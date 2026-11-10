@@ -19,25 +19,25 @@ dependencies:
     git:
       url: https://github.com/valeriinov/flutter_automation.git
       path: packages/flutter_automation
-      ref: 0.3.0
+      ref: 0.3.1
   flutter_automation_driver:
     git:
       url: https://github.com/valeriinov/flutter_automation.git
       path: packages/flutter_automation_driver
-      ref: 0.3.0
+      ref: 0.3.1
 
   flutter_automation_mock:
     git:
       url: https://github.com/valeriinov/flutter_automation.git
       path: packages/flutter_automation_mock
-      ref: 0.3.0
+      ref: 0.3.1
 
 dev_dependencies:
   flutter_automation_runner:
     git:
       url: https://github.com/valeriinov/flutter_automation.git
       path: packages/flutter_automation_runner
-      ref: 0.3.0
+      ref: 0.3.1
 ```
 
 Install the driver extension before the widgets binding starts:

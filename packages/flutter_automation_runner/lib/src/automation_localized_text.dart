@@ -11,7 +11,7 @@ final class AutomationLocalizedText {
 
   const AutomationLocalizedText(this._texts);
 
-  /// The locale codes the text is written in.
+  /// The locale codes that hold a version of the text.
   Iterable<String> get locales => _texts.keys;
 
   /// Reads the optional text under [key] of [json], `null` when it is missing.
