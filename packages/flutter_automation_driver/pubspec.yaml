@@ -1,0 +1,27 @@
+name: flutter_automation_driver
+description: Flutter Driver extension for the app and finders for the host that drives it.
+version: 0.3.0
+repository: https://github.com/valeriinov/flutter_automation
+publish_to: none
+
+environment:
+  sdk: ^3.12.2
+  flutter: ^3.47.5
+
+resolution: workspace
+
+dependencies:
+  flutter:
+    sdk: flutter
+  flutter_driver:
+    sdk: flutter
+  flutter_test:
+    sdk: flutter
+  flutter_automation:
+    git:
+      url: https://github.com/valeriinov/flutter_automation.git
+      ref: 0.3.0
+      path: packages/flutter_automation
+
+dev_dependencies:
+  flutter_lints: ^6.0.0

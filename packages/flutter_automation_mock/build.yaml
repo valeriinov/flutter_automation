@@ -1,0 +1,18 @@
+targets:
+  $default:
+    builders:
+      json_serializable:
+        options:
+          explicit_to_json: true
+          include_if_null: false
+
+      freezed:
+        options:
+          when:
+            when: false
+            maybe_when: false
+            when_or_null: false
+          map:
+            map: false
+            maybe_map: false
+            map_or_null: false

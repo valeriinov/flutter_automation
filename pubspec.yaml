@@ -1,0 +1,29 @@
+name: flutter_automation_workspace
+
+environment:
+  sdk: ^3.12.2
+
+publish_to: none
+
+workspace:
+  - packages/flutter_automation
+  - packages/flutter_automation_driver
+  - packages/flutter_automation_mock
+  - packages/flutter_automation_runner
+
+dev_dependencies:
+  dart_code_linter: ^4.4.0
+  flutter_lints: ^6.0.0
+  melos: ^7.3.0
+
+melos:
+  command:
+    bootstrap:
+      runPubGetInParallel: true
+  scripts:
+    analyze:
+      run: fvm dart run melos exec -- fvm dart analyze
+    test:
+      run: fvm dart run melos exec --dir-exists=test -- fvm flutter test
+    format:
+      run: fvm dart run melos exec -- fvm dart format .

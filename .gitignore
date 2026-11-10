@@ -1,0 +1,11 @@
+.DS_Store
+.dart_tool/
+.fvm/
+.idea/
+.vscode/
+*.iml
+build/
+coverage/
+**/pubspec.lock
+.flutter-plugins-dependencies
+.codemap/
