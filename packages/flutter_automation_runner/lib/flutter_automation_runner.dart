@@ -1,3 +1,4 @@
+export 'package:flutter_automation_runner/automation_flow_definition.dart';
 export 'package:flutter_automation_runner/src/automation_android_device.dart';
 export 'package:flutter_automation_runner/src/automation_block_library.dart';
 export 'package:flutter_automation_runner/src/automation_capture.dart';
@@ -8,12 +9,10 @@ export 'package:flutter_automation_runner/src/automation_device.dart';
 export 'package:flutter_automation_runner/src/automation_finder_kind.dart';
 export 'package:flutter_automation_runner/src/automation_finder_spec.dart';
 export 'package:flutter_automation_runner/src/automation_flow.dart';
-export 'package:flutter_automation_runner/src/automation_flow_entry.dart';
 export 'package:flutter_automation_runner/src/automation_host_finders.dart';
 export 'package:flutter_automation_runner/src/automation_ios_simulator.dart';
-export 'package:flutter_automation_runner/src/automation_launch_source.dart';
-export 'package:flutter_automation_runner/src/automation_localized_text.dart';
 export 'package:flutter_automation_runner/src/automation_runner.dart';
 export 'package:flutter_automation_runner/src/automation_runner_config.dart';
 export 'package:flutter_automation_runner/src/automation_runner_exception.dart';
 export 'package:flutter_automation_runner/src/automation_screen_answer.dart';
+export 'package:flutter_automation_runner/src/run_flows.dart';

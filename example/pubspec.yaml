@@ -1,0 +1,37 @@
+name: example
+description: Two-screen app that a flow drives on a mock backend.
+publish_to: none
+version: 1.0.0+1
+
+environment:
+  sdk: ^3.12.2
+  flutter: ^3.47.5
+
+resolution: workspace
+
+dependencies:
+  flutter:
+    sdk: flutter
+  dio: ^5.11.1
+  flutter_automation:
+    path: ../packages/flutter_automation
+  flutter_automation_driver:
+    path: ../packages/flutter_automation_driver
+  flutter_automation_mock:
+    path: ../packages/flutter_automation_mock
+  flutter_automation_mock_dio:
+    path: ../packages/flutter_automation_mock_dio
+  path_provider: ^2.1.5
+
+dev_dependencies:
+  flutter_lints: ^6.0.0
+  flutter_automation_runner:
+    path: ../packages/flutter_automation_runner
+
+flutter:
+  uses-material-design: true
+
+# Values the runner reads from this file.
+flutter_automation:
+  defaultLocale: en
+  launchHint: --dart-define=ENABLE_FLUTTER_DRIVER=true --dart-define=ENABLE_MOCK=true

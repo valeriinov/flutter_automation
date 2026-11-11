@@ -8,7 +8,6 @@ import 'package:flutter_automation_runner/src/automation_runner_exception.dart';
 const _fullPubspec = '''
 name: sample_app
 flutter_automation:
-  flows: tool/flows
   defaultLocale: uk
   dateFormats:
     uk: dd.MM.yyyy
@@ -31,7 +30,6 @@ flutter_automation:
 ''';
 const _wrongTypePubspecs = {
   'frameGoalMs': 'frameGoalMs: 16.5',
-  'flows': 'flows: [tool/flows]',
   'dateFormats': 'dateFormats: {uk: 5}',
   'finders': 'finders: [calendarDay]',
 };
@@ -62,8 +60,6 @@ void _automationRunnerConfig_should_readSectionOfPubspec() {
     final config = AutomationRunnerConfig.fromPubspec(_fullPubspec);
 
     expect(config.packagePrefix, 'package:sample_app/');
-    expect(config.flowsPath, 'tool/flows');
-    expect(config.blocksPath, 'tool/flows/blocks');
     expect(config.defaultLocale, 'uk');
     expect(config.dateFormats, {'uk': 'dd.MM.yyyy', 'en': 'MM/dd/yyyy'});
     expect(config.frameGoalMs, 8);
@@ -79,7 +75,6 @@ void _automationRunnerConfig_should_fallBackToDefaultsWithoutSection() {
     () {
       final config = AutomationRunnerConfig.fromPubspec(_barePubspec);
 
-      expect(config.flowsPath, 'automation/flows');
       expect(config.defaultLocale, 'en');
       expect(config.frameGoalMs, 16);
       expect(config.splashScreen, isNull);

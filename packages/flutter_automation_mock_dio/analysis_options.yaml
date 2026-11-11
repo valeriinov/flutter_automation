@@ -1,0 +1,126 @@
+include: ../../analysis_options.yaml
+
+analyzer:
+  exclude:
+    - "**/*.g.dart"
+    - "**/*.freezed.dart"
+    - build/**
+  errors:
+    invalid_annotation_target: ignore
+
+linter:
+  rules:
+    prefer_initializing_formals: false
+    non_constant_identifier_names: false
+    prefer_single_quotes: true
+    always_use_package_imports: true
+    cancel_subscriptions: true
+    close_sinks: true
+    flutter_style_todos: true
+    prefer_final_locals: true
+    use_enums: true
+    use_super_parameters: true
+    avoid_types_as_parameter_names: true
+    lines_longer_than_80_chars: true
+    prefer_inlined_adds: true
+    always_put_control_body_on_new_line: true
+    always_put_required_named_parameters_first: true
+    avoid_dynamic_calls: true
+    avoid_positional_boolean_parameters: true
+    avoid_redundant_argument_values: true
+    avoid_renaming_method_parameters: true
+    avoid_unused_constructor_parameters: true
+    avoid_void_async: true
+    implicit_reopen: true
+    invalid_case_patterns: true
+    leading_newlines_in_multiline_strings: true
+    library_private_types_in_public_api: true
+    literal_only_boolean_expressions: true
+    null_closures: true
+    parameter_assignments: true
+    prefer_adjacent_string_concatenation: true
+    prefer_conditional_assignment: true
+
+dart_code_linter:
+  metrics:
+    cyclomatic-complexity: 20
+    number-of-parameters: 4
+    maximum-nesting-level: 3
+  metrics-exclude:
+    - test/**
+  rules:
+    - member-ordering:
+        order:
+          - static-fields
+          - public-fields
+          - public-nullable-fields
+          - private-fields
+          - private-nullable-fields
+          - constructors
+          - named-constructors
+          - factory-constructors
+          - public-getters
+          - public-setters
+          - private-getters
+          - private-setters
+          - overridden-public-methods
+          - public-methods
+          - private-methods
+        widgets-order:
+          - static-fields
+          - public-fields
+          - public-nullable-fields
+          - private-fields
+          - private-nullable-fields
+          - constructors
+          - named-constructors
+          - factory-constructors
+          - public-getters
+          - public-setters
+          - private-getters
+          - private-setters
+          - init-state-method
+          - did-change-dependencies-method
+          - did-update-widget-method
+          - build-method
+          - public-methods
+          - private-methods
+          - dispose-method
+    - avoid-cascade-after-if-null
+    - avoid-collection-methods-with-unrelated-types:
+        strict: false
+    - avoid-double-slash-imports
+    - avoid-duplicate-exports
+    - avoid-dynamic
+    - avoid-global-state
+    - avoid-late-keyword
+    - avoid-missing-enum-constant-in-map
+    - avoid-nested-conditional-expressions
+    - avoid-non-null-assertion:
+        skip-checked-fields: true
+    - avoid-redundant-async
+    - avoid-unnecessary-conditionals
+    - avoid-unnecessary-type-assertions
+    - avoid-unrelated-type-assertions
+    - avoid-unused-parameters
+    - double-literal-format
+    - no-equal-then-else
+    - no-magic-number:
+        allow-only-once: true
+    - no-object-declaration
+    - prefer-async-await
+    - prefer-conditional-expressions
+    - prefer-commenting-analyzer-ignores
+    - prefer-first-or-null
+    - prefer-last
+    - prefer-match-file-name
+    - prefer-moving-to-variable
+    - always-remove-listener
+    - avoid-unnecessary-setstate
+    - avoid-wrapping-in-padding
+    - prefer-correct-edge-insets-constructor
+    - prefer-extracting-callbacks:
+        allowed-line-count: 5
+    - prefer-single-widget-per-file:
+        ignore-private-widgets: true
+    - use-setstate-synchronously

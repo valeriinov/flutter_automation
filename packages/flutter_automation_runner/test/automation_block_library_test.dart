@@ -40,7 +40,6 @@ const _library = AutomationBlockLibrary(
       title: _decideTitle,
     ),
   },
-  directory: 'flows/blocks',
 );
 
 void main() {

@@ -1,0 +1,47 @@
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Read the Flutter version
+        id: fvm
+        run: echo "flutter=$(jq -r .flutter .fvmrc)" >> "$GITHUB_OUTPUT"
+
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ steps.fvm.outputs.flutter }}
+          channel: stable
+          cache: true
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      # The melos scripts call `fvm <tool>`. The runner already holds the
+      # version from .fvmrc, so `fvm` only forwards to the tool.
+      - name: Forward fvm to the installed SDK
+        run: |
+          printf '#!/bin/sh\nexec "$@"\n' | sudo tee /usr/local/bin/fvm
+          sudo chmod +x /usr/local/bin/fvm
+
+      - name: Install packages
+        run: flutter pub get
+
+      - name: Analyze
+        run: dart run melos run analyze
+
+      - name: Test
+        run: dart run melos run test
+
+      - name: Build the example
+        working-directory: example
+        run: flutter build apk --debug

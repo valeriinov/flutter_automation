@@ -39,7 +39,6 @@ const _library = AutomationBlockLibrary(
       title: _blockTitle,
     ),
   },
-  directory: 'flows/blocks',
 );
 const _blockTitle = AutomationLocalizedText({
   'en': 'Open a found item',

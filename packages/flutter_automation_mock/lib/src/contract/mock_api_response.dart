@@ -1,7 +1,6 @@
 import 'dart:io';
 import 'dart:typed_data';
 
-import 'package:dio/dio.dart';
 import 'package:flutter_automation_mock/src/contract/mock_api_request.dart';
 
 /// {@category Utils}
@@ -12,6 +11,8 @@ import 'package:flutter_automation_mock/src/contract/mock_api_request.dart';
 /// a backend that fails, name a [statusCode] other than `200` or fill the error
 /// field that the payload already carries.
 class MockApiResponse {
+  static const String _jsonContentType = 'application/json';
+
   /// Http status code the app receives.
   final int statusCode;
 
@@ -27,7 +28,7 @@ class MockApiResponse {
 
   const MockApiResponse({required this.body, this.statusCode = HttpStatus.ok})
     : bytes = null,
-      contentType = Headers.jsonContentType;
+      contentType = _jsonContentType;
 
   /// Answers with the binary [bytes] of a file sent as [contentType].
   const MockApiResponse.fromBytes(

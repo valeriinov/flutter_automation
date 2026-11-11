@@ -5,6 +5,7 @@ import 'dart:typed_data';
 
 import 'package:collection/collection.dart';
 import 'package:flutter_automation_driver/flutter_automation_driver.dart';
+import 'package:flutter_automation_mock/mock_feature.dart';
 import 'package:flutter_driver/flutter_driver.dart';
 import 'package:image/image.dart' as image;
 
@@ -23,6 +24,8 @@ import 'package:flutter_automation_runner/src/automation_runner_config.dart';
 import 'package:flutter_automation_runner/src/automation_runner_exception.dart';
 import 'package:flutter_automation_runner/src/automation_screen_answer.dart';
 import 'package:flutter_automation_runner/src/automation_target_rect.dart';
+import 'package:flutter_automation_runner/src/definition/automation_flow_definition.dart';
+import 'package:flutter_automation_runner/src/definition/flow_block.dart';
 
 /// A step of a capture run: its 1-based [number] in the variant and the [stage]
 /// that the next user action opens. A step that is no user action belongs to
@@ -40,21 +43,23 @@ typedef _KeyboardScreenshot = ({
 /// Walks one variant of a flow of the app in one command. It sends the steps to
 /// the app back to back and times each of them.
 ///
-/// The app must run with `--dart-define=ENABLE_FLUTTER_DRIVER=true`. A flow
-/// file in the flows directory of the `flutter_automation:` section of the
-/// project holds one variant per way through its journey. The runner builds the
-/// named variant from the block library, so a whole walk costs one command
-/// instead of one command per tap.
+/// The app must run with `--dart-define=ENABLE_FLUTTER_DRIVER=true`. The
+/// project hands its [AutomationFlowDefinition]s and [FlowBlock]s to
+/// `runFlows`. A flow holds one variant per way through its journey. The runner
+/// builds the named variant from the block library, so a whole walk costs one
+/// command instead of one command per tap.
 ///
 /// ```shell
-/// fvm dart run flutter_automation_runner:run \
+/// fvm dart run <entry point> \
 ///   <flow> <variant> --uri ws://127.0.0.1:51626/token=/ws
 /// ```
 ///
 /// A variant may declare the mock configuration it needs. The runner pushes it
-/// into the app before the first step. A run is therefore set up without a
-/// rebuild or an edit in Dart. `--dry-run` expands the variant and prints its
-/// resolved steps. It does not use a device. `--timeline-out <path>` writes the
+/// into the app before the first step, unless the command line holds
+/// `--no-mock`. A run is therefore set up without a rebuild or an edit in Dart.
+/// `--dry-run` expands the variant and prints its resolved steps. It does not
+/// use a device. `--catalogue` prints every flow and block, before a `Use`
+/// expands, as one line of JSON. `--timeline-out <path>` writes the
 /// raw timeline that a traced window downloaded, in the Chrome trace format
 /// that DevTools and Perfetto open. It gives what the frame summary does not: a
 /// mark's arguments and the full list of spans inside one frame.
@@ -76,21 +81,27 @@ final class AutomationRunner {
   static const _uriOption = '--uri';
   static const _timelineOutOption = '--timeline-out';
   static const _dryRunFlag = '--dry-run';
+  static const _catalogueFlag = '--catalogue';
+  static const _noMockFlag = '--no-mock';
   static const _captureOption = '--capture';
   static const _systemKeyboardFlag = '--system-keyboard';
   static const _localeOption = '--locale';
   static const _uriCachePath = '.dart_tool/automation_runner_uri';
   static const _ledgerPath = '.dart_tool/automation_runner_runs.jsonl';
-  static const _mockApplyCommand = 'mock.apply';
-  static const _localeApplyCommand = 'locale.apply';
+  static const _mockApplyCommand = MockCommands.apply;
+  static const _localeApplyCommand = MockCommands.localeApply;
   static const _screenReadCommand = AutomationProtocol.screenReadCommand;
-  static const _journalReadCommand = 'journal.read';
+  static const _journalReadCommand = MockCommands.journalRead;
   static const _keyboardReadCommand = AutomationProtocol.keyboardReadCommand;
   static const _keyboardScreenshotAttempts = 3;
 
   final List<String> args;
 
   final AutomationRunnerConfig config;
+
+  final Map<String, Object?> _flows;
+
+  final Map<String, Object?> _blocks;
 
   final AutomationCaptureStages _stages;
 
@@ -99,16 +110,84 @@ final class AutomationRunner {
   AutomationDevice? _device;
   Map<String, Object?>? _frames;
 
-  AutomationRunner(this.args, {required this.config})
-    : _stages = AutomationCaptureStages.fromArgs(args),
-      _timelineOutPath = _tryReadTimelineOutPath(args);
+  /// Creates a runner over decoded flow and block objects, keyed by name.
+  ///
+  /// The [args] parameter is the command line. The [config] parameter is the
+  /// project's values. The [flows] parameter maps a flow name to its flow
+  /// object. The [blocks] parameter maps a block name to its block object.
+  AutomationRunner(
+    this.args, {
+    required this.config,
+    required Map<String, Object?> flows,
+    required Map<String, Object?> blocks,
+  }) : _flows = flows,
+       _blocks = blocks,
+       _stages = AutomationCaptureStages.fromArgs(args),
+       _timelineOutPath = _tryReadTimelineOutPath(args);
+
+  /// Creates a runner over flows and blocks written in Dart.
+  ///
+  /// The [args] parameter is the command line. The [config] parameter is the
+  /// project's values. The [flows] parameter holds the flows a run may ask for.
+  /// The [blocks] parameter holds the blocks their variants use.
+  factory AutomationRunner.fromDefinitions(
+    List<String> args, {
+    required AutomationRunnerConfig config,
+    required List<AutomationFlowDefinition> flows,
+    required List<FlowBlock> blocks,
+  }) {
+    return AutomationRunner(
+      args,
+      config: config,
+      flows: _indexByName(
+        flows.map((flow) => (name: flow.name, json: flow.toJson())),
+        'flow',
+      ),
+      blocks: _indexByName(
+        blocks.map((block) => (name: block.name, json: block.toJson())),
+        'block',
+      ),
+    );
+  }
+
+  /// The message of the error that a hot restart refusal ends the run with.
+  ///
+  /// The [uri] parameter is the Dart VM Service uri that refused.
+  static String describeHotRestartRefusal(String uri) {
+    return 'No flutter run answers hotRestart at $uri, so the app cannot '
+        'launch on the mock configuration of the variant. Relaunch it with '
+        'flutter run and pass the new uri with $_uriOption.';
+  }
+
+  static Map<String, Object?> _indexByName(
+    Iterable<({String name, Map<String, Object?> json})> items,
+    String kind,
+  ) {
+    final index = <String, Object?>{};
+
+    for (final item in items) {
+      if (index.containsKey(item.name)) {
+        throw AutomationRunnerException(
+          'The $kind "${item.name}" is declared twice.',
+        );
+      }
+
+      index[item.name] = item.json;
+    }
+
+    return index;
+  }
 
   bool get _showsSystemKeyboard => args.contains(_systemKeyboardFlag);
 
+  bool _appliesMock(AutomationFlow flow) {
+    return flow.mockConfig.isNotEmpty && !args.contains(_noMockFlag);
+  }
+
   String get _usage =>
-      'usage: flutter_automation_runner:run <flow> [variant] '
+      'usage: <runner> <flow> [variant] '
       '[$_uriOption <dart vm service uri>] [$_timelineOutOption <path>] '
-      '[$_dryRunFlag] '
+      '[$_dryRunFlag] [$_catalogueFlag] [$_noMockFlag] '
       '[$_captureOption <directory> '
       '[${AutomationCaptureStages.shootOption} <stage,stage>] '
       '[${AutomationCaptureStages.untilOption} <stage>]] '
@@ -123,6 +202,13 @@ final class AutomationRunner {
 
   Future<void> run() async {
     final command = Stopwatch()..start();
+
+    if (args.contains(_catalogueFlag)) {
+      stdout.writeln(jsonEncode({'flows': _flows, 'blocks': _blocks}));
+
+      return;
+    }
+
     final locale = _tryReadLocale();
     final flow = _readFlow(locale ?? config.defaultLocale);
     final capturePath = _readCapturePath();
@@ -151,9 +237,9 @@ final class AutomationRunner {
 
     final setupMs = await _applyMockConfig(launchDriver, flow);
 
-    final driver = flow.mockConfig.isEmpty
-        ? launchDriver
-        : await _relaunchOnMockConfig(launchDriver, uri);
+    final driver = _appliesMock(flow)
+        ? await _relaunchOnMockConfig(launchDriver, uri)
+        : launchDriver;
 
     if (locale != null) {
       await _applyLocale(driver, locale);
@@ -306,7 +392,7 @@ final class AutomationRunner {
         'dryRun': true,
         'entry': ?flow.entry?.toJson(),
         'stateOf': ?flow.stateOf,
-        'mock': flow.mockConfig,
+        'mock': _appliesMock(flow) ? flow.mockConfig : const {},
         'steps': flow.steps.map(_reportDryRunStep).toList(),
       }),
     );
@@ -343,17 +429,17 @@ final class AutomationRunner {
       throw AutomationRunnerException(_usage);
     }
 
-    final file = File('${config.flowsPath}/$name.json');
-
-    if (!file.existsSync()) {
-      throw AutomationRunnerException('No flow file at ${file.path}.');
+    if (!_flows.containsKey(name)) {
+      throw AutomationRunnerException(
+        'No flow "$name". Known flows: ${_flows.keys.toList()}.',
+      );
     }
 
     return AutomationFlow.fromJson(
       name: name,
       variant: _readVariant(),
-      json: jsonDecode(file.readAsStringSync()),
-      blocks: AutomationBlockLibrary.fromDirectory(config.blocksPath),
+      json: _flows[name],
+      blocks: AutomationBlockLibrary.fromJson(_blocks),
       finders: config.finderRegistry,
       locale: locale,
     );
@@ -507,7 +593,7 @@ final class AutomationRunner {
     FlutterDriver driver,
     AutomationFlow flow,
   ) async {
-    if (flow.mockConfig.isEmpty) {
+    if (!_appliesMock(flow)) {
       return 0;
     }
 
@@ -574,11 +660,7 @@ final class AutomationRunner {
       await socket.close();
     }
 
-    throw AutomationRunnerException(
-      'No flutter run answers hotRestart at $uri, so the app cannot launch on '
-      'the mock configuration of the variant. Relaunch it with flutter run and '
-      'pass the new uri with $_uriOption.',
-    );
+    throw AutomationRunnerException(describeHotRestartRefusal(uri));
   }
 
   /// `flutter run` registers `hotRestart` under the number of whichever client

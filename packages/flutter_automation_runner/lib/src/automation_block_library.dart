@@ -1,6 +1,3 @@
-import 'dart:convert';
-import 'dart:io';
-
 import 'package:flutter_automation_runner/src/automation_localized_text.dart';
 import 'package:flutter_automation_runner/src/automation_runner_exception.dart';
 import 'package:flutter_automation_runner/src/automation_step_label.dart';
@@ -11,7 +8,7 @@ const _titleKey = 'title';
 
 /// {@category Utils}
 ///
-/// Blocks that a flow variant draws on, read from `flows/blocks/`.
+/// Blocks that a flow variant draws on, read from the decoded block objects.
 ///
 /// A journey has many ways through it, and they share almost each step. The
 /// library holds each shared stretch once, and a variant lists the stretches it
@@ -19,29 +16,17 @@ const _titleKey = 'title';
 /// that walks through it.
 final class AutomationBlockLibrary {
   final Map<String, AutomationBlock> _blocks;
-  final String _directory;
 
-  const AutomationBlockLibrary({
-    required Map<String, AutomationBlock> blocks,
-    required String directory,
-  }) : _blocks = blocks,
-       _directory = directory;
+  const AutomationBlockLibrary({required Map<String, AutomationBlock> blocks})
+    : _blocks = blocks;
 
-  /// Reads every `*.json` of [directory], an empty library when it is missing.
-  factory AutomationBlockLibrary.fromDirectory(String directory) {
-    final dir = Directory(directory);
-
-    if (!dir.existsSync()) {
-      return AutomationBlockLibrary(blocks: const {}, directory: directory);
-    }
-
-    final files = dir.listSync().whereType<File>().where(
-      (file) => file.path.endsWith('.json'),
-    );
-
+  /// Reads the decoded block objects, keyed by block name.
+  factory AutomationBlockLibrary.fromJson(Map<String, Object?> blocks) {
     return AutomationBlockLibrary(
-      blocks: {for (final file in files) _readName(file): _readBlock(file)},
-      directory: directory,
+      blocks: {
+        for (final MapEntry(:key, :value) in blocks.entries)
+          key: AutomationBlock.fromJson(key, value),
+      },
     );
   }
 
@@ -118,7 +103,7 @@ final class AutomationBlockLibrary {
 
     if (block == null) {
       throw AutomationRunnerException(
-        'No block "$name" in $_directory. Known blocks: '
+        'No block "$name". Known blocks: '
         '${_blocks.keys.toList()..sort()}.',
       );
     }
@@ -172,14 +157,6 @@ final class AutomationBlockLibrary {
       'A "use" step has no string "action".',
     );
   }
-
-  static String _readName(File file) =>
-      file.uri.pathSegments.last.replaceAll('.json', '');
-
-  static AutomationBlock _readBlock(File file) => AutomationBlock.fromJson(
-    _readName(file),
-    jsonDecode(file.readAsStringSync()),
-  );
 }
 
 /// {@category Utils}

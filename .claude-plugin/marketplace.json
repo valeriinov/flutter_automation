@@ -1,0 +1,14 @@
+{
+  "name": "flutter-automation",
+  "description": "Skills and workflows for the flutter_automation packages by valeriinov.",
+  "owner": {
+    "name": "valeriinov"
+  },
+  "plugins": [
+    {
+      "name": "flutter-automation",
+      "source": "./",
+      "description": "Skills and workflows for Flutter teams that drive a running app with flutter_automation: walk flows, drive a device, mock the backend, mark widgets, set a project up."
+    }
+  ]
+}

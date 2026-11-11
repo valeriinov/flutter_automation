@@ -13,7 +13,6 @@ import 'package:flutter_automation_runner/src/automation_runner_exception.dart';
 ///
 /// ```yaml
 /// flutter_automation:
-///   flows: automation/flows
 ///   defaultLocale: en
 ///   dateFormats:
 ///     en: MM/dd/yyyy
@@ -29,14 +28,10 @@ final class AutomationRunnerConfig {
   static const _pubspecPath = 'pubspec.yaml';
   static const _sectionKey = 'flutter_automation';
   static const _dateValueKeyKind = 'dateValueKey';
-  static const _defaultFlowsPath = 'automation/flows';
   static const _defaultLocale = 'en';
 
   /// The `package:` prefix of the project's own libraries.
   final String packagePrefix;
-
-  /// Directory of the flow files, relative to the project root.
-  final String flowsPath;
 
   /// Locale a run takes when it names none.
   final String defaultLocale;
@@ -60,7 +55,6 @@ final class AutomationRunnerConfig {
 
   const AutomationRunnerConfig({
     required this.packagePrefix,
-    this.flowsPath = _defaultFlowsPath,
     this.defaultLocale = _defaultLocale,
     this.dateFormats = const {},
     this.frameGoalMs = AutomationFrameSummary.defaultGoalMillis,
@@ -97,7 +91,6 @@ final class AutomationRunnerConfig {
 
     return AutomationRunnerConfig(
       packagePrefix: 'package:${root['name']}/',
-      flowsPath: _readString(section, 'flows') ?? _defaultFlowsPath,
       defaultLocale: _readString(section, 'defaultLocale') ?? _defaultLocale,
       dateFormats: _readStrings(section, 'dateFormats'),
       frameGoalMs:
@@ -108,9 +101,6 @@ final class AutomationRunnerConfig {
       dateValueKeys: _readDateValueKeys(section),
     );
   }
-
-  /// Directory of the block files that a flow draws on.
-  String get blocksPath => '$flowsPath/blocks';
 
   /// The finder kinds of the built-in set and the ones this project declares.
   AutomationFinderRegistry get finderRegistry {

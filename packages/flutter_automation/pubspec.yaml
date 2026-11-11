@@ -1,6 +1,6 @@
 name: flutter_automation
 description: Target markup, command registry and switches for driving a Flutter app from an agent.
-version: 0.3.1
+version: 0.4.0
 repository: https://github.com/valeriinov/flutter_automation
 publish_to: none
 

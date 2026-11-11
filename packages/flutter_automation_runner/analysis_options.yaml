@@ -114,6 +114,11 @@ dart_code_linter:
           - lib/src/automation_finder_kind.dart
           - lib/src/automation_finder_spec.dart
           - lib/src/automation_runner_config.dart
+          # A step argument, a block parameter and a mock value are JSON.
+          - lib/src/definition/flow_block.dart
+          - lib/src/definition/flow_finder.dart
+          - lib/src/definition/flow_json_value.dart
+          - lib/src/definition/flow_step.dart
     - prefer-async-await
     - prefer-conditional-expressions
     - prefer-commenting-analyzer-ignores

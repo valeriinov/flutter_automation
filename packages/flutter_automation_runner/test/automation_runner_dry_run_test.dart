@@ -25,41 +25,74 @@ const _flowJson = {
   },
 };
 
+const _mockJson = {'latency': 'fast'};
+const _mockFlowJson = {
+  'variants': {
+    'main': {
+      'mock': _mockJson,
+      'use': [
+        {
+          'action': 'waitFor',
+          'finder': {'by': 'text', 'value': 'Hello'},
+        },
+      ],
+    },
+  },
+};
+
 void main() {
   group('AutomationRunner Tests', () {
     _automationRunner_should_dryRunFlowWithoutMockBlock();
+    _automationRunner_should_leaveTheMockOutOfARunWithNoMock();
   });
+}
+
+void _automationRunner_should_leaveTheMockOutOfARunWithNoMock() {
+  test(
+    'AutomationRunner should leave the mock out of a run with --no-mock',
+    () async {
+      final withMock = await _dryRun([_flowName, '--dry-run']);
+      final withoutMock = await _dryRun([_flowName, '--dry-run', '--no-mock']);
+
+      expect(withMock['mock'], _mockJson);
+      expect(withoutMock['mock'], isEmpty);
+    },
+  );
+}
+
+Future<Map<String, Object?>> _dryRun(List<String> args) async {
+  final lines = <String>[];
+
+  await IOOverrides.runZoned(
+    () => AutomationRunner(
+      args,
+      config: const AutomationRunnerConfig(
+        packagePrefix: 'package:sample_app/',
+      ),
+      flows: {_flowName: _mockFlowJson},
+      blocks: const {},
+    ).run(),
+    stdout: () => _LineStdout(lines),
+  );
+
+  return jsonDecode(lines.single) as Map<String, Object?>;
 }
 
 void _automationRunner_should_dryRunFlowWithoutMockBlock() {
   test('AutomationRunner should dry run flow without mock block', () async {
-    final directory = Directory.systemTemp.createTempSync('runner-dry-run-');
-    final previous = Directory.current;
-    final flowsDirectory = Directory('${directory.path}/flows')..createSync();
     final lines = <String>[];
 
-    File(
-      '${flowsDirectory.path}/$_flowName.json',
-    ).writeAsStringSync(jsonEncode(_flowJson));
-
-    try {
-      Directory.current = directory;
-
-      await IOOverrides.runZoned(
-        () => AutomationRunner(
-          [_flowName, '--dry-run'],
-          config: const AutomationRunnerConfig(
-            packagePrefix: 'package:sample_app/',
-            flowsPath: 'flows',
-          ),
-        ).run(),
-        stdout: () => _LineStdout(lines),
-      );
-    } finally {
-      Directory.current = previous;
-
-      directory.deleteSync(recursive: true);
-    }
+    await IOOverrides.runZoned(
+      () => AutomationRunner(
+        [_flowName, '--dry-run'],
+        config: const AutomationRunnerConfig(
+          packagePrefix: 'package:sample_app/',
+        ),
+        flows: {_flowName: _flowJson},
+        blocks: const {},
+      ).run(),
+      stdout: () => _LineStdout(lines),
+    );
 
     final report = jsonDecode(lines.single) as Map<String, Object?>;
     final steps = report['steps'] as List<Object?>;

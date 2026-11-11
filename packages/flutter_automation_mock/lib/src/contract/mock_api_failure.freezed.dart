@@ -22,9 +22,9 @@ mixin _$MockApiFailure {
  String? get message;/// Whether the request never reaches the backend, the way a device without
 /// a connection fails it.
 ///
-/// Turned on, the request fails with the connection error that Dio raises
-/// for a socket that cannot connect. The request does not read
-/// [statusCode], [errorCode] and [message].
+/// Turned on, the request fails with the connection error that the HTTP
+/// client raises for a socket that cannot connect. The request does not
+/// read [statusCode], [errorCode] and [message].
  bool get isConnectionError;
 /// Create a copy of MockApiFailure
 /// with the given fields replaced by the non-null parameter values.
@@ -110,9 +110,9 @@ class _MockApiFailure implements MockApiFailure {
 /// Whether the request never reaches the backend, the way a device without
 /// a connection fails it.
 ///
-/// Turned on, the request fails with the connection error that Dio raises
-/// for a socket that cannot connect. The request does not read
-/// [statusCode], [errorCode] and [message].
+/// Turned on, the request fails with the connection error that the HTTP
+/// client raises for a socket that cannot connect. The request does not
+/// read [statusCode], [errorCode] and [message].
 @override@JsonKey() final  bool isConnectionError;
 
 /// Create a copy of MockApiFailure

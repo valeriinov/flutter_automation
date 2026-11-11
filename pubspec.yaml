@@ -9,7 +9,9 @@ workspace:
   - packages/flutter_automation
   - packages/flutter_automation_driver
   - packages/flutter_automation_mock
+  - packages/flutter_automation_mock_dio
   - packages/flutter_automation_runner
+  - example
 
 dev_dependencies:
   dart_code_linter: ^4.4.0

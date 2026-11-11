@@ -28,9 +28,9 @@ sealed class MockApiFailure with _$MockApiFailure {
     /// Whether the request never reaches the backend, the way a device without
     /// a connection fails it.
     ///
-    /// Turned on, the request fails with the connection error that Dio raises
-    /// for a socket that cannot connect. The request does not read
-    /// [statusCode], [errorCode] and [message].
+    /// Turned on, the request fails with the connection error that the HTTP
+    /// client raises for a socket that cannot connect. The request does not
+    /// read [statusCode], [errorCode] and [message].
     @Default(false) bool isConnectionError,
   }) = _MockApiFailure;
 
