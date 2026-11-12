@@ -26,7 +26,9 @@ abstract final class AutomationInstaller {
   /// The [screenReader] parameter describes the screen the app shows when the
   /// `screen.read` command arrives.
   /// The [localeApplier] parameter applies the language of the `locale.apply`
-  /// command. The command stays unregistered without it.
+  /// command. The command stays unregistered without it. A run with
+  /// `--locale` restarts the app after the command, so an applier that keeps
+  /// the language for the next launch makes the app launch in it.
   static void maybeInstall({
     required AutomationScreenReader screenReader,
     AutomationLocaleApplier? localeApplier,

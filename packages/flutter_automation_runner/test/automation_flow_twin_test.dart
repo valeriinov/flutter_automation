@@ -481,7 +481,7 @@ void _automationRunner_should_describeHotRestartRefusal() {
     expect(
       AutomationRunner.describeHotRestartRefusal('ws://127.0.0.1:1/ws'),
       'No flutter run answers hotRestart at ws://127.0.0.1:1/ws, so the app '
-      'cannot launch on the scenario of the variant. Relaunch it '
+      'cannot launch on the scenario and the locale of the run. Relaunch it '
       'with flutter run and pass the new uri with --uri.',
     );
   });

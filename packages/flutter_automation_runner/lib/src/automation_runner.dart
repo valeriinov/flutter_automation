@@ -56,7 +56,9 @@ typedef _KeyboardScreenshot = ({
 ///
 /// A variant may declare the scenario it needs. The runner pushes it into the
 /// app before the first step, unless the command line holds `--no-scenario`. A
-/// run is therefore set up without a rebuild or an edit in Dart.
+/// run is therefore set up without a rebuild or an edit in Dart. `--locale`
+/// sends the language to the app before the restart that a scenario or the
+/// language needs, so the app launches in that language.
 /// `--dry-run` expands the variant and prints its resolved steps. It does not
 /// use a device. `--catalogue` prints every flow and block, before a `Use`
 /// expands, as one line of JSON. `--timeline-out <path>` writes the
@@ -159,7 +161,7 @@ final class AutomationRunner {
   /// The [uri] parameter is the Dart VM Service uri that refused.
   static String describeHotRestartRefusal(String uri) {
     return 'No flutter run answers hotRestart at $uri, so the app cannot '
-        'launch on the scenario of the variant. Relaunch it with '
+        'launch on the scenario and the locale of the run. Relaunch it with '
         'flutter run and pass the new uri with $_uriOption.';
   }
 
@@ -212,6 +214,12 @@ final class AutomationRunner {
     return flow.scenarioJson != null && !args.contains(_noScenarioFlag);
   }
 
+  /// Whether the run restarts the app before the first step. The app reads its
+  /// scenario and its language once, on launch.
+  bool _relaunches(AutomationFlow flow, String? locale) {
+    return _appliesScenario(flow) || locale != null;
+  }
+
   String get _usage =>
       'usage: <runner> <flow> [variant] '
       '[$_uriOption <dart vm service uri>] [$_timelineOutOption <path>] '
@@ -246,7 +254,7 @@ final class AutomationRunner {
     }
 
     if (args.contains(_dryRunFlag)) {
-      _reportDryRun(flow);
+      _reportDryRun(flow, locale);
 
       return;
     }
@@ -265,10 +273,16 @@ final class AutomationRunner {
 
     final setupMs = await _applyScenario(launchDriver, flow);
 
-    final driver = _appliesScenario(flow)
-        ? await _relaunchOnScenario(launchDriver, uri)
+    if (locale != null) {
+      await _applyLocale(launchDriver, locale);
+    }
+
+    final driver = _relaunches(flow, locale)
+        ? await _relaunch(launchDriver, uri)
         : launchDriver;
 
+    // An app that keeps no language across a launch still walks the steps in
+    // the language of the run.
     if (locale != null) {
       await _applyLocale(driver, locale);
     }
@@ -406,7 +420,7 @@ final class AutomationRunner {
   /// The runner builds a flow from blocks. This output therefore tells a
   /// malformed reference or an unresolved parameter apart from a step that the
   /// app failed.
-  void _reportDryRun(AutomationFlow flow) {
+  void _reportDryRun(AutomationFlow flow, String? locale) {
     stderr.writeln('${flow.id}: ${flow.steps.length} steps');
 
     for (final step in flow.steps) {
@@ -422,6 +436,7 @@ final class AutomationRunner {
         'stateOf': ?flow.stateOf,
         'scenario': _appliesScenario(flow) ? flow.scenarioJson : const {},
         'appliesScenario': _appliesScenario(flow),
+        'relaunches': _relaunches(flow, locale),
         'steps': flow.steps.map(_reportDryRunStep).toList(),
       }),
     );
@@ -648,17 +663,15 @@ final class AutomationRunner {
     }
   }
 
-  /// Restarts the app so that it launches on the scenario just
+  /// Restarts the app so that it launches on the scenario and the locale just
   /// applied. Then it connects to the restarted app.
   ///
-  /// The app reads its session, and the link and the push that opened it, once,
-  /// on launch. `scenario.apply` saves the scenario that the next launch seeds
-  /// from. The restart is the `hotRestart` method that `flutter run` registers
-  /// on the app's websocket.
-  Future<FlutterDriver> _relaunchOnScenario(
-    FlutterDriver driver,
-    String uri,
-  ) async {
+  /// The app reads its session, its language, and the link and the push that
+  /// opened it, once, on launch. `scenario.apply` saves the scenario that the
+  /// next launch seeds from. The `localeApplier` of the app keeps the language
+  /// for the next launch. The restart is the `hotRestart` method that
+  /// `flutter run` registers on the app's websocket.
+  Future<FlutterDriver> _relaunch(FlutterDriver driver, String uri) async {
     final watch = Stopwatch()..start();
 
     final launchIsolate = await _tryResolveDriverIsolateNumber(uri);
@@ -675,7 +688,7 @@ final class AutomationRunner {
     await _waitPastSplash(restartedDriver);
 
     watch.stop();
-    stderr.writeln('ok   ${watch.elapsedMilliseconds}ms  relaunch on mock');
+    stderr.writeln('ok   ${watch.elapsedMilliseconds}ms  relaunch');
 
     return restartedDriver;
   }
@@ -764,7 +777,7 @@ final class AutomationRunner {
     }
 
     throw AutomationRunnerException(
-      'The app restarted on the scenario but logged no screen past '
+      'The app restarted but logged no screen past '
       'the splash within ${_relaunchTimeout.inSeconds} s.',
     );
   }
@@ -786,7 +799,7 @@ final class AutomationRunner {
     }
 
     throw AutomationRunnerException(
-      'The app restarted on the scenario but registered no driver '
+      'The app restarted but registered no driver '
       'within ${_relaunchTimeout.inSeconds} s.',
     );
   }

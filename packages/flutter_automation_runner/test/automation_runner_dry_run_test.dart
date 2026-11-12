@@ -44,6 +44,29 @@ void main() {
   group('AutomationRunner Tests', () {
     _automationRunner_should_dryRunFlowWithoutScenario();
     _automationRunner_should_leaveTheScenarioOutOfARunWithNoScenario();
+    _automationRunner_should_relaunchOnAScenarioOrALocale();
+  });
+}
+
+void _automationRunner_should_relaunchOnAScenarioOrALocale() {
+  test('AutomationRunner should relaunch on a scenario or a locale', () async {
+    final withScenario = await _dryRun([_flowName, '--dry-run']);
+    final withLocaleOnly = await _dryRun([
+      _flowName,
+      '--dry-run',
+      '--no-scenario',
+      '--locale',
+      'uk',
+    ]);
+    final withNeither = await _dryRun([
+      _flowName,
+      '--dry-run',
+      '--no-scenario',
+    ]);
+
+    expect(withScenario['relaunches'], isTrue);
+    expect(withLocaleOnly['relaunches'], isTrue);
+    expect(withNeither['relaunches'], isFalse);
   });
 }
 

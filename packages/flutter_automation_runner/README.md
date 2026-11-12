@@ -49,7 +49,7 @@ final loginFlow = AutomationFlowDefinition(
   apply after the ones of the flow. The runner pushes the result with
   `scenario.apply` before the first step, unless the command line says
   `--no-scenario`. A variant that names a scenario makes the runner restart the
-  app after the push.
+  app after the push. `--locale` makes the runner restart the app too.
 - A block takes parameters. `FlowBlock.params` names them with defaults, the
   build function reads `params['name']`, and `Use(block, arguments: {...})`
   fills them in.
@@ -89,7 +89,7 @@ fvm dart run tool/run_flows.dart <flow> [variant] [options]
 | `--dry-run` | Prints the resolved steps as JSON. Needs no device. |
 | `--catalogue` | Prints every flow and block as one line of JSON. |
 | `--no-scenario` | Does not push the scenario into the app. |
-| `--locale <code>` | Language of the run, sent with `locale.apply` to the `localeApplier` of the driver. Works on an app without a mock. Default is `defaultLocale`. |
+| `--locale <code>` | Language of the run, sent with `locale.apply` to the `localeApplier` of the driver. The app restarts in it. Works on an app without a mock. Default is `defaultLocale`. |
 | `--timeline-out <path>` | Writes the raw timeline of a traced window. |
 | `--capture <dir>` | Captures the frames of the variant into the directory. |
 | `--system-keyboard` | Turns text entry emulation off for the whole run, so the system keyboard rises over a focused field and shows in a capture. `EnterText` switches the emulation on for its own call. |
@@ -101,6 +101,29 @@ runner names also ends stdout with `{"error": "<message>"}`.
 The app must run with `--dart-define=ENABLE_AUTOMATION=true`, and with the define
 of the project that turns the mock on. A capture sends `journal.read`, so it
 needs the mock. A run with `--no-scenario --locale <code>` needs no mock.
+
+### Launch language
+
+A run with `--locale <code>` launches the app in that language, with a
+scenario and with `--no-scenario`:
+
+1. The runner pushes the scenario, when the variant applies one.
+2. The runner sends `locale.apply` to the running app.
+3. The runner restarts the app with the `hotRestart` of `flutter run`.
+4. The runner sends `locale.apply` again, then walks the steps.
+
+The first frame and the launch requests are in the language of the run only
+when the `localeApplier` of the app keeps the language for the next launch, for
+example in a file that the app reads before its first request. A restart drops
+every Dart object, so a language kept only in memory is lost. An app that keeps
+the language only in memory launches in its own language, then switches at
+step 4.
+
+A run with `--locale` always restarts the app, so the app must run under
+`flutter run`. Under `--no-scenario`, the restart drops the state that the app
+held in memory. A mock then launches on an empty scenario, because the launch
+before already read and removed the saved one. A run
+without `--locale` sends no language and restarts the app only for a scenario.
 
 ## `pubspec.yaml` keys
 
