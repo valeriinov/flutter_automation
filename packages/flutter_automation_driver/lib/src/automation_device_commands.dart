@@ -6,6 +6,7 @@ import 'package:flutter/widgets.dart';
 import 'package:flutter_automation/flutter_automation.dart';
 import 'package:flutter_automation_driver/src/automation_frame_texts.dart';
 import 'package:flutter_automation_driver/src/automation_frame_widgets.dart';
+import 'package:flutter_automation_driver/src/automation_launch_locale_file.dart';
 import 'package:flutter_automation_driver/src/automation_locale_applier.dart';
 import 'package:flutter_automation_driver/src/automation_protocol.dart';
 import 'package:flutter_automation_driver/src/automation_screen_reader.dart';
@@ -19,15 +20,16 @@ import 'package:flutter_automation_driver/src/automation_screen_reader.dart';
 /// adds the texts and the widget types of the frame when the request sets
 /// `"texts"` and `"widgets"` to true. `locale.apply` takes
 /// `{"locale": <language code>}`, runs the locale applier and answers
-/// `{"locale": <language code>}`.
+/// `{"locale": <language code>}`. `locale.save` takes the same request, saves
+/// the language for the next launch of the app and answers the same way.
 abstract final class AutomationDeviceCommands {
   /// Registers the commands in [AutomationCommandRegistry].
   ///
   /// The [screenReader] parameter runs when `screen.read` arrives, not at
   /// registration. It may therefore reach objects that exist only after the app
   /// has started.
-  /// The [localeApplier] parameter runs when `locale.apply` arrives. The
-  /// command stays unregistered without it.
+  /// The [localeApplier] parameter runs when `locale.apply` arrives. Both
+  /// locale commands stay unregistered without it.
   static void register({
     required AutomationScreenReader screenReader,
     AutomationLocaleApplier? localeApplier,
@@ -48,6 +50,10 @@ abstract final class AutomationDeviceCommands {
     AutomationCommandRegistry.register(
       AutomationProtocol.localeApplyCommand,
       (payload) => _applyLocale(localeApplier, payload),
+    );
+    AutomationCommandRegistry.register(
+      AutomationProtocol.localeSaveCommand,
+      _saveLocale,
     );
   }
 
@@ -79,18 +85,41 @@ abstract final class AutomationDeviceCommands {
     AutomationLocaleApplier localeApplier,
     Map<String, Object?> payload,
   ) async {
-    final languageCode = payload[AutomationProtocol.localeKey];
-
-    if (languageCode is! String) {
-      throw StateError(
-        'The "${AutomationProtocol.localeApplyCommand}" command needs a '
-        '"${AutomationProtocol.localeKey}" string.',
-      );
-    }
+    final languageCode = _readLanguageCode(
+      AutomationProtocol.localeApplyCommand,
+      payload,
+    );
 
     await localeApplier(languageCode);
 
     return jsonEncode({AutomationProtocol.localeKey: languageCode});
+  }
+
+  static Future<String> _saveLocale(Map<String, Object?> payload) async {
+    final languageCode = _readLanguageCode(
+      AutomationProtocol.localeSaveCommand,
+      payload,
+    );
+
+    await AutomationLaunchLocaleFile.save(languageCode);
+
+    return jsonEncode({AutomationProtocol.localeKey: languageCode});
+  }
+
+  static String _readLanguageCode(
+    String command,
+    Map<String, Object?> payload,
+  ) {
+    final languageCode = payload[AutomationProtocol.localeKey];
+
+    if (languageCode is! String) {
+      throw StateError(
+        'The "$command" command needs a "${AutomationProtocol.localeKey}" '
+        'string.',
+      );
+    }
+
+    return languageCode;
   }
 
   static List<String>? _tryReadFrame(

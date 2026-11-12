@@ -108,16 +108,18 @@ A run with `--locale <code>` launches the app in that language, with a
 scenario and with `--no-scenario`:
 
 1. The runner pushes the scenario, when the variant applies one.
-2. The runner sends `locale.apply` to the running app.
-3. The runner restarts the app with the `hotRestart` of `flutter run`.
-4. The runner sends `locale.apply` again, then walks the steps.
+2. The runner sends `locale.save`. The driver saves the language in a file
+   that outlives the restart.
+3. The runner restarts the app with the `hotRestart` of `flutter run`. The
+   driver reads and removes the file and answers the language in
+   `AutomationInstaller.launchLanguageCode`.
+4. The runner sends `locale.apply`, then walks the steps.
 
-The first frame and the launch requests are in the language of the run only
-when the `localeApplier` of the app keeps the language for the next launch, for
-example in a file that the app reads before its first request. A restart drops
-every Dart object, so a language kept only in memory is lost. An app that keeps
-the language only in memory launches in its own language, then switches at
-step 4.
+The first frame and the launch requests are in the language of the run when
+the app starts in `AutomationInstaller.launchLanguageCode`. An app that does
+not read it launches in its own language, then switches at step 4. The driver
+answers the language for one launch only, so the next run without `--locale`
+starts in the language of the app.
 
 A run with `--locale` always restarts the app, so the app must run under
 `flutter run`. Under `--no-scenario`, the restart drops the state that the app

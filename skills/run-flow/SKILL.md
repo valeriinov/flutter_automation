@@ -198,9 +198,10 @@ Options:
 - `--capture <dir>` records what the app does at each step: requests, journal
   records, the screen before each action. The app must run with the mock on.
 - `--locale <code>` walks the app in another locale. The runner sends
-  `locale.apply` after the scenario. The app answers it through the
-  `localeApplier` of the driver installer, so it needs no mock. Without the
-  option, the app keeps its launch locale.
+  `locale.save` after the scenario, restarts the app, and sends `locale.apply`.
+  The app launches in the locale when it starts in
+  `AutomationInstaller.launchLanguageCode`. It needs no mock, but it needs an
+  app under `flutter run`. Without the option, the app keeps its launch locale.
   A number that the app formats per locale needs a finder `value` that matches
   that locale.
 - `--system-keyboard` turns text entry emulation off for the whole run, so the

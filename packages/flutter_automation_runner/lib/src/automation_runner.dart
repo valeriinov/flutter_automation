@@ -57,8 +57,9 @@ typedef _KeyboardScreenshot = ({
 /// A variant may declare the scenario it needs. The runner pushes it into the
 /// app before the first step, unless the command line holds `--no-scenario`. A
 /// run is therefore set up without a rebuild or an edit in Dart. `--locale`
-/// sends the language to the app before the restart that a scenario or the
-/// language needs, so the app launches in that language.
+/// saves the language in the app with `locale.save`, restarts the app, and
+/// applies the language with `locale.apply`. The app launches in it when it
+/// starts in `AutomationInstaller.launchLanguageCode`.
 /// `--dry-run` expands the variant and prints its resolved steps. It does not
 /// use a device. `--catalogue` prints every flow and block, before a `Use`
 /// expands, as one line of JSON. `--timeline-out <path>` writes the
@@ -92,6 +93,7 @@ final class AutomationRunner {
   static const _ledgerPath = '.dart_tool/automation_runner_runs.jsonl';
   static const _scenarioApplyCommand = MockCommands.scenarioApply;
   static const _localeApplyCommand = AutomationProtocol.localeApplyCommand;
+  static const _localeSaveCommand = AutomationProtocol.localeSaveCommand;
   static const _screenReadCommand = AutomationProtocol.screenReadCommand;
   static const _journalReadCommand = MockCommands.journalRead;
   static const _keyboardReadCommand = AutomationProtocol.keyboardReadCommand;
@@ -274,17 +276,17 @@ final class AutomationRunner {
     final setupMs = await _applyScenario(launchDriver, flow);
 
     if (locale != null) {
-      await _applyLocale(launchDriver, locale);
+      await _sendLocale(launchDriver, _localeSaveCommand, locale);
     }
 
     final driver = _relaunches(flow, locale)
         ? await _relaunch(launchDriver, uri)
         : launchDriver;
 
-    // An app that keeps no language across a launch still walks the steps in
-    // the language of the run.
+    // An app that does not start in the launch language still walks the steps
+    // in the language of the run.
     if (locale != null) {
-      await _applyLocale(driver, locale);
+      await _sendLocale(driver, _localeApplyCommand, locale);
     }
 
     if (_showsSystemKeyboard) {
@@ -668,8 +670,8 @@ final class AutomationRunner {
   ///
   /// The app reads its session, its language, and the link and the push that
   /// opened it, once, on launch. `scenario.apply` saves the scenario that the
-  /// next launch seeds from. The `localeApplier` of the app keeps the language
-  /// for the next launch. The restart is the `hotRestart` method that
+  /// next launch seeds from. `locale.save` saves the language that the next
+  /// launch reads. The restart is the `hotRestart` method that
   /// `flutter run` registers on the app's websocket.
   Future<FlutterDriver> _relaunch(FlutterDriver driver, String uri) async {
     final watch = Stopwatch()..start();
@@ -804,22 +806,23 @@ final class AutomationRunner {
     );
   }
 
-  Future<void> _applyLocale(FlutterDriver driver, String locale) async {
+  Future<void> _sendLocale(
+    FlutterDriver driver,
+    String command,
+    String locale,
+  ) async {
     try {
       final answer = await driver.requestData(
-        jsonEncode({
-          'command': _localeApplyCommand,
-          AutomationProtocol.localeKey: locale,
-        }),
+        jsonEncode({'command': command, AutomationProtocol.localeKey: locale}),
       );
 
-      stderr.writeln('ok   locale $answer');
+      stderr.writeln('ok   $command $answer');
     } on Object catch (error) {
       throw AutomationRunnerException(
         'The app refused the locale "$locale": $error\n'
         'The $_localeOption option needs an app that passes a localeApplier '
         'to AutomationInstaller.maybeInstall, which registers '
-        '$_localeApplyCommand.',
+        '$_localeSaveCommand and $_localeApplyCommand.',
       );
     }
   }

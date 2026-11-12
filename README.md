@@ -148,7 +148,8 @@ A complete app lives in [`example/`](example).
    The call does nothing unless the app runs with
    `--dart-define=ENABLE_AUTOMATION=true`. A release build never enables it.
    Pass `localeApplier: (languageCode) => ...` to the same call to let
-   `--locale` set the language of the app.
+   `--locale` set the language of the app. To launch in that language, start
+   the app in `AutomationInstaller.launchLanguageCode` when it is not `null`.
 
 4. Write a flow and an entry point.
 

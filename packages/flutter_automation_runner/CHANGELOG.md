@@ -3,10 +3,10 @@
 ## Unreleased
 
 - `--locale <code>` launches the app in that language. The runner sends
-  `locale.apply` before the restart, restarts the app also under
-  `--no-scenario`, and sends `locale.apply` again after the restart. The app
-  starts in the language when its `localeApplier` keeps the language for the
-  next launch.
+  `locale.save` before the restart, restarts the app also under
+  `--no-scenario`, and sends `locale.apply` after the restart. The app starts
+  in the language when it reads `AutomationInstaller.launchLanguageCode` at
+  startup.
 - A run with `--locale` needs an app under `flutter run`, as a scenario does.
 - The dry-run report names `relaunches`: whether the run restarts the app.
 

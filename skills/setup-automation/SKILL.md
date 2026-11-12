@@ -112,7 +112,9 @@ The optional `localeApplier` parameter lets the `--locale` option of the runner
 set the language of the app. It needs no mock. Pass a function that takes a
 language code and changes the language of the project, for example
 `localeApplier: (languageCode) => setAppLanguage(languageCode)`. Add it only when
-the project has such a function.
+the project has such a function. Where the project picks its start language,
+make `AutomationInstaller.launchLanguageCode` win when it is not `null`. The
+app then launches in the language of a `--locale` run.
 
 ## 5. Declare the first target and mark the first screen
 

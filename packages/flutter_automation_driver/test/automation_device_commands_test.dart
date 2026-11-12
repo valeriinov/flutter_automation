@@ -1,9 +1,11 @@
 import 'dart:convert';
+import 'dart:io';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter_automation/flutter_automation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_automation_driver/driver_extension.dart';
+import 'package:flutter_automation_driver/src/automation_launch_locale_file.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 const _screen = {'name': 'home'};
@@ -26,6 +28,7 @@ void main() {
     _automationDeviceCommands_should_readTheWidgetsOfTheFrameOnRequest();
     _automationDeviceCommands_should_applyTheLocaleWithTheApplier();
     _automationDeviceCommands_should_rejectALocaleWithoutLanguageCode();
+    _automationDeviceCommands_should_saveTheLocaleForTheNextLaunch();
   });
 }
 
@@ -109,18 +112,21 @@ void _automationDeviceCommands_should_callScreenReaderAtCommandTime() {
 void _automationDeviceCommands_should_skipLocaleApplyWithoutApplier() {
   test('AutomationDeviceCommands should not register locale apply without an '
       'applier', () {
-    expect(
-      () => _ask(AutomationProtocol.localeApplyCommand, {
-        AutomationProtocol.localeKey: 'uk',
-      }),
-      throwsA(
-        isA<StateError>().having(
-          (error) => error.message,
-          'message',
-          startsWith('No automation command'),
+    for (final command in [
+      AutomationProtocol.localeApplyCommand,
+      AutomationProtocol.localeSaveCommand,
+    ]) {
+      expect(
+        () => _ask(command, {AutomationProtocol.localeKey: 'uk'}),
+        throwsA(
+          isA<StateError>().having(
+            (error) => error.message,
+            'message',
+            startsWith('No automation command'),
+          ),
         ),
-      ),
-    );
+      );
+    }
   });
 }
 
@@ -200,6 +206,38 @@ void _automationDeviceCommands_should_rejectALocaleWithoutLanguageCode() {
     );
     expect(() => _ask(AutomationProtocol.localeApplyCommand), throwsStateError);
   });
+}
+
+void _automationDeviceCommands_should_saveTheLocaleForTheNextLaunch() {
+  test(
+    'AutomationDeviceCommands should save the locale for the next launch',
+    () async {
+      final directory = Directory.systemTemp.createTempSync('launch_locale_');
+      final languageCodes = <String>[];
+
+      addTearDown(() => directory.deleteSync(recursive: true));
+      AutomationDeviceCommands.register(
+        screenReader: () => null,
+        localeApplier: languageCodes.add,
+      );
+
+      final answer = await IOOverrides.runZoned(
+        () => _ask(AutomationProtocol.localeSaveCommand, {
+          AutomationProtocol.localeKey: 'uk',
+        }),
+        getSystemTempDirectory: () => directory,
+      );
+
+      final launchLanguageCode = IOOverrides.runZoned(
+        AutomationLaunchLocaleFile.consume,
+        getSystemTempDirectory: () => directory,
+      );
+
+      expect(answer, {AutomationProtocol.localeKey: 'uk'});
+      expect(launchLanguageCode, 'uk');
+      expect(languageCodes, isEmpty);
+    },
+  );
 }
 
 Widget _buildApp() {

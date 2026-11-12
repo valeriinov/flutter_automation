@@ -18,6 +18,9 @@ abstract final class AutomationProtocol {
   /// Command that applies a language to the app.
   static const String localeApplyCommand = 'locale.apply';
 
+  /// Command that saves a language for the next launch of the app.
+  static const String localeSaveCommand = 'locale.save';
+
   /// Finder type that matches a text by its value, without locale key marks.
   static const String unmarkedTextFinderType = 'UnmarkedText';
 
@@ -67,7 +70,7 @@ abstract final class AutomationProtocol {
   /// [screenReadCommand] and a key of its answer.
   static const String widgetsKey = 'widgets';
 
-  /// Key of the language code in the request and the answer of
-  /// [localeApplyCommand].
+  /// Key of the language code in the requests and the answers of
+  /// [localeApplyCommand] and [localeSaveCommand].
   static const String localeKey = 'locale';
 }
