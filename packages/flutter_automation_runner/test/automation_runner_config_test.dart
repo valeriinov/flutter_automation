@@ -12,7 +12,7 @@ flutter_automation:
   dateFormats:
     uk: dd.MM.yyyy
     en: MM/dd/yyyy
-  frameGoalMs: 8
+  frameBudgetMs: 8
   splashScreen: splash
   launchHint: --dart-define=MODE=full
   finders:
@@ -29,7 +29,7 @@ flutter_automation:
       kind: unknown
 ''';
 const _wrongTypePubspecs = {
-  'frameGoalMs': 'frameGoalMs: 16.5',
+  'frameBudgetMs': 'frameBudgetMs: 16.5',
   'dateFormats': 'dateFormats: {uk: 5}',
   'finders': 'finders: [calendarDay]',
 };
@@ -62,7 +62,7 @@ void _automationRunnerConfig_should_readSectionOfPubspec() {
     expect(config.packagePrefix, 'package:sample_app/');
     expect(config.defaultLocale, 'uk');
     expect(config.dateFormats, {'uk': 'dd.MM.yyyy', 'en': 'MM/dd/yyyy'});
-    expect(config.frameGoalMs, 8);
+    expect(config.frameBudgetMs, 8);
     expect(config.splashScreen, 'splash');
     expect(config.launchHint, '--dart-define=MODE=full');
     expect(config.dateValueKeys, {'calendarDay': 'item.day{yyyyMMdd}'});
@@ -76,7 +76,7 @@ void _automationRunnerConfig_should_fallBackToDefaultsWithoutSection() {
       final config = AutomationRunnerConfig.fromPubspec(_barePubspec);
 
       expect(config.defaultLocale, 'en');
-      expect(config.frameGoalMs, 16);
+      expect(config.frameBudgetMs, 16);
       expect(config.splashScreen, isNull);
       expect(config.launchHint, isNull);
       expect(config.dateFormats, isEmpty);
@@ -169,7 +169,7 @@ void _automationRunnerConfig_should_takeFrameGoalOfFrameSummaryByDefault() {
     () {
       final config = AutomationRunnerConfig.fromPubspec(_barePubspec);
 
-      expect(config.frameGoalMs, AutomationFrameSummary.defaultGoalMillis);
+      expect(config.frameBudgetMs, AutomationFrameSummary.defaultGoalMillis);
     },
   );
 }

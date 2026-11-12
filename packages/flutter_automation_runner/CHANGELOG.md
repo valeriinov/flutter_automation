@@ -1,5 +1,25 @@
 # Changelog
 
+## 0.5.0
+
+- Breaking: `runFlows(args, flows)` takes no list of blocks. The runner collects
+  the blocks from the `Use` items of the variants. Two different blocks with
+  one name stop the run.
+- Breaking: `FlowVariant.use` is `items`, and the flow JSON key `use` is
+  `items`. `AutomationEntry`, `AutomationBlockEntry`, `AutomationStepEntry` and
+  `AutomationFlow.entries` are `AutomationItem`, `AutomationBlockItem`,
+  `AutomationStepItem` and `items`.
+- Breaking: the scenario has one name. `AutomationFlow.mockConfig` is
+  `scenarioJson`. The key `mock` of the flow JSON and the report is `scenario`.
+  The option `--no-mock` is `--no-scenario`. The report names `appliesScenario`.
+- A variant writes its scenario as one list of overrides: the ones of the flow,
+  then its own. The runner no longer merges two JSON objects. A flow or a
+  variant that names a scenario applies it, also when the result is empty.
+- A capture reads `journal.read`, then `screen.read` with the `texts` and
+  `widgets` flags. The `--locale` error names the `localeApplier` parameter.
+- Breaking: the pubspec key `frameGoalMs` is `frameBudgetMs`.
+- `--catalogue` lists the blocks in the order of first use.
+
 ## 0.4.0
 
 - Breaking: flows are Dart. The library `automation_flow_definition.dart`

@@ -1,11 +1,11 @@
 ---
 name: mock-app
-description: Run the Flutter app on a device against an in-memory mock backend. Choose the mock scenario, tune a section through its MockFeature settings or profile, or add a mock api for an endpoint. Use for "run the app without a backend", "configure the mock", "show state X on the device", "mock the endpoint", "запусти без бэкенда", "настрой мок", "покажи состояние X на устройстве", "замокай эндпоинт", "запусти без бекенду", "налаштуй мок", "замокай ендпоінт", or any request to reproduce an app state without a remote environment.
+description: Run the Flutter app on a device against an in-memory mock backend. Choose the mock scenario, tune a section through its MockSection settings or profile, or add a mock api for an endpoint. Use for "run the app without a backend", "configure the mock", "show state X on the device", "mock the endpoint", "запусти без бэкенда", "настрой мок", "покажи состояние X на устройстве", "замокай эндпоинт", "запусти без бекенду", "налаштуй мок", "замокай ендпоінт", or any request to reproduce an app state without a remote environment.
 argument-hint: "<the state you want to see>"
 ---
 
 This skill turns a spoken request into the scenario, the settings or the code that
-produce the state. The mock is built with `AutomationMock`, `MockFeature` and the
+produce the state. The mock is built with `AutomationMock`, `MockSection` and the
 Dio adapter of the `flutter_automation_mock` and `flutter_automation_mock_dio`
 packages.
 
@@ -35,11 +35,15 @@ read the project code for the expression. A release build must ignore the define
 Reach a remote environment only when a backend bug is suspected, and never a
 production one.
 
-An enabled mock registers three commands in `AutomationCommandHandler`:
-`mock.apply` takes a scenario as JSON, saves it for the next launch and runs the
-`onApply` hook of the project. `journal.read` answers the requests the mock
-served, the launch record, and on request the texts and the widget types of the
-frame. `locale.apply` takes a language code and runs the `onLocale` hook.
+An enabled mock registers two commands in `AutomationCommandRegistry`.
+`scenario.apply` takes a scenario as JSON, saves it for the next launch and runs
+the `onScenarioApplied` hook of the project. `journal.read` answers the requests
+the mock served and the launch record.
+
+The driver package answers two more commands, with or without a mock.
+`screen.read` answers the screen and, on request, the texts and the widget types
+of the frame. `locale.apply` takes a language code and runs the `localeApplier`
+of the project.
 
 ## What a change costs
 
@@ -47,9 +51,11 @@ Answer this before you touch anything. It decides whether a file needs an edit.
 
 | Changed | Costs |
 | --- | --- |
-| a value that a flow declares in its `scenario` | nothing: no restart, no rebuild; the next run pushes it |
+| a value that a flow declares in its `scenario` | nothing: no rebuild; the next run pushes it and restarts the app |
+| the failed paths | nothing: the backend reads them on each request |
+| the latency profile or the latency seed | nothing to edit: the backend builds them again at `rebuild()`, which `onScenarioApplied` calls |
 | a default of a settings class, or the code that reads it | a hot **restart**, which re-seeds the state; a hot reload does not |
-| the define that turns the mock on | a fresh `flutter run`, because it is a compile-time constant |
+| the define that turns the mock on, or the choice of substitutes | a fresh `flutter run`, because the choice is a compile-time constant |
 
 A request that needs only a different state is answered by the `scenario` of a
 flow variant, with no rebuild and no Dart edit. `run-flow` owns writing it (in
@@ -59,16 +65,16 @@ everyone.
 
 ## Request to setting
 
-A `MockFeature<S>` is one section of the mock. Its `name` is the section key in the
-scenario JSON. `fromJson` builds the settings class `S`. `profiles` are named
-partial settings. `fields` describe the settings for a generic editor. Find the
-list in the **Mock configuration file**.
+A `MockSection<S>` is one section of the mock. Its `name` is the section key in the
+scenario JSON. `fromJson` builds the settings class `S`. `profiles` holds
+functions over the settings, each with a name. Find the sections in the **Mock configuration
+file**.
 
-- A request for a ready-made state: look for a `profile` of the feature
-  (`feature.profile('name')`). A profile holds only the keys it changes, so it
-  merges over the scenario.
-- A request for one value: `feature.override({'field': value})`, or a
-  `MockOverride(key, value)`.
+- A request for a ready-made state: look for a `profile` of the section
+  (`section.profile('name')`). A profile changes only the settings it names, with
+  `copyWith`.
+- A request for one value: `section.override((settings) => settings.copyWith(field:
+  value))`. A key outside the sections: `MockOverride(key, value)`.
 - **Read the settings class before you name a field.** A key that the class does
   not read is dropped in silence. The run then proves something other than what
   was asked. A `Duration` field is a number in JSON. Read its unit out of the
@@ -78,16 +84,21 @@ list in the **Mock configuration file**.
   - `latencySeed` makes two runs spend the same wall clock.
   - `failures` is keyed by endpoint path. `{"statusCode": 500}` answers an error.
     `{"isConnectionError": true}` answers a request that never reaches the backend.
-- The scenario merges in order, deep, and the later leaf wins.
+- The scenario applies its overrides in order. A typed override receives the
+  settings that the overrides before it built. It replaces its section with the
+  keys that differ from the defaults. A variant continues the overrides of its
+  flow.
 - A state that the app reads while it starts (the session, a launch link) answers
-  from the launch after `mock.apply`. `mock.apply` saves the scenario into a file
+  from the launch after `scenario.apply`. `scenario.apply` saves the scenario into a file
   in the scenario folder that `AutomationMock.init` got. The next launch, a hot
   restart included, reads it once and removes it. The runner restarts the app after
   every scenario. A hand-driven session pushes the scenario and restarts the app.
 - A mocked run leaves nothing on the device but that file, when the project
-  substitutes its storages through `automationMock.substitute<T>(real:, fake:)`.
-  `substitute` answers `real` when the mock is disabled, so a release build never
-  builds the fake.
+  substitutes its storages. A project puts substitutes in place in one of two
+  ways: `automationMock.substitute<T>(real:, fake:)` where it creates the
+  object, or one installer that runs after the dependency injection. Both leave
+  the real object when the mock is disabled, so a release build never builds the
+  fake.
 
 ## Recipes
 
@@ -119,10 +130,10 @@ answered with `MockApiResponse.fromBytes` and its content type. The bytes that a
 request sends arrive in `MockApiRequest.bytes`.
 
 **Add a knob that does not exist yet.** Add the field, with its default and its
-Dartdoc, to the settings class of the feature. Regenerate code if the class is
-generated. Read the field where the state is built. Add the key to the `fields` of
-the `MockFeature`. A field that the settings class does not hold cannot be reached
-from a flow.
+Dartdoc, to the settings class of the section. Regenerate code if the class is
+generated. Read the field where the state is built. A profile reaches the field
+through `copyWith`. A field that the settings class does not hold cannot be
+reached from a flow.
 
 ## Verifying
 
@@ -134,8 +145,8 @@ from a flow.
 ## Keeping documents in sync
 
 A value changed inside its documented range needs no document change. A new
-setting, a new profile, a new feature or a changed meaning needs more. It lands in
+setting, a new profile, a new section or a changed meaning needs more. It lands in
 every place that **Format-change places** lists for the mock, in one commit. It
-also lands in the Dartdoc of the new member. Run **Post-edit steps**. A rule you learned from a run goes into
-the document that **Learned rules** names. Never write it into this skill: the skill
+also lands in the Dartdoc of the new member. Run **Post-edit steps**. A rule you learned from a run
+goes into the document that **Learned rules** names. Never write it into this skill: the skill
 is installed from the package, and a local edit is lost on the next update.

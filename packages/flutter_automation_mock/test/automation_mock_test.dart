@@ -1,18 +1,14 @@
 import 'dart:convert';
 import 'dart:io';
 
-import 'package:flutter/widgets.dart';
 import 'package:flutter_automation/flutter_automation.dart';
 import 'package:flutter_automation_mock/flutter_automation_mock.dart';
 import 'package:fake_async/fake_async.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-const _catalog = MockFeature<Map<String, Object?>>(
+final _catalog = MockSection<Map<String, Object?>>(
   name: 'catalog',
   fromJson: _readJson,
-  profiles: {
-    'empty': {'itemCount': 0},
-  },
 );
 const _scenarioJson = <String, Object?>{
   'latency': 'fast',
@@ -34,7 +30,7 @@ void main() {
     _automationMock_should_ignoreTheFileWhenDisabled();
     _automationMock_should_substituteTheFakeWhenEnabled();
     _automationMock_should_keepTheRealObjectWhenDisabled();
-    _automationMock_should_readTheSettingsOfAFeature();
+    _automationMock_should_readTheSettingsOfASection();
     _automationMock_should_saveTheScenarioOnApply();
     _automationMock_should_answerTheApplyCommand();
     _automationMock_should_runOnApplyAfterItsOwnPart();
@@ -42,15 +38,10 @@ void main() {
     _automationMock_should_rejectAnApplyWithoutAConfig();
     _automationMock_should_readTheJournalAndEmptyIt();
     _automationMock_should_waitForTheAnswersBeforeReadingTheJournal();
-    _automationMock_should_readTheTextsOfTheFrame();
-    _automationMock_should_takeTheLanguageOnLocaleApply();
-    _automationMock_should_runOnLocaleAfterItsOwnPart();
-    _automationMock_should_rejectALocaleWithoutALanguageCode();
-    _automationMock_should_failTheLocaleCommandWithTheCallback();
     _automationMock_should_readTheLatencyProfileAndSeedOfTheScenario();
     _automationMock_should_defaultTheLatencyToRealisticWithSeedZero();
     _automationMock_should_readTheFailuresOfTheScenario();
-    _automationMock_should_startWithoutFeatures();
+    _automationMock_should_startWithoutSections();
   });
 }
 
@@ -123,8 +114,8 @@ void _automationMock_should_keepTheRealObjectWhenDisabled() {
   });
 }
 
-void _automationMock_should_readTheSettingsOfAFeature() {
-  test('AutomationMock should read the settings of a feature', () async {
+void _automationMock_should_readTheSettingsOfASection() {
+  test('AutomationMock should read the settings of a section', () async {
     await _file.writeAsString(jsonEncode(_scenarioJson));
 
     final mock = await _init();
@@ -137,7 +128,7 @@ void _automationMock_should_saveTheScenarioOnApply() {
   test('AutomationMock should save the scenario on apply', () async {
     final mock = await _init();
 
-    await _send({'command': 'mock.apply', 'config': _scenarioJson});
+    await _send({'command': 'scenario.apply', 'scenario': _scenarioJson});
 
     expect(jsonDecode(_file.readAsStringSync()), _scenarioJson);
     expect(mock.scenario.toJson(), _scenarioJson);
@@ -149,8 +140,8 @@ void _automationMock_should_answerTheApplyCommand() {
     await _init();
 
     final answer = await _send({
-      'command': 'mock.apply',
-      'config': _scenarioJson,
+      'command': 'scenario.apply',
+      'scenario': _scenarioJson,
     });
 
     expect(jsonDecode(answer), {
@@ -161,41 +152,51 @@ void _automationMock_should_answerTheApplyCommand() {
 }
 
 void _automationMock_should_runOnApplyAfterItsOwnPart() {
-  test('AutomationMock should run onApply after its own part', () async {
-    late AutomationMock mock;
+  test(
+    'AutomationMock should run onScenarioApplied after its own part',
+    () async {
+      late AutomationMock mock;
 
-    mock = await _init(
-      onApply: (scenario) {
-        _events.add('onApply saved=${_file.existsSync()}');
-        _events.add('onApply current=${mock.scenario == scenario}');
-      },
-    );
-    await _send({'command': 'mock.apply', 'config': _scenarioJson});
+      mock = await _init(
+        onScenarioApplied: (scenario) {
+          _events.add('onScenarioApplied saved=${_file.existsSync()}');
+          _events.add('onScenarioApplied current=${mock.scenario == scenario}');
+        },
+      );
+      await _send({'command': 'scenario.apply', 'scenario': _scenarioJson});
 
-    expect(_events, ['onApply saved=true', 'onApply current=true']);
-  });
+      expect(_events, [
+        'onScenarioApplied saved=true',
+        'onScenarioApplied current=true',
+      ]);
+    },
+  );
 }
 
 void _automationMock_should_emptyTheJournalAfterOnApply() {
-  test('AutomationMock should empty the journal after onApply', () async {
-    late AutomationMock mock;
+  test(
+    'AutomationMock should empty the journal after onScenarioApplied',
+    () async {
+      late AutomationMock mock;
 
-    mock = await _init(
-      onApply: (_) => mock.journal.add(MockRequestRecordKind.request, {}),
-    );
-    await _send({'command': 'mock.apply', 'config': _scenarioJson});
+      mock = await _init(
+        onScenarioApplied: (_) =>
+            mock.journal.add(MockRequestRecordKind.request, {}),
+      );
+      await _send({'command': 'scenario.apply', 'scenario': _scenarioJson});
 
-    final answer = await _send({'command': 'journal.read'});
+      final answer = await _send({'command': 'journal.read'});
 
-    expect((jsonDecode(answer) as Map<String, Object?>)['records'], isEmpty);
-  });
+      expect((jsonDecode(answer) as Map<String, Object?>)['records'], isEmpty);
+    },
+  );
 }
 
 void _automationMock_should_rejectAnApplyWithoutAConfig() {
   test('AutomationMock should reject an apply without a config', () async {
     await _init();
 
-    expect(_send({'command': 'mock.apply'}), throwsStateError);
+    expect(_send({'command': 'scenario.apply'}), throwsStateError);
   });
 }
 
@@ -230,76 +231,6 @@ void _automationMock_should_waitForTheAnswersBeforeReadingTheJournal() {
     mock.journal.addRequest({'path': '/items'});
     expect(_send({'command': 'journal.read'}), throwsStateError);
   });
-}
-
-void _automationMock_should_readTheTextsOfTheFrame() {
-  testWidgets('AutomationMock should read the texts of the frame', (
-    tester,
-  ) async {
-    await tester.runAsync(_init);
-    await tester.pumpWidget(
-      const Directionality(textDirection: TextDirection.ltr, child: Text('Hi')),
-    );
-
-    final answer = await tester.runAsync(
-      () => _send({'command': 'journal.read', 'texts': true}),
-    );
-
-    final json = jsonDecode(answer ?? '{}') as Map<String, Object?>;
-
-    expect(json['texts'], ['Hi']);
-    expect(json.containsKey('widgets'), isFalse);
-  });
-}
-
-void _automationMock_should_takeTheLanguageOnLocaleApply() {
-  test('AutomationMock should take the language on locale apply', () async {
-    final mock = await _init();
-    final answer = await _send({'command': 'locale.apply', 'locale': 'uk'});
-
-    expect(jsonDecode(answer), {'locale': 'uk'});
-    expect(mock.languageCode, 'uk');
-  });
-}
-
-void _automationMock_should_runOnLocaleAfterItsOwnPart() {
-  test('AutomationMock should run onLocale after its own part', () async {
-    late AutomationMock mock;
-
-    mock = await _init(
-      onLocale: (languageCode) {
-        _events.add('onLocale own=${mock.languageCode} given=$languageCode');
-      },
-    );
-    await _send({'command': 'locale.apply', 'locale': 'uk'});
-
-    expect(_events, ['onLocale own=uk given=uk']);
-  });
-}
-
-void _automationMock_should_rejectALocaleWithoutALanguageCode() {
-  test(
-    'AutomationMock should reject a locale without a language code',
-    () async {
-      await _init();
-
-      expect(_send({'command': 'locale.apply'}), throwsStateError);
-    },
-  );
-}
-
-void _automationMock_should_failTheLocaleCommandWithTheCallback() {
-  test(
-    'AutomationMock should fail the locale command with the callback',
-    () async {
-      await _init(onLocale: (_) => throw StateError('Unsupported language.'));
-
-      expect(
-        _send({'command': 'locale.apply', 'locale': 'xx'}),
-        throwsStateError,
-      );
-    },
-  );
 }
 
 void _automationMock_should_readTheLatencyProfileAndSeedOfTheScenario() {
@@ -362,14 +293,14 @@ void _automationMock_should_readTheFailuresOfTheScenario() {
   });
 }
 
-void _automationMock_should_startWithoutFeatures() {
-  test('AutomationMock should start without features', () async {
+void _automationMock_should_startWithoutSections() {
+  test('AutomationMock should start without sections', () async {
     final mock = await AutomationMock.init(
       isEnabled: true,
       scenarioDirectory: _directory.path,
     );
 
-    expect(mock.features, isEmpty);
+    expect(mock.sections, isEmpty);
   });
 }
 
@@ -392,22 +323,20 @@ List<Duration> _measureDelays(MockLatency latency) {
 
 Future<AutomationMock> _init({
   bool isEnabled = true,
-  MockApplyCallback? onApply,
-  MockLocaleCallback? onLocale,
+  MockScenarioAppliedCallback? onScenarioApplied,
   Duration journalResponseTimeout = const Duration(seconds: 10),
 }) {
   return AutomationMock.init(
     isEnabled: isEnabled,
     scenarioDirectory: _directory.path,
-    features: const [_catalog],
-    onApply: onApply,
-    onLocale: onLocale,
+    sections: [_catalog],
+    onScenarioApplied: onScenarioApplied,
     journalResponseTimeout: journalResponseTimeout,
   );
 }
 
 Future<String> _send(Map<String, Object?> payload) {
-  return AutomationCommandHandler.handle(jsonEncode(payload));
+  return AutomationCommandRegistry.handle(jsonEncode(payload));
 }
 
 Map<String, Object?> _readJson(Map<String, Object?> json) => json;

@@ -1,25 +1,25 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:flutter_automation_mock/src/state/mock_frame_widgets.dart';
+import 'package:flutter_automation_driver/src/automation_frame_widgets.dart';
 
 const _rowExtent = 100.0;
 const _rowCount = 30;
 const _shownRowCount = 2;
 
 void main() {
-  group('MockFrameWidgets Widget Tests', () {
-    _mockFrameWidgets_should_readOnlyTheChildAnIndexedStackShows();
-    _mockFrameWidgets_should_leaveOutAnOffstageSubtree();
-    _mockFrameWidgets_should_leaveOutRowsBuiltPastTheViewport();
-    _mockFrameWidgets_should_nameATypeWithoutGenericArguments();
-    _mockFrameWidgets_should_readSortedUniqueTypes();
+  group('AutomationFrameWidgets Widget Tests', () {
+    _automationFrameWidgets_should_readOnlyTheChildAnIndexedStackShows();
+    _automationFrameWidgets_should_leaveOutAnOffstageSubtree();
+    _automationFrameWidgets_should_leaveOutRowsBuiltPastTheViewport();
+    _automationFrameWidgets_should_nameATypeWithoutGenericArguments();
+    _automationFrameWidgets_should_readSortedUniqueTypes();
   });
 }
 
-void _mockFrameWidgets_should_readOnlyTheChildAnIndexedStackShows() {
+void _automationFrameWidgets_should_readOnlyTheChildAnIndexedStackShows() {
   testWidgets(
-    'MockFrameWidgets should read only the child an indexed stack shows',
+    'AutomationFrameWidgets should read only the child an indexed stack shows',
     (tester) async {
       await tester.pumpWidget(
         _buildApp(
@@ -35,8 +35,8 @@ void _mockFrameWidgets_should_readOnlyTheChildAnIndexedStackShows() {
   );
 }
 
-void _mockFrameWidgets_should_leaveOutAnOffstageSubtree() {
-  testWidgets('MockFrameWidgets should leave out an offstage subtree', (
+void _automationFrameWidgets_should_leaveOutAnOffstageSubtree() {
+  testWidgets('AutomationFrameWidgets should leave out an offstage subtree', (
     tester,
   ) async {
     await tester.pumpWidget(
@@ -57,9 +57,9 @@ void _mockFrameWidgets_should_leaveOutAnOffstageSubtree() {
   });
 }
 
-void _mockFrameWidgets_should_leaveOutRowsBuiltPastTheViewport() {
+void _automationFrameWidgets_should_leaveOutRowsBuiltPastTheViewport() {
   testWidgets(
-    'MockFrameWidgets should leave out rows built past the viewport',
+    'AutomationFrameWidgets should leave out rows built past the viewport',
     (tester) async {
       await tester.pumpWidget(
         _buildApp(
@@ -88,28 +88,29 @@ void _mockFrameWidgets_should_leaveOutRowsBuiltPastTheViewport() {
   );
 }
 
-void _mockFrameWidgets_should_nameATypeWithoutGenericArguments() {
-  testWidgets('MockFrameWidgets should name a type without generic arguments', (
-    tester,
-  ) async {
-    await tester.pumpWidget(
-      _buildApp(
-        ValueListenableBuilder<int>(
-          valueListenable: ValueNotifier(0),
-          builder: (_, value, _) => Text('$value'),
+void _automationFrameWidgets_should_nameATypeWithoutGenericArguments() {
+  testWidgets(
+    'AutomationFrameWidgets should name a type without generic arguments',
+    (tester) async {
+      await tester.pumpWidget(
+        _buildApp(
+          ValueListenableBuilder<int>(
+            valueListenable: ValueNotifier(0),
+            builder: (_, value, _) => Text('$value'),
+          ),
         ),
-      ),
-    );
+      );
 
-    final widgets = _read(tester);
+      final widgets = _read(tester);
 
-    expect(widgets, contains('ValueListenableBuilder'));
-    expect(widgets.where((name) => name.contains('<')), isEmpty);
-  });
+      expect(widgets, contains('ValueListenableBuilder'));
+      expect(widgets.where((name) => name.contains('<')), isEmpty);
+    },
+  );
 }
 
-void _mockFrameWidgets_should_readSortedUniqueTypes() {
-  testWidgets('MockFrameWidgets should read sorted unique types', (
+void _automationFrameWidgets_should_readSortedUniqueTypes() {
+  testWidgets('AutomationFrameWidgets should read sorted unique types', (
     tester,
   ) async {
     await tester.pumpWidget(
@@ -135,7 +136,7 @@ Widget _buildApp(Widget body) {
 List<String> _read(WidgetTester tester) {
   final view = tester.view;
 
-  return MockFrameWidgets.read(
+  return AutomationFrameWidgets.read(
     tester.binding.rootElement ?? tester.element(find.byType(MaterialApp)),
     Offset.zero & view.physicalSize / view.devicePixelRatio,
   );

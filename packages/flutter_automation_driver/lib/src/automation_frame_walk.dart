@@ -13,7 +13,7 @@ import 'package:flutter/widgets.dart';
 ///
 /// Below a viewport the clip narrows to the viewport. A reader can then leave
 /// out, by [readRect], the list rows built in its cache extent.
-abstract final class MockFrameWalk {
+abstract final class AutomationFrameWalk {
   /// Calls [onShown] with each shown element under [root] and the clip it
   /// stands in. The walk starts from [window], in global logical pixels.
   static void visit(

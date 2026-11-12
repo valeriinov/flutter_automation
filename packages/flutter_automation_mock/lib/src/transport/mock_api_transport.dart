@@ -3,8 +3,8 @@ import 'package:flutter_automation_mock/src/contract/mock_api_failure.dart';
 import 'package:flutter_automation_mock/src/contract/mock_api_request.dart';
 import 'package:flutter_automation_mock/src/contract/mock_api_response.dart';
 import 'package:flutter_automation_mock/src/state/mock_journal.dart';
-import 'package:flutter_automation_mock/src/transport/mock_connection_failure.dart';
-import 'package:flutter_automation_mock/src/transport/mock_transport_runtime.dart';
+import 'package:flutter_automation_mock/src/transport/mock_connection_exception.dart';
+import 'package:flutter_automation_mock/src/transport/mock_backend.dart';
 
 /// {@category Utils}
 ///
@@ -17,9 +17,9 @@ import 'package:flutter_automation_mock/src/transport/mock_transport_runtime.dar
 ///
 /// Each answer waits out the delay of the latency profile of the run. A loader,
 /// a disabled button and a race of the app are then as visible as they are
-/// against a real backend. When the runtime names a failure for a path, the
+/// against a real backend. When the backend names a failure for a path, the
 /// transport answers with that failure. It can also throw the
-/// [MockConnectionFailure] that a device without a connection raises. This is
+/// [MockConnectionException] that a device without a connection raises. This is
 /// how a flow reaches the error branch of the app.
 ///
 /// The transport writes each request it answers to the journal before its
@@ -37,19 +37,17 @@ class MockApiTransport {
   static const _connectionErrorReason = 'Failed host lookup';
   static const _connectionErrorStatusCode = 0;
 
-  final MockTransportRuntime _runtime;
+  final MockBackend _backend;
   final MockJournal _journal;
 
-  /// Creates a transport over [runtime] that records into [journal].
+  /// Creates a transport over [backend] that records into [journal].
   ///
-  /// The [runtime] parameter holds the endpoints, latency and failures the
+  /// The [backend] parameter holds the endpoints, latency and failures the
   /// transport reads on each request.
   /// The [journal] parameter receives a record of each answered request.
-  MockApiTransport({
-    required MockTransportRuntime runtime,
-    required MockJournal journal,
-  }) : _runtime = runtime,
-       _journal = journal;
+  MockApiTransport({required MockBackend backend, required MockJournal journal})
+    : _backend = backend,
+      _journal = journal;
 
   /// Whether an endpoint of the mock answers [path].
   ///
@@ -57,10 +55,10 @@ class MockApiTransport {
   bool ownsPath(String path) => _tryResolveEndpoint(path) != null;
 
   /// Answers [request] with the payload of its endpoint, or with the failure
-  /// the runtime names for it.
+  /// the backend names for it.
   ///
   /// Throws a [StateError] when no endpoint owns the path; check [ownsPath]
-  /// first. Throws a [MockConnectionFailure] when the runtime names a
+  /// first. Throws a [MockConnectionException] when the backend names a
   /// connection error for the path.
   Future<MockApiResponse> answer(MockApiRequest request) async {
     final endpoint = _tryResolveEndpoint(request.path);
@@ -71,7 +69,7 @@ class MockApiTransport {
 
     final record = _journal.addRequest(_toRecordFields(request));
 
-    await _runtime.latency.waitOut();
+    await _backend.latency.waitOut();
 
     final failure = _tryResolveFailure(endpoint, request);
 
@@ -82,7 +80,7 @@ class MockApiTransport {
         body: const {},
       );
 
-      throw const MockConnectionFailure(_connectionErrorReason);
+      throw const MockConnectionException(_connectionErrorReason);
     }
 
     final response = await _resolveResponse(endpoint, request, failure);
@@ -97,7 +95,7 @@ class MockApiTransport {
   }
 
   MockApiEndpoint? _tryResolveEndpoint(String path) {
-    return _runtime.endpointResolver.tryResolve(path);
+    return _backend.endpointResolver.tryResolve(path);
   }
 
   Map<String, Object?> _toRecordFields(MockApiRequest request) {
@@ -112,15 +110,15 @@ class MockApiTransport {
     };
   }
 
-  /// The failure the runtime names for this request, if it names one.
+  /// The failure the backend names for this request, if it names one.
   ///
   /// Matched on the path the request carries and on the path the endpoint owns,
-  /// so a runtime naming `/items` also fails `/items/1`.
+  /// so a backend naming `/items` also fails `/items/1`.
   MockApiFailure? _tryResolveFailure(
     MockApiEndpoint endpoint,
     MockApiRequest request,
   ) {
-    final failures = _runtime.failures;
+    final failures = _backend.failures;
 
     return failures[request.path] ?? failures[endpoint.path];
   }
@@ -136,7 +134,7 @@ class MockApiTransport {
 
     return MockApiResponse(
       statusCode: failure.statusCode,
-      body: _runtime.buildFailureBody(failure),
+      body: _backend.buildFailureBody(failure),
     );
   }
 

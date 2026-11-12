@@ -12,7 +12,6 @@ const _unownedPath = '/records/list';
 final _journal = MockJournal();
 final _endpointResolver = MockApiEndpointResolver([
   TestMockApi(
-    feature: TestSection.alpha,
     endpoints: [
       MockApiEndpoint(path: _ownedPath, respond: _respondOk),
       MockApiEndpoint(path: _failingPath, respond: _respondOk),
@@ -20,7 +19,7 @@ final _endpointResolver = MockApiEndpointResolver([
   ),
 ]);
 final _transport = MockApiTransport(
-  runtime: _TestRuntime(
+  backend: _TestBackend(
     endpointResolver: _endpointResolver,
     failures: {
       _failingPath: const MockApiFailure(
@@ -31,7 +30,7 @@ final _transport = MockApiTransport(
   journal: _journal,
 );
 final _disconnectedTransport = MockApiTransport(
-  runtime: _TestRuntime(
+  backend: _TestBackend(
     endpointResolver: _endpointResolver,
     failures: {_ownedPath: const MockApiFailure(isConnectionError: true)},
   ),
@@ -95,7 +94,7 @@ void _mockApiTransport_should_throwAConnectionFailure() {
       const MockApiRequest(path: _ownedPath, body: {}),
     );
 
-    expect(answer, throwsA(isA<MockConnectionFailure>()));
+    expect(answer, throwsA(isA<MockConnectionException>()));
   });
 }
 
@@ -133,7 +132,7 @@ void _mockApiTransport_should_recordAConnectionFailureAsAnswered() {
         _disconnectedTransport.answer(
           const MockApiRequest(path: _ownedPath, body: {}),
         ),
-        throwsA(isA<MockConnectionFailure>()),
+        throwsA(isA<MockConnectionException>()),
       );
 
       final record = _journal.readAndClear().single;
@@ -158,7 +157,7 @@ void _mockApiTransport_should_throwForAPathNoEndpointOwns() {
 MockApiResponse _respondOk(MockApiRequest _) =>
     const MockApiResponse(body: {'ok': true});
 
-final class _TestRuntime implements MockTransportRuntime {
+final class _TestBackend implements MockBackend {
   @override
   final MockApiEndpointResolver endpointResolver;
 
@@ -171,7 +170,7 @@ final class _TestRuntime implements MockTransportRuntime {
     seed: 1,
   );
 
-  _TestRuntime({required this.endpointResolver, this.failures = const {}});
+  _TestBackend({required this.endpointResolver, this.failures = const {}});
 
   @override
   Map<String, Object?> buildFailureBody(MockApiFailure failure) {

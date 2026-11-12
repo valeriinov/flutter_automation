@@ -16,7 +16,7 @@ import 'package:flutter_automation_runner/src/automation_runner_exception.dart';
 ///   defaultLocale: en
 ///   dateFormats:
 ///     en: MM/dd/yyyy
-///   frameGoalMs: 16
+///   frameBudgetMs: 16
 ///   splashScreen: splash
 ///   launchHint: --dart-define=MOCK_MODE=full
 ///   finders:
@@ -40,7 +40,7 @@ final class AutomationRunnerConfig {
   final Map<String, String> dateFormats;
 
   /// Frame time in milliseconds that the run holds a traced window to.
-  final int frameGoalMs;
+  final int frameBudgetMs;
 
   /// Value key templates by the name of the finder kind they define.
   final Map<String, String> dateValueKeys;
@@ -57,7 +57,7 @@ final class AutomationRunnerConfig {
     required this.packagePrefix,
     this.defaultLocale = _defaultLocale,
     this.dateFormats = const {},
-    this.frameGoalMs = AutomationFrameSummary.defaultGoalMillis,
+    this.frameBudgetMs = AutomationFrameSummary.defaultGoalMillis,
     this.splashScreen,
     this.launchHint,
     this.dateValueKeys = const {},
@@ -93,8 +93,8 @@ final class AutomationRunnerConfig {
       packagePrefix: 'package:${root['name']}/',
       defaultLocale: _readString(section, 'defaultLocale') ?? _defaultLocale,
       dateFormats: _readStrings(section, 'dateFormats'),
-      frameGoalMs:
-          _readInt(section, 'frameGoalMs') ??
+      frameBudgetMs:
+          _readInt(section, 'frameBudgetMs') ??
           AutomationFrameSummary.defaultGoalMillis,
       splashScreen: _readString(section, 'splashScreen'),
       launchHint: _readString(section, 'launchHint'),

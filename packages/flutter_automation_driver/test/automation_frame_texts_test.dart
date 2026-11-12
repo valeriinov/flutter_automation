@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:flutter_automation_mock/src/state/mock_frame_texts.dart';
+import 'package:flutter_automation_driver/src/automation_frame_texts.dart';
 
 const _rowExtent = 100.0;
 const _rowCount = 30;
@@ -15,41 +15,42 @@ const _firstRowText = 'Row 0';
 const _cachedRowText = 'Row 12';
 
 void main() {
-  group('MockFrameTexts Widget Tests', () {
-    _mockFrameTexts_should_leaveOutARouteAnOpaqueOneCovers();
-    _mockFrameTexts_should_readThePageUnderASheet();
-    _mockFrameTexts_should_leaveOutATabUnderADisabledTickerMode();
-    _mockFrameTexts_should_readOnlyTheChildAnIndexedStackShows();
-    _mockFrameTexts_should_leaveOutRowsBuiltPastTheViewport();
-    _mockFrameTexts_should_leaveOutATextLaidOutPastTheWindow();
+  group('AutomationFrameTexts Widget Tests', () {
+    _automationFrameTexts_should_leaveOutARouteAnOpaqueOneCovers();
+    _automationFrameTexts_should_readThePageUnderASheet();
+    _automationFrameTexts_should_leaveOutATabUnderADisabledTickerMode();
+    _automationFrameTexts_should_readOnlyTheChildAnIndexedStackShows();
+    _automationFrameTexts_should_leaveOutRowsBuiltPastTheViewport();
+    _automationFrameTexts_should_leaveOutATextLaidOutPastTheWindow();
   });
 }
 
-void _mockFrameTexts_should_leaveOutARouteAnOpaqueOneCovers() {
-  testWidgets('MockFrameTexts should leave out a route an opaque one covers', (
-    tester,
-  ) async {
-    await tester.pumpWidget(_buildApp(const Text(_coveredText)));
+void _automationFrameTexts_should_leaveOutARouteAnOpaqueOneCovers() {
+  testWidgets(
+    'AutomationFrameTexts should leave out a route an opaque one covers',
+    (tester) async {
+      await tester.pumpWidget(_buildApp(const Text(_coveredText)));
 
-    _navigator(tester).push(
-      MaterialPageRoute<void>(
-        builder: (_) => const Scaffold(body: TextField()),
-      ),
-    );
+      _navigator(tester).push(
+        MaterialPageRoute<void>(
+          builder: (_) => const Scaffold(body: TextField()),
+        ),
+      );
 
-    await tester.pumpAndSettle();
-    await tester.enterText(find.byType(TextField), _typedText);
-    await tester.pump();
+      await tester.pumpAndSettle();
+      await tester.enterText(find.byType(TextField), _typedText);
+      await tester.pump();
 
-    final texts = _read(tester);
+      final texts = _read(tester);
 
-    expect(texts, contains(_typedText));
-    expect(texts, isNot(contains(_coveredText)));
-  });
+      expect(texts, contains(_typedText));
+      expect(texts, isNot(contains(_coveredText)));
+    },
+  );
 }
 
-void _mockFrameTexts_should_readThePageUnderASheet() {
-  testWidgets('MockFrameTexts should read the page under a sheet', (
+void _automationFrameTexts_should_readThePageUnderASheet() {
+  testWidgets('AutomationFrameTexts should read the page under a sheet', (
     tester,
   ) async {
     await tester.pumpWidget(_buildApp(const Text(_pageUnderSheetText)));
@@ -67,9 +68,9 @@ void _mockFrameTexts_should_readThePageUnderASheet() {
   });
 }
 
-void _mockFrameTexts_should_leaveOutATabUnderADisabledTickerMode() {
+void _automationFrameTexts_should_leaveOutATabUnderADisabledTickerMode() {
   testWidgets(
-    'MockFrameTexts should leave out a tab under a disabled ticker mode',
+    'AutomationFrameTexts should leave out a tab under a disabled ticker mode',
     (tester) async {
       await tester.pumpWidget(
         _buildApp(
@@ -90,9 +91,9 @@ void _mockFrameTexts_should_leaveOutATabUnderADisabledTickerMode() {
   );
 }
 
-void _mockFrameTexts_should_readOnlyTheChildAnIndexedStackShows() {
+void _automationFrameTexts_should_readOnlyTheChildAnIndexedStackShows() {
   testWidgets(
-    'MockFrameTexts should read only the child an indexed stack shows',
+    'AutomationFrameTexts should read only the child an indexed stack shows',
     (tester) async {
       await tester.pumpWidget(
         _buildApp(
@@ -111,37 +112,38 @@ void _mockFrameTexts_should_readOnlyTheChildAnIndexedStackShows() {
   );
 }
 
-void _mockFrameTexts_should_leaveOutRowsBuiltPastTheViewport() {
-  testWidgets('MockFrameTexts should leave out rows built past the viewport', (
-    tester,
-  ) async {
-    await tester.pumpWidget(
-      _buildApp(
-        SizedBox(
-          height: _rowExtent * 2,
-          child: ListView.builder(
-            itemCount: _rowCount,
-            itemExtent: _rowExtent,
-            scrollCacheExtent: const ScrollCacheExtent.pixels(
-              _rowExtent * _rowCount,
+void _automationFrameTexts_should_leaveOutRowsBuiltPastTheViewport() {
+  testWidgets(
+    'AutomationFrameTexts should leave out rows built past the viewport',
+    (tester) async {
+      await tester.pumpWidget(
+        _buildApp(
+          SizedBox(
+            height: _rowExtent * 2,
+            child: ListView.builder(
+              itemCount: _rowCount,
+              itemExtent: _rowExtent,
+              scrollCacheExtent: const ScrollCacheExtent.pixels(
+                _rowExtent * _rowCount,
+              ),
+              itemBuilder: (_, index) => Text('Row $index'),
             ),
-            itemBuilder: (_, index) => Text('Row $index'),
           ),
         ),
-      ),
-    );
+      );
 
-    final texts = _read(tester);
+      final texts = _read(tester);
 
-    expect(find.text(_cachedRowText, skipOffstage: false), findsOneWidget);
-    expect(texts, contains(_firstRowText));
-    expect(texts, isNot(contains(_cachedRowText)));
-  });
+      expect(find.text(_cachedRowText, skipOffstage: false), findsOneWidget);
+      expect(texts, contains(_firstRowText));
+      expect(texts, isNot(contains(_cachedRowText)));
+    },
+  );
 }
 
-void _mockFrameTexts_should_leaveOutATextLaidOutPastTheWindow() {
+void _automationFrameTexts_should_leaveOutATextLaidOutPastTheWindow() {
   testWidgets(
-    'MockFrameTexts should leave out a text laid out past the window',
+    'AutomationFrameTexts should leave out a text laid out past the window',
     (tester) async {
       final windowHeight =
           tester.view.physicalSize.height / tester.view.devicePixelRatio;
@@ -181,7 +183,7 @@ NavigatorState _navigator(WidgetTester tester) {
 List<String> _read(WidgetTester tester) {
   final view = tester.view;
 
-  return MockFrameTexts.read(
+  return AutomationFrameTexts.read(
     tester.binding.rootElement ?? tester.element(find.byType(MaterialApp)),
     Offset.zero & view.physicalSize / view.devicePixelRatio,
   );

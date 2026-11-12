@@ -2,7 +2,7 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter_automation/automation_target.dart';
-import 'package:flutter_automation_mock/mock_feature.dart';
+import 'package:flutter_automation_mock/mock_section.dart';
 import 'package:flutter_automation_runner/automation_flow_definition.dart';
 
 enum _ProbeTarget with AutomationIdComposer {
@@ -22,7 +22,7 @@ void main() {
     variants: [
       FlowVariant(
         'main',
-        use: [
+        items: [
           Tap(ByTarget(_ProbeTarget.submit)),
           WaitFor(ByText('Done'), timeout: Duration(seconds: 5)),
         ],

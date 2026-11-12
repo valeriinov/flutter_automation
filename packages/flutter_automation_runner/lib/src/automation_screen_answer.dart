@@ -19,11 +19,21 @@ final class AutomationScreenAnswer {
   /// Size of the view, missing when the answer names none of a positive size.
   final AutomationViewSize? view;
 
+  /// Texts the frame shows, in tree order; empty unless the read asked for
+  /// them.
+  final List<String> texts;
+
+  /// Widget types the frame shows, sorted; empty unless the read asked for
+  /// them.
+  final List<String> widgets;
+
   const AutomationScreenAnswer({
     required this.screen,
     required this.view,
     required this.platform,
     required this.keyboardInset,
+    this.texts = const [],
+    this.widgets = const [],
   });
 
   /// Reads the decoded answer [json].
@@ -40,6 +50,8 @@ final class AutomationScreenAnswer {
         view: _tryReadView(json),
         platform: platform,
         keyboardInset: inset.round(),
+        texts: _readStrings(json, AutomationProtocol.textsKey),
+        widgets: _readStrings(json, AutomationProtocol.widgetsKey),
       );
     }
 
@@ -54,6 +66,14 @@ final class AutomationScreenAnswer {
     final screenName = screen?[AutomationProtocol.screenNameKey];
 
     return screenName is String && screenName != splashScreen;
+  }
+
+  static List<String> _readStrings(Map<Object?, Object?> json, String key) {
+    if (json[key] case final List<Object?> strings) {
+      return strings.whereType<String>().toList();
+    }
+
+    return const [];
   }
 
   static Map<String, Object?>? _tryReadScreen(Object? json) {

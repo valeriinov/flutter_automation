@@ -30,27 +30,27 @@ final class AutomationBlockLibrary {
     );
   }
 
-  /// Expands the `use` list of a variant into raw step objects, each paired
+  /// Expands the `items` list of a variant into raw step objects, each paired
   /// with the block that declared it.
   ///
-  /// The [use] parameter holds block names, block references that carry their
+  /// The [items] parameter holds block names, block references that carry their
   /// arguments, and inline steps, in the order a run walks them.
-  List<AutomationExpandedStep> expand(List<Object?> use) =>
-      use.expand(_expandEntry).toList(growable: false);
+  List<AutomationExpandedStep> expand(List<Object?> items) =>
+      items.expand(_expandItem).toList(growable: false);
 
-  /// Describes the `use` list of a variant: one entry per item, with the block
-  /// that a stretch came from and what the reference passed it.
+  /// Describes the `items` list of a variant: one item per block or step, with
+  /// the block that a stretch came from and what the reference passed it.
   ///
   /// Expansion of a variant flattens its blocks into one list of steps. The
   /// driver walks that list, and a reader of the journey has lost the blocks.
   ///
-  /// The [use] parameter holds block names, block references that carry their
+  /// The [items] parameter holds block names, block references that carry their
   /// arguments, and inline steps, in the order a run walks them.
-  List<AutomationEntry> describe(List<Object?> use) =>
-      use.map(_describeEntry).toList(growable: false);
+  List<AutomationItem> describe(List<Object?> items) =>
+      items.map(_describeItem).toList(growable: false);
 
-  Iterable<AutomationExpandedStep> _expandEntry(Object? entry) {
-    final (:block, :body) = _readUseEntry(entry);
+  Iterable<AutomationExpandedStep> _expandItem(Object? item) {
+    final (:block, :body) = _readItem(item);
 
     if (block == null) {
       return [(step: body, block: null)];
@@ -71,23 +71,23 @@ final class AutomationBlockLibrary {
     );
   }
 
-  AutomationEntry _describeEntry(Object? entry) {
-    final (:block, :body) = _readUseEntry(entry);
+  AutomationItem _describeItem(Object? item) {
+    final (:block, :body) = _readItem(item);
 
     if (block == null) {
       final action = _readAction(body);
 
-      return AutomationStepEntry(
+      return AutomationStepItem(
         action: action,
         label: AutomationStepLabel.resolve(body, action),
-        title: AutomationLocalizedText.tryRead(body, _titleKey, 'A "use" step'),
+        title: AutomationLocalizedText.tryRead(body, _titleKey, 'An item step'),
       );
     }
 
     final arguments = _readArguments(body);
     final resolved = _resolveBlock(name: block, arguments: arguments);
 
-    return AutomationBlockEntry(
+    return AutomationBlockItem(
       name: block,
       stepCount: resolved.steps.length,
       arguments: arguments,
@@ -122,26 +122,26 @@ final class AutomationBlockLibrary {
     return block;
   }
 
-  /// Reads a `use` entry into the block it names, `null` for an inline step,
-  /// and the object form of the entry, empty for a bare block name.
-  static _UseEntry _readUseEntry(Object? entry) {
-    if (entry is String) {
-      return (block: entry, body: const {});
+  /// Reads an item into the block it names, `null` for an inline step,
+  /// and the object form of the item, empty for a bare block name.
+  static _ItemParts _readItem(Object? item) {
+    if (item is String) {
+      return (block: item, body: const {});
     }
 
-    if (entry is! Map<String, Object?>) {
+    if (item is! Map<String, Object?>) {
       throw const AutomationRunnerException(
-        'A "use" entry is neither a block name, a block reference nor a step.',
+        'An item is neither a block name, a block reference nor a step.',
       );
     }
 
-    final block = entry['block'];
+    final block = item['block'];
 
-    return (block: block is String ? block : null, body: entry);
+    return (block: block is String ? block : null, body: item);
   }
 
-  static Map<String, Object?> _readArguments(Map<String, Object?> entry) {
-    final arguments = entry['with'];
+  static Map<String, Object?> _readArguments(Map<String, Object?> item) {
+    final arguments = item['with'];
 
     return arguments is Map<String, Object?> ? arguments : const {};
   }
@@ -154,7 +154,7 @@ final class AutomationBlockLibrary {
     }
 
     throw const AutomationRunnerException(
-      'A "use" step has no string "action".',
+      'An item step has no string "action".',
     );
   }
 }
@@ -215,20 +215,20 @@ final class AutomationBlock {
 
 /// {@category Utils}
 ///
-/// One entry of a variant's `use` list, as a reader of the journey sees it:
+/// One item of a variant's `items` list, as a reader of the journey sees it:
 /// either a whole block or a step written inline.
-sealed class AutomationEntry {
-  /// What the entry is, in words for people, missing when nothing names it.
+sealed class AutomationItem {
+  /// What the item is, in words for people, missing when nothing names it.
   final AutomationLocalizedText? title;
 
-  const AutomationEntry({required this.title});
+  const AutomationItem({required this.title});
 }
 
 /// {@category Utils}
 ///
-/// A `use` entry that walks a block, with the arguments the reference passed
+/// An item that walks a block, with the arguments the reference passed
 /// it.
-final class AutomationBlockEntry extends AutomationEntry {
+final class AutomationBlockItem extends AutomationItem {
   /// Name of the block walked.
   final String name;
 
@@ -238,7 +238,7 @@ final class AutomationBlockEntry extends AutomationEntry {
   /// Arguments the reference's `with` map named, empty for a bare block name.
   final Map<String, Object?> arguments;
 
-  const AutomationBlockEntry({
+  const AutomationBlockItem({
     required this.name,
     required this.stepCount,
     required this.arguments,
@@ -248,15 +248,15 @@ final class AutomationBlockEntry extends AutomationEntry {
 
 /// {@category Utils}
 ///
-/// A `use` entry written as one step of its own, between the blocks.
-final class AutomationStepEntry extends AutomationEntry {
+/// An item written as one step of its own, between the blocks.
+final class AutomationStepItem extends AutomationItem {
   /// Driver call the step sends.
   final String action;
 
   /// Short words that show the step when nothing titles it.
   final String label;
 
-  const AutomationStepEntry({
+  const AutomationStepItem({
     required this.action,
     required this.label,
     required super.title,
@@ -265,13 +265,13 @@ final class AutomationStepEntry extends AutomationEntry {
 
 /// {@category Utils}
 ///
-/// One raw step object of an expanded `use` list and the block that declared
+/// One raw step object of an expanded `items` list and the block that declared
 /// it, `null` for a step written inline in the variant.
 typedef AutomationExpandedStep = ({Object? step, String? block});
 
-/// One entry of a `use` list, read into the block it names, `null` for an
-/// inline step, and the object form of the entry.
-typedef _UseEntry = ({String? block, Map<String, Object?> body});
+/// One item of an `items` list, read into the block it names, `null` for an
+/// inline step, and the object form of the item.
+typedef _ItemParts = ({String? block, Map<String, Object?> body});
 
 Object? _substitute(
   Object? node,

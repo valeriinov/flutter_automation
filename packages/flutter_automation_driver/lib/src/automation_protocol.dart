@@ -11,8 +11,12 @@ abstract final class AutomationProtocol {
   static const String keyboardReadCommand = 'keyboard.read';
 
   /// Command that answers the screen the app shows, the view size, the
-  /// keyboard inset and the platform.
+  /// keyboard inset and the platform. With the [textsKey] and [widgetsKey]
+  /// flags it also answers what the frame shows.
   static const String screenReadCommand = 'screen.read';
+
+  /// Command that applies a language to the app.
+  static const String localeApplyCommand = 'locale.apply';
 
   /// Finder type that matches a text by its value, without locale key marks.
   static const String unmarkedTextFinderType = 'UnmarkedText';
@@ -54,4 +58,16 @@ abstract final class AutomationProtocol {
 
   /// Key of the platform name in the answer of [screenReadCommand].
   static const String platformKey = 'platform';
+
+  /// Key of the texts the frame shows: a request flag of [screenReadCommand]
+  /// and a key of its answer.
+  static const String textsKey = 'texts';
+
+  /// Key of the widget types the frame shows: a request flag of
+  /// [screenReadCommand] and a key of its answer.
+  static const String widgetsKey = 'widgets';
+
+  /// Key of the language code in the request and the answer of
+  /// [localeApplyCommand].
+  static const String localeKey = 'locale';
 }

@@ -1,5 +1,30 @@
 # Changelog
 
+## 0.5.0
+
+- Breaking: `MockFeature` is `MockSection`, in the library `mock_section.dart`.
+  A profile is a function over the settings. `MockSection.override` takes such a
+  function. `MockField`, `MockFieldType` and the `fields` parameter are removed.
+  `AutomationMock.features` is `sections`.
+- Breaking: the latency and failure overrides are the constructors
+  `MockOverride.latency`, `MockOverride.latencySeed` and
+  `MockOverride.failures`. The statics of `MockScenario` are removed.
+- A typed override replaces its section with the keys that differ from the
+  defaults. A variant continues the list of overrides of its flow.
+- Breaking: `MockTransportRuntime` is `MockBackend`.
+  `MockApiTransport(backend:)` replaces `runtime:`. `MockApi.feature` is
+  removed. `MockConnectionFailure` is `MockConnectionException`.
+- New `MockScenarioBackend`: the ready `MockBackend` over the scenario. Its
+  `rebuild()` builds the endpoints and the latency again.
+- Breaking: the command `mock.apply` is `scenario.apply`
+  (`MockCommands.scenarioApply`) and its payload key `config` is `scenario`.
+  `onApply` is `onScenarioApplied` and `MockApplyCallback` is
+  `MockScenarioAppliedCallback`.
+- Breaking: `journal.read` carries no texts and no widgets. `onLocale`,
+  `MockLocaleCallback` and `languageCode` are removed. `locale.apply` moves to
+  `flutter_automation_driver`; the replacement of `onLocale` is the
+  `localeApplier` of `AutomationInstaller.maybeInstall`.
+
 ## 0.4.0
 
 - Breaking: the core has no Dio dependency. `MockApiRequest` and

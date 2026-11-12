@@ -10,7 +10,7 @@ const _flowName = 'greeting';
 const _flowJson = {
   'variants': {
     'main': {
-      'use': [
+      'items': [
         {
           'action': 'tap',
           'label': 'open the greeting',
@@ -25,12 +25,12 @@ const _flowJson = {
   },
 };
 
-const _mockJson = {'latency': 'fast'};
-const _mockFlowJson = {
+const _scenarioJson = {'latency': 'fast'};
+const _scenarioFlowJson = {
   'variants': {
     'main': {
-      'mock': _mockJson,
-      'use': [
+      'scenario': _scenarioJson,
+      'items': [
         {
           'action': 'waitFor',
           'finder': {'by': 'text', 'value': 'Hello'},
@@ -42,20 +42,24 @@ const _mockFlowJson = {
 
 void main() {
   group('AutomationRunner Tests', () {
-    _automationRunner_should_dryRunFlowWithoutMockBlock();
-    _automationRunner_should_leaveTheMockOutOfARunWithNoMock();
+    _automationRunner_should_dryRunFlowWithoutScenario();
+    _automationRunner_should_leaveTheScenarioOutOfARunWithNoScenario();
   });
 }
 
-void _automationRunner_should_leaveTheMockOutOfARunWithNoMock() {
+void _automationRunner_should_leaveTheScenarioOutOfARunWithNoScenario() {
   test(
-    'AutomationRunner should leave the mock out of a run with --no-mock',
+    'AutomationRunner should skip the scenario with --no-scenario',
     () async {
-      final withMock = await _dryRun([_flowName, '--dry-run']);
-      final withoutMock = await _dryRun([_flowName, '--dry-run', '--no-mock']);
+      final withScenario = await _dryRun([_flowName, '--dry-run']);
+      final withoutScenario = await _dryRun([
+        _flowName,
+        '--dry-run',
+        '--no-scenario',
+      ]);
 
-      expect(withMock['mock'], _mockJson);
-      expect(withoutMock['mock'], isEmpty);
+      expect(withScenario['scenario'], _scenarioJson);
+      expect(withoutScenario['scenario'], isEmpty);
     },
   );
 }
@@ -69,7 +73,7 @@ Future<Map<String, Object?>> _dryRun(List<String> args) async {
       config: const AutomationRunnerConfig(
         packagePrefix: 'package:sample_app/',
       ),
-      flows: {_flowName: _mockFlowJson},
+      flows: {_flowName: _scenarioFlowJson},
       blocks: const {},
     ).run(),
     stdout: () => _LineStdout(lines),
@@ -78,8 +82,8 @@ Future<Map<String, Object?>> _dryRun(List<String> args) async {
   return jsonDecode(lines.single) as Map<String, Object?>;
 }
 
-void _automationRunner_should_dryRunFlowWithoutMockBlock() {
-  test('AutomationRunner should dry run flow without mock block', () async {
+void _automationRunner_should_dryRunFlowWithoutScenario() {
+  test('AutomationRunner should dry run flow without scenario', () async {
     final lines = <String>[];
 
     await IOOverrides.runZoned(
@@ -98,7 +102,7 @@ void _automationRunner_should_dryRunFlowWithoutMockBlock() {
     final steps = report['steps'] as List<Object?>;
 
     expect(report['dryRun'], isTrue);
-    expect(report['mock'], isEmpty);
+    expect(report['scenario'], isEmpty);
     expect(steps, hasLength(2));
     expect(
       (steps.first as Map<String, Object?>)['finder'],

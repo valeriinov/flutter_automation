@@ -3,6 +3,7 @@ import 'package:flutter/widgets.dart';
 import 'package:flutter_driver/driver_extension.dart';
 import 'package:flutter_automation/flutter_automation.dart';
 import 'package:flutter_automation_driver/src/automation_device_commands.dart';
+import 'package:flutter_automation_driver/src/automation_locale_applier.dart';
 import 'package:flutter_automation_driver/src/automation_screen_reader.dart';
 import 'package:flutter_automation_driver/src/unmarked_text_finder.dart';
 
@@ -24,14 +25,22 @@ abstract final class AutomationInstaller {
   ///
   /// The [screenReader] parameter describes the screen the app shows when the
   /// `screen.read` command arrives.
-  static void maybeInstall({required AutomationScreenReader screenReader}) {
+  /// The [localeApplier] parameter applies the language of the `locale.apply`
+  /// command. The command stays unregistered without it.
+  static void maybeInstall({
+    required AutomationScreenReader screenReader,
+    AutomationLocaleApplier? localeApplier,
+  }) {
     if (!AutomationSettings.isEnabled) {
       return;
     }
 
-    AutomationDeviceCommands.register(screenReader: screenReader);
+    AutomationDeviceCommands.register(
+      screenReader: screenReader,
+      localeApplier: localeApplier,
+    );
     enableFlutterDriverExtension(
-      handler: AutomationCommandHandler.handle,
+      handler: AutomationCommandRegistry.handle,
       finders: [
         UnmarkedTextFinder.text(),
         UnmarkedTextFinder.tooltip(),

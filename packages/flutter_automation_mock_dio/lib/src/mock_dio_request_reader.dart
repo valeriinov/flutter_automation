@@ -10,7 +10,7 @@ import 'package:flutter_automation_mock/flutter_automation_mock.dart';
 ///
 /// The path is resolved against the base url. The whole interceptor chain has
 /// run before the mock sees the request: auth headers, token refresh, logging.
-abstract final class MockDioRequest {
+abstract final class MockDioRequestReader {
   /// Reads the request Dio is about to send to the network.
   ///
   /// The [options] parameter is what Dio hands to its transport.

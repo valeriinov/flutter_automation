@@ -1,4 +1,4 @@
-import 'package:flutter_automation_mock/mock_feature.dart';
+import 'package:flutter_automation_mock/mock_section.dart';
 
 import 'package:flutter_automation_runner/src/automation_localized_text.dart';
 import 'package:flutter_automation_runner/src/automation_runner_exception.dart';
@@ -56,9 +56,10 @@ final class AutomationFlowDefinition {
       'title': ?title?.toJson(),
       'subtitle': ?subtitle?.toJson(),
       'defaultVariant': ?defaultVariant,
-      if (scenario.isNotEmpty) 'mock': MockScenario(scenario).toJson(),
+      if (scenario.isNotEmpty) 'scenario': MockScenario(scenario).toJson(),
       'variants': {
-        for (final variant in variants) variant.name: variant.toJson(),
+        for (final variant in variants)
+          variant.name: variant.toJson(flowScenario: scenario),
       },
     };
   }

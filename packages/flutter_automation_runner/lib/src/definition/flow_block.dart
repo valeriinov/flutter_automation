@@ -52,9 +52,9 @@ final class FlowBlock {
 
 /// {@category Utils}
 ///
-/// A `use` entry that walks a [block] with the given [arguments].
+/// An item that walks a [block] with the given [arguments].
 final class Use implements FlowItem {
-  /// Block the entry walks.
+  /// Block the item walks.
   final FlowBlock block;
 
   /// Values for parameters of the block, empty for the defaults.

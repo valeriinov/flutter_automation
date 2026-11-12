@@ -5,7 +5,7 @@ import 'dart:typed_data';
 
 import 'package:dio/dio.dart';
 import 'package:flutter_automation_mock/flutter_automation_mock.dart';
-import 'package:flutter_automation_mock_dio/src/mock_dio_request.dart';
+import 'package:flutter_automation_mock_dio/src/mock_dio_request_reader.dart';
 
 /// {@category Utils}
 ///
@@ -40,11 +40,11 @@ class MockDioHttpClientAdapter implements HttpClientAdapter {
     Stream<Uint8List>? requestStream,
     Future<void>? cancelFuture,
   ) async {
-    if (!_transport.ownsPath(MockDioRequest.readPath(options))) {
+    if (!_transport.ownsPath(MockDioRequestReader.readPath(options))) {
       return _networkAdapter.fetch(options, requestStream, cancelFuture);
     }
 
-    final request = MockDioRequest.read(
+    final request = MockDioRequestReader.read(
       options,
       bytes: await _tryReadBytes(options, requestStream),
     );
@@ -61,7 +61,7 @@ class MockDioHttpClientAdapter implements HttpClientAdapter {
   ) async {
     try {
       return await _transport.answer(request);
-    } on MockConnectionFailure catch (failure) {
+    } on MockConnectionException catch (failure) {
       throw DioException.connectionError(
         requestOptions: options,
         reason: failure.reason,

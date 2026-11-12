@@ -167,7 +167,7 @@ Report:
 - ok: true when the JSON holds "steps", false when it holds "error"
 - variant: the "variant" it resolved to, empty when it errored
 - stepCount: how many steps it expanded to, 0 when it errored
-- scenarioKeys: the top-level keys of the "mock" object, empty when there is none
+- scenarioKeys: the top-level keys of the "scenario" object, empty when there is none
 - problem: the "error" text verbatim, empty string when ok`
 
 const runPrompt = (runCommand, target) => `Walk the ${target} automation flow variant once on the connected device and report what it cost.
@@ -247,7 +247,7 @@ function lensesFor(hasFailure, config) {
       },
       {
         key: 'setup',
-        prompt: `Lens: what the variant walked into. Read the variant's scenario, ${config.mockFile} and the settings class of every feature the variant names. Report a key or a field the settings class does not read (it is dropped in silence, so the run proves something other than what was asked), a setting that contradicts what the variant name claims to prove, and anything a previous run leaves behind that makes the next one start elsewhere. A setupMs of zero with a scenario written means the merge never reached the variant.`,
+        prompt: `Lens: what the variant walked into. Read the variant's scenario, ${config.mockFile} and the settings class of every section the variant names. Report a key or a field the settings class does not read (it is dropped in silence, so the run proves something other than what was asked), a setting that contradicts what the variant name claims to prove, and anything a previous run leaves behind that makes the next one start elsewhere. A setupMs of zero with a scenario written means the scenario never reached the variant.`,
       },
     ]
   }

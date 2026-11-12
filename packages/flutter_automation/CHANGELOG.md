@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.5.0
+
+- Breaking: the registry of commands is `AutomationCommandRegistry`. The
+  function type that answers one command is `AutomationCommandHandler`.
+- Breaking: the build switches are `ENABLE_AUTOMATION` and
+  `ENABLE_AUTOMATION_LOCALE_KEYS`.
+
 ## 0.4.0
 
 - New library `automation_target.dart` with `AutomationTarget`,

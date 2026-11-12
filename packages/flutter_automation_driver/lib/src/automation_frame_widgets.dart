@@ -1,21 +1,21 @@
 import 'package:flutter/widgets.dart';
-import 'package:flutter_automation_mock/src/state/mock_frame_walk.dart';
+import 'package:flutter_automation_driver/src/automation_frame_walk.dart';
 
 /// {@category Utils}
 ///
 /// The widget types a frame shows: the `runtimeType` name of every widget
-/// [MockFrameWalk] reaches, without generic arguments, sorted, each once.
+/// [AutomationFrameWalk] reaches, without generic arguments, sorted, each once.
 ///
 /// The list leaves out a widget whose box lies past its clip, such as a list
 /// row built in a viewport's cache extent. It keeps a widget without a box,
 /// such as a sliver.
-abstract final class MockFrameWidgets {
+abstract final class AutomationFrameWidgets {
   /// Reads the widget types under [root] that stand inside [window], in
   /// global logical pixels.
   static List<String> read(Element root, Rect window) {
     final widgets = <String>{};
 
-    MockFrameWalk.visit(
+    AutomationFrameWalk.visit(
       root,
       window,
       onShown: (element, clip) => _maybeAddWidget(element, clip, widgets),
@@ -42,7 +42,7 @@ abstract final class MockFrameWidgets {
   }
 
   static bool _isInsideClip(Element element, Rect clip) {
-    final rect = MockFrameWalk.readRect(element.findRenderObject());
+    final rect = AutomationFrameWalk.readRect(element.findRenderObject());
 
     return rect == null || rect.overlaps(clip);
   }

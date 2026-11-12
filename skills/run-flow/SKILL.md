@@ -48,7 +48,7 @@ A request with no flow name walks the **Default flow**.
 ## 2. Add the variant
 
 A flow file declares one `AutomationFlowDefinition` with every way through one
-journey. A `FlowVariant` lists its steps in `use`. Names below are neutral
+journey. A `FlowVariant` lists its steps in `items`. Names below are neutral
 examples.
 
 ```dart
@@ -63,8 +63,12 @@ final loginFlow = AutomationFlowDefinition(
       proves: const AutomationLocalizedText({
         'en': 'A valid pair opens the home screen',
       }),
-      scenario: [authMockFeature.override({'isSignedInOnLaunch': false})],
-      use: [
+      scenario: [
+        authMockSection.override(
+          (settings) => settings.copyWith(isSignedInOnLaunch: false),
+        ),
+      ],
+      items: [
         const WaitFor(ByTarget(LoginTarget.root)),
         Use(enterCredentials, arguments: {'email': 'user@example.com'}),
         const Tap(ByTarget(LoginTarget.submit)),
@@ -75,7 +79,7 @@ final loginFlow = AutomationFlowDefinition(
 );
 ```
 
-- `use` holds `FlowStep` values (`Tap`, `WaitFor`, `WaitForAbsent`,
+- `items` holds `FlowStep` values (`Tap`, `WaitFor`, `WaitForAbsent`,
   `WaitForTappable`, `ScrollIntoView`, `Scroll`, `EnterText`, `ProbeCenter`,
   `ProbeSeries`, `TraceStart`, `TraceStop`, `DriverCommand`) and `Use(block)`
   items. Import `package:flutter_automation_runner/automation_flow_definition.dart`.
@@ -130,23 +134,28 @@ final enterCredentials = FlowBlock(
 `params['x']` prints as `{{x}}`, and the runner substitutes it inside any
 string of a step, the label and the title included. A parameter that the block
 does not declare throws when the flow builds. A block that no variant uses is
-dead weight: delete it or fold it back. The entry point passes every flow and
-every block to `runFlows`; a new flow or block joins that list.
+dead weight: delete it or fold it back. The entry point passes every flow to
+`runFlows`; a new flow joins that list. The runner collects the blocks from the
+`Use` items of the variants. Two different blocks with one name stop the run.
 
 ## 3. Declare the mock scenario the variant needs
 
-A `scenario` is a list of `MockOverride(key, value)`. Build one with the
-`MockFeature` of the section:
+A `scenario` is a list of `MockOverride`. Build one with the `MockSection` of the
+section:
 
-- `feature.profile('name')` applies a named partial setting the feature declares.
-- `feature.override({'field': value})` sets the fields it names.
-- `MockScenario.latency(<profile enum>)`, `MockScenario.latencySeed(<int>)` and
-  `MockScenario.failures({'<path>': {...}})` set the keys above the sections.
+- `section.profile('name')` applies a named function over the settings that the
+  section declares.
+- `section.override((settings) => settings.copyWith(field: value))` changes the
+  settings it names.
+- `MockOverride.latency(<profile enum>)`, `MockOverride.latencySeed(<int>)` and
+  `MockOverride.failures({'<path>': {...}})` set the keys above the sections.
 
-**Read the `MockFeature` and its settings class before you name a field.** The
-file is named in **Mock configuration file**. A key or a field that the settings
-class does not read is dropped in silence, and the run then proves something
-other than what was asked.
+**Read the `MockSection` and its settings class before you name a profile or a
+field.** **Mock configuration file** names the file. A profile name that the
+section does not declare throws when the flow builds. A field that the settings
+class lacks does not compile. A raw `MockOverride(key, value)` is the exception.
+The settings class ignores a key it does not read. The run then proves something
+other than the request.
 
 - `latency` decides the wall clock of every mocked answer. A fast profile is for
   a run that measures the app rather than the network. A seed makes two runs
@@ -154,10 +163,12 @@ other than what was asked.
 - `failures` is keyed by endpoint path. An entry with an error status, or with
   `isConnectionError: true`, reaches the error handling of the app with no line
   of Dart.
-- A variant `scenario` deep-merges over the flow `scenario`. The leaf key of the
-  variant wins, so a variant states what it differs by and inherits the rest.
+- A variant `scenario` continues the list of the flow `scenario`. The overrides
+  of the flow apply first and the ones of the variant after them. A variant
+  therefore states what it differs by and inherits the rest. A profile of the
+  variant can set a value of the flow back to its default.
 - A scenario needs an app launched with the mock on. **Launch** names the define.
-  `--no-mock` walks a variant without pushing its scenario.
+  `--no-scenario` walks a variant without pushing its scenario.
 
 ## 4. Expand, then run
 
@@ -168,14 +179,15 @@ step that the app failed.
 <Flow run command> <flow> <variant> --dry-run 2>/dev/null
 ```
 
-The answer holds the merged scenario and the resolved steps. An unknown block, a
-parameter that a block does not declare, a variant that the flow does not hold
-and a repeated variant name all fail here. Never spend a device run on a variant
+The answer holds the scenario and the resolved steps. The `appliesScenario`
+field says whether the run pushes the scenario. A dry run rejects four errors: an
+unknown block, an undeclared block parameter, an unknown variant and a repeated
+variant name. Never spend a device run on a variant
 that has not expanded. `--catalogue` prints every flow and block before a `Use`
 expands, as one line of JSON.
 
 Then walk it. `drive-device` step 1 picks the device. The app runs with the
-**Launch** arguments, which include `--dart-define=ENABLE_FLUTTER_DRIVER=true`.
+**Launch** arguments, which include `--dart-define=ENABLE_AUTOMATION=true`.
 
 ```shell
 <Flow run command> <flow> <variant> 2>/dev/null
@@ -186,7 +198,9 @@ Options:
 - `--capture <dir>` records what the app does at each step: requests, journal
   records, the screen before each action. The app must run with the mock on.
 - `--locale <code>` walks the app in another locale. The runner sends
-  `locale.apply` after the scenario. Without it, the app keeps its launch locale.
+  `locale.apply` after the scenario. The app answers it through the
+  `localeApplier` of the driver installer, so it needs no mock. Without the
+  option, the app keeps its launch locale.
   A number that the app formats per locale needs a finder `value` that matches
   that locale.
 - `--system-keyboard` turns text entry emulation off for the whole run, so the
@@ -206,7 +220,7 @@ report.
 **Restart the app before every run**, not only after a failure. A variant that
 succeeds parks the app on the screen it proved. A pushed route hides the screen
 below it from the driver, so the next opening `WaitFor` times out on a screen
-that is mounted but not visible. `mock.apply` re-seeds the backend but does not
+that is mounted but not visible. `scenario.apply` re-seeds the backend but does not
 pop a route. Use `mcp__dart__hot_restart`. A sweep of many variants cannot afford
 one MCP call each. The `flutter run` process registers a service method
 `s<N>.hotRestart`; call it over the Dart VM Service websocket with
@@ -219,7 +233,8 @@ A profile build has no hot restart. The runner answers a `scenario` with a hot
 restart, so a profile run stops with `No flutter run answers hotRestart`. The
 scenario it applied is saved and seeds the next launch. Run the variant once to
 save the scenario, relaunch the installed app, then walk the same variant with
-`--no-mock` (it does not push the scenario again). Relaunch by `adb shell am force-stop <package>` and
+`--no-scenario` (it does not push the scenario again). Relaunch by
+`adb shell am force-stop <package>` and
 `adb shell monkey -p <package> -c android.intent.category.LAUNCHER 1` on
 Android, or a fresh `flutter run` on iOS. Read the new service uri off the
 device and pass it as `--uri`. A skipped relaunch does not fail the run, so the
@@ -314,8 +329,8 @@ Never write it into this skill: the skill is installed from the package and a
 local edit is lost on the next update. If the field is missing, ask the user which
 document takes it.
 
-Some changes touch the flow format or the mock configuration: a new step or
-finder, a new runner option, a key that a flow can declare. Such a change lands in
+Some changes touch the flow format or the mock sections. Examples are a new step,
+a new finder, a new runner option and a key that a flow can declare. Such a change lands in
 every place that **Format-change places** lists, in one commit, or nowhere.
 
 A route through a flow spelled out as a list of ids is not a finding. It is a

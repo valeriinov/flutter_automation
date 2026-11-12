@@ -34,4 +34,4 @@ flutter:
 # Values the runner reads from this file.
 flutter_automation:
   defaultLocale: en
-  launchHint: --dart-define=ENABLE_FLUTTER_DRIVER=true --dart-define=ENABLE_MOCK=true
+  launchHint: --dart-define=ENABLE_AUTOMATION=true --dart-define=ENABLE_MOCK=true

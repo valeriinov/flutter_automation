@@ -4,7 +4,7 @@ import 'dart:io';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:flutter_automation/automation_target.dart';
-import 'package:flutter_automation_mock/mock_feature.dart';
+import 'package:flutter_automation_mock/mock_section.dart';
 import 'package:flutter_automation_runner/automation_flow_definition.dart';
 import 'package:flutter_automation_runner/src/automation_runner.dart';
 import 'package:flutter_automation_runner/src/automation_runner_config.dart';
@@ -70,7 +70,7 @@ final _definition = AutomationFlowDefinition(
   subtitle: const AutomationLocalizedText({'en': 'A walk', 'uk': 'Хід'}),
   defaultVariant: 'main',
   scenario: [
-    MockScenario.latency(MockLatencyProfile.fast),
+    MockOverride.latency(MockLatencyProfile.fast),
     const MockOverride('auth', {'isSignedIn': true, 'isAnonymous': false}),
   ],
   variants: [
@@ -86,7 +86,7 @@ final _definition = AutomationFlowDefinition(
         MockOverride('auth', {'isAnonymous': true}),
         MockOverride('catalog', {'isEmpty': true}),
       ],
-      use: [
+      items: [
         Use(_openItem),
         Use(_openItem, arguments: {'key': 'second', 'isFast': true}),
         Use(
@@ -161,9 +161,9 @@ final _definition = AutomationFlowDefinition(
         title: AutomationLocalizedText({'en': 'From link', 'uk': 'З лінка'}),
         launchedBy: AutomationLaunchSource.link,
       ),
-      use: [Use(_closeItem), const WaitFor(ByValueKey('end'))],
+      items: [Use(_closeItem), const WaitFor(ByValueKey('end'))],
     ),
-    const FlowVariant('third', use: [WaitFor(ByPageBack())]),
+    const FlowVariant('third', items: [WaitFor(ByPageBack())]),
   ],
 );
 
@@ -214,7 +214,7 @@ const _flowJson = {
   'title': {'en': 'Sample', 'uk': 'Зразок'},
   'subtitle': {'en': 'A walk', 'uk': 'Хід'},
   'defaultVariant': 'main',
-  'mock': {
+  'scenario': {
     'latency': 'fast',
     'auth': {'isSignedIn': true, 'isAnonymous': false},
   },
@@ -226,11 +226,12 @@ const _flowJson = {
         'title': {'en': 'From push', 'uk': 'З пуша'},
         'launchedBy': 'push',
       },
-      'mock': {
-        'auth': {'isAnonymous': true},
+      'scenario': {
+        'latency': 'fast',
+        'auth': {'isSignedIn': true, 'isAnonymous': true},
         'catalog': {'isEmpty': true},
       },
-      'use': [
+      'items': [
         'open_item',
         {
           'block': 'open_item',
@@ -348,7 +349,11 @@ const _flowJson = {
         'title': {'en': 'From link', 'uk': 'З лінка'},
         'launchedBy': 'link',
       },
-      'use': [
+      'scenario': {
+        'latency': 'fast',
+        'auth': {'isSignedIn': true, 'isAnonymous': false},
+      },
+      'items': [
         'close_item',
         {
           'action': 'waitFor',
@@ -357,7 +362,11 @@ const _flowJson = {
       ],
     },
     'third': {
-      'use': [
+      'scenario': {
+        'latency': 'fast',
+        'auth': {'isSignedIn': true, 'isAnonymous': false},
+      },
+      'items': [
         {
           'action': 'waitFor',
           'finder': {'by': 'pageBack'},
@@ -405,7 +414,7 @@ void _automationFlowDefinition_should_dryRunLikeItsJsonTwinInUkrainian() {
     final report = jsonDecode(await _runDefinition(args));
 
     expect(await _runDefinition(args), await _runJson(args));
-    expect(report, containsPair('mock', isA<Map<String, Object?>>()));
+    expect(report, containsPair('scenario', isA<Map<String, Object?>>()));
   });
 }
 
@@ -425,8 +434,8 @@ void _automationFlowDefinition_should_rejectRepeatedVariantName() {
     const definition = AutomationFlowDefinition(
       name: 'dup',
       variants: [
-        FlowVariant('a', use: []),
-        FlowVariant('a', use: []),
+        FlowVariant('a', items: []),
+        FlowVariant('a', items: []),
       ],
     );
 
@@ -452,7 +461,6 @@ void _automationRunner_should_refuseUnknownFlowWithKnownNames() {
       ['missing', '--dry-run'],
       config: _config,
       flows: [_definition],
-      blocks: [_openItem, _closeItem],
     );
 
     expect(
@@ -473,7 +481,7 @@ void _automationRunner_should_describeHotRestartRefusal() {
     expect(
       AutomationRunner.describeHotRestartRefusal('ws://127.0.0.1:1/ws'),
       'No flutter run answers hotRestart at ws://127.0.0.1:1/ws, so the app '
-      'cannot launch on the mock configuration of the variant. Relaunch it '
+      'cannot launch on the scenario of the variant. Relaunch it '
       'with flutter run and pass the new uri with --uri.',
     );
   });
@@ -485,7 +493,6 @@ Future<String> _runDefinition(List<String> args) {
       args,
       config: _config,
       flows: [_definition],
-      blocks: [_openItem, _closeItem],
     ),
   );
 }

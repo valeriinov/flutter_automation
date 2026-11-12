@@ -7,7 +7,7 @@ journey from the command line.
 
 - The app marks the elements an agent may address with a target enum.
 - The app opens a Flutter Driver extension, only in a build that sets
-  `ENABLE_FLUTTER_DRIVER`.
+  `ENABLE_AUTOMATION`.
 - A flow is Dart code that lists steps (tap, wait, type, read a frame). The
   runner on the host sends the steps to the app and prints one JSON report.
 - A mock backend puts the app into a known state without a remote
@@ -42,12 +42,15 @@ flowchart LR
   end
 
   runner <-->|"VM service, ext.flutter.driver"| ext
-  runner -.->|"mock.apply, journal.read"| cmds
+  runner -.->|"scenario.apply, journal.read, screen.read, locale.apply"| cmds
 ```
 
 The runner never links to the app. It talks to the driver extension through
-the VM service. `mock.apply` carries the scenario of the flow, and
-`journal.read` brings back what the app requested.
+the VM service. `scenario.apply` carries the scenario of the flow, and
+`journal.read` brings back what the app requested. `screen.read` reads the
+screen, the texts and the widgets of a frame. `locale.apply` sets the language.
+The last two belong to the driver, so `--locale` works on an app without a
+mock.
 
 ## Packages
 
@@ -55,7 +58,7 @@ the VM service. `mock.apply` carries the scenario of the flow, and
 | --- | --- |
 | [`flutter_automation`](packages/flutter_automation) | Target markup, command registry, build switches. |
 | [`flutter_automation_driver`](packages/flutter_automation_driver) | Driver extension for the app and the finders the host uses. |
-| [`flutter_automation_mock`](packages/flutter_automation_mock) | Scenario, `MockFeature`, `AutomationMock`, transport and journal. HTTP-client free. |
+| [`flutter_automation_mock`](packages/flutter_automation_mock) | Scenario, `MockSection`, `AutomationMock`, `MockScenarioBackend`, transport and journal. HTTP-client free. |
 | [`flutter_automation_mock_dio`](packages/flutter_automation_mock_dio) | `MockDioHttpClientAdapter` that answers Dio requests from the mock. |
 | [`flutter_automation_runner`](packages/flutter_automation_runner) | `runFlows` and the Dart flow definition. |
 
@@ -69,30 +72,30 @@ dependencies:
     git:
       url: https://github.com/valeriinov/flutter_automation.git
       path: packages/flutter_automation
-      ref: 0.4.0
+      ref: 0.5.0
   flutter_automation_driver:
     git:
       url: https://github.com/valeriinov/flutter_automation.git
       path: packages/flutter_automation_driver
-      ref: 0.4.0
+      ref: 0.5.0
   flutter_automation_mock:
     git:
       url: https://github.com/valeriinov/flutter_automation.git
       path: packages/flutter_automation_mock
-      ref: 0.4.0
+      ref: 0.5.0
   # Only for an app that uses Dio.
   flutter_automation_mock_dio:
     git:
       url: https://github.com/valeriinov/flutter_automation.git
       path: packages/flutter_automation_mock_dio
-      ref: 0.4.0
+      ref: 0.5.0
 
 dev_dependencies:
   flutter_automation_runner:
     git:
       url: https://github.com/valeriinov/flutter_automation.git
       path: packages/flutter_automation_runner
-      ref: 0.4.0
+      ref: 0.5.0
 ```
 
 Skip `flutter_automation_mock` and `flutter_automation_mock_dio` when the app
@@ -143,7 +146,9 @@ A complete app lives in [`example/`](example).
    ```
 
    The call does nothing unless the app runs with
-   `--dart-define=ENABLE_FLUTTER_DRIVER=true`. A release build never enables it.
+   `--dart-define=ENABLE_AUTOMATION=true`. A release build never enables it.
+   Pass `localeApplier: (languageCode) => ...` to the same call to let
+   `--locale` set the language of the app.
 
 4. Write a flow and an entry point.
 
@@ -154,7 +159,7 @@ A complete app lives in [`example/`](example).
    final loginFlow = AutomationFlowDefinition(
      name: 'login',
      variants: [
-       FlowVariant('default', use: [
+       FlowVariant('default', items: [
          const WaitFor(ByTarget(LoginTarget.screen)),
          const Tap(ByTarget(LoginTarget.submit)),
        ]),
@@ -164,13 +169,13 @@ A complete app lives in [`example/`](example).
    // tool/run_flows.dart
    import 'package:flutter_automation_runner/flutter_automation_runner.dart';
 
-   Future<void> main(List<String> args) => runFlows(args, [loginFlow], []);
+   Future<void> main(List<String> args) => runFlows(args, [loginFlow]);
    ```
 
 5. Run the app, then the flow.
 
    ```shell
-   fvm flutter run -d <device> --dart-define=ENABLE_FLUTTER_DRIVER=true
+   fvm flutter run -d <device> --dart-define=ENABLE_AUTOMATION=true
    fvm dart run tool/run_flows.dart login default --dry-run
    fvm dart run tool/run_flows.dart login default --uri ws://127.0.0.1:<port>/<token>=/ws
    ```
@@ -183,14 +188,19 @@ A complete app lives in [`example/`](example).
 Read [`flutter_automation_mock`](packages/flutter_automation_mock) first. The
 path in short:
 
-1. Declare one `MockFeature` per backend area, in a file that imports no
-   Flutter code. A flow names its profiles by Dart symbol.
+1. Declare one `MockSection` per backend area, in a file that imports no
+   Flutter code. A section names its settings class and its profiles. A
+   profile is a function over the settings, so no key is written twice.
 2. Call `AutomationMock.init` before the dependency injection of the app, with
    an `isEnabled` that is a compile-time constant of the project.
-3. Replace the transport of the HTTP client with `mock.substitute`. For Dio
-   use `MockDioHttpClientAdapter`; for storage see the
-   [recipes](packages/flutter_automation_mock/doc/recipes.md).
-4. Name the scenario in a flow with `scenario: [feature.profile('name')]`.
+3. Put the substitutes in place. Use one of two ways:
+   - `mock.substitute` at the place where the app creates the object. For Dio
+     use `MockDioHttpClientAdapter` over a `MockScenarioBackend`; for storage
+     see the [recipes](packages/flutter_automation_mock/doc/recipes.md).
+   - One installer that runs after the dependency injection and replaces the
+     registered objects.
+4. Name the scenario in a flow with `scenario: [section.profile('name')]`. A
+   variant continues the list of overrides of its flow.
 
 ## Agent skills
 
@@ -205,7 +215,7 @@ own facts (commands, folders, defaults) in an `## Automation` section of its
 |---|---|---|
 | `run-flow` | Walk one variant of a flow on a device: resolve the request to a flow and variant, add the variant and its mock scenario, expand with `--dry-run`, run it, read the report, fix one thing per round | optional (the `measure-flow` workflow scripts the measure-and-fix loop) |
 | `drive-device` | Pick and boot a device, launch the app with Flutter Driver, drive it tap by tap, read errors, take screenshots and video | — |
-| `mock-app` | Run the app on the in-memory mock, choose scenarios and profiles, tune a `MockFeature`, add a mock api | — |
+| `mock-app` | Run the app on the in-memory mock, choose scenarios and profiles, tune a `MockSection`, add a mock api | — |
 | `add-automation-targets` | Declare target enums and mark widgets with `automationTarget()` so a flow addresses ids, not text | — |
 | `setup-automation` | Set a project up from `flutter create`: dependencies at the tag, `flutter_automation:` section, `## Automation` in `AGENTS.md`, driver in `main`, `run_flows.dart` and a first flow, optionally the mock | — |
 

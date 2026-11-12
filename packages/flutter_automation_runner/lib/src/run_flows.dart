@@ -5,12 +5,11 @@ import 'package:flutter_automation_runner/src/automation_runner.dart';
 import 'package:flutter_automation_runner/src/automation_runner_config.dart';
 import 'package:flutter_automation_runner/src/automation_runner_exception.dart';
 import 'package:flutter_automation_runner/src/definition/automation_flow_definition.dart';
-import 'package:flutter_automation_runner/src/definition/flow_block.dart';
 
 /// {@category Utils}
 ///
-/// Runs the flow that [args] name, out of the flows and blocks the project
-/// declares in Dart.
+/// Runs the flow that [args] name, out of the flows the project declares in
+/// Dart.
 ///
 /// A project calls it from its entry point. The first argument is the flow
 /// name. A failure that the runner names prints its message to stderr and ends
@@ -18,13 +17,12 @@ import 'package:flutter_automation_runner/src/definition/flow_block.dart';
 /// line. The process then exits with the error exit code.
 ///
 /// The [args] parameter is the command line. The [flows] parameter holds the
-/// flows a run may ask for. The [blocks] parameter holds the blocks their
-/// variants use. The [config] parameter is the project's values, read from
+/// flows a run may ask for; the blocks their variants use come with them. The
+/// [config] parameter is the project's values, read from
 /// `pubspec.yaml` of the working directory when the caller passes none.
 Future<void> runFlows(
   List<String> args,
-  List<AutomationFlowDefinition> flows,
-  List<FlowBlock> blocks, {
+  List<AutomationFlowDefinition> flows, {
   AutomationRunnerConfig? config,
 }) async {
   try {
@@ -32,7 +30,6 @@ Future<void> runFlows(
       args,
       config: config ?? AutomationRunnerConfig.read(),
       flows: flows,
-      blocks: blocks,
     ).run();
   } on AutomationRunnerException catch (error) {
     stderr.writeln(error.message);

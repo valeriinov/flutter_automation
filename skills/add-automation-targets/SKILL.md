@@ -49,7 +49,7 @@ An element that no flow acts on gets none. Use `ByText` only where the text is
 what the walk checks: a value it just picked, a status the screen has to show.
 Copy that a flow must find in every locale is found by its locale key
 (`ByLocaleKey`, `ByLocaleKeyTooltip`). That finder matches the mark that a launch
-with `MARK_LOCALE_KEYS=true` writes into each translation string. An action
+with `ENABLE_AUTOMATION_LOCALE_KEYS=true` writes into each translation string. An action
 control still takes a target.
 
 An element that a shared widget already marks from inside (app chrome such as a

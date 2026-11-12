@@ -1,7 +1,7 @@
 import 'package:flutter_automation_runner/automation_flow_definition.dart';
 
 import 'package:example/automation/example_target.dart';
-import 'package:example/mock/catalog_mock_feature.dart';
+import 'package:example/mock/catalog_mock_section.dart';
 
 const signIn = FlowBlock(name: 'signIn', build: _buildSignInSteps);
 
@@ -18,19 +18,19 @@ final catalogFlow = AutomationFlowDefinition(
   variants: [
     FlowVariant(
       'items',
-      use: [
+      items: [
         const Use(signIn),
         const WaitFor(ByTarget(ExampleTarget.catalogList)),
       ],
-      scenario: [catalogMockFeature.profile('fullShelf')],
+      scenario: [catalogMockSection.profile('fullShelf')],
     ),
     FlowVariant(
       'empty',
-      use: [
+      items: [
         const Use(signIn),
         const WaitFor(ByTarget(ExampleTarget.catalogEmpty)),
       ],
-      scenario: [catalogMockFeature.profile('emptyShelf')],
+      scenario: [catalogMockSection.profile('emptyShelf')],
     ),
   ],
 );

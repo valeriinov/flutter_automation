@@ -1,4 +1,4 @@
-import 'package:flutter_automation_mock/mock_feature.dart';
+import 'package:flutter_automation_mock/mock_section.dart';
 
 /// {@category Utils}
 ///
@@ -19,18 +19,25 @@ final class CatalogMockSettings {
       itemCount: itemCount is int ? itemCount : _defaultItemCount,
     );
   }
+
+  /// Settings with the given values replaced.
+  CatalogMockSettings copyWith({int? itemCount}) {
+    return CatalogMockSettings(itemCount: itemCount ?? this.itemCount);
+  }
+
+  /// Section JSON of the settings.
+  Map<String, Object?> toJson() => {'itemCount': itemCount};
 }
 
 /// {@category Utils}
 ///
 /// The catalog section. The file imports no Flutter code, so a flow on the host
 /// names its profiles by Dart symbol.
-const catalogMockFeature = MockFeature<CatalogMockSettings>(
+final catalogMockSection = MockSection<CatalogMockSettings>(
   name: 'catalogSection',
   fromJson: CatalogMockSettings.fromJson,
   profiles: {
-    'emptyShelf': {'itemCount': 0},
-    'fullShelf': {'itemCount': 5},
+    'emptyShelf': (settings) => settings.copyWith(itemCount: 0),
+    'fullShelf': (settings) => settings.copyWith(itemCount: 5),
   },
-  fields: [MockField(name: 'itemCount', type: MockFieldType.integer)],
 );

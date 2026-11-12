@@ -1,7 +1,7 @@
 import 'dart:io';
 
 import 'package:flutter_automation/automation_target.dart';
-import 'package:flutter_automation_mock/mock_feature.dart';
+import 'package:flutter_automation_mock/mock_section.dart';
 
 enum _ProbeTarget with AutomationIdComposer {
   submit;
@@ -13,23 +13,31 @@ enum _ProbeTarget with AutomationIdComposer {
   String get scope => 'probe';
 }
 
-const _catalog = MockFeature<Map<String, Object?>>(
+final _catalog = MockSection<_CatalogSettings>(
   name: 'catalog',
-  fromJson: _readCatalog,
-  profiles: {
-    'empty': {'isEmpty': true},
-  },
+  fromJson: _CatalogSettings.fromJson,
+  profiles: {'empty': (settings) => _CatalogSettings(isEmpty: true)},
 );
 
-Map<String, Object?> _readCatalog(Map<String, Object?> json) => json;
+final class _CatalogSettings {
+  final bool isEmpty;
+
+  const _CatalogSettings({this.isEmpty = false});
+
+  factory _CatalogSettings.fromJson(Map<String, Object?> json) {
+    return _CatalogSettings(isEmpty: json['isEmpty'] == true);
+  }
+
+  Map<String, Object?> toJson() => {'isEmpty': isEmpty};
+}
 
 void main() {
   const AutomationTarget target = _ProbeTarget.submit;
   final scenario = MockScenario([
     _catalog.profile('empty'),
-    MockScenario.failures({'/items': {}}),
+    MockOverride.failures({'/items': {}}),
   ]);
-  final isEmpty = scenario.settingsOf(_catalog)['isEmpty'];
+  final isEmpty = scenario.settingsOf(_catalog).isEmpty;
 
   if (target.id != 'probe.button.submit' || isEmpty != true) {
     throw StateError('Unexpected probe result: ${target.id} $isEmpty');

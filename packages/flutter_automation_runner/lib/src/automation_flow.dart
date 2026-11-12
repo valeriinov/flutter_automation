@@ -43,13 +43,16 @@ final class AutomationFlow {
   /// Actions sent to the driver, in order.
   final List<AutomationStep> steps;
 
-  /// The `use` list of the variant, one entry per block and per inline step, in
-  /// the order a run walks them.
-  final List<AutomationEntry> entries;
+  /// The `items` list of the variant, one item per block and per inline step,
+  /// in the order a run walks them.
+  final List<AutomationItem> items;
 
-  /// Mock configuration that a run of the variant uses, empty when the variant
-  /// names none.
-  final Map<String, Object?> mockConfig;
+  /// Scenario that a run of the variant uses, missing when neither
+  /// the variant nor its flow names one.
+  ///
+  /// The scenario of the variant holds the whole scenario of the run. The one
+  /// of the flow applies only to a variant that names none.
+  final Map<String, Object?>? scenarioJson;
 
   /// What the journey is, in words for people, missing when the file names
   /// none.
@@ -79,8 +82,8 @@ final class AutomationFlow {
     required this.name,
     required this.variant,
     required this.steps,
-    required this.entries,
-    required this.mockConfig,
+    required this.items,
+    required this.scenarioJson,
     required this.title,
     required this.subtitle,
     required this.variantTitle,
@@ -120,13 +123,13 @@ final class AutomationFlow {
     );
     final variantSubject = 'Variant "$resolvedName" of "$name"';
     final entry = _readObject(variants[resolvedName], variantSubject);
-    final use = _readUse(name, resolvedName, entry);
+    final items = _readItems(name, resolvedName, entry);
 
     return AutomationFlow(
       name: name,
       variant: resolvedName,
       steps: blocks
-          .expand(use)
+          .expand(items)
           .map(
             (expanded) => AutomationStep.fromJson(
               expanded.step,
@@ -137,8 +140,8 @@ final class AutomationFlow {
             ),
           )
           .toList(growable: false),
-      entries: blocks.describe(use),
-      mockConfig: _mergeMockConfig(flow['mock'], entry['mock']),
+      items: blocks.describe(items),
+      scenarioJson: _readScenarioJson(flow['scenario'], entry['scenario']),
       title: AutomationLocalizedText.tryRead(flow, _titleKey, 'Flow "$name"'),
       subtitle: AutomationLocalizedText.tryRead(
         flow,
@@ -196,7 +199,7 @@ final class AutomationFlow {
     if (variants is! Map<String, Object?> || variants.isEmpty) {
       throw AutomationRunnerException(
         'Flow "$name" has no "variants" map. A flow holds one entry per way '
-        'through it, each naming the blocks it walks in a "use" list.',
+        'through it, each naming the blocks it walks in an "items" list.',
       );
     }
 
@@ -228,20 +231,20 @@ final class AutomationFlow {
     return name;
   }
 
-  static List<Object?> _readUse(
+  static List<Object?> _readItems(
     String flow,
     String variant,
     Map<String, Object?> entry,
   ) {
-    final use = entry['use'];
+    final items = entry['items'];
 
-    if (use is! List<Object?>) {
+    if (items is! List<Object?>) {
       throw AutomationRunnerException(
-        'Variant "$variant" of "$flow" has no "use" list.',
+        'Variant "$variant" of "$flow" has no "items" list.',
       );
     }
 
-    return use;
+    return items;
   }
 
   static String? _tryReadStateOf(
@@ -275,19 +278,15 @@ final class AutomationFlow {
     return name != variant && variants.containsKey(name);
   }
 
-  /// Merges the mock configuration of a variant over the one of its flow.
-  ///
-  /// The merge reaches into nested objects. A variant therefore states only the
-  /// one key it differs by, and the leaf that it names wins.
-  static Map<String, Object?> _mergeMockConfig(Object? flow, Object? variant) {
-    final base = flow is Map<String, Object?>
-        ? flow
-        : const <String, Object?>{};
-    final over = variant is Map<String, Object?>
-        ? variant
-        : const <String, Object?>{};
+  static Map<String, Object?>? _readScenarioJson(
+    Object? flow,
+    Object? variant,
+  ) {
+    if (variant is Map<String, Object?>) {
+      return variant;
+    }
 
-    return _mergeObjects(base, over);
+    return flow is Map<String, Object?> ? flow : null;
   }
 }
 
@@ -402,7 +401,7 @@ final class AutomationStep {
     required this.block,
   });
 
-  /// Reads a step out of one expanded entry of a variant's `use` list.
+  /// Reads a step out of one expanded item of a variant's `items` list.
   ///
   /// The [json] parameter is the step object, with each block parameter already
   /// substituted.
@@ -646,23 +645,4 @@ final class AutomationStep {
     // JSON `"false"` reach the app as the same command.
     return value.map((key, argument) => MapEntry(key, '$argument'));
   }
-}
-
-Map<String, Object?> _mergeObjects(
-  Map<String, Object?> base,
-  Map<String, Object?> over,
-) {
-  return {
-    ...base,
-    for (final entry in over.entries)
-      entry.key: _mergeValues(base[entry.key], entry.value),
-  };
-}
-
-Object? _mergeValues(Object? base, Object? over) {
-  if (base is Map<String, Object?> && over is Map<String, Object?>) {
-    return _mergeObjects(base, over);
-  }
-
-  return over;
 }

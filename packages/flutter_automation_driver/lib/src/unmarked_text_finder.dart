@@ -76,9 +76,10 @@ final class UnmarkedTextFinder extends FinderExtension {
 /// locale key ([LocaleKeyMarker.readKeys]). With it, a flow finds a translation
 /// by its key in each locale.
 ///
-/// The mark is in the text of a build launched with `MARK_LOCALE_KEYS`. The
-/// text variant matches an onstage [Text] or [EditableText]; the tooltip
-/// variant matches a [Tooltip] message. A host addresses them by [finderType]
+/// The mark is in the text of a build launched with
+/// `ENABLE_AUTOMATION_LOCALE_KEYS`. The text variant matches an onstage [Text]
+/// or [EditableText]; the tooltip variant matches a [Tooltip] message. A host
+/// addresses them by [finderType]
 /// with a `key` parameter.
 final class LocaleKeyFinder extends FinderExtension {
   static const _keyParameter = AutomationProtocol.keyParameter;

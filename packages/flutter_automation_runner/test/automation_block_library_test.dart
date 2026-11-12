@@ -128,7 +128,7 @@ void _automationBlockLibrary_should_describeInlineStepWithItsAction() {
 
       expect(
         described.single,
-        isA<AutomationStepEntry>()
+        isA<AutomationStepItem>()
             .having((entry) => entry.action, 'action', 'enterText')
             .having(
               (entry) => entry.title?.read('uk'),
@@ -176,7 +176,7 @@ Matcher _isBlockEntry(
   Map<String, Object?> arguments,
   String? title,
 ) {
-  return isA<AutomationBlockEntry>()
+  return isA<AutomationBlockItem>()
       .having((entry) => entry.name, 'name', name)
       .having((entry) => entry.stepCount, 'stepCount', stepCount)
       .having((entry) => entry.arguments, 'arguments', arguments)

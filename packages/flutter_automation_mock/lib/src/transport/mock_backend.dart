@@ -9,7 +9,7 @@ import 'package:flutter_automation_mock/src/transport/mock_latency.dart';
 /// A project implements it over its own mock state. The transport reads through
 /// it on each request. The project can therefore replace what it answers with,
 /// without a rebuild of the HTTP clients that hold the transport.
-abstract interface class MockTransportRuntime {
+abstract interface class MockBackend {
   /// Endpoints that the transport answers a path through.
   MockApiEndpointResolver get endpointResolver;
 

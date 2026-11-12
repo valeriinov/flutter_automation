@@ -5,7 +5,7 @@ import 'dart:typed_data';
 
 import 'package:collection/collection.dart';
 import 'package:flutter_automation_driver/flutter_automation_driver.dart';
-import 'package:flutter_automation_mock/mock_feature.dart';
+import 'package:flutter_automation_mock/mock_section.dart';
 import 'package:flutter_driver/flutter_driver.dart';
 import 'package:image/image.dart' as image;
 
@@ -43,20 +43,20 @@ typedef _KeyboardScreenshot = ({
 /// Walks one variant of a flow of the app in one command. It sends the steps to
 /// the app back to back and times each of them.
 ///
-/// The app must run with `--dart-define=ENABLE_FLUTTER_DRIVER=true`. The
-/// project hands its [AutomationFlowDefinition]s and [FlowBlock]s to
-/// `runFlows`. A flow holds one variant per way through its journey. The runner
-/// builds the named variant from the block library, so a whole walk costs one
-/// command instead of one command per tap.
+/// The app must run with `--dart-define=ENABLE_AUTOMATION=true`. The
+/// project hands its [AutomationFlowDefinition]s to `runFlows`. A flow holds
+/// one variant per way through its journey. The runner builds the named
+/// variant from the block library, so a whole walk costs one command instead
+/// of one command per tap.
 ///
 /// ```shell
 /// fvm dart run <entry point> \
 ///   <flow> <variant> --uri ws://127.0.0.1:51626/token=/ws
 /// ```
 ///
-/// A variant may declare the mock configuration it needs. The runner pushes it
-/// into the app before the first step, unless the command line holds
-/// `--no-mock`. A run is therefore set up without a rebuild or an edit in Dart.
+/// A variant may declare the scenario it needs. The runner pushes it into the
+/// app before the first step, unless the command line holds `--no-scenario`. A
+/// run is therefore set up without a rebuild or an edit in Dart.
 /// `--dry-run` expands the variant and prints its resolved steps. It does not
 /// use a device. `--catalogue` prints every flow and block, before a `Use`
 /// expands, as one line of JSON. `--timeline-out <path>` writes the
@@ -82,14 +82,14 @@ final class AutomationRunner {
   static const _timelineOutOption = '--timeline-out';
   static const _dryRunFlag = '--dry-run';
   static const _catalogueFlag = '--catalogue';
-  static const _noMockFlag = '--no-mock';
+  static const _noScenarioFlag = '--no-scenario';
   static const _captureOption = '--capture';
   static const _systemKeyboardFlag = '--system-keyboard';
   static const _localeOption = '--locale';
   static const _uriCachePath = '.dart_tool/automation_runner_uri';
   static const _ledgerPath = '.dart_tool/automation_runner_runs.jsonl';
-  static const _mockApplyCommand = MockCommands.apply;
-  static const _localeApplyCommand = MockCommands.localeApply;
+  static const _scenarioApplyCommand = MockCommands.scenarioApply;
+  static const _localeApplyCommand = AutomationProtocol.localeApplyCommand;
   static const _screenReadCommand = AutomationProtocol.screenReadCommand;
   static const _journalReadCommand = MockCommands.journalRead;
   static const _keyboardReadCommand = AutomationProtocol.keyboardReadCommand;
@@ -125,16 +125,18 @@ final class AutomationRunner {
        _stages = AutomationCaptureStages.fromArgs(args),
        _timelineOutPath = _tryReadTimelineOutPath(args);
 
-  /// Creates a runner over flows and blocks written in Dart.
+  /// Creates a runner over flows written in Dart.
+  ///
+  /// The blocks of the runner are the ones that the `Use` items of the variants
+  /// name. Two blocks that share a name and differ in their JSON end the run
+  /// with an [AutomationRunnerException].
   ///
   /// The [args] parameter is the command line. The [config] parameter is the
   /// project's values. The [flows] parameter holds the flows a run may ask for.
-  /// The [blocks] parameter holds the blocks their variants use.
   factory AutomationRunner.fromDefinitions(
     List<String> args, {
     required AutomationRunnerConfig config,
     required List<AutomationFlowDefinition> flows,
-    required List<FlowBlock> blocks,
   }) {
     return AutomationRunner(
       args,
@@ -144,7 +146,9 @@ final class AutomationRunner {
         'flow',
       ),
       blocks: _indexByName(
-        blocks.map((block) => (name: block.name, json: block.toJson())),
+        _collectBlocks(
+          flows,
+        ).map((block) => (name: block.name, json: block.toJson())),
         'block',
       ),
     );
@@ -155,8 +159,32 @@ final class AutomationRunner {
   /// The [uri] parameter is the Dart VM Service uri that refused.
   static String describeHotRestartRefusal(String uri) {
     return 'No flutter run answers hotRestart at $uri, so the app cannot '
-        'launch on the mock configuration of the variant. Relaunch it with '
+        'launch on the scenario of the variant. Relaunch it with '
         'flutter run and pass the new uri with $_uriOption.';
+  }
+
+  static Iterable<FlowBlock> _collectBlocks(
+    List<AutomationFlowDefinition> flows,
+  ) {
+    final blocks = flows
+        .expand((flow) => flow.variants)
+        .expand((variant) => variant.items)
+        .whereType<Use>()
+        .map((item) => item.block);
+    final collected = <FlowBlock>[];
+
+    for (final block in blocks) {
+      if (!collected.any((other) => _isSameBlock(other, block))) {
+        collected.add(block);
+      }
+    }
+
+    return collected;
+  }
+
+  static bool _isSameBlock(FlowBlock first, FlowBlock second) {
+    return first.name == second.name &&
+        const DeepCollectionEquality().equals(first.toJson(), second.toJson());
   }
 
   static Map<String, Object?> _indexByName(
@@ -180,14 +208,14 @@ final class AutomationRunner {
 
   bool get _showsSystemKeyboard => args.contains(_systemKeyboardFlag);
 
-  bool _appliesMock(AutomationFlow flow) {
-    return flow.mockConfig.isNotEmpty && !args.contains(_noMockFlag);
+  bool _appliesScenario(AutomationFlow flow) {
+    return flow.scenarioJson != null && !args.contains(_noScenarioFlag);
   }
 
   String get _usage =>
       'usage: <runner> <flow> [variant] '
       '[$_uriOption <dart vm service uri>] [$_timelineOutOption <path>] '
-      '[$_dryRunFlag] [$_catalogueFlag] [$_noMockFlag] '
+      '[$_dryRunFlag] [$_catalogueFlag] [$_noScenarioFlag] '
       '[$_captureOption <directory> '
       '[${AutomationCaptureStages.shootOption} <stage,stage>] '
       '[${AutomationCaptureStages.untilOption} <stage>]] '
@@ -235,10 +263,10 @@ final class AutomationRunner {
             variant: flow.variant,
           );
 
-    final setupMs = await _applyMockConfig(launchDriver, flow);
+    final setupMs = await _applyScenario(launchDriver, flow);
 
-    final driver = _appliesMock(flow)
-        ? await _relaunchOnMockConfig(launchDriver, uri)
+    final driver = _appliesScenario(flow)
+        ? await _relaunchOnScenario(launchDriver, uri)
         : launchDriver;
 
     if (locale != null) {
@@ -392,7 +420,8 @@ final class AutomationRunner {
         'dryRun': true,
         'entry': ?flow.entry?.toJson(),
         'stateOf': ?flow.stateOf,
-        'mock': _appliesMock(flow) ? flow.mockConfig : const {},
+        'scenario': _appliesScenario(flow) ? flow.scenarioJson : const {},
+        'appliesScenario': _appliesScenario(flow),
         'steps': flow.steps.map(_reportDryRunStep).toList(),
       }),
     );
@@ -490,7 +519,7 @@ final class AutomationRunner {
     } on Object catch (error) {
       throw AutomationRunnerException(
         'No drivable app at $uri: $error\n'
-        'Relaunch it with --dart-define=ENABLE_FLUTTER_DRIVER=true, then pass '
+        'Relaunch it with --dart-define=ENABLE_AUTOMATION=true, then pass '
         'the new uri with $_uriOption.',
       );
     }
@@ -584,16 +613,15 @@ final class AutomationRunner {
     return number;
   }
 
-  /// Pushes the mock configuration of the variant into the app.
+  /// Pushes the scenario of the variant into the app.
   ///
   /// Returns the milliseconds it cost. It returns zero when the variant names
-  /// no configuration, and the run then walks the app in whatever state it
+  /// no scenario, and the run then walks the app in whatever state it
   /// launched in.
-  Future<int> _applyMockConfig(
-    FlutterDriver driver,
-    AutomationFlow flow,
-  ) async {
-    if (!_appliesMock(flow)) {
+  Future<int> _applyScenario(FlutterDriver driver, AutomationFlow flow) async {
+    final scenarioJson = flow.scenarioJson;
+
+    if (scenarioJson == null || !_appliesScenario(flow)) {
       return 0;
     }
 
@@ -601,7 +629,10 @@ final class AutomationRunner {
 
     try {
       final answer = await driver.requestData(
-        jsonEncode({'command': _mockApplyCommand, 'config': flow.mockConfig}),
+        jsonEncode({
+          'command': _scenarioApplyCommand,
+          'scenario': scenarioJson,
+        }),
       );
 
       watch.stop();
@@ -610,21 +641,21 @@ final class AutomationRunner {
       return watch.elapsedMilliseconds;
     } on Object catch (error) {
       throw AutomationRunnerException(
-        'The app refused the mock configuration of ${flow.id}: $error\n'
-        'A variant naming a "mock" block needs an app that answers '
-        '$_mockApplyCommand$_launchClause.',
+        'The app refused the scenario of ${flow.id}: $error\n'
+        'A variant naming a scenario needs an app that answers '
+        '$_scenarioApplyCommand$_launchClause.',
       );
     }
   }
 
-  /// Restarts the app so that it launches on the mock configuration just
+  /// Restarts the app so that it launches on the scenario just
   /// applied. Then it connects to the restarted app.
   ///
   /// The app reads its session, and the link and the push that opened it, once,
-  /// on launch. `mock.apply` saves the configuration that the next launch seeds
+  /// on launch. `scenario.apply` saves the scenario that the next launch seeds
   /// from. The restart is the `hotRestart` method that `flutter run` registers
   /// on the app's websocket.
-  Future<FlutterDriver> _relaunchOnMockConfig(
+  Future<FlutterDriver> _relaunchOnScenario(
     FlutterDriver driver,
     String uri,
   ) async {
@@ -733,7 +764,7 @@ final class AutomationRunner {
     }
 
     throw AutomationRunnerException(
-      'The app restarted on the mock configuration but logged no screen past '
+      'The app restarted on the scenario but logged no screen past '
       'the splash within ${_relaunchTimeout.inSeconds} s.',
     );
   }
@@ -755,7 +786,7 @@ final class AutomationRunner {
     }
 
     throw AutomationRunnerException(
-      'The app restarted on the mock configuration but registered no driver '
+      'The app restarted on the scenario but registered no driver '
       'within ${_relaunchTimeout.inSeconds} s.',
     );
   }
@@ -763,15 +794,19 @@ final class AutomationRunner {
   Future<void> _applyLocale(FlutterDriver driver, String locale) async {
     try {
       final answer = await driver.requestData(
-        jsonEncode({'command': _localeApplyCommand, 'locale': locale}),
+        jsonEncode({
+          'command': _localeApplyCommand,
+          AutomationProtocol.localeKey: locale,
+        }),
       );
 
       stderr.writeln('ok   locale $answer');
     } on Object catch (error) {
       throw AutomationRunnerException(
         'The app refused the locale "$locale": $error\n'
-        'The $_localeOption option needs an app that answers '
-        '$_localeApplyCommand$_launchClause.',
+        'The $_localeOption option needs an app that passes a localeApplier '
+        'to AutomationInstaller.maybeInstall, which registers '
+        '$_localeApplyCommand.',
       );
     }
   }
@@ -971,22 +1006,19 @@ final class AutomationRunner {
     required bool shouldMeasureTarget,
   }) async {
     try {
-      final answer = await _readJournal(
+      final journal = await _readJournal(driver);
+      final screen = await _readScreen(
         driver,
         shouldReadTexts: true,
         shouldReadWidgets: true,
       );
 
       return {
-        'journalBeforeAction': shouldKeepRecords ? answer.records : const [],
-        'texts': answer.texts,
-        'widgets': answer.widgets,
+        'journalBeforeAction': shouldKeepRecords ? journal.records : const [],
+        'texts': screen.texts,
+        'widgets': screen.widgets,
         if (shouldMeasureTarget)
-          ...await _captureTargetRect(
-            driver,
-            step,
-            (await _readScreen(driver)).view,
-          ),
+          ...await _captureTargetRect(driver, step, screen.view),
       };
     } on Object catch (error) {
       stderr.writeln('fail capture  ${step.label}');
@@ -1056,12 +1088,13 @@ final class AutomationRunner {
     required bool shouldKeepRecords,
   }) async {
     try {
-      final answer = await _readJournal(driver, shouldReadTexts: true);
+      final journal = await _readJournal(driver);
+      final screen = await _readScreen(driver, shouldReadTexts: true);
 
       return {
-        'journal': shouldKeepRecords ? answer.records : const [],
-        'screen': (await _readScreen(driver)).screen,
-        'textsAfterStep': answer.texts,
+        'journal': shouldKeepRecords ? journal.records : const [],
+        'screen': screen.screen,
+        'textsAfterStep': screen.texts,
       };
     } on Object catch (error) {
       stderr.writeln('fail capture  ${step.label}');
@@ -1225,16 +1258,17 @@ final class AutomationRunner {
 
   Future<Map<String, Object?>> _captureEndJournal(FlutterDriver driver) async {
     try {
-      final answer = await _readJournal(
+      final journal = await _readJournal(driver);
+      final screen = await _readScreen(
         driver,
         shouldReadTexts: true,
         shouldReadWidgets: true,
       );
 
       return {
-        'endJournal': answer.records,
-        'endTexts': answer.texts,
-        'endWidgets': answer.widgets,
+        'endJournal': journal.records,
+        'endTexts': screen.texts,
+        'endWidgets': screen.widgets,
       };
     } on Object catch (error) {
       stderr.writeln('fail capture  end journal');
@@ -1243,26 +1277,26 @@ final class AutomationRunner {
     }
   }
 
-  Future<AutomationScreenAnswer> _readScreen(FlutterDriver driver) async {
-    final response = await driver.requestData(
-      jsonEncode({'command': _screenReadCommand}),
-    );
-
-    return AutomationScreenAnswer.fromJson(jsonDecode(response));
-  }
-
-  /// The app empties its journal on every read.
-  Future<AutomationJournalAnswer> _readJournal(
+  Future<AutomationScreenAnswer> _readScreen(
     FlutterDriver driver, {
     bool shouldReadTexts = false,
     bool shouldReadWidgets = false,
   }) async {
     final response = await driver.requestData(
       jsonEncode({
-        'command': _journalReadCommand,
-        if (shouldReadTexts) 'texts': true,
-        if (shouldReadWidgets) 'widgets': true,
+        'command': _screenReadCommand,
+        if (shouldReadTexts) AutomationProtocol.textsKey: true,
+        if (shouldReadWidgets) AutomationProtocol.widgetsKey: true,
       }),
+    );
+
+    return AutomationScreenAnswer.fromJson(jsonDecode(response));
+  }
+
+  /// The app empties its journal on every read.
+  Future<AutomationJournalAnswer> _readJournal(FlutterDriver driver) async {
+    final response = await driver.requestData(
+      jsonEncode({'command': _journalReadCommand}),
     );
 
     return AutomationJournalAnswer.fromJson(jsonDecode(response));
@@ -1554,7 +1588,7 @@ final class AutomationRunner {
 
     _frames = AutomationFrameSummary(
       timeline,
-      goalMillis: config.frameGoalMs,
+      goalMillis: config.frameBudgetMs,
     ).toReport();
 
     _maybeWriteTimeline(timeline);

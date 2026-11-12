@@ -81,11 +81,11 @@ If `pubspec.yaml` has no top-level `flutter_automation:` key, append:
 ```yaml
 flutter_automation:
   defaultLocale: en
-  launchHint: --dart-define=ENABLE_FLUTTER_DRIVER=true
+  launchHint: --dart-define=ENABLE_AUTOMATION=true
 ```
 
 With the mock, the launch hint also names the define that turns the mock on (step
-7). The runner reads the keys `defaultLocale`, `dateFormats`, `frameGoalMs`,
+7). The runner reads the keys `defaultLocale`, `dateFormats`, `frameBudgetMs`,
 `splashScreen`, `launchHint` and `finders`. Add a key only when the project needs
 it.
 
@@ -101,11 +101,18 @@ AutomationInstaller.maybeInstall(screenReader: () => null);
 ```
 
 `maybeInstall` does nothing unless the app runs with
-`--dart-define=ENABLE_FLUTTER_DRIVER=true`, and a release build never enables it.
+`--dart-define=ENABLE_AUTOMATION=true`, and a release build never enables it.
 That define is the flag. Keep the import with the other imports of the file. `main`
 may stay synchronous in this step: step 7 turns it into `Future<void> main() async`.
-Skip the step when `AutomationInstaller` is already in the file. The `screenReader` can answer `{AutomationProtocol.screenNameKey: <name>}`
-when the project tracks the current screen name; `null` is valid.
+Skip the step when `AutomationInstaller` is already in the file. The
+`screenReader` can answer `{AutomationProtocol.screenNameKey: <name>}` when the
+project tracks the current screen name; `null` is valid.
+
+The optional `localeApplier` parameter lets the `--locale` option of the runner
+set the language of the app. It needs no mock. Pass a function that takes a
+language code and changes the language of the project, for example
+`localeApplier: (languageCode) => setAppLanguage(languageCode)`. Add it only when
+the project has such a function.
 
 ## 5. Declare the first target and mark the first screen
 
@@ -162,7 +169,7 @@ final homeFlow = AutomationFlowDefinition(
   variants: [
     FlowVariant(
       'counterIncreases',
-      use: [
+      items: [
         const WaitFor(ByTarget(HomeTarget.root)),
         const Tap(ByTarget(HomeTarget.increment)),
         const WaitFor(ByText('1')),
@@ -179,7 +186,7 @@ import 'package:flutter_automation_runner/flutter_automation_runner.dart';
 
 import 'flows/home_flow.dart';
 
-Future<void> main(List<String> args) => runFlows(args, [homeFlow], []);
+Future<void> main(List<String> args) => runFlows(args, [homeFlow]);
 ```
 
 Take the package name from `name:` in `pubspec.yaml`. Skip a file that exists; if
@@ -200,11 +207,12 @@ mistake in the files above: fix it before you go on. Run `fvm dart format .` and
 The parts go in `lib/automation/mock/`. Files that a flow reads import no Flutter
 code. Skip a part that exists: a second run adds nothing to `main`.
 
-1. **Settings and feature**, in `catalog_mock_feature.dart`. The file imports only
-   `mock_feature.dart`, so a flow on the host compiles it. A `MockFeature` is one
-   section of the scenario:
+1. **Settings and section**, in `catalog_mock_section.dart`. The file imports only
+   `mock_section.dart`, so a flow on the host compiles it. A `MockSection` is one
+   section of the scenario. A profile is a function over the settings, so the settings class writes the key
+   `itemCount` once:
    ```dart
-   import 'package:flutter_automation_mock/mock_feature.dart';
+   import 'package:flutter_automation_mock/mock_section.dart';
 
    /// Settings of the catalog section of the mock.
    final class CatalogMockSettings {
@@ -223,21 +231,30 @@ code. Skip a part that exists: a second run adds nothing to `main`.
          itemCount: itemCount is int ? itemCount : _defaultItemCount,
        );
      }
+
+     /// Settings with the given values replaced.
+     CatalogMockSettings copyWith({int? itemCount}) {
+       return CatalogMockSettings(itemCount: itemCount ?? this.itemCount);
+     }
+
+     /// Section JSON of the settings.
+     Map<String, Object?> toJson() => {'itemCount': itemCount};
    }
 
    /// The catalog section of the mock.
-   const catalogMockFeature = MockFeature<CatalogMockSettings>(
+   final catalogMockSection = MockSection<CatalogMockSettings>(
      name: 'catalog',
      fromJson: CatalogMockSettings.fromJson,
      profiles: {
-       'emptyShelf': {'itemCount': 0},
+       'emptyShelf': (settings) => settings.copyWith(itemCount: 0),
      },
-     fields: [MockField(name: 'itemCount', type: MockFieldType.integer)],
    );
    ```
 
-   Name the feature after a real backend area of the project, not `catalog`. A
+   Name the section after a real backend area of the project, not `catalog`. A
    project without a backend call yet names it after the first area it will call.
+   A settings class that a generator such as `freezed` writes already holds
+   `fromJson`, `toJson` and `copyWith`.
 
 2. **The switch**, in `<project>_mock_settings.dart`, a separate file: it imports
    Flutter code, so no flow imports it. One compile-time constant decides whether
@@ -255,14 +272,17 @@ code. Skip a part that exists: a second run adds nothing to `main`.
    first). `main` becomes `Future<void> main() async`. Imports:
    `package:flutter_automation_mock/flutter_automation_mock.dart`,
    `package:path_provider/path_provider.dart`, the switch file
-   `<project>_mock_settings.dart` (`isMockEnabled`) and the feature file
-   `catalog_mock_feature.dart` (`catalogMockFeature`):
+   `<project>_mock_settings.dart` (`isMockEnabled`) and the section file
+   `catalog_mock_section.dart` (`catalogMockSection`):
 
    ```dart
+   MockScenarioBackend? backend;
+
    final mock = await AutomationMock.init(
      isEnabled: isMockEnabled,
      scenarioDirectory: (await getTemporaryDirectory()).path,
-     features: [catalogMockFeature],
+     sections: isMockEnabled ? [catalogMockSection] : const [],
+     onScenarioApplied: (scenario) => backend?.rebuild(),
    );
    ```
 
@@ -279,31 +299,38 @@ code. Skip a part that exists: a second run adds nothing to `main`.
 
    dio.httpClientAdapter = mock.substitute(
      real: networkAdapter,
-     fake: (mock) => MockDioHttpClientAdapter(
-       transport: MockApiTransport(
-         runtime: <the project MockTransportRuntime>(mock),
-         journal: mock.journal,
-       ),
-       networkAdapter: networkAdapter,
-     ),
+     fake: (mock) {
+       final scenarioBackend = MockScenarioBackend(
+         readScenario: () => mock.scenario,
+         buildApis: () => [MockCatalogApi(mock)],
+         buildFailureBody: (failure) => {
+           'code': failure.errorCode,
+           'message': failure.message,
+         },
+       );
+
+       backend = scenarioBackend;
+
+       return MockDioHttpClientAdapter(
+         transport: MockApiTransport(
+           backend: scenarioBackend,
+           journal: mock.journal,
+         ),
+         networkAdapter: networkAdapter,
+       );
+     },
    );
    ```
 
-   `MockTransportRuntime` (the project implements it) holds `endpointResolver`,
-   `latency`, `failures` and `buildFailureBody`. Build `endpointResolver` from the
-   `MockApi` list of the project; `latency` and `failures` return the getters of
-   the same name on `AutomationMock`. Write three files from this shape:
-   `<project>_mock_section.dart` (the `<Project>MockSection` enum),
-   `mock_catalog_api.dart` and `<project>_mock_runtime.dart`, with
-   `<Project>` for the project name; the imports are
-   `package:flutter_automation_mock/flutter_automation_mock.dart`, the feature
-   file `catalog_mock_feature.dart` and the other two files of this part where a
-   type of theirs is used. `main` imports `<project>_mock_runtime.dart`:
+   `MockScenarioBackend` is the ready `MockBackend`. It reads the failures from
+   the scenario on each request. It builds the endpoints from `buildApis` and one
+   latency object from the scenario, and it builds them again when
+   `onScenarioApplied` calls `rebuild()`. Write one file, `mock_catalog_api.dart`,
+   from this shape. The imports are
+   `package:flutter_automation_mock/flutter_automation_mock.dart` and the section
+   file `catalog_mock_section.dart`. `main` imports `mock_catalog_api.dart`:
 
    ```dart
-   /// Sections of the mock backend.
-   enum <Project>MockSection { catalog }
-
    /// Answers the catalog endpoint from the settings of the scenario.
    final class MockCatalogApi implements MockApi {
      final AutomationMock _mock;
@@ -311,62 +338,39 @@ code. Skip a part that exists: a second run adds nothing to `main`.
      const MockCatalogApi(this._mock);
 
      @override
-     Enum get feature => <Project>MockSection.catalog;
-
-     @override
      List<MockApiEndpoint> get endpoints => [
        MockApiEndpoint(path: '/catalog/items', respond: _respondItems),
      ];
 
      MockApiResponse _respondItems(MockApiRequest request) {
-       final settings = _mock.settingsOf(catalogMockFeature);
+       final settings = _mock.settingsOf(catalogMockSection);
 
        return MockApiResponse(body: {'itemCount': settings.itemCount});
      }
    }
-
-   /// What the mock transport reads on each request, taken from the scenario.
-   final class <Project>MockRuntime implements MockTransportRuntime {
-     final AutomationMock _mock;
-
-     @override
-     final MockApiEndpointResolver endpointResolver;
-
-     <Project>MockRuntime(AutomationMock mock)
-       : _mock = mock,
-         endpointResolver = MockApiEndpointResolver([MockCatalogApi(mock)]);
-
-     @override
-     MockLatency get latency => _mock.latency;
-
-     @override
-     Map<String, MockApiFailure> get failures => _mock.failures;
-
-     @override
-     Map<String, Object?> buildFailureBody(MockApiFailure failure) {
-       return {'code': failure.errorCode, 'message': failure.message};
-     }
-   }
    ```
 
-   Read the Dartdoc of `AutomationMock`, `MockApi`
-   and `MockTransportRuntime` for more, or the `example/` app of the package
-   repository. If the app uses another
-   HTTP client, tell the user that only the Dio adapter ships and stop after
+   A project can also put its substitutes in place with one installer that runs
+   after the dependency injection. Use `mock.substitute` where the app creates the
+   object when the project has no such installer.
+
+   Read the Dartdoc of `AutomationMock`, `MockApi` and `MockBackend` for more, or
+   the `example/` app of the package repository. If the app uses another HTTP
+   client, tell the user that only the Dio adapter ships and stop after
    `AutomationMock.init`.
 
 5. Add the define of the switch to `launchHint` in `pubspec.yaml`
    (`--dart-define=ENABLE_MOCK=true`).
 
 6. Add a variant to `tool/flows/home_flow.dart` that sets the profile of part 1, so
-   the flow compiles with the feature file. Import
-   `package:<app package>/automation/mock/catalog_mock_feature.dart`:
+   the flow compiles with the section file. Import
+   `package:<app package>/automation/mock/catalog_mock_section.dart`:
 
    ```dart
    FlowVariant(
      'emptyShelf',
-     use: [const WaitFor(ByTarget(HomeTarget.root))],
-     scenario: [catalogMockFeature.profile('emptyShelf')],
+     items: [const WaitFor(ByTarget(HomeTarget.root))],
+     scenario: [catalogMockSection.profile('emptyShelf')],
    ),
    ```
 
@@ -383,11 +387,11 @@ paragraph and the bold labels. Leave a field alone when it already holds a value
 - **Flow run command**: `fvm dart run tool/run_flows.dart`
 - **Launch**: the `flutter run` arguments with the entry point (`-t lib/main.dart`
   when the project has no other), the flavor if any and
-  `--dart-define=ENABLE_FLUTTER_DRIVER=true`, plus the mock define when step 7 ran
+  `--dart-define=ENABLE_AUTOMATION=true`, plus the mock define when step 7 ran
 - **Flows folder**: `tool/flows`
 - **Targets folder**: `lib/automation/targets`
-- **Mock configuration file**: the file of step 7 that declares the `MockFeature`
-  (`lib/automation/mock/catalog_mock_feature.dart`), or `none`
+- **Mock configuration file**: the file of step 7 that declares the `MockSection`
+  (`lib/automation/mock/catalog_mock_section.dart`), or `none`
 - **Default flow**: `home`
 - **After an edit**: `fvm dart format . && fvm dart analyze`
 - **Post-edit steps**: `none`
@@ -406,7 +410,7 @@ fvm dart run tool/run_flows.dart home counterIncreases 2>/dev/null
 ```
 
 With the mock, walk the `emptyShelf` variant too. It builds the flow with the
-feature file and applies the profile:
+section file and applies the profile:
 
 ```shell
 fvm dart run tool/run_flows.dart home emptyShelf 2>/dev/null

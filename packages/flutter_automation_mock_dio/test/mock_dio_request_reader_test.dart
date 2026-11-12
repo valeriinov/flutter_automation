@@ -24,7 +24,7 @@ const _fileUrl =
 final _bytes = Uint8List.fromList(const [1, 2, 3]);
 
 void main() {
-  group('MockDioRequest Tests', () {
+  group('MockDioRequestReader Tests', () {
     _mockDioRequest_should_readThePathRelativeToTheBaseUrl();
     _mockDioRequest_should_keepThePathWhenTheBaseUrlHasNoPath();
     _mockDioRequest_should_readTheTrailingId();
@@ -44,28 +44,34 @@ void main() {
 }
 
 void _mockDioRequest_should_readThePathRelativeToTheBaseUrl() {
-  test('MockDioRequest should read the path relative to the base url', () {
-    final request = MockDioRequest.read(
-      _createOptions(baseUrl: _baseUrl, path: _textPath),
-    );
+  test(
+    'MockDioRequestReader should read the path relative to the base url',
+    () {
+      final request = MockDioRequestReader.read(
+        _createOptions(baseUrl: _baseUrl, path: _textPath),
+      );
 
-    expect(request.path, _textPath);
-  });
+      expect(request.path, _textPath);
+    },
+  );
 }
 
 void _mockDioRequest_should_keepThePathWhenTheBaseUrlHasNoPath() {
-  test('MockDioRequest should keep the path when the base url has no path', () {
-    final request = MockDioRequest.read(
-      _createOptions(baseUrl: _rootBaseUrl, path: _textPath),
-    );
+  test(
+    'MockDioRequestReader should keep the path when the base url has no path',
+    () {
+      final request = MockDioRequestReader.read(
+        _createOptions(baseUrl: _rootBaseUrl, path: _textPath),
+      );
 
-    expect(request.path, _textPath);
-  });
+      expect(request.path, _textPath);
+    },
+  );
 }
 
 void _mockDioRequest_should_readTheTrailingId() {
-  test('MockDioRequest should read the trailing id', () {
-    final request = MockDioRequest.read(
+  test('MockDioRequestReader should read the trailing id', () {
+    final request = MockDioRequestReader.read(
       _createOptions(baseUrl: _baseUrl, path: '$_endpointPath/$_itemId'),
     );
 
@@ -75,9 +81,9 @@ void _mockDioRequest_should_readTheTrailingId() {
 
 void _mockDioRequest_should_leaveThePathIdNullWithoutATrailingNumber() {
   test(
-    'MockDioRequest should leave the path id null without a trailing number',
+    'MockDioRequestReader should leave the path id null without a number',
     () {
-      final request = MockDioRequest.read(
+      final request = MockDioRequestReader.read(
         _createOptions(baseUrl: _baseUrl, path: _endpointPath),
       );
 
@@ -87,8 +93,8 @@ void _mockDioRequest_should_leaveThePathIdNullWithoutATrailingNumber() {
 }
 
 void _mockDioRequest_should_readAMapBody() {
-  test('MockDioRequest should read a map body', () {
-    final request = MockDioRequest.read(
+  test('MockDioRequestReader should read a map body', () {
+    final request = MockDioRequestReader.read(
       _createOptions(
         baseUrl: _baseUrl,
         path: _endpointPath,
@@ -101,18 +107,25 @@ void _mockDioRequest_should_readAMapBody() {
 }
 
 void _mockDioRequest_should_leaveTheBodyEmptyWithoutAMapPayload() {
-  test('MockDioRequest should leave the body empty without a map payload', () {
-    final request = MockDioRequest.read(
-      _createOptions(baseUrl: _baseUrl, path: _endpointPath, data: _bodyValue),
-    );
+  test(
+    'MockDioRequestReader should leave the body empty without a map payload',
+    () {
+      final request = MockDioRequestReader.read(
+        _createOptions(
+          baseUrl: _baseUrl,
+          path: _endpointPath,
+          data: _bodyValue,
+        ),
+      );
 
-    expect(request.body, isEmpty);
-  });
+      expect(request.body, isEmpty);
+    },
+  );
 }
 
 void _mockDioRequest_should_readTheQueryParameters() {
-  test('MockDioRequest should read the query parameters', () {
-    final request = MockDioRequest.read(
+  test('MockDioRequestReader should read the query parameters', () {
+    final request = MockDioRequestReader.read(
       _createOptions(
         baseUrl: _baseUrl,
         path: _endpointPath,
@@ -125,21 +138,18 @@ void _mockDioRequest_should_readTheQueryParameters() {
 }
 
 void _mockDioRequest_should_leaveTheQueryParametersEmptyWithoutAQuery() {
-  test(
-    'MockDioRequest should leave the query parameters empty without a query',
-    () {
-      final request = MockDioRequest.read(
-        _createOptions(baseUrl: _baseUrl, path: _endpointPath),
-      );
+  test('MockDioRequestReader should leave the query empty without a query', () {
+    final request = MockDioRequestReader.read(
+      _createOptions(baseUrl: _baseUrl, path: _endpointPath),
+    );
 
-      expect(request.queryParameters, isEmpty);
-    },
-  );
+    expect(request.queryParameters, isEmpty);
+  });
 }
 
 void _mockDioRequest_should_readAStringTrailingSegment() {
-  test('MockDioRequest should read a string trailing segment', () {
-    final request = MockDioRequest.read(
+  test('MockDioRequestReader should read a string trailing segment', () {
+    final request = MockDioRequestReader.read(
       _createOptions(baseUrl: _baseUrl, path: '$_endpointPath/$_attachmentId'),
     );
 
@@ -149,8 +159,8 @@ void _mockDioRequest_should_readAStringTrailingSegment() {
 }
 
 void _mockDioRequest_should_readTheFullPathOfAnAbsoluteUrl() {
-  test('MockDioRequest should read the full path of an absolute url', () {
-    final request = MockDioRequest.read(
+  test('MockDioRequestReader should read the full path of an absolute url', () {
+    final request = MockDioRequestReader.read(
       _createOptions(baseUrl: '', path: _fileUrl),
     );
 
@@ -159,8 +169,8 @@ void _mockDioRequest_should_readTheFullPathOfAnAbsoluteUrl() {
 }
 
 void _mockDioRequest_should_readTheQueryWrittenIntoTheUrl() {
-  test('MockDioRequest should read the query written into the url', () {
-    final request = MockDioRequest.read(
+  test('MockDioRequestReader should read the query written into the url', () {
+    final request = MockDioRequestReader.read(
       _createOptions(
         baseUrl: _baseUrl,
         path: '$_endpointPath/$_attachmentId?$_variantKey=$_variantValue',
@@ -177,8 +187,8 @@ void _mockDioRequest_should_readTheQueryWrittenIntoTheUrl() {
 }
 
 void _mockDioRequest_should_keepTheBytesItIsGiven() {
-  test('MockDioRequest should keep the bytes it is given', () {
-    final request = MockDioRequest.read(
+  test('MockDioRequestReader should keep the bytes it is given', () {
+    final request = MockDioRequestReader.read(
       _createOptions(baseUrl: '', path: _fileUrl, data: _bytes),
       bytes: _bytes,
     );
@@ -189,8 +199,8 @@ void _mockDioRequest_should_keepTheBytesItIsGiven() {
 }
 
 void _mockDioRequest_should_readTheAcceptLanguageHeader() {
-  test('MockDioRequest should read the accept language header', () {
-    final request = MockDioRequest.read(
+  test('MockDioRequestReader should read the accept language header', () {
+    final request = MockDioRequestReader.read(
       _createOptions(
         baseUrl: _baseUrl,
         path: _textPath,
@@ -204,9 +214,9 @@ void _mockDioRequest_should_readTheAcceptLanguageHeader() {
 
 void _mockDioRequest_should_leaveTheAcceptLanguageNullWithoutTheHeader() {
   test(
-    'MockDioRequest should leave the accept language null without the header',
+    'MockDioRequestReader should leave the language null without the header',
     () {
-      final request = MockDioRequest.read(
+      final request = MockDioRequestReader.read(
         _createOptions(baseUrl: _baseUrl, path: _textPath),
       );
 
@@ -216,8 +226,8 @@ void _mockDioRequest_should_leaveTheAcceptLanguageNullWithoutTheHeader() {
 }
 
 void _mockDioRequest_should_readTheMethod() {
-  test('MockDioRequest should read the method', () {
-    final request = MockDioRequest.read(
+  test('MockDioRequestReader should read the method', () {
+    final request = MockDioRequestReader.read(
       _createOptions(baseUrl: _baseUrl, path: _textPath, method: _putMethod),
     );
 

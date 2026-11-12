@@ -8,24 +8,29 @@ import 'package:path_provider/path_provider.dart';
 import 'package:example/automation/screen_name_observer.dart';
 import 'package:example/catalog/catalog_api.dart';
 import 'package:example/example_app.dart';
-import 'package:example/mock/catalog_mock_feature.dart';
-import 'package:example/mock/example_mock_runtime.dart';
+import 'package:example/mock/catalog_mock_section.dart';
+import 'package:example/mock/mock_catalog_api.dart';
 import 'package:example/mock/example_mock_settings.dart';
 
 Future<void> main() async {
   final screenNameObserver = ScreenNameObserver();
+  final locale = ValueNotifier(const Locale('en'));
 
   AutomationInstaller.maybeInstall(
     screenReader: () => {
       AutomationProtocol.screenNameKey: screenNameObserver.screenName,
     },
+    localeApplier: (languageCode) => locale.value = Locale(languageCode),
   );
   WidgetsFlutterBinding.ensureInitialized();
+
+  MockScenarioBackend? backend;
 
   final mock = await AutomationMock.init(
     isEnabled: isMockEnabled,
     scenarioDirectory: (await getTemporaryDirectory()).path,
-    features: [catalogMockFeature],
+    sections: isMockEnabled ? [catalogMockSection] : const [],
+    onScenarioApplied: (scenario) => backend?.rebuild(),
   );
 
   final dio = Dio(BaseOptions(baseUrl: 'https://api.example.test'));
@@ -33,19 +38,33 @@ Future<void> main() async {
 
   dio.httpClientAdapter = mock.substitute(
     real: networkAdapter,
-    fake: (mock) => MockDioHttpClientAdapter(
-      transport: MockApiTransport(
-        runtime: ExampleMockRuntime(mock),
-        journal: mock.journal,
-      ),
-      networkAdapter: networkAdapter,
-    ),
+    fake: (mock) {
+      final scenarioBackend = MockScenarioBackend(
+        readScenario: () => mock.scenario,
+        buildApis: () => [MockCatalogApi(mock)],
+        buildFailureBody: (failure) => {
+          'code': failure.errorCode,
+          'message': failure.message,
+        },
+      );
+
+      backend = scenarioBackend;
+
+      return MockDioHttpClientAdapter(
+        transport: MockApiTransport(
+          backend: scenarioBackend,
+          journal: mock.journal,
+        ),
+        networkAdapter: networkAdapter,
+      );
+    },
   );
 
   runApp(
     ExampleApp(
       catalogApi: CatalogApi(dio),
       screenNameObserver: screenNameObserver,
+      locale: locale,
     ),
   );
 }

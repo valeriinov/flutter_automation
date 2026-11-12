@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
 import 'package:example/automation/screen_name_observer.dart';
@@ -9,22 +10,28 @@ import 'package:example/login_screen.dart';
 class ExampleApp extends StatelessWidget {
   final CatalogApi catalogApi;
   final ScreenNameObserver screenNameObserver;
+  final ValueListenable<Locale> locale;
 
   const ExampleApp({
     super.key,
     required this.catalogApi,
     required this.screenNameObserver,
+    required this.locale,
   });
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Example',
-      navigatorObservers: [screenNameObserver],
-      initialRoute: LoginScreen.routeName,
-      onGenerateRoute: (settings) => MaterialPageRoute<void>(
-        settings: settings,
-        builder: (context) => _buildScreen(context, settings.name),
+    return ValueListenableBuilder<Locale>(
+      valueListenable: locale,
+      builder: (context, value, _) => MaterialApp(
+        title: 'Example',
+        locale: value,
+        navigatorObservers: [screenNameObserver],
+        initialRoute: LoginScreen.routeName,
+        onGenerateRoute: (settings) => MaterialPageRoute<void>(
+          settings: settings,
+          builder: (context) => _buildScreen(context, settings.name),
+        ),
       ),
     );
   }

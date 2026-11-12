@@ -8,7 +8,7 @@ and the build switches. Every other package builds on it.
 | Import | Host-safe | Holds |
 | --- | --- | --- |
 | `package:flutter_automation/automation_target.dart` | Yes, no Flutter import | `AutomationTarget`, `AutomationTargetType`, `AutomationIdComposer`, `AutomationTimelineLabel`. |
-| `package:flutter_automation/flutter_automation.dart` | No, imports Flutter | Everything above, plus `automationTarget()`, `AutomationSettings`, `AutomationCommandHandler`, `AutomationTimeline`, `LocaleKeyMarker`. |
+| `package:flutter_automation/flutter_automation.dart` | No, imports Flutter | Everything above, plus `automationTarget()`, `AutomationSettings`, `AutomationCommandRegistry`, `AutomationCommandHandler`, `AutomationTimeline`, `LocaleKeyMarker`. |
 
 "Host-safe" means a program in the plain Dart VM can import the library. A flow
 and the target enums it reads import only `automation_target.dart`.
@@ -58,10 +58,10 @@ release build.
 
 | Constant | Define | Effect |
 | --- | --- | --- |
-| `isEnabled` | `ENABLE_FLUTTER_DRIVER` | Master switch. |
+| `isEnabled` | `ENABLE_AUTOMATION` | Master switch. |
 | `isSemanticsEnabled` | `ENABLE_AUTOMATION_SEMANTICS` (default true) | Raises the semantics tree. |
 | `isFrameProfilingEnabled` | `ENABLE_AUTOMATION_FRAME_PROFILING` | Names widgets and render objects in traced frames. |
-| `isLocaleKeyMarkingEnabled` | `MARK_LOCALE_KEYS` | A translation string carries the mark of its key. |
+| `isLocaleKeyMarkingEnabled` | `ENABLE_AUTOMATION_LOCALE_KEYS` | A translation string carries the mark of its key. |
 
 ### Commands
 
@@ -69,10 +69,13 @@ A subsystem registers what the app answers. `flutter_automation_mock` and
 `flutter_automation_driver` use it.
 
 ```dart
-AutomationCommandHandler.register('echo', (payload) async => '"${payload['text']}"');
+AutomationCommandRegistry.register(
+  'echo',
+  (payload) async => '"${payload['text']}"',
+);
 ```
 
-An `AutomationCommand` takes the decoded JSON payload and returns a JSON string.
+An `AutomationCommandHandler` takes the decoded JSON payload and returns a JSON string.
 A command that nothing registered throws, so a run fails before its first step.
 
 ### Timeline spans

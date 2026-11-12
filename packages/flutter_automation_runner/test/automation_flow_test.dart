@@ -129,7 +129,7 @@ void main() {
 void _automationFlow_should_carryBlockAndTargetOnSteps() {
   test('AutomationFlow should carry block and target on steps', () {
     final flow = _readFlow(
-      use: [
+      items: [
         {
           'block': _openBlock,
           'with': {'author': 'John Doe'},
@@ -149,7 +149,7 @@ void _automationFlow_should_carryBlockAndTargetOnSteps() {
 void _automationFlow_should_readFlowAndVariantTexts() {
   test('AutomationFlow should read flow and variant texts', () {
     final flow = _readFlow(
-      use: [_openBlock],
+      items: [_openBlock],
       flowFields: {'title': _title, 'subtitle': _subtitle},
       variantFields: {'title': _variantTitle, 'proves': _proves},
     );
@@ -166,9 +166,9 @@ void _automationFlow_should_readFlowAndVariantTexts() {
 }
 
 void _automationFlow_should_describeEntriesOfUseList() {
-  test('AutomationFlow should describe entries of use list', () {
+  test('AutomationFlow should describe items of items list', () {
     final flow = _readFlow(
-      use: [
+      items: [
         {
           'block': _openBlock,
           'with': {'author': 'John Doe'},
@@ -182,8 +182,8 @@ void _automationFlow_should_describeEntriesOfUseList() {
     );
 
     expect(
-      flow.entries.first,
-      isA<AutomationBlockEntry>()
+      flow.items.first,
+      isA<AutomationBlockItem>()
           .having((entry) => entry.name, 'name', _openBlock)
           .having((entry) => entry.stepCount, 'stepCount', 1)
           .having((entry) => entry.arguments, 'arguments', {
@@ -196,8 +196,8 @@ void _automationFlow_should_describeEntriesOfUseList() {
           ),
     );
     expect(
-      flow.entries.last,
-      isA<AutomationStepEntry>()
+      flow.items.last,
+      isA<AutomationStepItem>()
           .having((entry) => entry.action, 'action', 'enterText')
           .having((entry) => entry.title?.read('uk'), 'title', 'Ввести адресу'),
     );
@@ -208,7 +208,7 @@ void _automationFlow_should_rejectMalformedProvesNamingVariant() {
   test('AutomationFlow should reject malformed proves naming variant', () {
     expect(
       () => _readFlow(
-        use: [_openBlock],
+        items: [_openBlock],
         variantFields: {'proves': 'The shopper picks a basket.'},
       ),
       _throwsRunnerException(
@@ -222,7 +222,7 @@ void _automationFlow_should_rejectFlowTitleWithBlankLanguage() {
   test('AutomationFlow should reject flow title with blank language', () {
     expect(
       () => _readFlow(
-        use: [_openBlock],
+        items: [_openBlock],
         flowFields: {
           'title': {'en': 'Shopper checks out a basket', 'uk': ' '},
         },
@@ -237,7 +237,7 @@ void _automationFlow_should_substituteBlockArgumentsInsideStepTitle() {
     'AutomationFlow should substitute block arguments inside step title',
     () {
       final flow = _readFlow(
-        use: [
+        items: [
           {
             'block': _openBlock,
             'with': {'author': 'John Doe'},
@@ -254,7 +254,7 @@ void _automationFlow_should_substituteBlockArgumentsInsideStepTitle() {
 
 void _automationStep_should_reportBlockAndTarget() {
   test('AutomationStep should report block and target', () {
-    final step = _readFlow(use: [_openBlock]).steps.first;
+    final step = _readFlow(items: [_openBlock]).steps.first;
     final report = step.toReport();
 
     expect(report, {
@@ -327,7 +327,7 @@ void _automationStep_should_readTitleOfInlineStep() {
 
 void _automationStep_should_leaveTitleOutOfReport() {
   test('AutomationStep should leave title out of report', () {
-    final step = _readFlow(use: [_openBlock]).steps.first;
+    final step = _readFlow(items: [_openBlock]).steps.first;
     final report = step.toReport();
 
     expect(step.title, isNotNull);
@@ -480,7 +480,7 @@ void _automationStep_should_rejectPerLocaleFinderValueWithoutRunLocale() {
 void _automationFlow_should_readEntryAndStateOf() {
   test('AutomationFlow should read entry and stateOf', () {
     final flow = _readFlow(
-      use: [_openBlock],
+      items: [_openBlock],
       variantFields: {
         'entry': {'title': _entryTitle, 'launchedBy': 'link'},
         'stateOf': _mainVariantName,
@@ -497,7 +497,7 @@ void _automationFlow_should_readEntryAndStateOf() {
 void _automationFlow_should_leaveEntryAndStateOfAbsentWhenUnnamed() {
   test('AutomationFlow should leave entry and stateOf absent when unnamed', () {
     final flow = _readFlow(
-      use: [_openBlock],
+      items: [_openBlock],
       variantFields: {
         'entry': {'title': _entryTitle},
       },
@@ -513,7 +513,7 @@ void _automationFlow_should_rejectUnknownLaunchSource() {
   test('AutomationFlow should reject unknown launch source', () {
     expect(
       () => _readFlow(
-        use: [_openBlock],
+        items: [_openBlock],
         variantFields: {
           'entry': {'title': _entryTitle, 'launchedBy': 'email'},
         },
@@ -527,7 +527,7 @@ void _automationFlow_should_rejectEntryWithoutTitle() {
   test('AutomationFlow should reject entry without title', () {
     expect(
       () => _readFlow(
-        use: [_openBlock],
+        items: [_openBlock],
         variantFields: {
           'entry': {'launchedBy': 'push'},
         },
@@ -541,7 +541,7 @@ void _automationFlow_should_rejectStateOfNamingNoOtherVariant() {
   test('AutomationFlow should reject stateOf naming no other variant', () {
     expect(
       () => _readFlow(
-        use: [_openBlock],
+        items: [_openBlock],
         variantFields: {'stateOf': _variantName},
       ),
       _throwsRunnerException('has a "stateOf" "$_variantName" naming no other'),
@@ -726,7 +726,7 @@ void _automationStep_should_rejectDateTextWithNonStringTime() {
 }
 
 AutomationFlow _readFlow({
-  required List<Object?> use,
+  required List<Object?> items,
   Map<String, Object?> flowFields = const {},
   Map<String, Object?> variantFields = const {},
 }) {
@@ -737,9 +737,9 @@ AutomationFlow _readFlow({
       ...flowFields,
       'defaultVariant': _variantName,
       'variants': {
-        _variantName: {...variantFields, 'use': use},
+        _variantName: {...variantFields, 'items': items},
         _mainVariantName: {
-          'use': [_openBlock],
+          'items': [_openBlock],
         },
       },
     },

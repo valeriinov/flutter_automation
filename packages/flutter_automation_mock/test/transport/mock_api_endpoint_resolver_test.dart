@@ -16,7 +16,6 @@ const _recordId = 7;
 
 final _sut = MockApiEndpointResolver([
   TestMockApi(
-    feature: TestSection.alpha,
     endpoints: [
       MockApiEndpoint(path: _exactPath, respond: _respondEmpty),
       MockApiEndpoint(
@@ -27,7 +26,6 @@ final _sut = MockApiEndpointResolver([
     ],
   ),
   TestMockApi(
-    feature: TestSection.beta,
     endpoints: [MockApiEndpoint(path: _otherExactPath, respond: _respondEmpty)],
   ),
 ]);
@@ -129,7 +127,6 @@ void _mockApiRouter_should_resolveThePrefixPathItself() {
 MockApiEndpointResolver _createOverlappingRouter(List<String> paths) {
   return MockApiEndpointResolver([
     TestMockApi(
-      feature: TestSection.beta,
       endpoints: paths
           .map(
             (path) => MockApiEndpoint(

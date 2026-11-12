@@ -1,13 +1,12 @@
-import 'package:flutter_automation_mock/src/scenario/mock_feature.dart';
+import 'package:flutter_automation_mock/src/scenario/mock_section.dart';
 import 'package:flutter_automation_mock/src/scenario/mock_override.dart';
-import 'package:flutter_automation_mock/src/transport/mock_latency_profile.dart';
 
 /// {@category Utils}
 ///
 /// State a run starts the mock from: the overrides of its sections.
 ///
-/// The JSON form is what the runner sends with `mock.apply` and what the app
-/// saves to read at the next launch.
+/// The JSON form is what the runner sends with `scenario.apply` and what the
+/// app saves to read at the next launch.
 final class MockScenario {
   /// Key of the latency profile in the scenario JSON.
   static const latencyKey = 'latency';
@@ -31,30 +30,18 @@ final class MockScenario {
         .toList(growable: false),
   );
 
-  /// Override of the latency profile, by its enum name.
-  static MockOverride latency(MockLatencyProfile profile) =>
-      MockOverride(latencyKey, profile.name);
-
-  /// Override of the latency jitter seed.
-  static MockOverride latencySeed(int seed) =>
-      MockOverride(latencySeedKey, seed);
-
-  /// Override of the failed paths: path to failure JSON.
-  static MockOverride failures(Map<String, Object?> failures) =>
-      MockOverride(failuresKey, failures);
-
-  /// Scenario JSON: overrides merged in order, keys in first-use order.
+  /// Scenario JSON: the overrides applied in order, keys in first-use order.
   Map<String, Object?> toJson() => overrides.fold(
     <String, Object?>{},
-    (merged, override) => mergeJson(merged, {override.key: override.value}),
+    (json, override) => override.applyTo(json),
   );
 
   /// Scenario with the overrides of [other] applied after these.
   MockScenario merge(MockScenario other) =>
       MockScenario([...overrides, ...other.overrides]);
 
-  /// Settings of [feature] in this scenario.
-  S settingsOf<S>(MockFeature<S> feature) => feature.read(toJson());
+  /// Settings of [section] in this scenario.
+  S settingsOf<S>(MockSection<S> section) => section.read(toJson());
 
   /// Merges [over] into [base]: nested objects merge key by key, any other
   /// value of [over] replaces the one of [base].

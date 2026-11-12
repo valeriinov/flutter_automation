@@ -69,7 +69,7 @@ fvm flutter run --debug -d <device-id> <Launch>
 ```
 
 **Launch** holds the flavor, the entry point and the defines of the project. It
-must include `--dart-define=ENABLE_FLUTTER_DRIVER=true`.
+must include `--dart-define=ENABLE_AUTOMATION=true`.
 
 Run it detached and keep the log path: the log is the console. A foreground
 command that waits for the build holds the session still. A background command
@@ -118,7 +118,7 @@ multi-tap window.
 Swap `--debug` for `--profile` when a bug renders as it does in release. The
 defines survive a profile build.
 
-`ENABLE_FLUTTER_DRIVER` makes the app drivable. Without it, every driver command
+`ENABLE_AUTOMATION` makes the app drivable. Without it, every driver command
 fails and the automation ids are absent from the tree.
 `ENABLE_AUTOMATION_SEMANTICS=false` drops the semantics tree. Use it for a frame
 statistics walk only: production never pays for that pass. The native finders
@@ -126,15 +126,15 @@ statistics walk only: production never pays for that pass. The native finders
 screen dump keeps the default. `ENABLE_AUTOMATION_FRAME_PROFILING=true` makes a
 frame summary name the widgets that a wide frame stood in. The spans cost what
 they measure, so read such a run for the shares between rows and take a baseline
-with it off. `MARK_LOCALE_KEYS=true` ends each translation string in an
+with it off. `ENABLE_AUTOMATION_LOCALE_KEYS=true` ends each translation string in an
 invisible mark of its locale key. A hand launch leaves it out and drives with
 `ByText` as the copy reads. The flow runner sends `ByText` as a finder that
 matches the copy with its marks stripped in either build.
 
 A toast lives about two seconds. Read its text right after the action that raised
 it. A `--capture` run reads the texts of the frame before every action. By hand,
-the `journal.read` command with `"texts": true` answers them and empties the
-journal, so read it once per frame.
+the `screen.read` command with `"texts": true` answers them. The command needs no
+mock and does not empty the journal.
 
 ## 3. Connect
 

@@ -8,10 +8,6 @@ import 'package:flutter_automation_mock/src/contract/mock_api_endpoint.dart';
 /// section, next to the state they read. An api owns endpoint declaration and
 /// serialization only.
 abstract interface class MockApi {
-  /// Section of the backend the api answers, an enum value the project
-  /// declares.
-  Enum get feature;
-
   /// Endpoints the api owns; everything else reaches the network.
   List<MockApiEndpoint> get endpoints;
 }

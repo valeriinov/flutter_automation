@@ -41,7 +41,6 @@ final _networkAdapter = TestHttpClientAdapter(onFetch: _respondEmpty);
 final _journal = MockJournal();
 final _endpointResolver = MockApiEndpointResolver([
   TestMockApi(
-    feature: TestSection.alpha,
     endpoints: [
       MockApiEndpoint(path: _ownedPath, respond: _respondPathId),
       MockApiEndpoint(path: _idPath, respond: _respondPathId, hasPathId: true),
@@ -53,7 +52,7 @@ final _endpointResolver = MockApiEndpointResolver([
 final _dio = Dio(BaseOptions(baseUrl: _baseUrl))
   ..httpClientAdapter = MockDioHttpClientAdapter(
     transport: MockApiTransport(
-      runtime: _TestMockRuntime(endpointResolver: _endpointResolver),
+      backend: _TestMockBackend(endpointResolver: _endpointResolver),
       journal: _journal,
     ),
     networkAdapter: _networkAdapter,
@@ -62,7 +61,7 @@ final _dio = Dio(BaseOptions(baseUrl: _baseUrl))
 final _failingDio = Dio(BaseOptions(baseUrl: _baseUrl))
   ..httpClientAdapter = MockDioHttpClientAdapter(
     transport: MockApiTransport(
-      runtime: _TestMockRuntime(
+      backend: _TestMockBackend(
         failures: {_ownedPath: _failure},
         endpointResolver: _endpointResolver,
       ),
@@ -74,7 +73,7 @@ final _failingDio = Dio(BaseOptions(baseUrl: _baseUrl))
 final _idFailingDio = Dio(BaseOptions(baseUrl: _baseUrl))
   ..httpClientAdapter = MockDioHttpClientAdapter(
     transport: MockApiTransport(
-      runtime: _TestMockRuntime(
+      backend: _TestMockBackend(
         failures: {_idPath: _failure},
         endpointResolver: _endpointResolver,
       ),
@@ -86,7 +85,7 @@ final _idFailingDio = Dio(BaseOptions(baseUrl: _baseUrl))
 final _disconnectedDio = Dio(BaseOptions(baseUrl: _baseUrl))
   ..httpClientAdapter = MockDioHttpClientAdapter(
     transport: MockApiTransport(
-      runtime: _TestMockRuntime(
+      backend: _TestMockBackend(
         failures: {_ownedPath: MockApiFailure(isConnectionError: true)},
         endpointResolver: _endpointResolver,
       ),
@@ -97,7 +96,7 @@ final _disconnectedDio = Dio(BaseOptions(baseUrl: _baseUrl))
 
 final _delayedAdapter = MockDioHttpClientAdapter(
   transport: MockApiTransport(
-    runtime: _TestMockRuntime(
+    backend: _TestMockBackend(
       latencyProfile: MockLatencyProfile.realistic,
       endpointResolver: _endpointResolver,
     ),
@@ -469,9 +468,9 @@ Future<ResponseBody> _respondEmpty(RequestOptions _) async {
   );
 }
 
-// Test utility runtime over the endpoints a test declares, so the transport can
+// Test utility backend over the endpoints a test declares, so the transport can
 // be exercised without the state of a project behind it.
-final class _TestMockRuntime implements MockTransportRuntime {
+final class _TestMockBackend implements MockBackend {
   @override
   final MockApiEndpointResolver endpointResolver;
 
@@ -481,7 +480,7 @@ final class _TestMockRuntime implements MockTransportRuntime {
   @override
   final MockLatency latency;
 
-  _TestMockRuntime({
+  _TestMockBackend({
     required this.endpointResolver,
     this.failures = const {},
     MockLatencyProfile latencyProfile = MockLatencyProfile.fast,

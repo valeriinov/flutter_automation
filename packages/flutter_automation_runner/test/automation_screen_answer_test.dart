@@ -17,6 +17,8 @@ void main() {
     _automationScreenAnswer_should_dropViewOfNoPositiveSize();
     _automationScreenAnswer_should_rejectMalformedAnswers();
     _automationScreenAnswer_should_tellScreenPastSplash();
+    _automationScreenAnswer_should_readTextsOfTheFrame();
+    _automationScreenAnswer_should_readWidgetsOfTheFrame();
   });
 }
 
@@ -96,6 +98,34 @@ void _automationScreenAnswer_should_tellScreenPastSplash() {
     expect(pastSplash.isPastSplash(null), isTrue);
     expect(onSplash.isPastSplash(_splashScreen), isFalse);
     expect(beforeAnyScreen.isPastSplash(_splashScreen), isFalse);
+  });
+}
+
+void _automationScreenAnswer_should_readTextsOfTheFrame() {
+  test('AutomationScreenAnswer should read texts of the frame', () {
+    const texts = ['Деталі кошика', 'Надіслати запит'];
+    final answer = AutomationScreenAnswer.fromJson({
+      ..._answer(),
+      'texts': texts,
+    });
+    final answerWithoutTexts = AutomationScreenAnswer.fromJson(_answer());
+
+    expect(answer.texts, texts);
+    expect(answerWithoutTexts.texts, isEmpty);
+  });
+}
+
+void _automationScreenAnswer_should_readWidgetsOfTheFrame() {
+  test('AutomationScreenAnswer should read widgets of the frame', () {
+    const widgets = ['BasketDetailsView', 'BasketDetailsScreen'];
+    final answer = AutomationScreenAnswer.fromJson({
+      ..._answer(),
+      'widgets': widgets,
+    });
+    final answerWithoutWidgets = AutomationScreenAnswer.fromJson(_answer());
+
+    expect(answer.widgets, widgets);
+    expect(answerWithoutWidgets.widgets, isEmpty);
   });
 }
 

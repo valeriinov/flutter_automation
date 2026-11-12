@@ -11,8 +11,6 @@ void main() {
   group('AutomationJournalAnswer Tests', () {
     _automationJournalAnswer_should_readRecords();
     _automationJournalAnswer_should_rejectMalformedAnswers();
-    _automationJournalAnswer_should_readTextsOfTheFrame();
-    _automationJournalAnswer_should_readWidgetsOfTheFrame();
     _automationJournalAnswer_should_readLaunchKeptBesideRecords();
   });
 }
@@ -45,38 +43,6 @@ void _automationJournalAnswer_should_rejectMalformedAnswers() {
         throwsA(isA<StateError>()),
       );
     }
-  });
-}
-
-void _automationJournalAnswer_should_readTextsOfTheFrame() {
-  test('AutomationJournalAnswer should read texts of the frame', () {
-    const texts = ['Деталі кошика', 'Надіслати запит'];
-    final answer = AutomationJournalAnswer.fromJson({
-      'records': _records,
-      'texts': texts,
-    });
-    final answerWithoutTexts = AutomationJournalAnswer.fromJson({
-      'records': _records,
-    });
-
-    expect(answer.texts, texts);
-    expect(answerWithoutTexts.texts, isEmpty);
-  });
-}
-
-void _automationJournalAnswer_should_readWidgetsOfTheFrame() {
-  test('AutomationJournalAnswer should read widgets of the frame', () {
-    const widgets = ['BasketDetailsView', 'BasketDetailsScreen'];
-    final answer = AutomationJournalAnswer.fromJson({
-      'records': _records,
-      'widgets': widgets,
-    });
-    final answerWithoutWidgets = AutomationJournalAnswer.fromJson({
-      'records': _records,
-    });
-
-    expect(answer.widgets, widgets);
-    expect(answerWithoutWidgets.widgets, isEmpty);
   });
 }
 

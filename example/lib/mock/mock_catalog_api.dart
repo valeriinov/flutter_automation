@@ -1,9 +1,6 @@
 import 'package:flutter_automation_mock/flutter_automation_mock.dart';
 
-import 'package:example/mock/catalog_mock_feature.dart';
-
-/// Sections of the mock backend.
-enum ExampleMockSection { catalog }
+import 'package:example/mock/catalog_mock_section.dart';
 
 /// Answers the catalog endpoint from the settings of the scenario.
 final class MockCatalogApi implements MockApi {
@@ -12,15 +9,12 @@ final class MockCatalogApi implements MockApi {
   const MockCatalogApi(this._mock);
 
   @override
-  Enum get feature => ExampleMockSection.catalog;
-
-  @override
   List<MockApiEndpoint> get endpoints => [
     MockApiEndpoint(path: '/catalog/items', respond: _respondItems),
   ];
 
   MockApiResponse _respondItems(MockApiRequest request) {
-    final settings = _mock.settingsOf(catalogMockFeature);
+    final settings = _mock.settingsOf(catalogMockSection);
 
     return MockApiResponse(
       body: {

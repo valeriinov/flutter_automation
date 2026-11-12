@@ -8,7 +8,7 @@ of an app from the mock of
 
 | Import | Host-safe | Holds |
 | --- | --- | --- |
-| `package:flutter_automation_mock_dio/flutter_automation_mock_dio.dart` | No, imports Flutter and Dio | `MockDioHttpClientAdapter`, `MockDioRequest`. |
+| `package:flutter_automation_mock_dio/flutter_automation_mock_dio.dart` | No, imports Flutter and Dio | `MockDioHttpClientAdapter`, `MockDioRequestReader`. |
 
 Nothing here runs on the host. A flow never imports this package.
 
@@ -26,7 +26,11 @@ dio.httpClientAdapter = mock.substitute(
   real: networkAdapter,
   fake: (mock) => MockDioHttpClientAdapter(
     transport: MockApiTransport(
-      runtime: ExampleMockRuntime(mock),
+      backend: MockScenarioBackend(
+        readScenario: () => mock.scenario,
+        buildApis: () => [CatalogMockApi(mock)],
+        buildFailureBody: (failure) => {'message': failure.message},
+      ),
       journal: mock.journal,
     ),
     networkAdapter: networkAdapter,

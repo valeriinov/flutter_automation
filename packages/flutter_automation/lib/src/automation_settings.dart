@@ -1,7 +1,7 @@
 import 'package:flutter/foundation.dart';
 
 /// Build-time name of the UI automation switch passed as `--dart-define`.
-const String _flutterDriverFlag = 'ENABLE_FLUTTER_DRIVER';
+const String _automationFlag = 'ENABLE_AUTOMATION';
 
 /// Build-time name of the semantics switch passed as `--dart-define`.
 const String _semanticsFlag = 'ENABLE_AUTOMATION_SEMANTICS';
@@ -9,7 +9,7 @@ const String _semanticsFlag = 'ENABLE_AUTOMATION_SEMANTICS';
 /// Build-time name of the frame-attribution switch passed as `--dart-define`.
 const String _frameProfilingFlag = 'ENABLE_AUTOMATION_FRAME_PROFILING';
 
-const String _markLocaleKeysFlag = 'MARK_LOCALE_KEYS';
+const String _localeKeysFlag = 'ENABLE_AUTOMATION_LOCALE_KEYS';
 
 /// Settings of the agent-driven UI automation.
 ///
@@ -17,7 +17,7 @@ const String _markLocaleKeysFlag = 'MARK_LOCALE_KEYS';
 /// to address widgets while it runs the app on a simulator. Run it with:
 ///
 /// ```shell
-/// fvm flutter run --dart-define=ENABLE_FLUTTER_DRIVER=true
+/// fvm flutter run --dart-define=ENABLE_AUTOMATION=true
 /// ```
 abstract final class AutomationSettings {
   /// Whether the app accepts UI automation commands from an agent.
@@ -26,7 +26,7 @@ abstract final class AutomationSettings {
   /// The value is a compile-time constant, so a release build drops every
   /// branch guarded by it together with the automation code it reaches.
   static const bool isEnabled =
-      !kReleaseMode && bool.fromEnvironment(_flutterDriverFlag);
+      !kReleaseMode && bool.fromEnvironment(_automationFlag);
 
   /// Whether an automation run raises the semantics tree.
   ///
@@ -41,7 +41,7 @@ abstract final class AutomationSettings {
   /// costs the traced frames nothing, as in production.
   ///
   /// ```shell
-  /// fvm flutter run --dart-define=ENABLE_FLUTTER_DRIVER=true \
+  /// fvm flutter run --dart-define=ENABLE_AUTOMATION=true \
   ///   --dart-define=ENABLE_AUTOMATION_SEMANTICS=false
   /// ```
   static const bool isSemanticsEnabled =
@@ -69,7 +69,7 @@ abstract final class AutomationSettings {
   /// baselines and gates with this switch off.
   ///
   /// ```shell
-  /// fvm flutter run --dart-define=ENABLE_FLUTTER_DRIVER=true \
+  /// fvm flutter run --dart-define=ENABLE_AUTOMATION=true \
   ///   --dart-define=ENABLE_AUTOMATION_FRAME_PROFILING=true
   /// ```
   static const bool isFrameProfilingEnabled =
@@ -81,9 +81,9 @@ abstract final class AutomationSettings {
   /// Set only by the capture launch, on top of [isEnabled]:
   ///
   /// ```shell
-  /// fvm flutter run --dart-define=ENABLE_FLUTTER_DRIVER=true \
-  ///   --dart-define=MARK_LOCALE_KEYS=true
+  /// fvm flutter run --dart-define=ENABLE_AUTOMATION=true \
+  ///   --dart-define=ENABLE_AUTOMATION_LOCALE_KEYS=true
   /// ```
   static const bool isLocaleKeyMarkingEnabled =
-      isEnabled && bool.fromEnvironment(_markLocaleKeysFlag);
+      isEnabled && bool.fromEnvironment(_localeKeysFlag);
 }
