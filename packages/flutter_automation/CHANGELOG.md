@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.5.1
+
+- No changes. The version follows the other packages.
+
 ## 0.5.0
 
 - Breaking: the registry of commands is `AutomationCommandRegistry`. The

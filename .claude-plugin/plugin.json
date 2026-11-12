@@ -1,7 +1,7 @@
 {
   "name": "flutter-automation",
   "description": "Skills and workflows that let an agent drive a Flutter app on a device with the flutter_automation packages: run flows, address widgets, mock the backend, set a project up.",
-  "version": "0.5.0",
+  "version": "0.5.1",
   "author": {
     "name": "valeriinov",
     "url": "https://github.com/valeriinov"

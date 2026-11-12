@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.5.1
+
+- Depends on `flutter_automation_mock` 0.5.1.
+
 ## 0.5.0
 
 - Breaking: `MockDioRequest` is `MockDioRequestReader`.

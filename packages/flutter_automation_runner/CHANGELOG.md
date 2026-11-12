@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 0.5.1
 
 - `--locale <code>` launches the app in that language. The runner sends
   `locale.save` before the restart, restarts the app also under
@@ -9,6 +9,7 @@
   startup.
 - A run with `--locale` needs an app under `flutter run`, as a scenario does.
 - The dry-run report names `relaunches`: whether the run restarts the app.
+- Depends on `flutter_automation_driver` 0.5.1, which answers `locale.save`.
 
 ## 0.5.0
 

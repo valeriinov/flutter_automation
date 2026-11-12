@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.5.1
+
+- Depends on `flutter_automation` 0.5.1.
+
 ## 0.5.0
 
 - Breaking: `MockFeature` is `MockSection`, in the library `mock_section.dart`.
