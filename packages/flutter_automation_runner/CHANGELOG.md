@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.6.0
+
+- Depends on `flutter_automation` 0.6.0. A flow names one of the elements that a
+  screen shows more than once with `ByTarget(<target>.withKey(key))`.
+
 ## 0.5.1
 
 - `--locale <code>` launches the app in that language. The runner sends

@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.6.0
+
+- Depends on `flutter_automation` 0.6.0.
+
 ## 0.5.1
 
 - Depends on `flutter_automation` 0.5.1.

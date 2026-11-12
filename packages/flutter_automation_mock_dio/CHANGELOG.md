@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.6.0
+
+- Depends on `flutter_automation_mock` 0.6.0.
+
 ## 0.5.1
 
 - Depends on `flutter_automation_mock` 0.5.1.

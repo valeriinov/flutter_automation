@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 0.6.0
 
 - New `AutomationTarget.withKey(key)` in the extension
   `AutomationTargetWithKey`. It returns the same target with the key of a

@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.6.0
+
+- Depends on `flutter_automation` 0.6.0.
+
 ## 0.5.1
 
 - New `locale.save` command. It saves a language for the next launch of the
