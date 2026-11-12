@@ -1,5 +1,13 @@
 # Changelog
 
+## Unreleased
+
+- New `AutomationTarget.withKey(key)` in the extension
+  `AutomationTargetWithKey`. It returns the same target with the key of a
+  record as the last id segment, `<scope>.<type>.<name>.<key>`, so an element
+  that a screen shows more than once gets a target of its own. The key is a
+  string or an int.
+
 ## 0.5.1
 
 - No changes. The version follows the other packages.

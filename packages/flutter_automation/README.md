@@ -7,7 +7,7 @@ and the build switches. Every other package builds on it.
 
 | Import | Host-safe | Holds |
 | --- | --- | --- |
-| `package:flutter_automation/automation_target.dart` | Yes, no Flutter import | `AutomationTarget`, `AutomationTargetType`, `AutomationIdComposer`, `AutomationTimelineLabel`. |
+| `package:flutter_automation/automation_target.dart` | Yes, no Flutter import | `AutomationTarget`, `AutomationTargetType`, `AutomationIdComposer`, `AutomationTargetWithKey`, `AutomationTimelineLabel`. |
 | `package:flutter_automation/flutter_automation.dart` | No, imports Flutter | Everything above, plus `automationTarget()`, `AutomationSettings`, `AutomationCommandRegistry`, `AutomationCommandHandler`, `AutomationTimeline`, `LocaleKeyMarker`. |
 
 "Host-safe" means a program in the plain Dart VM can import the library. A flow
@@ -38,6 +38,33 @@ enum CatalogTarget with AutomationIdComposer {
 ```
 
 `CatalogTarget.list.id` is `catalog.panel.list`.
+
+### An element the screen shows more than once
+
+One id must resolve to one widget. A delete button on every card of a list
+therefore takes `withKey(key)`. The method returns the same target with the key
+of the record as a fourth id segment: `<scope>.<type>.<name>.<key>`.
+
+The key is the key of the record the element shows, a string or an int: the id
+of a notification, the id of a message, the code of a country. It is not a
+Flutter widget `Key`. A record key stays with its element when the list sorts
+or drops a row.
+
+```dart
+// The app marks every card.
+DeleteButton(onPressed: onDeletePressed)
+    .automationTarget(CatalogTarget.deleteButton.withKey(item.id))
+
+// The flow names one of them. It imports automation_target.dart for withKey.
+Tap(ByTarget(CatalogTarget.deleteButton.withKey(42)))
+```
+
+`CatalogTarget.deleteButton.withKey(42).id` is
+`catalog.button.deleteButton.42`. The id dump, the `--catalogue` output and the
+step label of a report all show this id. A key with a dot or a space keeps the
+`<scope>.<type>.` prefix, because the key comes after the name. The same screen
+can carry the target without a key on one element and with a key on others:
+each id stays its own.
 
 ### Marking a widget
 

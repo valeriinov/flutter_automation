@@ -1,3 +1,4 @@
+import 'package:flutter_automation/automation_target.dart';
 import 'package:flutter_automation_runner/automation_flow_definition.dart';
 
 import 'package:example/automation/example_target.dart';
@@ -21,6 +22,7 @@ final catalogFlow = AutomationFlowDefinition(
       items: [
         const Use(signIn),
         const WaitFor(ByTarget(ExampleTarget.catalogList)),
+        WaitFor(ByTarget(ExampleTarget.catalogItem.withKey(5))),
       ],
       scenario: [catalogMockSection.profile('fullShelf')],
     ),

@@ -10,6 +10,7 @@ enum ExampleTarget with AutomationIdComposer {
   loginButton(AutomationTargetType.button),
   catalogScreen(AutomationTargetType.screen),
   catalogList(AutomationTargetType.panel),
+  catalogItem(AutomationTargetType.tile),
   catalogEmpty(AutomationTargetType.label);
 
   @override

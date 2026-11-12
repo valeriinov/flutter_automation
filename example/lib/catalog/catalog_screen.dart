@@ -3,6 +3,7 @@ import 'package:flutter_automation/flutter_automation.dart';
 
 import 'package:example/automation/example_target.dart';
 import 'package:example/catalog/catalog_api.dart';
+import 'package:example/catalog/catalog_item.dart';
 
 /// Second screen: the items the catalog answers with.
 class CatalogScreen extends StatefulWidget {
@@ -17,26 +18,26 @@ class CatalogScreen extends StatefulWidget {
 }
 
 class _CatalogScreenState extends State<CatalogScreen> {
-  late final Future<List<String>> _titles = widget.catalogApi.getItemTitles();
+  late final Future<List<CatalogItem>> _items = widget.catalogApi.getItems();
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: const Text('Catalog')),
-      body: FutureBuilder<List<String>>(
-        future: _titles,
+      body: FutureBuilder<List<CatalogItem>>(
+        future: _items,
         builder: (context, snapshot) {
-          final titles = snapshot.data;
+          final items = snapshot.data;
 
           if (snapshot.hasError) {
             return const Center(child: Text('Could not load the catalog'));
           }
 
-          if (titles == null) {
+          if (items == null) {
             return const Center(child: CircularProgressIndicator());
           }
 
-          if (titles.isEmpty) {
+          if (items.isEmpty) {
             return Center(
               child: const Text(
                 'The catalog is empty',
@@ -46,7 +47,10 @@ class _CatalogScreenState extends State<CatalogScreen> {
 
           return ListView(
             children: [
-              for (final title in titles) ListTile(title: Text(title)),
+              for (final item in items)
+                ListTile(
+                  title: Text(item.title),
+                ).automationTarget(ExampleTarget.catalogItem.withKey(item.id)),
             ],
           ).automationTarget(ExampleTarget.catalogList);
         },

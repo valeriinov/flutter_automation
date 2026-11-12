@@ -104,8 +104,17 @@ A flow then needs a finder that rebuilds the value. A project declares that find
 under `finders:` in the `flutter_automation:` section of `pubspec.yaml`, and a
 flow uses it as `ByDeclaredDate`.
 
-An element that the app can mount more than once at a time must not get a target.
-The id would resolve to several widgets, and every driver command on it fails.
+An element that the app can mount more than once at a time needs one id per copy.
+A shared id resolves to several widgets, and every driver command on it fails.
+When each copy shows a record with a key of its own (a notification id, a message
+id, a country code), mark it with `<Flow>Target.<name>.withKey(record.key)`. The
+key is a string or an int and becomes the last id segment. A flow names one copy
+with `ByTarget(<Flow>Target.<name>.withKey(42))` and imports
+`package:flutter_automation/automation_target.dart` for `withKey`. In a mocked
+run the scenario sets the keys, so the flow knows them.
+
+An element without a stable record key must not get a target. A list position is
+not a record key: it moves to another copy when the list sorts or drops a row.
 Parameterize the surrounding widget, or address the element by text.
 
 "At a time" means present in the tree, not on screen. A screen that the navigator
