@@ -54,8 +54,11 @@ ul { margin: 0; padding-left: 18px; display: grid; gap: 4px; }
 a { color: var(--brand); text-underline-offset: 2px; }
 :focus-visible { outline: 3px solid var(--brand); outline-offset: 2px; }
 code, kbd { font-family: var(--font-mono); font-size: .86em; background: var(--code-bg); padding: 1px 5px; border-radius: 6px; overflow-wrap: anywhere; }
-.cmd { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
-.cmd code { font-size: 13px; padding: 6px 10px; }
+.cmd { position: relative; min-width: 0; }
+.cmd code { display: block; font-size: 13px; padding: 9px 84px 9px 12px; border-radius: 10px; }
+.cmd .copy { position: absolute; top: 50%; right: 6px; transform: translateY(-50%); }
+.route { display: grid; gap: 8px; padding-top: 12px; border-top: 1px solid var(--line); }
+.route:first-of-type { padding-top: 4px; border-top: 0; }
 .code { position: relative; min-width: 0; }
 .code .copy { position: absolute; top: 8px; right: 8px; }
 pre { margin: 0; background: var(--code-bg); border-radius: 12px; padding: 12px 14px; padding-right: 96px; overflow-x: auto; font: 500 12.5px/1.6 var(--font-mono); }
@@ -98,6 +101,14 @@ tr:first-child td { border-top: 0; }
 .wire { display: grid; place-items: center; text-align: center; font-size: 12px; color: var(--muted); gap: 4px; align-content: center; }
 .wire .arrow { font-size: 22px; color: var(--brand); line-height: 1; }
 .phrase { font-style: italic; color: var(--ink); }
+.explain { display: grid; gap: 8px; font-size: 14px; }
+.explain summary { font: 700 12px/1.2 var(--font-body); letter-spacing: .06em; text-transform: uppercase; color: var(--brand); cursor: pointer; justify-self: start; list-style: none; display: flex; gap: 6px; align-items: center; padding: 4px 0; }
+.explain summary::-webkit-details-marker { display: none; }
+.explain summary::before { content: "▸"; transition: transform .15s; }
+.explain[open] summary::before { transform: rotate(90deg); }
+.explain ul { list-style: none; padding: 0; gap: 6px; }
+.explain li { padding-left: 12px; border-left: 3px solid var(--brand-line); display: grid; gap: 2px; }
+.explain li > code:first-child { justify-self: start; }
 @media (max-width: 640px) {
   .flow, .cards.two { grid-template-columns: minmax(0, 1fr); }
   .arch { grid-template-columns: minmax(0, 1fr); }
@@ -167,6 +178,7 @@ tr:first-child td { border-top: 0; }
         <table>
           <tr><td><b><span data-l="en">Target</span><span data-l="uk">Таргет</span></b></td><td><span data-l="en">A fixed name on a button, a field or a screen, for example <code>login.button.submit</code>. A step finds the element by this name, not by its text.</span><span data-l="uk">Постійне ім'я на кнопці, полі чи екрані, наприклад <code>login.button.submit</code>. Крок знаходить елемент за цим ім'ям, а не за текстом.</span></td></tr>
           <tr><td><b><span data-l="en">Flow</span><span data-l="uk">Флоу</span></b></td><td><span data-l="en">One user journey, written as a list of steps.</span><span data-l="uk">Один шлях користувача, записаний як список кроків.</span></td></tr>
+          <tr><td><b><span data-l="en">Step</span><span data-l="uk">Крок</span></b></td><td><span data-l="en">One action of a flow: tap, wait for an element, type, scroll. A step only acts on what the app shows; it never opens a screen by itself.</span><span data-l="uk">Одна дія флоу: натиснути, дочекатися елемента, ввести текст, прокрутити. Крок діє лише на те, що показує застосунок; сам він екран не відкриває.</span></td></tr>
           <tr><td><b><span data-l="en">Variant</span><span data-l="uk">Варіант</span></b></td><td><span data-l="en">One way through a flow. The flow "catalog" can have the variants "items" and "empty".</span><span data-l="uk">Один спосіб пройти флоу. Флоу «catalog» може мати варіанти «items» і «empty».</span></td></tr>
           <tr><td><b><span data-l="en">Mock</span><span data-l="uk">Мок</span></b></td><td><span data-l="en">The fake server inside the app. It answers requests the way the real server does.</span><span data-l="uk">Фейковий сервер усередині застосунку. Він відповідає на запити так само, як справжній сервер.</span></td></tr>
           <tr><td><b><span data-l="en">Scenario</span><span data-l="uk">Сценарій</span></b></td><td><span data-l="en">The state of the mock for one run: how many items, which request fails, how slow the network is.</span><span data-l="uk">Стан мока для одного запуску: скільки елементів, який запит падає, наскільки повільна мережа.</span></td></tr>
@@ -242,18 +254,16 @@ tr:first-child td { border-top: 0; }
       <ol class="steps">
         <li class="step"><div class="body">
           <span class="t"><span data-l="en">Install the skills</span><span data-l="uk">Встановити скіли</span></span>
-          <div class="cards">
-            <div class="box card">
-              <span class="tag">Claude Code</span>
-              <p class="small"><span data-l="en">Type in Claude Code. You get the skills and the workflows.</span><span data-l="uk">Введіть у Claude Code. Ви отримаєте скіли і воркфлоу.</span></p>
-              <div class="cmd"><code>/plugin marketplace add valeriinov/flutter_automation</code><button class="copy" type="button"></button></div>
-              <div class="cmd"><code>/plugin install flutter-automation@flutter-automation</code><button class="copy" type="button"></button></div>
-            </div>
-            <div class="box card">
-              <span class="tag">Codex <span data-l="en">and other agents</span><span data-l="uk">та інші агенти</span></span>
-              <p class="small"><span data-l="en">Run in the terminal. Put a release tag in place of <code>&lt;tag&gt;</code>. This route installs the skills only, without workflows.</span><span data-l="uk">Виконайте в терміналі. Замість <code>&lt;tag&gt;</code> поставте тег релізу. Цей шлях встановлює лише скіли, без воркфлоу.</span></p>
-              <div class="cmd"><code>npx skills add https://github.com/valeriinov/flutter_automation/tree/&lt;tag&gt;</code><button class="copy" type="button"></button></div>
-            </div>
+          <div class="route">
+            <span class="tag">Claude Code</span>
+            <p class="small"><span data-l="en">Type in Claude Code. You get the skills and the workflows.</span><span data-l="uk">Введіть у Claude Code. Ви отримаєте скіли і воркфлоу.</span></p>
+            <div class="cmd"><code>/plugin marketplace add valeriinov/flutter_automation</code><button class="copy" type="button"></button></div>
+            <div class="cmd"><code>/plugin install flutter-automation@flutter-automation</code><button class="copy" type="button"></button></div>
+          </div>
+          <div class="route">
+            <span class="tag">Codex <span data-l="en">and other agents</span><span data-l="uk">та інші агенти</span></span>
+            <p class="small"><span data-l="en">Run in the terminal. Put a release tag in place of <code>&lt;tag&gt;</code>. This route installs the skills only, without workflows.</span><span data-l="uk">Виконайте в терміналі. Замість <code>&lt;tag&gt;</code> поставте тег релізу. Цей шлях встановлює лише скіли, без воркфлоу.</span></p>
+            <div class="cmd"><code>npx skills add https://github.com/valeriinov/flutter_automation/tree/&lt;tag&gt;</code><button class="copy" type="button"></button></div>
           </div>
         </div></li>
         <li class="step"><div class="body">
@@ -321,6 +331,14 @@ void main() {
   AutomationInstaller.maybeInstall(screenReader: () =&gt; null);
   runApp(const App());
 }</code></pre></div>
+          <details class="explain">
+            <summary><span data-l="en">What happens here</span><span data-l="uk">Що тут відбувається</span></summary>
+            <ul>
+              <li><code>maybeInstall(...)</code><span><span data-l="en">Opens the channel through which the runner sends steps to the app. Without the define, the call returns at once and changes nothing.</span><span data-l="uk">Відкриває канал, через який раннер надсилає кроки в застосунок. Без define виклик одразу повертається і нічого не змінює.</span></span></li>
+              <li><code>screenReader: () =&gt; null</code><span><span data-l="en">Tells the runner the name of the current screen. <code>null</code> is enough for a start. The <button type="button" class="link" data-go="dev">For developers</button> tab shows the full form.</span><span data-l="uk">Повідомляє раннеру ім'я поточного екрана. Для початку достатньо <code>null</code>. Повну форму показує вкладка <button type="button" class="link" data-go="dev">Для розробників</button>.</span></span></li>
+              <li><span data-l="en"><b>Why the first statement:</b> the driver brings its own widgets binding, and the app can hold only one.</span><span data-l="uk"><b>Чому першою інструкцією:</b> драйвер приносить власний widgets binding, а застосунок може мати лише один.</span></li>
+            </ul>
+          </details>
         </div></li>
         <li class="step"><div class="body">
           <span class="t"><span data-l="en">Declare a target and mark a widget</span><span data-l="uk">Оголосити таргет і розмітити віджет</span></span>
@@ -344,13 +362,27 @@ enum HomeTarget with AutomationIdComposer {
 // In the widget file:
 import 'package:flutter_automation/flutter_automation.dart';
 
-FloatingActionButton(onPressed: onIncrement, child: const Icon(Icons.add))
-    .automationTarget(HomeTarget.increment)</code></pre></div>
+Scaffold(
+  body: counterText,
+  floatingActionButton: FloatingActionButton(
+    onPressed: onIncrement,
+    child: const Icon(Icons.add),
+  ).automationTarget(HomeTarget.increment),
+).automationTarget(HomeTarget.screen)</code></pre></div>
+          <details class="explain">
+            <summary><span data-l="en">What happens here</span><span data-l="uk">Що тут відбувається</span></summary>
+            <ul>
+              <li><code>increment(AutomationTargetType.button)</code><span><span data-l="en">One target. Its id joins the scope, the type and the name: <code>home.button.increment</code>.</span><span data-l="uk">Один таргет. Його id складається зі scope, типу та імені: <code>home.button.increment</code>.</span></span></li>
+              <li><code>.automationTarget(HomeTarget.increment)</code><span><span data-l="en">Puts this id on the button. The button looks and works as before.</span><span data-l="uk">Ставить цей id на кнопку. Кнопка виглядає і працює як раніше.</span></span></li>
+              <li><code>.automationTarget(HomeTarget.screen)</code><span><span data-l="en">Marks the whole screen. A flow waits for this id to know that the screen is shown.</span><span data-l="uk">Розмічає весь екран. Флоу чекає на цей id, щоб знати, що екран показано.</span></span></li>
+            </ul>
+          </details>
         </div></li>
         <li class="step"><div class="body">
           <span class="t"><span data-l="en">Write a flow and the entry point</span><span data-l="uk">Написати флоу і точку входу</span></span>
           <div class="code"><button class="copy" type="button"></button><pre><code>// tool/flows/home_flow.dart
 import 'package:flutter_automation_runner/automation_flow_definition.dart';
+import 'package:my_app/automation/targets/home_target.dart';
 
 final homeFlow = AutomationFlowDefinition(
   name: 'home',
@@ -365,18 +397,44 @@ final homeFlow = AutomationFlowDefinition(
 // tool/run_flows.dart
 import 'package:flutter_automation_runner/flutter_automation_runner.dart';
 
+import 'flows/home_flow.dart';
+
 Future&lt;void&gt; main(List&lt;String&gt; args) =&gt; runFlows(args, [homeFlow]);</code></pre></div>
+          <details class="explain">
+            <summary><span data-l="en">What happens here</span><span data-l="uk">Що тут відбувається</span></summary>
+            <ul>
+              <li><code>package:my_app/...</code><span><span data-l="en">Put the package name of your app in place of <code>my_app</code>.</span><span data-l="uk">Замість <code>my_app</code> поставте ім'я пакета вашого застосунку.</span></span></li>
+              <li><code>name: 'home'</code><span><span data-l="en">The name of the flow. You type it in the command: <code>run_flows.dart home</code>.</span><span data-l="uk">Ім'я флоу. Ви пишете його в команді: <code>run_flows.dart home</code>.</span></span></li>
+              <li><code>FlowVariant('counterIncreases', ...)</code><span><span data-l="en">One variant: the second word of the command. A flow can hold many variants.</span><span data-l="uk">Один варіант: друге слово команди. Флоу може мати багато варіантів.</span></span></li>
+              <li><code>WaitFor(ByTarget(HomeTarget.screen))</code><span><span data-l="en">Waits until the widget with the id <code>home.screen.screen</code> is in the widget tree. The step opens nothing. The app shows the screen after launch, or an earlier step leads to it. The step fails after 10 seconds; <code>timeout:</code> changes the limit.</span><span data-l="uk">Чекає, доки віджет з id <code>home.screen.screen</code> з'явиться в дереві віджетів. Крок нічого не відкриває. Застосунок показує екран після запуску, або до нього веде попередній крок. Крок падає через 10 секунд; <code>timeout:</code> змінює ліміт.</span></span></li>
+              <li><code>Tap(ByTarget(HomeTarget.increment))</code><span><span data-l="en">Finds the button by its id and taps its centre, as a finger does.</span><span data-l="uk">Знаходить кнопку за id і натискає на її центр, як це робить палець.</span></span></li>
+              <li><code>runFlows(args, [homeFlow])</code><span><span data-l="en">Reads the flow and the variant from the command and walks them. List every flow of the project here.</span><span data-l="uk">Читає флоу і варіант із команди та проходить їх. Перелічіть тут усі флоу проєкту.</span></span></li>
+            </ul>
+          </details>
         </div></li>
         <li class="step"><div class="body">
           <span class="t"><span data-l="en">Run the app, then the flow</span><span data-l="uk">Запустити застосунок, потім флоу</span></span>
+          <p><b>1.</b> <span data-l="en">Terminal 1: start the app and keep it running. It prints the address of the Dart VM service.</span><span data-l="uk">Термінал 1: запустіть застосунок і не закривайте його. Він друкує адресу Dart VM service.</span></p>
           <div class="cmd"><code>fvm flutter run -d &lt;device&gt; --dart-define=ENABLE_AUTOMATION=true</code><button class="copy" type="button"></button></div>
+          <p><b>2.</b> <span data-l="en">Terminal 2: check the flow without a device. The command prints the steps as JSON, so a typo shows up before a run.</span><span data-l="uk">Термінал 2: перевірте флоу без пристрою. Команда друкує кроки як JSON, тож помилка видна ще до запуску.</span></p>
           <div class="cmd"><code>fvm dart run tool/run_flows.dart home counterIncreases --dry-run</code><button class="copy" type="button"></button></div>
+          <p><b>3.</b> <span data-l="en">Terminal 2: walk the flow. Write the address from step 1 as <code>ws://127.0.0.1:&lt;port&gt;/&lt;token&gt;=/ws</code>. The runner keeps it, so later runs need no <code>--uri</code>.</span><span data-l="uk">Термінал 2: пройдіть флоу. Запишіть адресу з кроку 1 як <code>ws://127.0.0.1:&lt;port&gt;/&lt;token&gt;=/ws</code>. Раннер запам'ятовує її, тому наступним запускам <code>--uri</code> не потрібен.</span></p>
           <div class="cmd"><code>fvm dart run tool/run_flows.dart home counterIncreases --uri &lt;ws-uri&gt;</code><button class="copy" type="button"></button></div>
-          <ul class="small">
-            <li><span data-l="en"><code>--dry-run</code> expands the steps on the computer. It needs no device.</span><span data-l="uk"><code>--dry-run</code> розгортає кроки на комп'ютері. Пристрій не потрібен.</span></li>
-            <li><span data-l="en"><code>--uri</code> is the VM service address that <code>flutter run</code> prints. The runner keeps it for the next runs.</span><span data-l="uk"><code>--uri</code> — адреса VM service, яку друкує <code>flutter run</code>. Раннер запам'ятовує її для наступних запусків.</span></li>
-            <li><span data-l="en">Drop <code>fvm</code> when the project does not use it.</span><span data-l="uk">Приберіть <code>fvm</code>, якщо проєкт його не використовує.</span></li>
-          </ul>
+          <p><b>4.</b> <span data-l="en">Read the report: one JSON line. The example is shortened, and the numbers are only an illustration.</span><span data-l="uk">Прочитайте звіт: один рядок JSON. Приклад скорочено, числа лише для ілюстрації.</span></p>
+          <div class="code"><button class="copy" type="button"></button><pre><code>{"flow":"home","variant":"counterIncreases","ok":true,
+ "commandMs":2140,"setupMs":0,"totalMs":610,
+ "steps":[
+  {"label":"waitFor home.screen.screen","action":"waitFor","ms":420,"ok":true},
+  {"label":"tap home.button.increment","action":"tap","ms":190,"ok":true}]}</code></pre></div>
+          <details class="explain">
+            <summary><span data-l="en">What happens here</span><span data-l="uk">Що тут відбувається</span></summary>
+            <ul>
+              <li><code>"ok":true</code><span><span data-l="en">Every step passed. On a failure the run stops, and the failed step carries <code>"error"</code>.</span><span data-l="uk">Кожен крок пройшов. При помилці запуск зупиняється, а крок із помилкою містить <code>"error"</code>.</span></span></li>
+              <li><code>"ms"</code><span><span data-l="en">How long one step took.</span><span data-l="uk">Скільки тривав один крок.</span></span></li>
+              <li><code>"commandMs"</code><span><span data-l="en">How long the whole command took. Compare runs by this number.</span><span data-l="uk">Скільки тривала вся команда. Порівнюйте запуски за цим числом.</span></span></li>
+            </ul>
+          </details>
+          <p class="small"><span data-l="en">Drop <code>fvm</code> when the project does not use it.</span><span data-l="uk">Приберіть <code>fvm</code>, якщо проєкт його не використовує.</span></p>
         </div></li>
         <li class="step"><div class="body">
           <span class="t"><span data-l="en">Optional: describe the project for the skills</span><span data-l="uk">Необов'язково: описати проєкт для скілів</span></span>
@@ -451,6 +509,14 @@ ItemCard(item: item).automationTarget(CatalogTarget.item.withKey(item.id))
 
 // The flow: catalog.tile.item.42
 Tap(ByTarget(CatalogTarget.item.withKey(42)))</code></pre></div>
+      <details class="explain">
+        <summary><span data-l="en">What happens here</span><span data-l="uk">Що тут відбувається</span></summary>
+        <ul>
+          <li><code>CatalogTarget.item</code><span><span data-l="en">The id is <code>catalog.tile.item</code>. Without a key, the list would have many widgets with one id, and a step could not choose.</span><span data-l="uk">Id — <code>catalog.tile.item</code>. Без ключа в списку було б багато віджетів з одним id, і крок не зміг би обрати.</span></span></li>
+          <li><code>.withKey(item.id)</code><span><span data-l="en">The app adds the id of the record to each card: <code>catalog.tile.item.1</code>, <code>.2</code>, <code>.42</code>. The id stays with its card when the list sorts.</span><span data-l="uk">Застосунок додає до кожної картки id запису: <code>catalog.tile.item.1</code>, <code>.2</code>, <code>.42</code>. Id залишається зі своєю карткою, коли список сортується.</span></span></li>
+          <li><code>Tap(...withKey(42))</code><span><span data-l="en">The flow taps exactly the card of record 42.</span><span data-l="uk">Флоу натискає саме картку запису 42.</span></span></li>
+        </ul>
+      </details>
     </section>
 
     <section>
@@ -465,6 +531,7 @@ Tap(ByTarget(CatalogTarget.item.withKey(42)))</code></pre></div>
       AutomationInstaller.launchLanguageCode ?? readSavedLanguageCode();
   // ...
 }</code></pre></div>
+      <p class="small"><span data-l="en"><code>currentScreenName</code>, <code>setAppLanguage</code> and <code>readSavedLanguageCode</code> stand for the code of your app.</span><span data-l="uk"><code>currentScreenName</code>, <code>setAppLanguage</code> і <code>readSavedLanguageCode</code> позначають код вашого застосунку.</span></p>
       <div class="box">
         <table>
           <tr><td><code>screenReader</code></td><td><span data-l="en">Names the current screen. The runner compares it with <code>splashScreen</code> to know when a launch ends. <code>null</code> is valid.</span><span data-l="uk">Називає поточний екран. Раннер порівнює його зі <code>splashScreen</code>, щоб знати, коли запуск закінчився. <code>null</code> допустимий.</span></td></tr>
@@ -499,13 +566,48 @@ final catalogFlow = AutomationFlowDefinition(
     ),
   ],
 );</code></pre></div>
+      <details class="explain">
+        <summary><span data-l="en">What happens here</span><span data-l="uk">Що тут відбувається</span></summary>
+        <ul>
+          <li><code>FlowBlock signIn</code><span><span data-l="en">The sign-in steps, written once. Each <code>Use(signIn)</code> puts them into a variant.</span><span data-l="uk">Кроки входу, записані один раз. Кожен <code>Use(signIn)</code> вставляє їх у варіант.</span></span></li>
+          <li><code>'items'</code><span><span data-l="en">The runner sets the mock to the <code>fullShelf</code> profile and restarts the app. Then it signs in and waits for the catalog screen.</span><span data-l="uk">Раннер ставить мок у профіль <code>fullShelf</code> і перезапускає застосунок. Потім входить і чекає на екран каталогу.</span></span></li>
+          <li><code>'empty'</code><span><span data-l="en">The same path on the <code>emptyShelf</code> profile. It waits for the label of the empty catalog.</span><span data-l="uk">Той самий шлях на профілі <code>emptyShelf</code>. Він чекає на напис порожнього каталогу.</span></span></li>
+          <li><code>defaultVariant: 'items'</code><span><span data-l="en">The variant that runs when the command names none.</span><span data-l="uk">Варіант, що запускається, коли команда жодного не називає.</span></span></li>
+        </ul>
+      </details>
       <div class="box">
         <table>
           <tr><td><code>FlowVariant</code></td><td><span data-l="en">One way through the journey. <code>items</code> holds steps and <code>Use(block)</code> items, in order.</span><span data-l="uk">Один спосіб пройти шлях. <code>items</code> містить кроки і елементи <code>Use(block)</code>, по порядку.</span></td></tr>
           <tr><td><code>FlowBlock</code>, <code>Use</code></td><td><span data-l="en">Reusable steps. <code>FlowBlock.params</code> names parameters with defaults; <code>Use(block, arguments: {...})</code> fills them in.</span><span data-l="uk">Кроки для повторного використання. <code>FlowBlock.params</code> називає параметри зі значеннями за замовчуванням; <code>Use(block, arguments: {...})</code> їх заповнює.</span></td></tr>
           <tr><td><code>scenario</code></td><td><span data-l="en">On the flow, it applies to every variant. On a variant, it continues the list of the flow. The runner pushes it before the first step and restarts the app.</span><span data-l="uk">На флоу діє на кожен варіант. На варіанті продовжує список флоу. Раннер надсилає його перед першим кроком і перезапускає застосунок.</span></td></tr>
-          <tr><td><span data-l="en">Steps</span><span data-l="uk">Кроки</span></td><td><code>Tap</code>, <code>WaitFor</code>, <code>WaitForAbsent</code>, <code>WaitForTappable</code>, <code>ScrollIntoView</code>, <code>Scroll</code>, <code>EnterText</code>, <code>ProbeCenter</code>, <code>ProbeSeries</code>, <code>TraceStart</code>, <code>TraceStop</code>, <code>DriverCommand</code></td></tr>
-          <tr><td><span data-l="en">Finders</span><span data-l="uk">Фіндери</span></td><td><code>ByTarget</code>, <code>ByValueKey</code>, <code>ByText</code>, <code>ByTooltip</code>, <code>ByLocaleKey</code>, <code>ByLocaleKeyTooltip</code>, <code>ByType</code>, <code>ByPageBack</code>, <code>ByDateText</code>, <code>ByDeclaredDate</code>, <code>ByDescendant</code>, <code>ByAncestor</code></td></tr>
+        </table>
+      </div>
+      <div class="box">
+        <h3><span data-l="en">Steps: what each one does</span><span data-l="uk">Кроки: що робить кожен</span></h3>
+        <p class="small"><span data-l="en">A step only acts on what the app shows. No step opens a screen by itself: a screen appears because the app shows it, or because a <code>Tap</code> leads to it. Each step waits up to 10 seconds; <code>timeout:</code> changes the limit.</span><span data-l="uk">Крок діє лише на те, що показує застосунок. Жоден крок сам не відкриває екран: екран з'являється, бо його показує застосунок або до нього веде <code>Tap</code>. Кожен крок чекає до 10 секунд; <code>timeout:</code> змінює ліміт.</span></p>
+        <table>
+          <tr><td><code>Tap</code></td><td><span data-l="en">Taps the centre of the element.</span><span data-l="uk">Натискає на центр елемента.</span></td></tr>
+          <tr><td><code>WaitFor</code></td><td><span data-l="en">Waits until the element is in the widget tree.</span><span data-l="uk">Чекає, доки елемент з'явиться в дереві віджетів.</span></td></tr>
+          <tr><td><code>WaitForAbsent</code></td><td><span data-l="en">Waits until the element leaves the tree, for example a loader.</span><span data-l="uk">Чекає, доки елемент зникне з дерева, наприклад лоадер.</span></td></tr>
+          <tr><td><code>WaitForTappable</code></td><td><span data-l="en">Waits until the element is in the tree and a tap can reach it.</span><span data-l="uk">Чекає, доки елемент буде в дереві і натискання зможе до нього дістатися.</span></td></tr>
+          <tr><td><code>ScrollIntoView</code></td><td><span data-l="en">Scrolls the nearest list until the element is on screen.</span><span data-l="uk">Прокручує найближчий список, доки елемент не з'явиться на екрані.</span></td></tr>
+          <tr><td><code>Scroll</code></td><td><span data-l="en">Drags on the element by a distance.</span><span data-l="uk">Тягне по елементу на задану відстань.</span></td></tr>
+          <tr><td><code>EnterText</code></td><td><span data-l="en">Types text into the focused field.</span><span data-l="uk">Вводить текст у поле у фокусі.</span></td></tr>
+          <tr><td><code>ProbeCenter</code>, <code>ProbeSeries</code></td><td><span data-l="en">Read the position of elements into the report, once or in a series.</span><span data-l="uk">Записують позицію елементів у звіт, один раз або серією.</span></td></tr>
+          <tr><td><code>TraceStart</code>, <code>TraceStop</code></td><td><span data-l="en">Open and close a window in which the run measures frames.</span><span data-l="uk">Відкривають і закривають вікно, в якому запуск вимірює кадри.</span></td></tr>
+          <tr><td><code>DriverCommand</code></td><td><span data-l="en">Sends the app a command by its name.</span><span data-l="uk">Надсилає застосунку команду за її ім'ям.</span></td></tr>
+        </table>
+      </div>
+      <div class="box">
+        <h3><span data-l="en">Finders: how a step finds an element</span><span data-l="uk">Фіндери: як крок знаходить елемент</span></h3>
+        <table>
+          <tr><td><code>ByTarget</code> <span class="tag ok"><span data-l="en">first choice</span><span data-l="uk">перший вибір</span></span></td><td><span data-l="en">The widget with a target id. A text change does not break it.</span><span data-l="uk">Віджет з id таргета. Зміна тексту його не ламає.</span></td></tr>
+          <tr><td><code>ByText</code>, <code>ByTooltip</code></td><td><span data-l="en">A text or a tooltip as the user reads it.</span><span data-l="uk">Текст або підказка, як їх читає користувач.</span></td></tr>
+          <tr><td><code>ByLocaleKey</code>, <code>ByLocaleKeyTooltip</code></td><td><span data-l="en">A text by its translation key, in any language. Needs <code>ENABLE_AUTOMATION_LOCALE_KEYS</code>.</span><span data-l="uk">Текст за ключем перекладу, будь-якою мовою. Потребує <code>ENABLE_AUTOMATION_LOCALE_KEYS</code>.</span></td></tr>
+          <tr><td><code>ByValueKey</code>, <code>ByType</code></td><td><span data-l="en">A widget by its <code>ValueKey</code> or by its class.</span><span data-l="uk">Віджет за його <code>ValueKey</code> або за класом.</span></td></tr>
+          <tr><td><code>ByPageBack</code></td><td><span data-l="en">The back button of a page.</span><span data-l="uk">Кнопка «назад» сторінки.</span></td></tr>
+          <tr><td><code>ByDateText</code>, <code>ByDeclaredDate</code></td><td><span data-l="en">A day of a calendar, written by <code>dateFormats</code> or by a <code>finders</code> template of <code>pubspec.yaml</code>.</span><span data-l="uk">День календаря, записаний за <code>dateFormats</code> або за шаблоном <code>finders</code> з <code>pubspec.yaml</code>.</span></td></tr>
+          <tr><td><code>ByDescendant</code>, <code>ByAncestor</code></td><td><span data-l="en">One finder inside or around another one.</span><span data-l="uk">Один фіндер усередині або навколо іншого.</span></td></tr>
         </table>
       </div>
       <p class="callout warn"><b><span data-l="en">Name clash.</span><span data-l="uk">Конфлікт імен.</span></b> <span data-l="en"><code>package:flutter_driver</code> has the same names (<code>Tap</code>, <code>WaitFor</code>, <code>ByText</code> and others). A script that needs both imports one of them with a prefix.</span><span data-l="uk"><code>package:flutter_driver</code> має ті самі імена (<code>Tap</code>, <code>WaitFor</code>, <code>ByText</code> та інші). Скрипт, якому потрібні обидва, імпортує один із них із префіксом.</span></p>
@@ -527,6 +629,13 @@ final catalogSection = MockSection&lt;CatalogSettings&gt;(
     'fullShelf': (settings) =&gt; settings.copyWith(itemCount: 5),
   },
 );</code></pre></div>
+          <details class="explain">
+            <summary><span data-l="en">What happens here</span><span data-l="uk">Що тут відбувається</span></summary>
+            <ul>
+              <li><code>CatalogSettings</code><span><span data-l="en">Your class with the state of the area, here one field <code>itemCount</code> with its default.</span><span data-l="uk">Ваш клас зі станом частини, тут одне поле <code>itemCount</code> зі значенням за замовчуванням.</span></span></li>
+              <li><code>'emptyShelf'</code><span><span data-l="en">A named state: the catalog answers with 0 items. A flow names it as <code>catalogSection.profile('emptyShelf')</code>.</span><span data-l="uk">Іменований стан: каталог відповідає 0 елементами. Флоу називає його як <code>catalogSection.profile('emptyShelf')</code>.</span></span></li>
+            </ul>
+          </details>
           <p class="small"><span data-l="en">A flow also takes <code>catalogSection.override((s) =&gt; ...)</code>, <code>MockOverride.latency(MockLatencyProfile.slow)</code>, <code>.latencySeed(7)</code> and <code>.failures({...})</code>.</span><span data-l="uk">Флоу також приймає <code>catalogSection.override((s) =&gt; ...)</code>, <code>MockOverride.latency(MockLatencyProfile.slow)</code>, <code>.latencySeed(7)</code> і <code>.failures({...})</code>.</span></p>
         </div></li>
         <li class="step"><div class="body">
@@ -542,7 +651,14 @@ final mock = await AutomationMock.init(
   sections: isMockEnabled ? [catalogSection] : const [],
   onScenarioApplied: (scenario) =&gt; backend?.rebuild(),
 );</code></pre></div>
-          <p class="small"><span data-l="en"><code>isEnabled</code> must be a compile-time constant, so the release build drops the mock code.</span><span data-l="uk"><code>isEnabled</code> має бути константою часу компіляції, тоді release-збірка викидає код мока.</span></p>
+          <details class="explain">
+            <summary><span data-l="en">What happens here</span><span data-l="uk">Що тут відбувається</span></summary>
+            <ul>
+              <li><code>isMockEnabled</code><span><span data-l="en">True only with both defines. A compile-time constant, so the release build drops the mock code.</span><span data-l="uk">True лише з обома define. Константа часу компіляції, тож release-збірка викидає код мока.</span></span></li>
+              <li><code>scenarioDirectory</code><span><span data-l="en">The folder where the scenario waits for the next launch. The runner restarts the app after it sends a scenario.</span><span data-l="uk">Папка, де сценарій чекає на наступний запуск. Раннер перезапускає застосунок після надсилання сценарію.</span></span></li>
+              <li><code>onScenarioApplied</code><span><span data-l="en">Runs after a new scenario arrives. <code>rebuild()</code> lets the backend take the new latency and endpoints.</span><span data-l="uk">Виконується, коли надходить новий сценарій. <code>rebuild()</code> дає бекенду взяти нову затримку і ендпоінти.</span></span></li>
+            </ul>
+          </details>
         </div></li>
         <li class="step"><div class="body">
           <span class="t"><span data-l="en">Answer the endpoints</span><span data-l="uk">Відповідати на ендпоінти</span></span>
@@ -562,6 +678,13 @@ final mock = await AutomationMock.init(
     return MockApiResponse(body: {'count': count});
   }
 }</code></pre></div>
+          <details class="explain">
+            <summary><span data-l="en">What happens here</span><span data-l="uk">Що тут відбувається</span></summary>
+            <ul>
+              <li><code>MockApiEndpoint(path: '/catalog/items', ...)</code><span><span data-l="en">The mock owns this path. A request to it gets the answer of <code>_respondItems</code>, not of the server.</span><span data-l="uk">Мок володіє цим шляхом. Запит на нього отримує відповідь <code>_respondItems</code>, а не сервера.</span></span></li>
+              <li><code>settingsOf(catalogSection).itemCount</code><span><span data-l="en">The value of the current scenario: 0 for <code>emptyShelf</code>, 5 for <code>fullShelf</code>.</span><span data-l="uk">Значення поточного сценарію: 0 для <code>emptyShelf</code>, 5 для <code>fullShelf</code>.</span></span></li>
+            </ul>
+          </details>
           <p class="small"><span data-l="en">Read settings with <code>settingsOf</code> at the time of use. A later <code>scenario.apply</code> then shows up without a restart.</span><span data-l="uk">Читайте налаштування через <code>settingsOf</code> у момент використання. Тоді наступний <code>scenario.apply</code> діє без перезапуску.</span></p>
         </div></li>
         <li class="step"><div class="body">
@@ -585,6 +708,14 @@ dio.httpClientAdapter = mock.substitute(
     );
   },
 );</code></pre></div>
+          <details class="explain">
+            <summary><span data-l="en">What happens here</span><span data-l="uk">Що тут відбувається</span></summary>
+            <ul>
+              <li><code>real: networkAdapter</code><span><span data-l="en">With the mock off, Dio keeps its usual network adapter.</span><span data-l="uk">Коли мок вимкнено, Dio залишає свій звичайний мережевий адаптер.</span></span></li>
+              <li><code>fake: ...</code><span><span data-l="en">With the mock on, a path that the mock owns gets the mock answer. Any other path still goes to <code>networkAdapter</code>.</span><span data-l="uk">Коли мок увімкнено, шлях, яким володіє мок, отримує відповідь мока. Будь-який інший шлях іде в <code>networkAdapter</code>.</span></span></li>
+              <li><code>journal: mock.journal</code><span><span data-l="en">Records each request, so a run can read what the app asked for.</span><span data-l="uk">Записує кожен запит, щоб запуск міг прочитати, що запитував застосунок.</span></span></li>
+            </ul>
+          </details>
           <p class="small"><span data-l="en">Recipes for <code>shared_preferences</code>, <code>flutter_secure_storage</code> and Drift: <a href="https://github.com/valeriinov/flutter_automation/blob/main/packages/flutter_automation_mock/doc/recipes.md" target="_blank" rel="noopener"><code>doc/recipes.md</code></a>.</span><span data-l="uk">Рецепти для <code>shared_preferences</code>, <code>flutter_secure_storage</code> і Drift: <a href="https://github.com/valeriinov/flutter_automation/blob/main/packages/flutter_automation_mock/doc/recipes.md" target="_blank" rel="noopener"><code>doc/recipes.md</code></a>.</span></p>
         </div></li>
         <li class="step"><div class="body">
