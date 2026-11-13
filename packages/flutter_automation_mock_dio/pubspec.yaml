@@ -1,6 +1,6 @@
 name: flutter_automation_mock_dio
 description: Dio adapter that answers the requests of an app from the in-memory mock of flutter_automation_mock.
-version: 0.6.0
+version: 0.6.1
 repository: https://github.com/valeriinov/flutter_automation
 publish_to: none
 
@@ -17,7 +17,7 @@ dependencies:
   flutter_automation_mock:
     git:
       url: https://github.com/valeriinov/flutter_automation.git
-      ref: 0.6.0
+      ref: 0.6.1
       path: packages/flutter_automation_mock
 
 dev_dependencies:

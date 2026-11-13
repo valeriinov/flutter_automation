@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.6.1
+
+- No change; released together with the other packages.
+
 ## 0.6.0
 
 - New `AutomationTarget.withKey(key)` in the extension
