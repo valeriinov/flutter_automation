@@ -1,0 +1,852 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>flutter_automation guide</title>
+<style>
+:root {
+  --brand: #0A6FE0; --brand-strong: #0858B5; --brand-soft: #E3EEFD; --brand-line: #C4DAF8; --brand-bg2: #F5F9FF;
+  --ground: #F4F5F9; --surface: #FFFFFF; --line: #E3E6EE;
+  --ink: #151823; --muted: #5B6173; --code-bg: #E8EAF1;
+  --ok-soft: #E3F5EA; --ok-ink: #11803A; --warn-soft: #FBEEE4; --warn-ink: #B5652F;
+  --app: #6B4FC8; --app-soft: #EEE9FB;
+  --shadow: 0 1px 3px rgba(21,24,35,.08), 0 10px 28px -18px rgba(21,24,35,.3);
+  --font-display: "Unbounded", "Manrope", system-ui, sans-serif;
+  --font-body: "Manrope", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, "SF Mono", Menlo, monospace;
+  color-scheme: light;
+}
+html[lang="en"] [data-l="uk"], html[lang="uk"] [data-l="en"] { display: none !important; }
+* { box-sizing: border-box; }
+body { background: var(--ground); color: var(--ink); font: 15px/1.55 var(--font-body); margin: 0;
+  padding: 0 max(16px, env(safe-area-inset-right, 0px)) 56px max(16px, env(safe-area-inset-left, 0px)); }
+.wrap { max-width: 760px; margin: 0 auto; display: grid; grid-template-columns: minmax(0, 1fr); gap: 18px; }
+header { padding-top: 28px; display: grid; gap: 14px; }
+.brand-row { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; }
+.brand-row > div:not(.lang) { flex: 1 1 240px; min-width: 0; }
+.logo { width: 38px; height: 38px; flex: none; border-radius: 11px; background: var(--brand); color: #fff; display: grid; place-items: center; font-size: 18px; }
+.eyebrow { font: 700 11px/1.2 var(--font-body); letter-spacing: .08em; text-transform: uppercase; color: var(--brand); margin: 0 0 4px; }
+h1 { font: 700 22px/1.25 var(--font-display); margin: 0; letter-spacing: -.01em; overflow-wrap: anywhere; }
+h2 { font: 700 18px/1.3 var(--font-body); margin: 0; }
+h3 { font: 700 15px/1.3 var(--font-body); margin: 0; }
+p { margin: 0; }
+.sub { color: var(--muted); font-size: 14px; max-width: 64ch; }
+.lang { display: flex; gap: 2px; padding: 3px; background: #E9ECF4; border-radius: 10px; flex: none; align-self: start; }
+.lang button { font: 700 12px/1 var(--font-body); border: 0; background: transparent; color: var(--muted); padding: 7px 10px; border-radius: 8px; cursor: pointer; }
+.lang button[aria-pressed="true"] { background: var(--surface); color: var(--ink); box-shadow: 0 1px 2px rgba(21,24,35,.12); }
+.tabs { display: flex; flex-wrap: wrap; gap: 4px; padding: 4px; background: #E9ECF4; border-radius: 12px; justify-self: start; max-width: 100%; }
+.tabs button { font: 700 14px/1 var(--font-body); border: 0; background: transparent; color: var(--muted); padding: 9px 14px; border-radius: 9px; cursor: pointer; }
+.tabs button[aria-selected="true"] { background: var(--surface); color: var(--ink); box-shadow: 0 1px 2px rgba(21,24,35,.12); }
+.panel { display: grid; gap: 22px; grid-template-columns: minmax(0, 1fr); }
+.panel[hidden] { display: none; }
+section { display: grid; gap: 10px; grid-template-columns: minmax(0, 1fr); }
+.stage-head { display: flex; flex-wrap: wrap; gap: 8px 10px; align-items: center; }
+.stage-head .k { font: 500 12px/1 var(--font-mono); color: var(--muted); }
+ol.steps { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; counter-reset: s; }
+.step, .box { background: var(--surface); border: 1px solid var(--line); border-radius: 16px; padding: 14px 16px; box-shadow: var(--shadow); }
+.step { display: grid; grid-template-columns: 28px minmax(0, 1fr); gap: 4px 12px; }
+.step::before { counter-increment: s; content: counter(s); width: 28px; height: 28px; border-radius: 50%; background: var(--brand-soft); color: var(--brand-strong); display: grid; place-items: center; font: 700 13px/1 var(--font-body); }
+.body, .box { min-width: 0; display: grid; gap: 8px; align-content: start; }
+.body { padding-top: 3px; }
+.t { font-weight: 700; }
+ul { margin: 0; padding-left: 18px; display: grid; gap: 4px; }
+a { color: var(--brand); text-underline-offset: 2px; }
+:focus-visible { outline: 3px solid var(--brand); outline-offset: 2px; }
+code, kbd { font-family: var(--font-mono); font-size: .86em; background: var(--code-bg); padding: 1px 5px; border-radius: 6px; overflow-wrap: anywhere; }
+.cmd { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.cmd code { font-size: 13px; padding: 6px 10px; }
+.code { position: relative; min-width: 0; }
+.code .copy { position: absolute; top: 8px; right: 8px; }
+pre { margin: 0; background: var(--code-bg); border-radius: 12px; padding: 12px 14px; padding-right: 96px; overflow-x: auto; font: 500 12.5px/1.6 var(--font-mono); }
+pre code { background: none; padding: 0; font-size: inherit; overflow-wrap: normal; }
+button.copy { font: 700 13px/1 var(--font-body); padding: 7px 11px; border-radius: 10px; border: 1px solid var(--brand-line); background: var(--surface); color: var(--brand); cursor: pointer; }
+button.copy:hover { background: var(--brand-bg2); }
+button.link { font: inherit; color: var(--brand); background: none; border: 0; padding: 0; cursor: pointer; text-decoration: underline; text-underline-offset: 2px; }
+.cards { display: grid; grid-template-columns: minmax(0, 1fr); gap: 10px; }
+.cards.two { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.card ol { margin: 0; padding-left: 18px; display: grid; gap: 6px; }
+.tag { font: 700 12px/1 var(--font-body); padding: 5px 9px; border-radius: 999px; justify-self: start; background: var(--brand-soft); color: var(--brand-strong); white-space: nowrap; }
+.tag.ok { background: var(--ok-soft); color: var(--ok-ink); }
+.tag.app { background: var(--app-soft); color: var(--app); }
+.tag.warn { background: var(--warn-soft); color: var(--warn-ink); }
+.callout { padding: 10px 14px; border-radius: 12px; background: var(--brand-soft); font-size: 14px; }
+.callout b { color: var(--brand-strong); }
+.callout.ok { background: var(--ok-soft); }
+.callout.ok b { color: var(--ok-ink); }
+.callout.warn { background: var(--warn-soft); }
+.callout.warn b { color: var(--warn-ink); }
+.small { font-size: 13.5px; color: var(--muted); }
+table { border-collapse: collapse; width: 100%; font-size: 14px; }
+td { padding: 7px 0; border-top: 1px solid var(--line); vertical-align: top; }
+td:first-child { padding-right: 14px; width: 34%; }
+tr:first-child td { border-top: 0; }
+.flow { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 8px; }
+.flow > div { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 10px; display: grid; gap: 4px; align-content: start; box-shadow: var(--shadow); }
+.flow b { font-size: 14px; }
+.flow span { font-size: 12.5px; color: var(--muted); }
+.flow .n { font: 700 12px/1 var(--font-mono); color: var(--brand); }
+.flow .app { border-color: #D8CDF5; background: #FBF9FF; }
+.flow .app .n { color: var(--app); }
+.arch { display: grid; grid-template-columns: minmax(0, 1fr) 92px minmax(0, 1fr); gap: 8px; align-items: stretch; }
+.side { border-radius: 16px; padding: 12px; display: grid; gap: 8px; align-content: start; border: 1px dashed var(--brand-line); background: var(--brand-bg2); }
+.side.app { border-color: #D8CDF5; background: #FBF9FF; }
+.side .h { font: 700 12px/1.2 var(--font-body); letter-spacing: .06em; text-transform: uppercase; color: var(--brand); }
+.side.app .h { color: var(--app); }
+.node { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 8px 10px; font-size: 13px; display: grid; gap: 2px; }
+.node code { font-size: 11.5px; justify-self: start; }
+.wire { display: grid; place-items: center; text-align: center; font-size: 12px; color: var(--muted); gap: 4px; align-content: center; }
+.wire .arrow { font-size: 22px; color: var(--brand); line-height: 1; }
+.phrase { font-style: italic; color: var(--ink); }
+@media (max-width: 640px) {
+  .flow, .cards.two { grid-template-columns: minmax(0, 1fr); }
+  .arch { grid-template-columns: minmax(0, 1fr); }
+  .wire .arrow { transform: rotate(90deg); }
+  td:first-child { width: 40%; }
+}
+@media (max-width: 560px), (pointer: coarse) { button.copy { min-height: 40px; } }
+</style>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Unbounded:wght@700&family=Manrope:wght@400;500;700&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="brand-row">
+      <span class="logo" aria-hidden="true">▶</span>
+      <div>
+        <p class="eyebrow"><span data-l="en">Flutter packages · Guide</span><span data-l="uk">Пакети Flutter · Посібник</span></p>
+        <h1>flutter_automation</h1>
+      </div>
+      <div class="lang" role="group" aria-label="Language / Мова">
+        <button type="button" data-set-lang="en" aria-pressed="true">EN</button>
+        <button type="button" data-set-lang="uk" aria-pressed="false">UK</button>
+      </div>
+    </div>
+    <p class="sub">
+      <span data-l="en">A set of packages for Flutter apps. An AI agent or a developer runs the app on a phone or a simulator. One command then walks a user journey through it and returns a report.</span>
+      <span data-l="uk">Набір пакетів для застосунків на Flutter. AI-агент або розробник запускає застосунок на телефоні чи симуляторі. Потім одна команда проходить шлях користувача і повертає звіт.</span>
+    </p>
+    <div class="tabs" role="tablist">
+      <button role="tab" id="tab-overview" aria-controls="overview" aria-selected="true"><span data-l="en">Overview</span><span data-l="uk">Огляд</span></button>
+      <button role="tab" id="tab-install" aria-controls="install" aria-selected="false" tabindex="-1"><span data-l="en">Install</span><span data-l="uk">Встановлення</span></button>
+      <button role="tab" id="tab-dev" aria-controls="dev" aria-selected="false" tabindex="-1"><span data-l="en">For developers</span><span data-l="uk">Для розробників</span></button>
+      <button role="tab" id="tab-skills" aria-controls="skills" aria-selected="false" tabindex="-1"><span data-l="en">Agent skills</span><span data-l="uk">Скіли агента</span></button>
+    </div>
+  </header>
+
+  <!-- ============================== OVERVIEW ============================== -->
+  <div class="panel" id="overview" role="tabpanel" aria-labelledby="tab-overview">
+    <section>
+      <div class="stage-head"><h2><span data-l="en">The idea in one minute</span><span data-l="uk">Ідея за одну хвилину</span></h2></div>
+      <div class="box">
+        <ul>
+          <li><span data-l="en">A tester usually opens the app and taps through a screen by hand. These packages let a program do the same taps.</span><span data-l="uk">Тестувальник зазвичай відкриває застосунок і проходить екран руками. Ці пакети дають програмі зробити ті самі натискання.</span></li>
+          <li><span data-l="en">The journey is written down once, for example "sign in and open the catalog". After that, one command repeats it on any device.</span><span data-l="uk">Шлях записують один раз, наприклад «увійти і відкрити каталог». Далі одна команда повторює його на будь-якому пристрої.</span></li>
+          <li><span data-l="en">The app needs no real server for this. A built-in fake server puts the app into the state that the journey needs.</span><span data-l="uk">Справжній сервер для цього не потрібен. Вбудований фейковий сервер ставить застосунок у стан, потрібний шляху.</span></li>
+          <li><span data-l="en">The result is a report: which steps passed and how many milliseconds each one took.</span><span data-l="uk">Результат — звіт: які кроки пройшли і скільки мілісекунд зайняв кожен.</span></li>
+        </ul>
+      </div>
+    </section>
+
+    <section>
+      <div class="stage-head"><h2><span data-l="en">The path of one run</span><span data-l="uk">Шлях одного запуску</span></h2></div>
+      <div class="flow">
+        <div><span class="n">1</span><b><span data-l="en">Journey</span><span data-l="uk">Шлях</span></b><span><span data-l="en">The steps: tap, wait, type.</span><span data-l="uk">Кроки: натиснути, дочекатися, ввести.</span></span></div>
+        <div><span class="n">2</span><b><span data-l="en">State</span><span data-l="uk">Стан</span></b><span><span data-l="en">For example: an empty list, or a server error.</span><span data-l="uk">Наприклад: порожній список або помилка сервера.</span></span></div>
+        <div><span class="n">3</span><b><span data-l="en">Runner</span><span data-l="uk">Раннер</span></b><span><span data-l="en">Sends the state and the steps to the app.</span><span data-l="uk">Надсилає стан і кроки в застосунок.</span></span></div>
+        <div class="app"><span class="n"><span data-l="en">4 · on the device</span><span data-l="uk">4 · на пристрої</span></span><b><span data-l="en">App</span><span data-l="uk">Застосунок</span></b><span><span data-l="en">Does the steps. The fake server answers its requests.</span><span data-l="uk">Виконує кроки. Фейковий сервер відповідає на запити.</span></span></div>
+        <div><span class="n">5</span><b><span data-l="en">Report</span><span data-l="uk">Звіт</span></b><span><span data-l="en">Passed or failed, and the time of each step.</span><span data-l="uk">Пройшло чи ні, і час кожного кроку.</span></span></div>
+      </div>
+    </section>
+
+    <section>
+      <div class="stage-head"><h2><span data-l="en">Words used on this page</span><span data-l="uk">Слова на цій сторінці</span></h2></div>
+      <div class="box">
+        <table>
+          <tr><td><b><span data-l="en">Target</span><span data-l="uk">Таргет</span></b></td><td><span data-l="en">A fixed name on a button, a field or a screen, for example <code>login.button.submit</code>. A step finds the element by this name, not by its text.</span><span data-l="uk">Постійне ім'я на кнопці, полі чи екрані, наприклад <code>login.button.submit</code>. Крок знаходить елемент за цим ім'ям, а не за текстом.</span></td></tr>
+          <tr><td><b><span data-l="en">Flow</span><span data-l="uk">Флоу</span></b></td><td><span data-l="en">One user journey, written as a list of steps.</span><span data-l="uk">Один шлях користувача, записаний як список кроків.</span></td></tr>
+          <tr><td><b><span data-l="en">Variant</span><span data-l="uk">Варіант</span></b></td><td><span data-l="en">One way through a flow. The flow "catalog" can have the variants "items" and "empty".</span><span data-l="uk">Один спосіб пройти флоу. Флоу «catalog» може мати варіанти «items» і «empty».</span></td></tr>
+          <tr><td><b><span data-l="en">Mock</span><span data-l="uk">Мок</span></b></td><td><span data-l="en">The fake server inside the app. It answers requests the way the real server does.</span><span data-l="uk">Фейковий сервер усередині застосунку. Він відповідає на запити так само, як справжній сервер.</span></td></tr>
+          <tr><td><b><span data-l="en">Scenario</span><span data-l="uk">Сценарій</span></b></td><td><span data-l="en">The state of the mock for one run: how many items, which request fails, how slow the network is.</span><span data-l="uk">Стан мока для одного запуску: скільки елементів, який запит падає, наскільки повільна мережа.</span></td></tr>
+          <tr><td><b><span data-l="en">Runner</span><span data-l="uk">Раннер</span></b></td><td><span data-l="en">The command on the computer. It walks a flow in the running app and prints the report.</span><span data-l="uk">Команда на комп'ютері. Вона проходить флоу в запущеному застосунку і друкує звіт.</span></td></tr>
+          <tr><td><b><span data-l="en">Skill</span><span data-l="uk">Скіл</span></b></td><td><span data-l="en">A set of instructions for an AI agent. With skills, the agent sets up, marks screens and runs flows for you.</span><span data-l="uk">Набір інструкцій для AI-агента. Зі скілами агент сам налаштовує проєкт, розмічає екрани і проганяє флоу.</span></td></tr>
+        </table>
+      </div>
+    </section>
+
+    <section>
+      <div class="stage-head"><h2><span data-l="en">What it gives the team</span><span data-l="uk">Що це дає команді</span></h2></div>
+      <div class="cards two">
+        <div class="box">
+          <span class="tag ok"><span data-l="en">No server needed</span><span data-l="uk">Без сервера</span></span>
+          <p><span data-l="en">The mock shows any state on demand: an empty list, an error, a slow network. Nobody prepares test data on a remote environment.</span><span data-l="uk">Мок показує будь-який стан на вимогу: порожній список, помилку, повільну мережу. Нікому не треба готувати тестові дані на віддаленому середовищі.</span></p>
+        </div>
+        <div class="box">
+          <span class="tag ok"><span data-l="en">Same result every time</span><span data-l="uk">Той самий результат щоразу</span></span>
+          <p><span data-l="en">A flow names its state. Each run starts from that state, so two runs compare fairly.</span><span data-l="uk">Флоу називає свій стан. Кожен запуск стартує з цього стану, тому два запуски чесно порівнюються.</span></p>
+        </div>
+        <div class="box">
+          <span class="tag ok"><span data-l="en">Text changes break nothing</span><span data-l="uk">Зміна тексту нічого не ламає</span></span>
+          <p><span data-l="en">Steps find elements by target. A new button label or a translation does not break a flow.</span><span data-l="uk">Кроки знаходять елементи за таргетом. Новий напис на кнопці чи переклад не ламає флоу.</span></p>
+        </div>
+        <div class="box">
+          <span class="tag ok"><span data-l="en">A number, not an impression</span><span data-l="uk">Число, а не враження</span></span>
+          <p><span data-l="en">The report gives milliseconds per step. "The screen got slower" becomes a measured fact.</span><span data-l="uk">Звіт дає мілісекунди на кожен крок. «Екран став повільнішим» стає виміряним фактом.</span></p>
+        </div>
+        <div class="box">
+          <span class="tag ok"><span data-l="en">Any language</span><span data-l="uk">Будь-яка мова</span></span>
+          <p><span data-l="en">One option runs the same flow in another language of the app.</span><span data-l="uk">Одна опція проганяє той самий флоу іншою мовою застосунку.</span></p>
+        </div>
+        <div class="box">
+          <span class="tag ok"><span data-l="en">Safe for users</span><span data-l="uk">Безпечно для користувачів</span></span>
+          <p><span data-l="en">The store build holds none of this code. A build switch removes it.</span><span data-l="uk">Збірка для магазину не містить цього коду. Перемикач збірки прибирає його.</span></p>
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <div class="stage-head"><h2><span data-l="en">What the agent does for you</span><span data-l="uk">Що агент робить за вас</span></h2></div>
+      <p class="sub"><span data-l="en">An AI agent with the skills does the routine work. You ask in plain words; the agent picks the right skill.</span><span data-l="uk">AI-агент зі скілами робить рутинну роботу. Ви просите звичайними словами, агент обирає потрібний скіл.</span></p>
+      <div class="box">
+        <table>
+          <tr><td class="phrase"><span data-l="en">"Set up flutter_automation"</span><span data-l="uk">«Налаштуй автоматизацію в проєкті»</span></td><td><span data-l="en">Connects the packages and writes a first flow.</span><span data-l="uk">Підключає пакети і пише перший флоу.</span></td></tr>
+          <tr><td class="phrase"><span data-l="en">"Add automation targets to the login screen"</span><span data-l="uk">«Покрий флоу логіну таргетами»</span></td><td><span data-l="en">Gives fixed names to the buttons and fields of a screen.</span><span data-l="uk">Дає постійні імена кнопкам і полям екрана.</span></td></tr>
+          <tr><td class="phrase"><span data-l="en">"Show the empty catalog on the device"</span><span data-l="uk">«Покажи порожній каталог на пристрої»</span></td><td><span data-l="en">Sets the mock to that state and runs the app.</span><span data-l="uk">Ставить мок у цей стан і запускає застосунок.</span></td></tr>
+          <tr><td class="phrase"><span data-l="en">"Run the login flow"</span><span data-l="uk">«Прожени флоу логіну»</span></td><td><span data-l="en">Walks the flow, reads the report and fixes one problem per round.</span><span data-l="uk">Проходить флоу, читає звіт і виправляє одну проблему за раунд.</span></td></tr>
+          <tr><td class="phrase"><span data-l="en">"Reproduce the bug on the simulator"</span><span data-l="uk">«Відтвори баг на симуляторі»</span></td><td><span data-l="en">Starts the device and taps through the app step by step.</span><span data-l="uk">Запускає пристрій і проходить застосунок крок за кроком.</span></td></tr>
+        </table>
+      </div>
+      <p class="small"><span data-l="en">The <button type="button" class="link" data-go="skills">Agent skills</button> tab lists every skill and its manual equivalent.</span><span data-l="uk">Вкладка <button type="button" class="link" data-go="skills">Скіли агента</button> описує кожен скіл і як зробити те саме руками.</span></p>
+    </section>
+
+    <section>
+      <div class="stage-head"><h2><span data-l="en">How it fits into a project</span><span data-l="uk">Як це вбудовується в проєкт</span></h2></div>
+      <ol class="steps">
+        <li class="step"><div class="body"><span class="t"><span data-l="en">Connect once</span><span data-l="uk">Підключити один раз</span></span><p><span data-l="en">A developer or the agent adds the packages. This takes one request to the agent.</span><span data-l="uk">Розробник або агент додає пакети. Агенту для цього достатньо одного запиту.</span></p></div></li>
+        <li class="step"><div class="body"><span class="t"><span data-l="en">Mark the screens</span><span data-l="uk">Розмітити екрани</span></span><p><span data-l="en">Each screen of a journey gets targets on the elements a step must reach.</span><span data-l="uk">Кожен екран шляху отримує таргети на елементах, до яких має дістатися крок.</span></p></div></li>
+        <li class="step"><div class="body"><span class="t"><span data-l="en">Describe the journeys</span><span data-l="uk">Описати шляхи</span></span><p><span data-l="en">A flow per journey, a variant per case: the happy path, an empty list, an error.</span><span data-l="uk">Флоу на кожен шлях, варіант на кожен випадок: успішний шлях, порожній список, помилка.</span></p></div></li>
+        <li class="step"><div class="body"><span class="t"><span data-l="en">Run and read the report</span><span data-l="uk">Запустити і прочитати звіт</span></span><p><span data-l="en">Any person or agent repeats a journey with one command, after every change.</span><span data-l="uk">Будь-яка людина чи агент повторює шлях однією командою після кожної зміни.</span></p></div></li>
+      </ol>
+      <p class="callout ok"><b><span data-l="en">For the store build:</span><span data-l="uk">Для збірки в магазин:</span></b> <span data-l="en">nothing changes. The automation code works only in a debug or profile build that turns it on.</span><span data-l="uk">нічого не змінюється. Код автоматизації працює лише в debug- або profile-збірці, яка його вмикає.</span></p>
+    </section>
+  </div>
+
+  <!-- ============================== INSTALL ============================== -->
+  <div class="panel" id="install" role="tabpanel" aria-labelledby="tab-install" hidden>
+    <p class="callout"><b><span data-l="en">You need:</span><span data-l="uk">Потрібно:</span></b> <span data-l="en">a Flutter project, and an Android emulator, an iOS simulator or a phone on a cable. The agent route also needs Claude Code, Codex or another agent with skills.</span><span data-l="uk">проєкт на Flutter, а також емулятор Android, симулятор iOS або телефон на кабелі. Для шляху з агентом також потрібен Claude Code, Codex або інший агент зі скілами.</span></p>
+
+    <section>
+      <div class="stage-head"><span class="k">A</span><h2><span data-l="en">With an agent</span><span data-l="uk">Через агента</span></h2><span class="tag ok"><span data-l="en">easiest</span><span data-l="uk">найпростіше</span></span></div>
+      <ol class="steps">
+        <li class="step"><div class="body">
+          <span class="t"><span data-l="en">Install the skills</span><span data-l="uk">Встановити скіли</span></span>
+          <div class="cards">
+            <div class="box card">
+              <span class="tag">Claude Code</span>
+              <p class="small"><span data-l="en">Type in Claude Code. You get the skills and the workflows.</span><span data-l="uk">Введіть у Claude Code. Ви отримаєте скіли і воркфлоу.</span></p>
+              <div class="cmd"><code>/plugin marketplace add valeriinov/flutter_automation</code><button class="copy" type="button"></button></div>
+              <div class="cmd"><code>/plugin install flutter-automation@flutter-automation</code><button class="copy" type="button"></button></div>
+            </div>
+            <div class="box card">
+              <span class="tag">Codex <span data-l="en">and other agents</span><span data-l="uk">та інші агенти</span></span>
+              <p class="small"><span data-l="en">Run in the terminal. Put a release tag in place of <code>&lt;tag&gt;</code>. This route installs the skills only, without workflows.</span><span data-l="uk">Виконайте в терміналі. Замість <code>&lt;tag&gt;</code> поставте тег релізу. Цей шлях встановлює лише скіли, без воркфлоу.</span></p>
+              <div class="cmd"><code>npx skills add https://github.com/valeriinov/flutter_automation/tree/&lt;tag&gt;</code><button class="copy" type="button"></button></div>
+            </div>
+          </div>
+        </div></li>
+        <li class="step"><div class="body">
+          <span class="t"><span data-l="en">Ask the agent to set up the project</span><span data-l="uk">Попросити агента налаштувати проєкт</span></span>
+          <p><span data-l="en">Open the agent at the root of the project and write:</span><span data-l="uk">Відкрийте агента в корені проєкту і напишіть:</span></p>
+          <p class="phrase"><span data-l="en">"Set up flutter_automation with the mock."</span><span data-l="uk">«Налаштуй автоматизацію в проєкті разом з моком.»</span></p>
+          <p class="small"><span data-l="en">The <code>setup-automation</code> skill adds the packages at the tag of the skills, the driver in <code>main</code>, a first target, a first flow and the <code>## Automation</code> section of <code>AGENTS.md</code>. It changes only what is missing, so a second run changes nothing.</span><span data-l="uk">Скіл <code>setup-automation</code> додає пакети з тегом скілів, драйвер у <code>main</code>, перший таргет, перший флоу і розділ <code>## Automation</code> в <code>AGENTS.md</code>. Він змінює лише те, чого бракує, тому повторний запуск нічого не змінює.</span></p>
+        </div></li>
+        <li class="step"><div class="body">
+          <span class="t"><span data-l="en">Check the result</span><span data-l="uk">Перевірити результат</span></span>
+          <p><span data-l="en">The agent runs the first flow on a device. The report must hold <code>"ok":true</code>.</span><span data-l="uk">Агент проганяє перший флоу на пристрої. Звіт має містити <code>"ok":true</code>.</span></p>
+        </div></li>
+      </ol>
+    </section>
+
+    <section>
+      <div class="stage-head"><span class="k">B</span><h2><span data-l="en">By hand</span><span data-l="uk">Вручну</span></h2></div>
+      <p class="sub"><span data-l="en">The same steps that the skill does. A complete app lives in <a href="https://github.com/valeriinov/flutter_automation/tree/main/example" target="_blank" rel="noopener"><code>example/</code></a>.</span><span data-l="uk">Ті самі кроки, що робить скіл. Повний застосунок лежить у <a href="https://github.com/valeriinov/flutter_automation/tree/main/example" target="_blank" rel="noopener"><code>example/</code></a>.</span></p>
+      <ol class="steps">
+        <li class="step"><div class="body">
+          <span class="t"><span data-l="en">Add the packages to <code>pubspec.yaml</code></span><span data-l="uk">Додати пакети в <code>pubspec.yaml</code></span></span>
+          <p class="small"><span data-l="en">All packages come from git. <code>&lt;tag&gt;</code> is the version of the whole set; take the newest one from the <a href="https://github.com/valeriinov/flutter_automation/tags" target="_blank" rel="noopener">tag list</a>. Use the same tag for all packages and for the skills.</span><span data-l="uk">Усі пакети беруться з git. <code>&lt;tag&gt;</code> — версія всього набору; візьміть найновіший зі <a href="https://github.com/valeriinov/flutter_automation/tags" target="_blank" rel="noopener">списку тегів</a>. Для всіх пакетів і скілів беріть один тег.</span></p>
+          <div class="code"><button class="copy" type="button"></button><pre><code>dependencies:
+  flutter_automation:
+    git:
+      url: https://github.com/valeriinov/flutter_automation.git
+      path: packages/flutter_automation
+      ref: &lt;tag&gt;
+  flutter_automation_driver:
+    git:
+      url: https://github.com/valeriinov/flutter_automation.git
+      path: packages/flutter_automation_driver
+      ref: &lt;tag&gt;
+  # Only with the mock.
+  flutter_automation_mock:
+    git:
+      url: https://github.com/valeriinov/flutter_automation.git
+      path: packages/flutter_automation_mock
+      ref: &lt;tag&gt;
+  # Only with the mock, for an app on Dio.
+  flutter_automation_mock_dio:
+    git:
+      url: https://github.com/valeriinov/flutter_automation.git
+      path: packages/flutter_automation_mock_dio
+      ref: &lt;tag&gt;
+
+dev_dependencies:
+  flutter_automation_runner:
+    git:
+      url: https://github.com/valeriinov/flutter_automation.git
+      path: packages/flutter_automation_runner
+      ref: &lt;tag&gt;
+
+flutter_automation:
+  defaultLocale: en
+  launchHint: --dart-define=ENABLE_AUTOMATION=true</code></pre></div>
+          <p class="small"><span data-l="en">The <code>flutter_automation:</code> section holds the settings of the runner. The <button type="button" class="link" data-go="dev">For developers</button> tab lists every key.</span><span data-l="uk">Розділ <code>flutter_automation:</code> містить налаштування раннера. Вкладка <button type="button" class="link" data-go="dev">Для розробників</button> описує кожен ключ.</span></p>
+        </div></li>
+        <li class="step"><div class="body">
+          <span class="t"><span data-l="en">Install the driver in <code>main</code></span><span data-l="uk">Встановити драйвер у <code>main</code></span></span>
+          <p><span data-l="en">Make the call the first statement of <code>main</code>. It does nothing unless the app runs with <code>ENABLE_AUTOMATION=true</code>.</span><span data-l="uk">Зробіть виклик першою інструкцією <code>main</code>. Він нічого не робить, якщо застосунок запущено без <code>ENABLE_AUTOMATION=true</code>.</span></p>
+          <div class="code"><button class="copy" type="button"></button><pre><code>import 'package:flutter_automation_driver/driver_extension.dart';
+
+void main() {
+  AutomationInstaller.maybeInstall(screenReader: () =&gt; null);
+  runApp(const App());
+}</code></pre></div>
+        </div></li>
+        <li class="step"><div class="body">
+          <span class="t"><span data-l="en">Declare a target and mark a widget</span><span data-l="uk">Оголосити таргет і розмітити віджет</span></span>
+          <p><span data-l="en">Put the enum in a file that imports no Flutter code. The runner on the computer reads it.</span><span data-l="uk">Покладіть enum у файл, який не імпортує код Flutter. Раннер на комп'ютері читає цей файл.</span></p>
+          <div class="code"><button class="copy" type="button"></button><pre><code>// lib/automation/targets/home_target.dart
+import 'package:flutter_automation/automation_target.dart';
+
+enum HomeTarget with AutomationIdComposer {
+  screen(AutomationTargetType.screen),
+  increment(AutomationTargetType.button);
+
+  @override
+  final AutomationTargetType type;
+
+  const HomeTarget(this.type);
+
+  @override
+  String get scope =&gt; 'home';
+}
+
+// In the widget file:
+import 'package:flutter_automation/flutter_automation.dart';
+
+FloatingActionButton(onPressed: onIncrement, child: const Icon(Icons.add))
+    .automationTarget(HomeTarget.increment)</code></pre></div>
+        </div></li>
+        <li class="step"><div class="body">
+          <span class="t"><span data-l="en">Write a flow and the entry point</span><span data-l="uk">Написати флоу і точку входу</span></span>
+          <div class="code"><button class="copy" type="button"></button><pre><code>// tool/flows/home_flow.dart
+import 'package:flutter_automation_runner/automation_flow_definition.dart';
+
+final homeFlow = AutomationFlowDefinition(
+  name: 'home',
+  variants: [
+    FlowVariant('counterIncreases', items: [
+      const WaitFor(ByTarget(HomeTarget.screen)),
+      const Tap(ByTarget(HomeTarget.increment)),
+    ]),
+  ],
+);
+
+// tool/run_flows.dart
+import 'package:flutter_automation_runner/flutter_automation_runner.dart';
+
+Future&lt;void&gt; main(List&lt;String&gt; args) =&gt; runFlows(args, [homeFlow]);</code></pre></div>
+        </div></li>
+        <li class="step"><div class="body">
+          <span class="t"><span data-l="en">Run the app, then the flow</span><span data-l="uk">Запустити застосунок, потім флоу</span></span>
+          <div class="cmd"><code>fvm flutter run -d &lt;device&gt; --dart-define=ENABLE_AUTOMATION=true</code><button class="copy" type="button"></button></div>
+          <div class="cmd"><code>fvm dart run tool/run_flows.dart home counterIncreases --dry-run</code><button class="copy" type="button"></button></div>
+          <div class="cmd"><code>fvm dart run tool/run_flows.dart home counterIncreases --uri &lt;ws-uri&gt;</code><button class="copy" type="button"></button></div>
+          <ul class="small">
+            <li><span data-l="en"><code>--dry-run</code> expands the steps on the computer. It needs no device.</span><span data-l="uk"><code>--dry-run</code> розгортає кроки на комп'ютері. Пристрій не потрібен.</span></li>
+            <li><span data-l="en"><code>--uri</code> is the VM service address that <code>flutter run</code> prints. The runner keeps it for the next runs.</span><span data-l="uk"><code>--uri</code> — адреса VM service, яку друкує <code>flutter run</code>. Раннер запам'ятовує її для наступних запусків.</span></li>
+            <li><span data-l="en">Drop <code>fvm</code> when the project does not use it.</span><span data-l="uk">Приберіть <code>fvm</code>, якщо проєкт його не використовує.</span></li>
+          </ul>
+        </div></li>
+        <li class="step"><div class="body">
+          <span class="t"><span data-l="en">Optional: describe the project for the skills</span><span data-l="uk">Необов'язково: описати проєкт для скілів</span></span>
+          <p><span data-l="en">Copy <a href="https://github.com/valeriinov/flutter_automation/blob/main/templates/AGENTS.automation.md" target="_blank" rel="noopener"><code>templates/AGENTS.automation.md</code></a> into the <code>AGENTS.md</code> of the project and fill in the fields. The skills read the commands and folders from there.</span><span data-l="uk">Скопіюйте <a href="https://github.com/valeriinov/flutter_automation/blob/main/templates/AGENTS.automation.md" target="_blank" rel="noopener"><code>templates/AGENTS.automation.md</code></a> в <code>AGENTS.md</code> проєкту і заповніть поля. Скіли беруть звідти команди і папки.</span></p>
+        </div></li>
+      </ol>
+      <p class="callout"><b><span data-l="en">The mock by hand:</span><span data-l="uk">Мок вручну:</span></b> <span data-l="en">see the mock section on the <button type="button" class="link" data-go="dev" data-anchor="dev-mock">For developers</button> tab.</span><span data-l="uk">дивіться розділ про мок на вкладці <button type="button" class="link" data-go="dev" data-anchor="dev-mock">Для розробників</button>.</span></p>
+    </section>
+  </div>
+
+  <!-- ============================== DEVELOPERS ============================== -->
+  <div class="panel" id="dev" role="tabpanel" aria-labelledby="tab-dev" hidden>
+    <section>
+      <div class="stage-head"><h2><span data-l="en">How the parts connect</span><span data-l="uk">Як поєднуються частини</span></h2></div>
+      <div class="arch">
+        <div class="side">
+          <span class="h"><span data-l="en">Computer · Dart VM</span><span data-l="uk">Комп'ютер · Dart VM</span></span>
+          <div class="node"><b><span data-l="en">Flow in Dart</span><span data-l="uk">Флоу на Dart</span></b><code>AutomationFlowDefinition</code></div>
+          <div class="node"><b><span data-l="en">Runner</span><span data-l="uk">Раннер</span></b><code>runFlows</code></div>
+        </div>
+        <div class="wire"><span class="arrow">⇄</span><span><span data-l="en">VM service, Flutter Driver</span><span data-l="uk">VM service, Flutter Driver</span></span></div>
+        <div class="side app">
+          <span class="h"><span data-l="en">App · debug or profile</span><span data-l="uk">Застосунок · debug або profile</span></span>
+          <div class="node"><b><span data-l="en">Driver extension</span><span data-l="uk">Розширення драйвера</span></b><code>AutomationInstaller</code></div>
+          <div class="node"><b><span data-l="en">Marked widgets</span><span data-l="uk">Розмічені віджети</span></b><code>.automationTarget()</code></div>
+          <div class="node"><b><span data-l="en">Mock</span><span data-l="uk">Мок</span></b><code>AutomationMock</code></div>
+          <div class="node"><b><span data-l="en">Dio adapter</span><span data-l="uk">Адаптер Dio</span></b><code>MockDioHttpClientAdapter</code></div>
+        </div>
+      </div>
+      <ul class="small">
+        <li><span data-l="en">The runner never links to the app. It talks to the driver extension through the VM service.</span><span data-l="uk">Раннер ніколи не лінкується із застосунком. Він говорить із розширенням драйвера через VM service.</span></li>
+        <li><span data-l="en">A path that the mock owns gets its answer from the mock. Any other path goes to the network.</span><span data-l="uk">Шлях, яким володіє мок, отримує відповідь від мока. Будь-який інший шлях іде в мережу.</span></li>
+      </ul>
+    </section>
+
+    <section>
+      <div class="stage-head"><h2><span data-l="en">Packages</span><span data-l="uk">Пакети</span></h2></div>
+      <div class="box">
+        <table>
+          <tr><td><code>flutter_automation</code></td><td><span data-l="en">The base: targets, the command registry, the build switches.</span><span data-l="uk">Основа: таргети, реєстр команд, перемикачі збірки.</span></td></tr>
+          <tr><td><code>flutter_automation_driver</code></td><td><span data-l="en">The driver extension in the app and the finders the runner uses.</span><span data-l="uk">Розширення драйвера в застосунку і фіндери, якими користується раннер.</span></td></tr>
+          <tr><td><code>flutter_automation_mock</code></td><td><span data-l="en">The mock: sections, scenario, transport, journal. Knows no HTTP client.</span><span data-l="uk">Мок: секції, сценарій, транспорт, журнал. Не знає жодного HTTP-клієнта.</span></td></tr>
+          <tr><td><code>flutter_automation_mock_dio</code></td><td><span data-l="en">A Dio adapter that answers requests from the mock.</span><span data-l="uk">Адаптер Dio, який відповідає на запити з мока.</span></td></tr>
+          <tr><td><code>flutter_automation_runner</code><br><span class="small">dev_dependency</span></td><td><span data-l="en"><code>runFlows</code> and the Dart library for flows.</span><span data-l="uk"><code>runFlows</code> і Dart-бібліотека для флоу.</span></td></tr>
+        </table>
+      </div>
+      <p class="callout"><b><span data-l="en">Host-safe imports.</span><span data-l="uk">Імпорти для хоста.</span></b> <span data-l="en">A flow runs in the plain Dart VM, without Flutter. Flow files import only <code>automation_target.dart</code>, <code>mock_section.dart</code> and <code>automation_flow_definition.dart</code>. Keep target enums and mock sections in files with the same rule.</span><span data-l="uk">Флоу працює в чистій Dart VM, без Flutter. Файли флоу імпортують лише <code>automation_target.dart</code>, <code>mock_section.dart</code> і <code>automation_flow_definition.dart</code>. Enum-и таргетів і секції мока тримайте у файлах з тим самим правилом.</span></p>
+    </section>
+
+    <section>
+      <div class="stage-head"><span class="k"><span data-l="en">Contract 1</span><span data-l="uk">Контракт 1</span></span><h2><span data-l="en">Targets</span><span data-l="uk">Таргети</span></h2></div>
+      <ul>
+        <li><span data-l="en">One enum per flow, with <code>AutomationIdComposer</code>. The id is <code>&lt;scope&gt;.&lt;type&gt;.&lt;name&gt;</code>.</span><span data-l="uk">Один enum на флоу, з <code>AutomationIdComposer</code>. Id має вигляд <code>&lt;scope&gt;.&lt;type&gt;.&lt;name&gt;</code>.</span></li>
+        <li><span data-l="en"><code>.automationTarget(target)</code> gives the widget a <code>ValueKey</code> for the driver and a <code>Semantics.identifier</code> for native tools. With automation off, it returns the widget untouched.</span><span data-l="uk"><code>.automationTarget(target)</code> дає віджету <code>ValueKey</code> для драйвера і <code>Semantics.identifier</code> для нативних інструментів. Коли автоматизацію вимкнено, він повертає віджет без змін.</span></li>
+        <li><span data-l="en">One id must resolve to one widget. An element in every row of a list takes <code>withKey(key)</code>: the key of the record, a string or an int.</span><span data-l="uk">Один id має знаходити один віджет. Елемент у кожному рядку списку отримує <code>withKey(key)</code>: ключ запису, рядок або int.</span></li>
+      </ul>
+      <div class="code"><button class="copy" type="button"></button><pre><code>enum CatalogTarget with AutomationIdComposer {
+  screen(AutomationTargetType.screen),
+  item(AutomationTargetType.tile);
+
+  @override
+  final AutomationTargetType type;
+
+  const CatalogTarget(this.type);
+
+  @override
+  String get scope =&gt; 'catalog';
+}
+
+// The app: every card gets its own id.
+ItemCard(item: item).automationTarget(CatalogTarget.item.withKey(item.id))
+
+// The flow: catalog.tile.item.42
+Tap(ByTarget(CatalogTarget.item.withKey(42)))</code></pre></div>
+    </section>
+
+    <section>
+      <div class="stage-head"><span class="k"><span data-l="en">Contract 2</span><span data-l="uk">Контракт 2</span></span><h2><span data-l="en">The driver in the app</span><span data-l="uk">Драйвер у застосунку</span></h2></div>
+      <div class="code"><button class="copy" type="button"></button><pre><code>void main() {
+  AutomationInstaller.maybeInstall(
+    screenReader: () =&gt; {AutomationProtocol.screenNameKey: currentScreenName},
+    localeApplier: (languageCode) =&gt; setAppLanguage(languageCode),
+  );
+
+  final startLanguageCode =
+      AutomationInstaller.launchLanguageCode ?? readSavedLanguageCode();
+  // ...
+}</code></pre></div>
+      <div class="box">
+        <table>
+          <tr><td><code>screenReader</code></td><td><span data-l="en">Names the current screen. The runner compares it with <code>splashScreen</code> to know when a launch ends. <code>null</code> is valid.</span><span data-l="uk">Називає поточний екран. Раннер порівнює його зі <code>splashScreen</code>, щоб знати, коли запуск закінчився. <code>null</code> допустимий.</span></td></tr>
+          <tr><td><code>localeApplier</code></td><td><span data-l="en">Optional. Sets the app language for <code>--locale</code>. Without it, <code>--locale</code> fails with a message that names the parameter.</span><span data-l="uk">Необов'язковий. Ставить мову застосунку для <code>--locale</code>. Без нього <code>--locale</code> падає з повідомленням, що називає параметр.</span></td></tr>
+          <tr><td><code>launchLanguageCode</code></td><td><span data-l="en">The language of a <code>--locale</code> run, for this launch only. Read it once at start, so the first frame is in that language.</span><span data-l="uk">Мова запуску з <code>--locale</code>, лише для цього старту. Прочитайте її один раз на старті, щоб перший кадр був цією мовою.</span></td></tr>
+        </table>
+      </div>
+    </section>
+
+    <section>
+      <div class="stage-head"><span class="k"><span data-l="en">Contract 3</span><span data-l="uk">Контракт 3</span></span><h2><span data-l="en">Flows</span><span data-l="uk">Флоу</span></h2></div>
+      <div class="code"><button class="copy" type="button"></button><pre><code>const signIn = FlowBlock(name: 'signIn', build: _buildSignIn);
+
+List&lt;FlowStep&gt; _buildSignIn(FlowParams params) =&gt; const [
+  WaitFor(ByTarget(LoginTarget.screen)),
+  Tap(ByTarget(LoginTarget.submit)),
+];
+
+final catalogFlow = AutomationFlowDefinition(
+  name: 'catalog',
+  defaultVariant: 'items',
+  variants: [
+    FlowVariant(
+      'items',
+      items: [const Use(signIn), const WaitFor(ByTarget(CatalogTarget.screen))],
+      scenario: [catalogSection.profile('fullShelf')],
+    ),
+    FlowVariant(
+      'empty',
+      items: [const Use(signIn), const WaitFor(ByTarget(CatalogTarget.empty))],
+      scenario: [catalogSection.profile('emptyShelf')],
+    ),
+  ],
+);</code></pre></div>
+      <div class="box">
+        <table>
+          <tr><td><code>FlowVariant</code></td><td><span data-l="en">One way through the journey. <code>items</code> holds steps and <code>Use(block)</code> items, in order.</span><span data-l="uk">Один спосіб пройти шлях. <code>items</code> містить кроки і елементи <code>Use(block)</code>, по порядку.</span></td></tr>
+          <tr><td><code>FlowBlock</code>, <code>Use</code></td><td><span data-l="en">Reusable steps. <code>FlowBlock.params</code> names parameters with defaults; <code>Use(block, arguments: {...})</code> fills them in.</span><span data-l="uk">Кроки для повторного використання. <code>FlowBlock.params</code> називає параметри зі значеннями за замовчуванням; <code>Use(block, arguments: {...})</code> їх заповнює.</span></td></tr>
+          <tr><td><code>scenario</code></td><td><span data-l="en">On the flow, it applies to every variant. On a variant, it continues the list of the flow. The runner pushes it before the first step and restarts the app.</span><span data-l="uk">На флоу діє на кожен варіант. На варіанті продовжує список флоу. Раннер надсилає його перед першим кроком і перезапускає застосунок.</span></td></tr>
+          <tr><td><span data-l="en">Steps</span><span data-l="uk">Кроки</span></td><td><code>Tap</code>, <code>WaitFor</code>, <code>WaitForAbsent</code>, <code>WaitForTappable</code>, <code>ScrollIntoView</code>, <code>Scroll</code>, <code>EnterText</code>, <code>ProbeCenter</code>, <code>ProbeSeries</code>, <code>TraceStart</code>, <code>TraceStop</code>, <code>DriverCommand</code></td></tr>
+          <tr><td><span data-l="en">Finders</span><span data-l="uk">Фіндери</span></td><td><code>ByTarget</code>, <code>ByValueKey</code>, <code>ByText</code>, <code>ByTooltip</code>, <code>ByLocaleKey</code>, <code>ByLocaleKeyTooltip</code>, <code>ByType</code>, <code>ByPageBack</code>, <code>ByDateText</code>, <code>ByDeclaredDate</code>, <code>ByDescendant</code>, <code>ByAncestor</code></td></tr>
+        </table>
+      </div>
+      <p class="callout warn"><b><span data-l="en">Name clash.</span><span data-l="uk">Конфлікт імен.</span></b> <span data-l="en"><code>package:flutter_driver</code> has the same names (<code>Tap</code>, <code>WaitFor</code>, <code>ByText</code> and others). A script that needs both imports one of them with a prefix.</span><span data-l="uk"><code>package:flutter_driver</code> має ті самі імена (<code>Tap</code>, <code>WaitFor</code>, <code>ByText</code> та інші). Скрипт, якому потрібні обидва, імпортує один із них із префіксом.</span></p>
+    </section>
+
+    <section id="dev-mock">
+      <div class="stage-head"><span class="k"><span data-l="en">Contract 4</span><span data-l="uk">Контракт 4</span></span><h2><span data-l="en">The mock</span><span data-l="uk">Мок</span></h2></div>
+      <ol class="steps">
+        <li class="step"><div class="body">
+          <span class="t"><span data-l="en">Declare a section</span><span data-l="uk">Оголосити секцію</span></span>
+          <p><span data-l="en">One <code>MockSection</code> per backend area, in a host-safe file. The settings class needs <code>fromJson</code>, <code>toJson</code> and <code>copyWith</code>. A profile is a function over the settings, so each key is written once.</span><span data-l="uk">Одна <code>MockSection</code> на кожну частину бекенду, у файлі, безпечному для хоста. Клас налаштувань потребує <code>fromJson</code>, <code>toJson</code> і <code>copyWith</code>. Профіль — це функція над налаштуваннями, тому кожен ключ записано один раз.</span></p>
+          <div class="code"><button class="copy" type="button"></button><pre><code>import 'package:flutter_automation_mock/mock_section.dart';
+
+final catalogSection = MockSection&lt;CatalogSettings&gt;(
+  name: 'catalog',
+  fromJson: CatalogSettings.fromJson,
+  profiles: {
+    'emptyShelf': (settings) =&gt; settings.copyWith(itemCount: 0),
+    'fullShelf': (settings) =&gt; settings.copyWith(itemCount: 5),
+  },
+);</code></pre></div>
+          <p class="small"><span data-l="en">A flow also takes <code>catalogSection.override((s) =&gt; ...)</code>, <code>MockOverride.latency(MockLatencyProfile.slow)</code>, <code>.latencySeed(7)</code> and <code>.failures({...})</code>.</span><span data-l="uk">Флоу також приймає <code>catalogSection.override((s) =&gt; ...)</code>, <code>MockOverride.latency(MockLatencyProfile.slow)</code>, <code>.latencySeed(7)</code> і <code>.failures({...})</code>.</span></p>
+        </div></li>
+        <li class="step"><div class="body">
+          <span class="t"><span data-l="en">Start the mock before the dependency injection</span><span data-l="uk">Запустити мок до впровадження залежностей</span></span>
+          <div class="code"><button class="copy" type="button"></button><pre><code>const bool isMockEnabled =
+    AutomationSettings.isEnabled &amp;&amp; bool.fromEnvironment('ENABLE_MOCK');
+
+MockScenarioBackend? backend;
+
+final mock = await AutomationMock.init(
+  isEnabled: isMockEnabled,
+  scenarioDirectory: (await getTemporaryDirectory()).path,
+  sections: isMockEnabled ? [catalogSection] : const [],
+  onScenarioApplied: (scenario) =&gt; backend?.rebuild(),
+);</code></pre></div>
+          <p class="small"><span data-l="en"><code>isEnabled</code> must be a compile-time constant, so the release build drops the mock code.</span><span data-l="uk"><code>isEnabled</code> має бути константою часу компіляції, тоді release-збірка викидає код мока.</span></p>
+        </div></li>
+        <li class="step"><div class="body">
+          <span class="t"><span data-l="en">Answer the endpoints</span><span data-l="uk">Відповідати на ендпоінти</span></span>
+          <div class="code"><button class="copy" type="button"></button><pre><code>final class CatalogMockApi implements MockApi {
+  final AutomationMock _mock;
+
+  const CatalogMockApi(this._mock);
+
+  @override
+  List&lt;MockApiEndpoint&gt; get endpoints =&gt; [
+    MockApiEndpoint(path: '/catalog/items', respond: _respondItems),
+  ];
+
+  MockApiResponse _respondItems(MockApiRequest request) {
+    final count = _mock.settingsOf(catalogSection).itemCount;
+
+    return MockApiResponse(body: {'count': count});
+  }
+}</code></pre></div>
+          <p class="small"><span data-l="en">Read settings with <code>settingsOf</code> at the time of use. A later <code>scenario.apply</code> then shows up without a restart.</span><span data-l="uk">Читайте налаштування через <code>settingsOf</code> у момент використання. Тоді наступний <code>scenario.apply</code> діє без перезапуску.</span></p>
+        </div></li>
+        <li class="step"><div class="body">
+          <span class="t"><span data-l="en">Put the substitute in place</span><span data-l="uk">Підставити заміну</span></span>
+          <p><span data-l="en"><code>substitute</code> answers <code>fake(mock)</code> when the mock is on and <code>real</code> otherwise. For Dio, replace the HTTP adapter: every interceptor still runs, only the socket is fake.</span><span data-l="uk"><code>substitute</code> повертає <code>fake(mock)</code>, коли мок увімкнено, і <code>real</code> в іншому разі. Для Dio замініть HTTP-адаптер: усі інтерсептори працюють, фейковий лише сокет.</span></p>
+          <div class="code"><button class="copy" type="button"></button><pre><code>final networkAdapter = dio.httpClientAdapter;
+
+dio.httpClientAdapter = mock.substitute(
+  real: networkAdapter,
+  fake: (mock) {
+    final scenarioBackend = MockScenarioBackend(
+      readScenario: () =&gt; mock.scenario,
+      buildApis: () =&gt; [CatalogMockApi(mock)],
+      buildFailureBody: (failure) =&gt; {'message': failure.message},
+    );
+    backend = scenarioBackend;
+
+    return MockDioHttpClientAdapter(
+      transport: MockApiTransport(backend: scenarioBackend, journal: mock.journal),
+      networkAdapter: networkAdapter,
+    );
+  },
+);</code></pre></div>
+          <p class="small"><span data-l="en">Recipes for <code>shared_preferences</code>, <code>flutter_secure_storage</code> and Drift: <a href="https://github.com/valeriinov/flutter_automation/blob/main/packages/flutter_automation_mock/doc/recipes.md" target="_blank" rel="noopener"><code>doc/recipes.md</code></a>.</span><span data-l="uk">Рецепти для <code>shared_preferences</code>, <code>flutter_secure_storage</code> і Drift: <a href="https://github.com/valeriinov/flutter_automation/blob/main/packages/flutter_automation_mock/doc/recipes.md" target="_blank" rel="noopener"><code>doc/recipes.md</code></a>.</span></p>
+        </div></li>
+        <li class="step"><div class="body">
+          <span class="t"><span data-l="en">Run with the mock define</span><span data-l="uk">Запускати з define мока</span></span>
+          <div class="cmd"><code>fvm flutter run -d &lt;device&gt; --dart-define=ENABLE_AUTOMATION=true --dart-define=ENABLE_MOCK=true</code><button class="copy" type="button"></button></div>
+        </div></li>
+      </ol>
+      <div class="box">
+        <h3><span data-l="en">When a change takes effect</span><span data-l="uk">Коли зміна набирає сили</span></h3>
+        <table>
+          <tr><td><span data-l="en">Failed paths; settings read with <code>settingsOf</code></span><span data-l="uk">Шляхи з помилкою; налаштування через <code>settingsOf</code></span></td><td><span data-l="en">At once.</span><span data-l="uk">Одразу.</span></td></tr>
+          <tr><td><span data-l="en">Latency, endpoints of <code>MockScenarioBackend</code></span><span data-l="uk">Затримка, ендпоінти <code>MockScenarioBackend</code></span></td><td><span data-l="en">After <code>rebuild()</code> in <code>onScenarioApplied</code>.</span><span data-l="uk">Після <code>rebuild()</code> в <code>onScenarioApplied</code>.</span></td></tr>
+          <tr><td><span data-l="en">Storage seeded at creation; what the app reads once at launch</span><span data-l="uk">Сховище, засіяне при створенні; те, що застосунок читає один раз на старті</span></td><td><span data-l="en">After a restart. The runner restarts the app after <code>scenario.apply</code>.</span><span data-l="uk">Після перезапуску. Раннер перезапускає застосунок після <code>scenario.apply</code>.</span></td></tr>
+          <tr><td><span data-l="en">Whether the mock is on, which objects have a substitute</span><span data-l="uk">Чи ввімкнено мок, які об'єкти мають заміну</span></td><td><span data-l="en">At build time.</span><span data-l="uk">Під час збірки.</span></td></tr>
+        </table>
+      </div>
+    </section>
+
+    <section>
+      <div class="stage-head"><span class="k"><span data-l="en">Contract 5</span><span data-l="uk">Контракт 5</span></span><h2><span data-l="en">The runner command and its report</span><span data-l="uk">Команда раннера і її звіт</span></h2></div>
+      <div class="cmd"><code>fvm dart run tool/run_flows.dart &lt;flow&gt; [variant] [options]</code><button class="copy" type="button"></button></div>
+      <div class="box">
+        <table>
+          <tr><td><code>--uri &lt;ws://...&gt;</code></td><td><span data-l="en">VM service address of the running app.</span><span data-l="uk">Адреса VM service запущеного застосунку.</span></td></tr>
+          <tr><td><code>--dry-run</code></td><td><span data-l="en">Prints the resolved steps as JSON. Needs no device.</span><span data-l="uk">Друкує розгорнуті кроки як JSON. Пристрій не потрібен.</span></td></tr>
+          <tr><td><code>--catalogue</code></td><td><span data-l="en">Prints every flow and block as one line of JSON.</span><span data-l="uk">Друкує всі флоу і блоки одним рядком JSON.</span></td></tr>
+          <tr><td><code>--no-scenario</code></td><td><span data-l="en">Does not push the scenario into the app.</span><span data-l="uk">Не надсилає сценарій у застосунок.</span></td></tr>
+          <tr><td><code>--locale &lt;code&gt;</code></td><td><span data-l="en">Restarts the app in that language. Needs <code>localeApplier</code>, no mock.</span><span data-l="uk">Перезапускає застосунок цією мовою. Потребує <code>localeApplier</code>, мок не потрібен.</span></td></tr>
+          <tr><td><code>--capture &lt;dir&gt;</code></td><td><span data-l="en">Records the frames, requests and journal of each step. Needs the mock.</span><span data-l="uk">Записує кадри, запити і журнал кожного кроку. Потребує мока.</span></td></tr>
+          <tr><td><code>--timeline-out &lt;path&gt;</code></td><td><span data-l="en">Writes the raw timeline of a traced window.</span><span data-l="uk">Записує сирий таймлайн трасованого вікна.</span></td></tr>
+          <tr><td><code>--system-keyboard</code></td><td><span data-l="en">Lets the system keyboard rise over a focused field for the whole run.</span><span data-l="uk">Дає системній клавіатурі підніматися над полем у фокусі на весь запуск.</span></td></tr>
+        </table>
+      </div>
+      <p><span data-l="en">Stdout holds one JSON line. The run stops at the first failed step and exits with code 1.</span><span data-l="uk">Stdout містить один рядок JSON. Запуск зупиняється на першому кроці з помилкою і виходить з кодом 1.</span></p>
+      <div class="box">
+        <table>
+          <tr><td><code>ok</code></td><td><span data-l="en">Every step that ran succeeded.</span><span data-l="uk">Кожен виконаний крок пройшов.</span></td></tr>
+          <tr><td><code>steps[]</code></td><td><span data-l="en"><code>label</code>, <code>action</code>, <code>target</code>, <code>ms</code>, <code>ok</code>, and <code>error</code> on the step that stopped the run.</span><span data-l="uk"><code>label</code>, <code>action</code>, <code>target</code>, <code>ms</code>, <code>ok</code>, і <code>error</code> на кроці, що зупинив запуск.</span></td></tr>
+          <tr><td><code>setupMs</code></td><td><span data-l="en">The cost of the scenario push.</span><span data-l="uk">Вартість надсилання сценарію.</span></td></tr>
+          <tr><td><code>totalMs</code></td><td><span data-l="en">The steps alone.</span><span data-l="uk">Лише кроки.</span></td></tr>
+          <tr><td><code>commandMs</code></td><td><span data-l="en">The whole command. A time target is measured against it.</span><span data-l="uk">Уся команда. Цільовий час вимірюють саме за нею.</span></td></tr>
+        </table>
+      </div>
+      <p class="small"><span data-l="en">One run is not a measurement. Take three runs and the median of <code>commandMs</code>.</span><span data-l="uk">Один запуск — не вимірювання. Зробіть три запуски і візьміть медіану <code>commandMs</code>.</span></p>
+    </section>
+
+    <section>
+      <div class="stage-head"><h2><span data-l="en">Build switches</span><span data-l="uk">Перемикачі збірки</span></h2></div>
+      <p class="sub"><span data-l="en">Each one is a <code>--dart-define</code> and a compile-time constant in <code>AutomationSettings</code>. Each is false in a release build.</span><span data-l="uk">Кожен — це <code>--dart-define</code> і константа часу компіляції в <code>AutomationSettings</code>. У release-збірці кожен дорівнює false.</span></p>
+      <div class="box">
+        <table>
+          <tr><td><code>ENABLE_AUTOMATION</code></td><td><span data-l="en">The main switch. Without it, every driver command fails and the ids are absent.</span><span data-l="uk">Головний перемикач. Без нього кожна команда драйвера падає, а id відсутні.</span></td></tr>
+          <tr><td><code>ENABLE_AUTOMATION_SEMANTICS</code></td><td><span data-l="en">Default true. Raises the semantics tree for native tools.</span><span data-l="uk">За замовчуванням true. Піднімає дерево семантики для нативних інструментів.</span></td></tr>
+          <tr><td><code>ENABLE_AUTOMATION_FRAME_PROFILING</code></td><td><span data-l="en">Names widgets in traced frames.</span><span data-l="uk">Називає віджети в трасованих кадрах.</span></td></tr>
+          <tr><td><code>ENABLE_AUTOMATION_LOCALE_KEYS</code></td><td><span data-l="en">Marks each translation string with its key, for <code>ByLocaleKey</code>.</span><span data-l="uk">Позначає кожен рядок перекладу його ключем, для <code>ByLocaleKey</code>.</span></td></tr>
+        </table>
+      </div>
+    </section>
+
+    <section>
+      <div class="stage-head"><h2><span data-l="en">The <code>flutter_automation:</code> section of <code>pubspec.yaml</code></span><span data-l="uk">Розділ <code>flutter_automation:</code> у <code>pubspec.yaml</code></span></h2></div>
+      <div class="code"><button class="copy" type="button"></button><pre><code>flutter_automation:
+  defaultLocale: en
+  dateFormats:
+    en: MM/dd/yyyy
+  frameBudgetMs: 16
+  splashScreen: splash
+  launchHint: --dart-define=ENABLE_AUTOMATION=true
+  finders:
+    calendarDay:
+      kind: dateValueKey
+      template: day.tile.{yyyyMMdd}</code></pre></div>
+      <div class="box">
+        <table>
+          <tr><td><code>defaultLocale</code></td><td><span data-l="en">The language of a run that names none. Default <code>en</code>.</span><span data-l="uk">Мова запуску, який її не називає. За замовчуванням <code>en</code>.</span></td></tr>
+          <tr><td><code>dateFormats</code></td><td><span data-l="en">How <code>ByDateText</code> writes a date, per language.</span><span data-l="uk">Як <code>ByDateText</code> пише дату, для кожної мови.</span></td></tr>
+          <tr><td><code>frameBudgetMs</code></td><td><span data-l="en">Frame time limit for a traced window.</span><span data-l="uk">Ліміт часу кадру для трасованого вікна.</span></td></tr>
+          <tr><td><code>splashScreen</code></td><td><span data-l="en">The <code>screenName</code> during start. After a relaunch, the runner waits for another screen.</span><span data-l="uk"><code>screenName</code> під час старту. Після перезапуску раннер чекає на інший екран.</span></td></tr>
+          <tr><td><code>launchHint</code></td><td><span data-l="en">How the app must launch, shown at the end of an error.</span><span data-l="uk">Як треба запускати застосунок, показується в кінці помилки.</span></td></tr>
+          <tr><td><code>finders</code></td><td><span data-l="en">Project finders, used as <code>ByDeclaredDate(name, dayOffset: n)</code>.</span><span data-l="uk">Фіндери проєкту, використовуються як <code>ByDeclaredDate(name, dayOffset: n)</code>.</span></td></tr>
+        </table>
+      </div>
+      <p class="small"><span data-l="en">Every key is optional. A key of the wrong type stops the run with a message that names the key.</span><span data-l="uk">Кожен ключ необов'язковий. Ключ неправильного типу зупиняє запуск із повідомленням, що називає ключ.</span></p>
+    </section>
+
+    <section>
+      <div class="stage-head"><h2><span data-l="en">Commands between the runner and the app</span><span data-l="uk">Команди між раннером і застосунком</span></h2></div>
+      <div class="box">
+        <table>
+          <tr><td><code>screen.read</code> <span class="tag app">driver</span></td><td><span data-l="en">The screen name, view size, keyboard inset, platform. <code>{"texts": true, "widgets": true}</code> adds the texts and widget types of the frame.</span><span data-l="uk">Ім'я екрана, розмір view, відступ клавіатури, платформа. <code>{"texts": true, "widgets": true}</code> додає тексти і типи віджетів кадру.</span></td></tr>
+          <tr><td><code>locale.save</code>, <code>locale.apply</code> <span class="tag app">driver</span></td><td><span data-l="en">Save the language for the next launch, then apply it. Registered only with a <code>localeApplier</code>.</span><span data-l="uk">Зберегти мову для наступного старту, потім застосувати її. Реєструються лише з <code>localeApplier</code>.</span></td></tr>
+          <tr><td><code>scenario.apply</code> <span class="tag">mock</span></td><td><span data-l="en">Takes the scenario, saves it for the next launch, runs <code>onScenarioApplied</code>.</span><span data-l="uk">Приймає сценарій, зберігає його для наступного старту, викликає <code>onScenarioApplied</code>.</span></td></tr>
+          <tr><td><code>journal.read</code> <span class="tag">mock</span></td><td><span data-l="en">Returns the requests the app made.</span><span data-l="uk">Повертає запити, які зробив застосунок.</span></td></tr>
+        </table>
+      </div>
+      <p class="small"><span data-l="en">Your own command: <code>AutomationCommandRegistry.register('name', (payload) async =&gt; '{...}')</code>. A command that nothing registered fails before the first step.</span><span data-l="uk">Власна команда: <code>AutomationCommandRegistry.register('name', (payload) async =&gt; '{...}')</code>. Команда, яку ніхто не зареєстрував, падає до першого кроку.</span></p>
+    </section>
+  </div>
+
+  <!-- ============================== SKILLS ============================== -->
+  <div class="panel" id="skills" role="tabpanel" aria-labelledby="tab-skills" hidden>
+    <section>
+      <div class="stage-head"><h2><span data-l="en">Why skills</span><span data-l="uk">Навіщо скіли</span></h2></div>
+      <div class="box">
+        <ul>
+          <li><span data-l="en">A skill tells an AI agent how to do one job with these packages. You ask in words; the agent does the edits and the runs.</span><span data-l="uk">Скіл пояснює AI-агенту, як зробити одну роботу з цими пакетами. Ви просите словами, агент робить правки і запуски.</span></li>
+          <li><span data-l="en">The skills read the facts of your project from the <code>## Automation</code> section of <code>AGENTS.md</code>: commands, folders, the default flow.</span><span data-l="uk">Скіли беруть факти вашого проєкту з розділу <code>## Automation</code> в <code>AGENTS.md</code>: команди, папки, флоу за замовчуванням.</span></li>
+          <li><span data-l="en">A field is missing? The skill asks you once and writes the answer into the section.</span><span data-l="uk">Бракує поля? Скіл запитає вас один раз і запише відповідь у розділ.</span></li>
+          <li><span data-l="en">The skill version equals the package tag. Install both at the same tag.</span><span data-l="uk">Версія скілів дорівнює тегу пакетів. Встановлюйте обидва з одним тегом.</span></li>
+        </ul>
+      </div>
+      <p class="small"><span data-l="en">How to install them: the <button type="button" class="link" data-go="install">Install</button> tab, route A. In Claude Code, a skill runs as <code>/flutter-automation:&lt;skill&gt;</code>; a request in words works too.</span><span data-l="uk">Як встановити: вкладка <button type="button" class="link" data-go="install">Встановлення</button>, шлях A. У Claude Code скіл запускається як <code>/flutter-automation:&lt;skill&gt;</code>; запит словами теж працює.</span></p>
+    </section>
+
+    <section>
+      <div class="stage-head"><h2><span data-l="en">The five skills</span><span data-l="uk">П'ять скілів</span></h2></div>
+      <div class="cards">
+        <div class="box">
+          <span class="tag">setup-automation</span>
+          <p><span data-l="en">Takes a project from <code>flutter create</code> to a first flow that walks on a device. With the mock on request. Safe to run twice.</span><span data-l="uk">Веде проєкт від <code>flutter create</code> до першого флоу, що проходить на пристрої. Мок — на запит. Безпечно запускати двічі.</span></p>
+          <p class="small"><b><span data-l="en">Say:</span><span data-l="uk">Скажіть:</span></b> <span class="phrase"><span data-l="en">"set up flutter_automation"</span><span data-l="uk">«налаштуй автоматизацію в проєкті», «підключи пакети автоматизації»</span></span></p>
+          <p class="small"><b><span data-l="en">By hand:</span><span data-l="uk">Вручну:</span></b> <span data-l="en">the <button type="button" class="link" data-go="install">Install</button> tab, route B.</span><span data-l="uk">вкладка <button type="button" class="link" data-go="install">Встановлення</button>, шлях B.</span></p>
+        </div>
+        <div class="box">
+          <span class="tag">add-automation-targets</span>
+          <p><span data-l="en">Collects the elements of a flow, declares targets only where a text finder cannot reach, and marks the widgets.</span><span data-l="uk">Збирає елементи флоу, оголошує таргети лише там, де текстовий фіндер не дістає, і розмічає віджети.</span></p>
+          <p class="small"><b><span data-l="en">Say:</span><span data-l="uk">Скажіть:</span></b> <span class="phrase"><span data-l="en">"add automation targets to the checkout screen"</span><span data-l="uk">«покрий флоу таргетами», «зроби екран керованим»</span></span></p>
+          <p class="small"><b><span data-l="en">By hand:</span><span data-l="uk">Вручну:</span></b> <span data-l="en">add a value to the target enum, then call <code>.automationTarget()</code> on the widget. Contract 1 on the <button type="button" class="link" data-go="dev">For developers</button> tab.</span><span data-l="uk">додайте значення в enum таргетів, потім викличте <code>.automationTarget()</code> на віджеті. Контракт 1 на вкладці <button type="button" class="link" data-go="dev">Для розробників</button>.</span></p>
+        </div>
+        <div class="box">
+          <span class="tag">drive-device</span>
+          <p><span data-l="en">Picks and boots a device, launches the app with Flutter Driver, taps and types through it, reads errors, takes screenshots and video.</span><span data-l="uk">Обирає і запускає пристрій, стартує застосунок із Flutter Driver, натискає і вводить текст, читає помилки, робить скріншоти і відео.</span></p>
+          <p class="small"><b><span data-l="en">Say:</span><span data-l="uk">Скажіть:</span></b> <span class="phrase"><span data-l="en">"run it on the simulator", "reproduce the bug on a device"</span><span data-l="uk">«запусти на симуляторі», «відтвори баг на пристрої»</span></span></p>
+          <p class="small"><b><span data-l="en">By hand:</span><span data-l="uk">Вручну:</span></b> <span data-l="en">start the app, then walk it with the runner or your own Flutter Driver script.</span><span data-l="uk">запустіть застосунок, потім проходьте його раннером або власним скриптом Flutter Driver.</span></p>
+          <div class="cmd"><code>fvm flutter run --debug -d &lt;device-id&gt; --dart-define=ENABLE_AUTOMATION=true</code><button class="copy" type="button"></button></div>
+        </div>
+        <div class="box">
+          <span class="tag">mock-app</span>
+          <p><span data-l="en">Turns a requested state into a scenario, a section setting or a new mock api. The mock behaves as the live backend does.</span><span data-l="uk">Перетворює потрібний стан на сценарій, налаштування секції або новий mock api. Мок поводиться так само, як живий бекенд.</span></p>
+          <p class="small"><b><span data-l="en">Say:</span><span data-l="uk">Скажіть:</span></b> <span class="phrase"><span data-l="en">"run the app without a backend", "mock the endpoint"</span><span data-l="uk">«запусти без бекенду», «налаштуй мок», «замокай ендпоінт»</span></span></p>
+          <p class="small"><b><span data-l="en">By hand:</span><span data-l="uk">Вручну:</span></b> <span data-l="en">add a profile to the <code>MockSection</code>, name it in <code>scenario:</code> of a variant, run with the mock define. Contract 4 on the <button type="button" class="link" data-go="dev" data-anchor="dev-mock">For developers</button> tab.</span><span data-l="uk">додайте профіль у <code>MockSection</code>, назвіть його в <code>scenario:</code> варіанта, запустіть із define мока. Контракт 4 на вкладці <button type="button" class="link" data-go="dev" data-anchor="dev-mock">Для розробників</button>.</span></p>
+        </div>
+        <div class="box">
+          <span class="tag">run-flow</span>
+          <p><span data-l="en">Resolves a request in words to a flow and a variant. Adds the variant and its scenario when none covers it. Expands it with <code>--dry-run</code>, runs it, reads the report, fixes one thing per round.</span><span data-l="uk">Зводить запит словами до флоу і варіанта. Додає варіант і його сценарій, якщо такого немає. Розгортає його через <code>--dry-run</code>, проганяє, читає звіт, виправляє одну річ за раунд.</span></p>
+          <p class="small"><b><span data-l="en">Say:</span><span data-l="uk">Скажіть:</span></b> <span class="phrase"><span data-l="en">"run the login flow", "add a flow variant"</span><span data-l="uk">«прожени флоу», «додай варіант флоу», «пройди сценарій»</span></span></p>
+          <p class="small"><b><span data-l="en">By hand:</span><span data-l="uk">Вручну:</span></b> <span data-l="en">expand, run, read <code>ok</code> and <code>commandMs</code>; restart the app before each run.</span><span data-l="uk">розгорніть, проженіть, прочитайте <code>ok</code> і <code>commandMs</code>; перезапускайте застосунок перед кожним запуском.</span></p>
+          <div class="cmd"><code>fvm dart run tool/run_flows.dart &lt;flow&gt; &lt;variant&gt; --dry-run</code><button class="copy" type="button"></button></div>
+          <div class="cmd"><code>fvm dart run tool/run_flows.dart &lt;flow&gt; &lt;variant&gt; 2&gt;/dev/null</code><button class="copy" type="button"></button></div>
+          <p class="small"><span data-l="en">It needs <code>drive-device</code>, <code>mock-app</code> and <code>add-automation-targets</code>. Install all four together.</span><span data-l="uk">Йому потрібні <code>drive-device</code>, <code>mock-app</code> і <code>add-automation-targets</code>. Встановлюйте всі чотири разом.</span></p>
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <div class="stage-head"><h2><span data-l="en">Workflows</span><span data-l="uk">Воркфлоу</span></h2><span class="tag warn"><span data-l="en">Claude Code plugin only</span><span data-l="uk">лише плагін Claude Code</span></span></div>
+      <p class="sub"><span data-l="en">A workflow runs several agents in a fixed order. <code>npx skills</code> does not install workflows; <code>run-flow</code> then does the same loop by hand.</span><span data-l="uk">Воркфлоу запускає кількох агентів у фіксованому порядку. <code>npx skills</code> воркфлоу не встановлює; тоді <code>run-flow</code> проходить той самий цикл вручну.</span></p>
+      <div class="box">
+        <table>
+          <tr><td><code>/flutter-automation:measure-flow</code></td><td><span data-l="en">Walks one variant three times, takes the median of <code>commandMs</code> and spends exactly one fix on what it shows.</span><span data-l="uk">Проходить один варіант тричі, бере медіану <code>commandMs</code> і робить рівно одне виправлення за її результатом.</span></td></tr>
+          <tr><td><code>/flutter-automation:optimize-flow</code></td><td><span data-l="en">Walks a flow in rounds until its median meets a time target. One fix per round. Default target 60 s, two rounds.</span><span data-l="uk">Проходить флоу раундами, доки медіана не досягне цільового часу. Одне виправлення за раунд. За замовчуванням ціль 60 с, два раунди.</span></td></tr>
+        </table>
+      </div>
+    </section>
+
+    <section>
+      <div class="stage-head"><h2><span data-l="en">The <code>## Automation</code> section of <code>AGENTS.md</code></span><span data-l="uk">Розділ <code>## Automation</code> в <code>AGENTS.md</code></span></h2></div>
+      <p class="sub"><span data-l="en"><code>setup-automation</code> writes it. By hand, copy the <a href="https://github.com/valeriinov/flutter_automation/blob/main/templates/AGENTS.automation.md" target="_blank" rel="noopener">template</a> and fill in each field.</span><span data-l="uk"><code>setup-automation</code> пише його сам. Вручну скопіюйте <a href="https://github.com/valeriinov/flutter_automation/blob/main/templates/AGENTS.automation.md" target="_blank" rel="noopener">шаблон</a> і заповніть кожне поле.</span></p>
+      <div class="box">
+        <table>
+          <tr><td><b>Flow run command</b></td><td><span data-l="en">The runner command without the flow name, for example <code>fvm dart run tool/run_flows.dart</code>.</span><span data-l="uk">Команда раннера без імені флоу, наприклад <code>fvm dart run tool/run_flows.dart</code>.</span></td></tr>
+          <tr><td><b>Launch</b></td><td><span data-l="en">The <code>flutter run</code> arguments: flavor, entry point, defines.</span><span data-l="uk">Аргументи <code>flutter run</code>: flavor, точка входу, define-и.</span></td></tr>
+          <tr><td><b>Flows folder</b>, <b>Targets folder</b></td><td><span data-l="en">Where the flows and the target enums live.</span><span data-l="uk">Де лежать флоу і enum-и таргетів.</span></td></tr>
+          <tr><td><b>Mock configuration file</b></td><td><span data-l="en">The file with the <code>MockSection</code> values, or <code>none</code>.</span><span data-l="uk">Файл зі значеннями <code>MockSection</code>, або <code>none</code>.</span></td></tr>
+          <tr><td><b>Default flow</b></td><td><span data-l="en">The flow a skill walks when you name none.</span><span data-l="uk">Флоу, який скіл проходить, коли ви жодного не назвали.</span></td></tr>
+          <tr><td><b>After an edit</b></td><td><span data-l="en">Format and analyze commands, for example <code>fvm dart format . &amp;&amp; fvm dart analyze</code>.</span><span data-l="uk">Команди форматування й аналізу, наприклад <code>fvm dart format . &amp;&amp; fvm dart analyze</code>.</span></td></tr>
+          <tr><td><b>Post-edit steps</b>, <b>Format-change places</b></td><td><span data-l="en">What else a change must update, or <code>none</code>.</span><span data-l="uk">Що ще має оновити зміна, або <code>none</code>.</span></td></tr>
+          <tr><td><b>Learned rules</b></td><td><span data-l="en">The document where an agent writes a rule it learned from a failed run.</span><span data-l="uk">Документ, куди агент записує правило, вивчене з невдалого запуску.</span></td></tr>
+        </table>
+      </div>
+    </section>
+  </div>
+</div>
+<script>
+(() => {
+  const labels = {
+    en: { copy: 'Copy', copied: 'Copied', selected: 'Selected: press ⌘C' },
+    uk: { copy: 'Копіювати', copied: 'Скопійовано', selected: 'Виділено: натисніть ⌘C' },
+  };
+  const tabs = [...document.querySelectorAll('.tabs [role="tab"]')];
+  const copyButtons = [...document.querySelectorAll('button.copy')];
+  const langButtons = [...document.querySelectorAll('[data-set-lang]')];
+  const currentLang = () => document.documentElement.lang === 'uk' ? 'uk' : 'en';
+
+  const setLang = lang => {
+    document.documentElement.lang = lang;
+    langButtons.forEach(btn => btn.setAttribute('aria-pressed', String(btn.dataset.setLang === lang)));
+    copyButtons.forEach(btn => { btn.textContent = labels[lang].copy; });
+    try { localStorage.setItem('fa-docs-lang', lang); } catch (e) {}
+  };
+  langButtons.forEach(btn => btn.addEventListener('click', () => setLang(btn.dataset.setLang)));
+
+  const select = tab => {
+    tabs.forEach(other => {
+      const isOn = other === tab;
+      other.setAttribute('aria-selected', String(isOn));
+      other.tabIndex = isOn ? 0 : -1;
+      document.getElementById(other.getAttribute('aria-controls')).hidden = !isOn;
+    });
+    try { history.replaceState(null, '', '#' + tab.getAttribute('aria-controls')); } catch (e) {}
+  };
+  tabs.forEach((tab, index) => {
+    tab.addEventListener('click', () => select(tab));
+    tab.addEventListener('keydown', event => {
+      const step = event.key === 'ArrowRight' ? 1 : event.key === 'ArrowLeft' ? -1 : 0;
+      if (!step) { return; }
+      const next = tabs[(index + step + tabs.length) % tabs.length];
+      select(next);
+      next.focus();
+    });
+  });
+
+  document.querySelectorAll('[data-go]').forEach(link => {
+    link.addEventListener('click', () => {
+      const tab = tabs.find(item => item.getAttribute('aria-controls') === link.dataset.go);
+      if (!tab) { return; }
+      select(tab);
+      const anchor = link.dataset.anchor && document.getElementById(link.dataset.anchor);
+      (anchor || document.querySelector('header')).scrollIntoView({ behavior: 'smooth' });
+    });
+  });
+
+  copyButtons.forEach(btn => {
+    btn.addEventListener('click', () => {
+      const source = btn.closest('.cmd, .code').querySelector('code');
+      const done = key => {
+        btn.textContent = labels[currentLang()][key];
+        setTimeout(() => { btn.textContent = labels[currentLang()].copy; }, 1600);
+      };
+      const selectText = () => {
+        const range = document.createRange();
+        range.selectNodeContents(source);
+        const selection = getSelection();
+        selection.removeAllRanges();
+        selection.addRange(range);
+        done('selected');
+      };
+      try { navigator.clipboard.writeText(source.textContent).then(() => done('copied'), selectText); } catch (e) { selectText(); }
+    });
+  });
+
+  let savedLang = 'en';
+  try { savedLang = localStorage.getItem('fa-docs-lang') === 'uk' ? 'uk' : 'en'; } catch (e) {}
+  setLang(savedLang);
+
+  const selectFromHash = () => {
+    const tab = tabs.find(item => '#' + item.getAttribute('aria-controls') === location.hash);
+    if (tab) { select(tab); }
+  };
+  window.addEventListener('hashchange', selectFromHash);
+  selectFromHash();
+})();
+</script>
+</body>
+</html>
