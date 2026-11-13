@@ -24,7 +24,7 @@ melos:
       runPubGetInParallel: true
   scripts:
     analyze:
-      run: fvm dart run melos exec -- fvm dart analyze
+      run: fvm dart run melos exec -c 1 -- fvm dart analyze
     test:
       run: fvm dart run melos exec --dir-exists=test -- fvm flutter test
     format:
