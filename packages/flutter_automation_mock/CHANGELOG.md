@@ -1,5 +1,10 @@
 # Changelog
 
+## Unreleased
+
+- New getter `AutomationMock.journalResponseTimeout`. It returns the time
+  `journal.read` waits for the requests the mock still has to answer.
+
 ## 0.6.0
 
 - Depends on `flutter_automation` 0.6.0.

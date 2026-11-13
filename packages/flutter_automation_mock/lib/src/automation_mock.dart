@@ -107,6 +107,10 @@ class AutomationMock {
   /// `scenario.apply`.
   MockScenario get scenario => _scenario;
 
+  /// How long `journal.read` waits for the requests that the mock still has
+  /// to answer.
+  Duration get journalResponseTimeout => _journalResponseTimeout;
+
   /// Latency of a mocked answer: the profile of the `latency` key of the
   /// [scenario] (`realistic` when absent or unknown) and the `latencySeed` key
   /// (0 when absent).
