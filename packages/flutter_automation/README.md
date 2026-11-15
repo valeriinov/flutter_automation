@@ -76,19 +76,22 @@ ListView(children: tiles).automationTarget(CatalogTarget.list)
 
 The id reaches the agent as a `ValueKey` for the driver finder and as a
 `Semantics.identifier` for the native accessibility tree. When
-`AutomationSettings.isEnabled` is false the call returns the widget untouched.
+`AutomationSettings.isMarkingEnabled` is false the call returns the widget
+untouched.
 
 ### Switches
 
 `AutomationSettings` holds compile-time constants. Each one is false in a
-release build.
+release build, except `isMarkingEnabled` and `isLocaleKeyMarkingEnabled` under
+`ENABLE_AUTOMATION_MARKING`.
 
 | Constant | Define | Effect |
 | --- | --- | --- |
 | `isEnabled` | `ENABLE_AUTOMATION` | Master switch. |
 | `isSemanticsEnabled` | `ENABLE_AUTOMATION_SEMANTICS` (default true) | Raises the semantics tree. |
 | `isFrameProfilingEnabled` | `ENABLE_AUTOMATION_FRAME_PROFILING` | Names widgets and render objects in traced frames. |
-| `isLocaleKeyMarkingEnabled` | `ENABLE_AUTOMATION_LOCALE_KEYS` | A translation string carries the mark of its key. |
+| `isMarkingEnabled` | `ENABLE_AUTOMATION_MARKING` | Targets and locale keys are marked with no driver, also in a release build. A QA build sets it so an in-app player finds its targets. `isEnabled` implies it. |
+| `isLocaleKeyMarkingEnabled` | `ENABLE_AUTOMATION_LOCALE_KEYS`, or `ENABLE_AUTOMATION_MARKING` | A translation string carries the mark of its key. |
 
 ### Commands
 

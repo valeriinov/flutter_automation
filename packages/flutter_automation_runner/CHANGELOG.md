@@ -1,5 +1,24 @@
 # Changelog
 
+## 0.8.0
+
+- A recorded step keeps its `step` JSON. `AutomationRecordedStep.step` holds it.
+- `AutomationCatalogueBuilder` fills the action, the finder, the text, the
+  title, the timeout and the drag of a catalogue step. The fork stands at the
+  earlier of the first parting step and the first differing request. A branch
+  carries the title of its variant and `isChosenBeforeStart`.
+- `AutomationCatalogueBuilder`, `AutomationRunner` and `runFlows` take
+  `sections`.
+- `AutomationCatalogueBuilder` takes `dateFormats` and `dateValueKeys`, and
+  `--qa-catalogue` passes the ones of the `flutter_automation:` section. The
+  catalogue carries them for the panel player.
+- `AutomationDatePattern` comes from `flutter_automation`; the runner library
+  still exports it. `AutomationFinderKind.resolveDate` is removed. Use
+  `AutomationDatePattern.resolveDay`.
+- The report holds `step` only in the run that `--record` writes.
+- `AutomationStep.toPlayJson` writes `durationMs` and `frequency` for every
+  scroll. A scroll without a drag is a finger hold.
+
 ## 0.7.0
 
 - Depends on `flutter_automation` 0.7.0.

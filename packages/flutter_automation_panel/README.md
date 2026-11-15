@@ -2,9 +2,11 @@
 
 The builder of the QA panel for an app that runs on `flutter_automation_mock`.
 A tester picks a flow and its outcome, changes the answer of one request and
-walks the app by hand, with no restart. The package depends on the mock only.
-Its interface is in English and has a theme of its own,
-`AutomationPanelTheme`.
+starts a walk. A start restarts the app. The player of the panel then does each
+step of the flow inside the app: one action per tap of Next step in a manual
+walk, every step in a row in an autorun. The package depends on the mock and on
+`flutter_automation`, never on `flutter_driver` or the runner. Its interface is
+in English and has a theme of its own, `AutomationPanelTheme`.
 
 ## Build a panel
 
@@ -33,9 +35,49 @@ MaterialApp(
 ```
 
 The project creates the controller before `runApp`: it handles the system back
-button for the panel from the first frame. A request of a later step moves the
-manual walk forward. A start that needs a restart saves the scenario and the
-walk, asks the project to restart and starts no flow.
+button for the panel and, while a walk runs, swallows it from the first frame.
+
+## Walk and autorun
+
+`controller.startWalk(flow, variant, mode: ...)` saves the scenario of the
+variant and the walk, and calls `onRestartRequired` once, whatever the
+scenario held before. It starts nothing:
+the walk begins when the tester opens the app again. A branch whose
+`isChosenBeforeStart` is true is picked on the flow map, before the restart.
+The other branches are picked on the plaque, at the fork.
+
+`AutomationFlowPlayer` does a catalogue step with the public API of Flutter: a
+pointer event for a tap or a drag, `EditableTextState` for text,
+`Scrollable.ensureVisible` for a scroll into view, and a poll of the element
+tree for a wait. It reads the `finder` JSON of the step itself. The steps
+`driverCommand`, the probes and the traces are skipped. A target that does not
+appear stops the walk with a reason on the plaque. A `dateText` or a declared
+date finder reads the date formats and the date key templates of the catalogue,
+which the runner builds out of the `flutter_automation:` section of
+`pubspec.yaml`. Pass `AutomationPlayerSettings.readLocale` to name the locale
+of the formats.
+
+While a walk runs, `AutomationPanelLauncher` puts an `AutomationInputGate` above
+the app. The gate covers the dialogs and the sheets, blocks the finger and
+lets the events of the player through. The plaque and the QA button stand above
+the gate inside an `AutomationInputPassThrough`, so the finger reaches them and
+a tap of the player goes through them. The launcher sets
+`controller.isLauncherVisible`: the gate and the back button block only while
+the launcher shows. The plaque names the next action, offers
+Next step or the branches of a fork, and has a stop icon named Exit that ends
+the walk and leaves the app on its screen. The tester drags the plaque down.
+
+The gate blocks pointers only. The soft keyboard of the tester still types into
+the app during a walk.
+
+An autorun (`AutomationAutorunPage`, the button Restart and run) shows the
+`AutomationTouchIndicator` circle and nothing else while it plays its steps. A
+failure brings the plaque back, and Try again runs the autorun again. A sheet with the requests,
+Share logs, Run again and Exit run closes it. `onShareLogs` of the definition
+backs Share logs.
+
+The targets of the app reach the player only in a build with
+`ENABLE_AUTOMATION_MARKING=true`.
 
 `wrapButton` wraps the QA button, so the project marks it for automation.
 `startPosition` sets where the button stands before the tester drags it; the
@@ -44,7 +86,8 @@ a project moves the button off the controls its flows tap.
 
 The project owns the debug menu, the gesture that opens it and the restart.
 `AutomationModeController` switches between server and mock and writes the
-choice to `state.json`. `AutomationMockModeTile` is a ready tile for it.
+choice to `state.json`. `AutomationMockModeTile` is a ready tile for it. It is an
+`AutomationPanelSwitchTile`, so it fits an `AutomationPanelSheet`.
 
 ## Catalogue
 

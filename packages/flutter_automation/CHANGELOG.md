@@ -1,5 +1,17 @@
 # Changelog
 
+## 0.8.0
+
+- New `AutomationSettings.isMarkingEnabled` and the define
+  `ENABLE_AUTOMATION_MARKING`. It has no `kReleaseMode` condition.
+  `WidgetAutomationTarget.automationTarget` reads it, and `isEnabled` implies
+  it. `isLocaleKeyMarkingEnabled` is also true under it. The driver and the
+  other switches stay out of a release build.
+- New library `automation_date_pattern.dart` with `AutomationDatePattern`,
+  moved from the runner. It writes a day by a pattern (`format`, `resolveDay`,
+  `writeDayText`, `writeDayKey`). The runner and the panel player read a date
+  finder through it. It imports no Flutter code.
+
 ## 0.7.0
 
 - No change; released together with the other packages.

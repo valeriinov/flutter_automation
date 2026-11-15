@@ -119,7 +119,8 @@ Swap `--debug` for `--profile` when a bug renders as it does in release. The
 defines survive a profile build.
 
 `ENABLE_AUTOMATION` makes the app drivable. Without it, every driver command
-fails and the automation ids are absent from the tree.
+fails and the automation ids are absent from the tree, unless
+`ENABLE_AUTOMATION_MARKING` is set.
 `ENABLE_AUTOMATION_SEMANTICS=false` drops the semantics tree. Use it for a frame
 statistics walk only: production never pays for that pass. The native finders
 (AXe, `uiautomator dump`) read their ids from that tree, so a walk that reads a

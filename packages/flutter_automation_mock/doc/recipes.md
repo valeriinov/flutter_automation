@@ -18,13 +18,14 @@ Two things keep it so.
    // lib/mock/mock_settings.dart
    import 'package:flutter_automation/flutter_automation.dart';
 
-   const bool isMockEnabled =
-       AutomationSettings.isEnabled && bool.fromEnvironment('ENABLE_MOCK');
+   const bool isMockEnabled = bool.fromEnvironment('ENABLE_MOCK');
    ```
 
-   `AutomationSettings.isEnabled` is false when `kReleaseMode` is true, so no
-   define turns the mock on in a release build. Read the flag from nowhere else:
-   a value that a function or a file reads at run time is not a constant.
+   A release build without `ENABLE_MOCK` folds it to false. A QA release build
+   sets `ENABLE_MOCK` next to `ENABLE_AUTOMATION_MARKING`. Do not gate the
+   constant with `AutomationSettings.isEnabled`: it is false in a release
+   build. Read the flag from nowhere else: a value that a function or a file
+   reads at run time is not a constant.
 
 2. `AutomationMock.init` and `substitute` keep the shape below. `init` takes the
    constant and builds the mock; the fake is built only inside the `fake`

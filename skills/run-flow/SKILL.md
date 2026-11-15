@@ -212,6 +212,13 @@ Options:
   devices a run goes to the device cached last. Pass `--uri` for every device
   and read the cache back before you trust a report.
 - `--timeline-out <path>` keeps the raw timeline of a traced run.
+- `--record <dir>` keeps the `step` JSON of each step, and `--qa-catalogue`
+  copies the action, the finder, the text and the title into the catalogue. The
+  QA panel of the app plays that catalogue with its in-app player, so a tester
+  walks a flow in a release QA build (`ENABLE_AUTOMATION_MARKING` and
+  `ENABLE_MOCK` set) with no driver. A change of the step
+  format or of the finder kinds changes the recording, the catalogue and the
+  player together.
 - `--shoot` and `--until` limit a `--capture` run to some stages.
 
 A capture and a run of several variants start from the main session, in the

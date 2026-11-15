@@ -1,5 +1,21 @@
 # Changelog
 
+## 0.8.0
+
+- `AutomationCatalogueStep` carries `action`, `finder`, `text`, `title`,
+  `timeoutMs`, `dx`, `dy`, `durationMs` and `frequency`, so a player can do the
+  step.
+- `AutomationCatalogueFork.method` and `path` are nullable: a fork that stands
+  at a step where the steps of the variants differ names no request.
+- New `AutomationCatalogueBranch.isChosenBeforeStart`.
+- `AutomationCatalogue` carries `dateFormats` and `dateValueKeys`, so a player
+  reads a date finder as the runner does. The key names of
+  `AutomationCatalogueStep` are public constants (`actionKey`, `finderKey`
+  and the others).
+- New `AutomationWalkMode` and the fields `mode`, `shouldShowTouches` and
+  `shouldSignalEnd` of `AutomationWalkProgress`, with `onVariant`. `state.json`
+  keeps them. A walk saved without a mode is a manual walk.
+
 ## 0.7.0
 
 - Depends on `flutter_automation` 0.7.0.

@@ -139,9 +139,18 @@ recording.
 of the flows. With `--recordings <dir>` it adds the recorded answers of the runs
 that passed. It needs no device. A flow stays in the catalogue only when its
 `AutomationFlowDefinition` sets `isInQaCatalogue: true`. The `entry` title of a
-variant becomes the entry of its catalogue variant. The fork of a flow is the
-first request, matched by method, path and its n-th call in the variant, whose
-code or body differs between variants.
+variant becomes the entry of its catalogue variant. A recorded step keeps its
+`step` JSON: the action, the finder with each block parameter substituted, the
+text, the title, the timeout and the distance of a scroll. The catalogue step
+carries them, so the player of `flutter_automation_panel` can do it.
+
+The fork of a flow stands at the earlier of two places: the first step at which
+the steps of two variants differ in their action, finder or text, and the first
+request, matched by method, path and its n-th call in the variant, whose code or
+body differs between variants. A branch carries the title of its variant. A
+branch is chosen before the start when its scenario differs from another
+branch in a `restartKeys` key of a section. `runFlows` and
+`AutomationRunner.fromDefinitions` take the `sections` that name those keys.
 
 ## `pubspec.yaml` keys
 

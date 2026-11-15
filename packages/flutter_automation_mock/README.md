@@ -75,7 +75,10 @@ overrides, walk), `presets/<name>.json` and `runs/<id>/report.json` (the last
 starts from the scenario in `state.json`. A scenario file that `scenario.apply`
 saved wins over it, also when the file holds an empty scenario. Then the mock
 also starts without the walk and without the outcome failures of `state.json`.
-`scenario.apply` ends the walk. The mock never writes `mode`.
+`scenario.apply` ends the walk. The mock never writes `mode`. The walk holds
+the flow, the variant, the step index (in the steps of the variant, service
+steps included), its `AutomationWalkMode` (`manual` or `autorun`) and the two
+autorun options.
 
 `mock.saveOutcomeFailures(failures)` keeps the `failures` JSON of the outcome a
 tester chose, and `mock.outcomeFailures` reads it back after a restart. The
@@ -101,7 +104,9 @@ final mock = await AutomationMock.init(
 ```
 
 - `isEnabled` must be a compile-time constant of the project, for example
-  `AutomationSettings.isEnabled && bool.fromEnvironment('ENABLE_MOCK')`.
+  `bool.fromEnvironment('ENABLE_MOCK')`. Do not add
+  `AutomationSettings.isEnabled`: it is false in a release build, and a QA
+  release build runs the mock.
 - `scenarioDirectory` holds the scenario between launches. `scenario.apply`
   saves it; the next launch reads it once and removes it.
 - `sections` lists the sections. The package only keeps the list. Gate it with

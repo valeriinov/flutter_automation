@@ -260,13 +260,15 @@ code. Skip a part that exists: a second run adds nothing to `main`.
 
 2. **The switch**, in `<project>_mock_settings.dart`, a separate file: it imports
    Flutter code, so no flow imports it. One compile-time constant decides whether
-   the app runs on the mock. A release build folds it to false:
+   the app runs on the mock. A build without the define folds it to false. A QA
+   release build sets `ENABLE_MOCK` next to `ENABLE_AUTOMATION_MARKING`; never
+   gate the constant with `AutomationSettings.isEnabled`, which is false in a
+   release build:
 
    ```dart
    import 'package:flutter_automation/flutter_automation.dart';
 
-   const bool isMockEnabled =
-       AutomationSettings.isEnabled && bool.fromEnvironment('ENABLE_MOCK');
+   const bool isMockEnabled = bool.fromEnvironment('ENABLE_MOCK');
    ```
 
 3. **Init before dependency injection**, in `main` after

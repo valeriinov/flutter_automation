@@ -154,6 +154,13 @@ scenario, overrides, walk), the presets and the last 20 run reports in one
 folder. The mock starts from `state.json`. A scenario that `scenario.apply`
 saved wins over it.
 
+A start of a flow in the QA panel saves the scenario of the variant and a walk
+with its mode, `manual` or `autorun`, and always restarts the app. The in-app
+player of `flutter_automation_panel` then does the steps of the variant. A
+branch whose scenario differs from another branch in a restart key is picked
+before the restart. The panel finds the targets only in a build with
+`ENABLE_AUTOMATION_MARKING=true`.
+
 ## Keeping documents in sync
 
 A value changed inside its documented range needs no document change. A new
