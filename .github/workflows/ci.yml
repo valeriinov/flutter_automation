@@ -39,8 +39,9 @@ jobs:
       - name: Analyze
         run: dart run melos run analyze
 
+      # The goldens of the panel hold fonts of macOS, so they run on a Mac only.
       - name: Test
-        run: dart run melos run test
+        run: dart run melos exec --dir-exists=test -- flutter test --exclude-tags golden
 
       - name: Build the example
         working-directory: example

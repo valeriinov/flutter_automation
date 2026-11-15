@@ -1,0 +1,42 @@
+/// A builder for the QA panel of an app that runs on the mock of
+/// `flutter_automation_mock`.
+library;
+
+export 'package:flutter_automation_panel/src/blocks/automation_code_badge.dart';
+export 'package:flutter_automation_panel/src/blocks/automation_flow_step.dart';
+export 'package:flutter_automation_panel/src/blocks/automation_flow_tile.dart';
+export 'package:flutter_automation_panel/src/blocks/automation_panel_button.dart';
+export 'package:flutter_automation_panel/src/blocks/automation_panel_button_group.dart';
+export 'package:flutter_automation_panel/src/blocks/automation_panel_card.dart';
+export 'package:flutter_automation_panel/src/blocks/automation_panel_chips.dart';
+export 'package:flutter_automation_panel/src/blocks/automation_panel_count.dart';
+export 'package:flutter_automation_panel/src/blocks/automation_panel_frame.dart';
+export 'package:flutter_automation_panel/src/blocks/automation_panel_label.dart';
+export 'package:flutter_automation_panel/src/blocks/automation_panel_option.dart';
+export 'package:flutter_automation_panel/src/blocks/automation_panel_radio_tile.dart';
+export 'package:flutter_automation_panel/src/blocks/automation_panel_segments.dart';
+export 'package:flutter_automation_panel/src/blocks/automation_panel_sheet.dart';
+export 'package:flutter_automation_panel/src/blocks/automation_panel_status.dart';
+export 'package:flutter_automation_panel/src/blocks/automation_panel_switch_tile.dart';
+export 'package:flutter_automation_panel/src/blocks/automation_request_row.dart';
+export 'package:flutter_automation_panel/src/blocks/automation_walk_plaque.dart';
+export 'package:flutter_automation_panel/src/mode/automation_mock_mode_sheet.dart';
+export 'package:flutter_automation_panel/src/mode/automation_mock_mode_tile.dart';
+export 'package:flutter_automation_panel/src/mode/automation_mode_controller.dart';
+export 'package:flutter_automation_panel/src/pages/automation_flow_map_page.dart';
+export 'package:flutter_automation_panel/src/pages/automation_flows_page.dart';
+export 'package:flutter_automation_panel/src/pages/automation_journal_page.dart';
+export 'package:flutter_automation_panel/src/pages/automation_section_panel.dart';
+export 'package:flutter_automation_panel/src/pages/automation_sections_page.dart';
+export 'package:flutter_automation_panel/src/pages/mock_endpoint_panel.dart';
+export 'package:flutter_automation_panel/src/panel/automation_panel.dart';
+export 'package:flutter_automation_panel/src/panel/automation_panel_controller.dart';
+export 'package:flutter_automation_panel/src/panel/automation_panel_definition.dart';
+export 'package:flutter_automation_panel/src/panel/automation_panel_launcher.dart';
+export 'package:flutter_automation_panel/src/panel/automation_panel_page.dart';
+export 'package:flutter_automation_panel/src/panel/automation_panel_scope.dart';
+export 'package:flutter_automation_panel/src/panel/automation_walk_strip.dart';
+export 'package:flutter_automation_panel/src/sheets/automation_presets_sheet.dart';
+export 'package:flutter_automation_panel/src/sheets/automation_response_sheet.dart';
+export 'package:flutter_automation_panel/src/sheets/automation_run_done_sheet.dart';
+export 'package:flutter_automation_panel/src/theme/automation_panel_theme.dart';

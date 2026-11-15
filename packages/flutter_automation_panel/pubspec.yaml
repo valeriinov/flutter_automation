@@ -1,0 +1,29 @@
+name: flutter_automation_panel
+description: Builder of the QA panel of an app that runs on the mock of flutter_automation_mock, in a style of its own.
+version: 0.7.0
+repository: https://github.com/valeriinov/flutter_automation
+publish_to: none
+
+environment:
+  sdk: ^3.12.2
+  flutter: ^3.47.5
+
+resolution: workspace
+
+dependencies:
+  flutter:
+    sdk: flutter
+  collection: ^1.19.1
+  flutter_automation_mock:
+    git:
+      url: https://github.com/valeriinov/flutter_automation.git
+      ref: 0.7.0
+      path: packages/flutter_automation_mock
+
+dev_dependencies:
+  flutter_lints: ^6.0.0
+  flutter_test:
+    sdk: flutter
+
+flutter:
+  uses-material-design: true

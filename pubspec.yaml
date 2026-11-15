@@ -10,6 +10,7 @@ workspace:
   - packages/flutter_automation_driver
   - packages/flutter_automation_mock
   - packages/flutter_automation_mock_dio
+  - packages/flutter_automation_panel
   - packages/flutter_automation_runner
   - example
 
