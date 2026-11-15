@@ -5,6 +5,7 @@ import 'package:flutter_test/flutter_test.dart';
 
 import 'package:flutter_automation_runner/src/automation_runner.dart';
 import 'package:flutter_automation_runner/src/automation_runner_config.dart';
+import 'package:flutter_automation_runner/src/automation_runner_exception.dart';
 
 const _flowName = 'greeting';
 const _flowJson = {
@@ -45,6 +46,31 @@ void main() {
     _automationRunner_should_dryRunFlowWithoutScenario();
     _automationRunner_should_leaveTheScenarioOutOfARunWithNoScenario();
     _automationRunner_should_relaunchOnAScenarioOrALocale();
+    _automationRunner_should_rejectARecordOfAPartialRun();
+  });
+}
+
+void _automationRunner_should_rejectARecordOfAPartialRun() {
+  test('AutomationRunner should reject a record of a partial run', () {
+    final runner = AutomationRunner(
+      [
+        _flowName,
+        '--dry-run',
+        '--capture',
+        'capture',
+        '--record',
+        'recordings',
+        '--until',
+        '1',
+      ],
+      config: const AutomationRunnerConfig(
+        packagePrefix: 'package:sample_app/',
+      ),
+      flows: {_flowName: _flowJson},
+      blocks: const {},
+    );
+
+    expect(runner.run, throwsA(isA<AutomationRunnerException>()));
   });
 }
 

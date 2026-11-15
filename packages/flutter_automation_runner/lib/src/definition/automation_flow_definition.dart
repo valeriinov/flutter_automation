@@ -2,6 +2,7 @@ import 'package:flutter_automation_mock/mock_section.dart';
 
 import 'package:flutter_automation_runner/src/automation_localized_text.dart';
 import 'package:flutter_automation_runner/src/automation_runner_exception.dart';
+import 'package:flutter_automation_runner/src/definition/automation_flow_group.dart';
 import 'package:flutter_automation_runner/src/definition/flow_variant.dart';
 
 /// {@category Utils}
@@ -24,9 +25,16 @@ final class AutomationFlowDefinition {
   /// What the journey is about in one sentence, missing when it has none.
   final AutomationLocalizedText? subtitle;
 
+  /// Group the flow belongs to, missing when it has none.
+  final AutomationFlowGroup? group;
+
   /// Variant a run walks when it names none, missing when the flow has one
   /// variant or the run always names it.
   final String? defaultVariant;
+
+  /// Whether the QA catalogue of the panel lists the flow. A flow a tester
+  /// walks by hand sets it.
+  final bool isInQaCatalogue;
 
   /// Overrides every variant starts from.
   final List<MockOverride> scenario;
@@ -36,7 +44,9 @@ final class AutomationFlowDefinition {
     required this.variants,
     this.title,
     this.subtitle,
+    this.group,
     this.defaultVariant,
+    this.isInQaCatalogue = false,
     this.scenario = const [],
   });
 
@@ -55,7 +65,9 @@ final class AutomationFlowDefinition {
     return {
       'title': ?title?.toJson(),
       'subtitle': ?subtitle?.toJson(),
+      'group': ?group?.toJson(),
       'defaultVariant': ?defaultVariant,
+      if (isInQaCatalogue) 'isInQaCatalogue': true,
       if (scenario.isNotEmpty) 'scenario': MockScenario(scenario).toJson(),
       'variants': {
         for (final variant in variants)

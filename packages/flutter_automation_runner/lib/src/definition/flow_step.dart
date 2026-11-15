@@ -1,4 +1,5 @@
 import 'package:flutter_automation_runner/src/automation_localized_text.dart';
+import 'package:flutter_automation_runner/src/definition/flow_action_names.dart';
 import 'package:flutter_automation_runner/src/definition/flow_finder.dart';
 import 'package:flutter_automation_runner/src/definition/flow_item.dart';
 import 'package:flutter_automation_runner/src/definition/flow_json_value.dart';
@@ -113,7 +114,7 @@ final class ProbeCenter extends FlowFinderStep {
   const ProbeCenter(super.finder, {super.label, super.title, super.timeout});
 
   @override
-  String get action => 'probeCenter';
+  String get action => FlowActionNames.probeCenter;
 }
 
 /// {@category Utils}
@@ -192,7 +193,7 @@ final class DriverCommand extends FlowStep {
   });
 
   @override
-  String get action => 'driverCommand';
+  String get action => FlowActionNames.driverCommand;
 
   @override
   Map<String, Object?> toJson() => {
@@ -213,7 +214,7 @@ final class TraceStart extends FlowStep {
   const TraceStart({this.duration, super.label, super.title, super.timeout});
 
   @override
-  String get action => 'traceStart';
+  String get action => FlowActionNames.traceStart;
 
   @override
   Map<String, Object?> toJson() => {
@@ -237,7 +238,7 @@ final class TraceStop extends FlowStep {
   });
 
   @override
-  String get action => 'traceStop';
+  String get action => FlowActionNames.traceStop;
 
   @override
   Map<String, Object?> toJson() => {
@@ -288,7 +289,7 @@ final class ProbeSeries extends FlowStep {
   });
 
   @override
-  String get action => 'probeSeries';
+  String get action => FlowActionNames.probeSeries;
 
   @override
   Map<String, Object?> toJson() => {

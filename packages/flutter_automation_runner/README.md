@@ -127,6 +127,22 @@ held in memory. A mock then launches on an empty scenario, because the launch
 before already read and removed the saved one. A run
 without `--locale` sends no language and restarts the app only for a scenario.
 
+## QA catalogue and recordings
+
+`--record <dir>` writes `<dir>/<flow>/<variant>.json` with the steps, the
+timings and the requests of each step. A request that the mock answers after
+the read of a step belongs to that step, as in a capture run. The option needs
+a full run: it rejects `--shoot` and `--until`. A run that fails writes no
+recording.
+
+`--qa-catalogue <file>` writes the catalogue of `flutter_automation_panel` out
+of the flows. With `--recordings <dir>` it adds the recorded answers of the runs
+that passed. It needs no device. A flow stays in the catalogue only when its
+`AutomationFlowDefinition` sets `isInQaCatalogue: true`. The `entry` title of a
+variant becomes the entry of its catalogue variant. The fork of a flow is the
+first request, matched by method, path and its n-th call in the variant, whose
+code or body differs between variants.
+
 ## `pubspec.yaml` keys
 
 The runner reads the `flutter_automation:` section of the `pubspec.yaml` of the

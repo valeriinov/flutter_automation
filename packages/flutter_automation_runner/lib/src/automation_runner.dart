@@ -25,7 +25,11 @@ import 'package:flutter_automation_runner/src/automation_runner_exception.dart';
 import 'package:flutter_automation_runner/src/automation_screen_answer.dart';
 import 'package:flutter_automation_runner/src/automation_target_rect.dart';
 import 'package:flutter_automation_runner/src/definition/automation_flow_definition.dart';
+import 'package:flutter_automation_runner/src/definition/flow_action_names.dart';
 import 'package:flutter_automation_runner/src/definition/flow_block.dart';
+import 'package:flutter_automation_runner/src/recording/automation_catalogue_builder.dart';
+import 'package:flutter_automation_runner/src/recording/automation_recording.dart';
+import 'package:flutter_automation_runner/src/recording/automation_recording_files.dart';
 
 /// A step of a capture run: its 1-based [number] in the variant and the [stage]
 /// that the next user action opens. A step that is no user action belongs to
@@ -62,10 +66,15 @@ typedef _KeyboardScreenshot = ({
 /// starts in `AutomationInstaller.launchLanguageCode`.
 /// `--dry-run` expands the variant and prints its resolved steps. It does not
 /// use a device. `--catalogue` prints every flow and block, before a `Use`
-/// expands, as one line of JSON. `--timeline-out <path>` writes the
-/// raw timeline that a traced window downloaded, in the Chrome trace format
-/// that DevTools and Perfetto open. It gives what the frame summary does not: a
-/// mark's arguments and the full list of spans inside one frame.
+/// expands, as one line of JSON. `--record <directory>` writes the recording of
+/// the run to `<directory>/<flow>/<variant>.json`: the steps, their timings and
+/// the requests the mock answered in each one. `--qa-catalogue <file>` writes
+/// the catalogue of the panel out of the flows and the recordings in the
+/// `--recordings <directory>` folder; it uses no device.
+/// `--timeline-out <path>` writes the raw timeline that a traced window
+/// downloaded, in the Chrome trace format that DevTools and Perfetto open. It
+/// gives what the frame summary does not: a mark's arguments and the full list
+/// of spans inside one frame.
 ///
 /// Stdout carries the report and nothing else. The report is one line of JSON
 /// with the per-step milliseconds, the totals and, when the variant traced, the
@@ -87,6 +96,9 @@ final class AutomationRunner {
   static const _catalogueFlag = '--catalogue';
   static const _noScenarioFlag = '--no-scenario';
   static const _captureOption = '--capture';
+  static const _recordOption = '--record';
+  static const _qaCatalogueOption = '--qa-catalogue';
+  static const _recordingsOption = '--recordings';
   static const _systemKeyboardFlag = '--system-keyboard';
   static const _localeOption = '--locale';
   static const _uriCachePath = '.dart_tool/automation_runner_uri';
@@ -226,6 +238,8 @@ final class AutomationRunner {
       'usage: <runner> <flow> [variant] '
       '[$_uriOption <dart vm service uri>] [$_timelineOutOption <path>] '
       '[$_dryRunFlag] [$_catalogueFlag] [$_noScenarioFlag] '
+      '[$_recordOption <directory>] '
+      '[$_qaCatalogueOption <file> [$_recordingsOption <directory>]] '
       '[$_captureOption <directory> '
       '[${AutomationCaptureStages.shootOption} <stage,stage>] '
       '[${AutomationCaptureStages.untilOption} <stage>]] '
@@ -247,12 +261,29 @@ final class AutomationRunner {
       return;
     }
 
+    final qaCataloguePath = _tryReadOption(_qaCatalogueOption, 'a file path');
+
+    if (qaCataloguePath != null) {
+      _writeQaCatalogue(qaCataloguePath);
+
+      return;
+    }
+
     final locale = _tryReadLocale();
     final flow = _readFlow(locale ?? config.defaultLocale);
-    final capturePath = _readCapturePath();
+    final capturePath = _tryReadOption(_captureOption, 'a directory');
+    final recordPath = _tryReadOption(_recordOption, 'a directory');
 
     if (_stages.isPartial && capturePath == null) {
       throw AutomationRunnerException(_usage);
+    }
+
+    if (_stages.isPartial && recordPath != null) {
+      throw AutomationRunnerException(
+        'The $_recordOption option needs a full run: drop '
+        '${AutomationCaptureStages.shootOption} and '
+        '${AutomationCaptureStages.untilOption}.',
+      );
     }
 
     if (args.contains(_dryRunFlag)) {
@@ -293,7 +324,8 @@ final class AutomationRunner {
       await _turnTextEntryEmulationOff(driver);
     }
 
-    final launch = capture == null ? null : await _clearJournal(driver);
+    final isRecording = capture != null || recordPath != null;
+    final launch = isRecording ? await _clearJournal(driver) : null;
     final steps = <Map<String, Object?>>[];
     final total = Stopwatch()..start();
     int stage = 0;
@@ -313,7 +345,7 @@ final class AutomationRunner {
       // flow and many entries of the report: one per read, so a reader walks
       // the numbers of one node without knowing how the flow was written.
       final results = capture == null
-          ? await _runStep(driver, step)
+          ? await _runStepOrRecord(driver, step, isRecording: isRecording)
           : await _runCapturedStep(driver, capture, (
               step: step,
               number: index + 1,
@@ -333,7 +365,12 @@ final class AutomationRunner {
 
     total.stop();
 
-    final runEnd = await _captureRunEnd(driver, capture, isCut: isCut);
+    final runEnd = await _captureRunEnd(
+      driver,
+      capture,
+      isCut: isCut,
+      isRecording: isRecording,
+    );
 
     await driver.close();
 
@@ -358,6 +395,10 @@ final class AutomationRunner {
 
     stdout.writeln(jsonEncode(report));
 
+    if (recordPath != null) {
+      AutomationRecordingFiles(recordPath).writeReport(report);
+    }
+
     if (capture == null) {
       _appendToLedger(report, steps);
     } else {
@@ -369,17 +410,109 @@ final class AutomationRunner {
     }
   }
 
-  String? _readCapturePath() {
-    final index = args.indexOf(_captureOption);
+  /// The records read before the action of a step arrived after the last read
+  /// of the step before it, and are that step's, as in a capture run.
+  Future<List<Map<String, Object?>>> _runStepOrRecord(
+    FlutterDriver driver,
+    AutomationStep step, {
+    required bool isRecording,
+  }) async {
+    if (!isRecording) {
+      return _runStep(driver, step);
+    }
+
+    final before = step.isUserAction
+        ? await _recordJournalBeforeAction(driver, step)
+        : const <String, Object?>{};
+
+    if (before['ok'] == false) {
+      return [
+        {'label': step.label, ..._describeStep(step), ...before},
+      ];
+    }
+
+    final results = await _runStep(driver, step);
+
+    final last = results.lastOrNull;
+
+    if (last == null) {
+      return results;
+    }
+
+    last.addAll(before);
+
+    if (last['ok'] != true) {
+      return results;
+    }
+
+    try {
+      last['journal'] = (await _readJournal(driver)).records;
+    } on Object catch (error) {
+      stderr.writeln('fail record  ${step.label}');
+
+      last
+        ..['ok'] = false
+        ..['error'] = 'Could not read the journal after ${step.label}: $error';
+    }
+
+    return results;
+  }
+
+  Future<Map<String, Object?>> _recordJournalBeforeAction(
+    FlutterDriver driver,
+    AutomationStep step,
+  ) async {
+    try {
+      return {'journalBeforeAction': (await _readJournal(driver)).records};
+    } on Object catch (error) {
+      stderr.writeln('fail record  ${step.label}');
+
+      return {
+        'ok': false,
+        'error': 'Could not read the journal before ${step.label}: $error',
+      };
+    }
+  }
+
+  Future<Map<String, Object?>> _recordEndJournal(FlutterDriver driver) async {
+    try {
+      return {'endJournal': (await _readJournal(driver)).records};
+    } on Object catch (error) {
+      stderr.writeln('fail record  end journal');
+
+      return {'endJournalError': '$error'};
+    }
+  }
+
+  void _writeQaCatalogue(String path) {
+    final recordingsPath = _tryReadOption(_recordingsOption, 'a directory');
+    final recordings = recordingsPath == null
+        ? const <AutomationRecording>[]
+        : AutomationRecordingFiles(recordingsPath).readAll();
+    final catalogue = AutomationCatalogueBuilder(
+      flows: _flows,
+      recordings: recordings,
+    ).build();
+    final file = File(path);
+
+    file.parent.createSync(recursive: true);
+    file.writeAsStringSync(
+      const JsonEncoder.withIndent('  ').convert(catalogue.toJson()),
+    );
+    stdout.writeln(
+      jsonEncode({'qaCatalogue': path, 'flows': catalogue.flows.length}),
+    );
+  }
+
+  String? _tryReadOption(String option, String expected) {
+    final index = args.indexOf(option);
 
     if (index < 0) {
       return null;
     }
 
     if (index + 1 >= args.length || args[index + 1].startsWith('-')) {
-      throw const AutomationRunnerException(
-        'The $_captureOption option needs a directory.',
-      );
+      throw AutomationRunnerException('The $option option needs $expected.');
     }
 
     return args[index + 1];
@@ -1091,7 +1224,7 @@ final class AutomationRunner {
     FlutterDriver driver,
     AutomationStep step,
   ) async {
-    if (step.action == 'probeSeries') {
+    if (step.action == FlowActionNames.probeSeries) {
       return _runProbeSeries(driver, step);
     }
 
@@ -1126,9 +1259,10 @@ final class AutomationRunner {
     FlutterDriver driver,
     AutomationCapture? capture, {
     required bool isCut,
+    required bool isRecording,
   }) async {
     if (capture == null) {
-      return const {};
+      return isRecording ? _recordEndJournal(driver) : const {};
     }
 
     if (isCut) {
@@ -1513,7 +1647,7 @@ final class AutomationRunner {
   }
 
   Future<Object?> _sendStep(FlutterDriver driver, AutomationStep step) async {
-    if (step.action == 'probeCenter') {
+    if (step.action == FlowActionNames.probeCenter) {
       return _probeCenter(driver, _resolveFinder(step), step.timeout);
     }
 
@@ -1557,15 +1691,15 @@ final class AutomationRunner {
         timeout: step.timeout,
       ),
       'enterText' => _enterText(driver, step),
-      'driverCommand' => driver.sendCommand(
+      FlowActionNames.driverCommand => driver.sendCommand(
         AutomationDriverCommand(
           name: _resolveCommand(step),
           arguments: step.arguments,
           timeout: step.timeout,
         ),
       ),
-      'traceStart' => _startTracing(driver, step),
-      'traceStop' => _stopTracing(driver, step),
+      FlowActionNames.traceStart => _startTracing(driver, step),
+      FlowActionNames.traceStop => _stopTracing(driver, step),
       _ => throw AutomationRunnerException('Unknown action "${step.action}".'),
     };
   }

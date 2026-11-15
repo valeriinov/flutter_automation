@@ -8,6 +8,7 @@ export 'package:flutter_automation_runner/src/automation_flow_entry.dart';
 export 'package:flutter_automation_runner/src/automation_launch_source.dart';
 export 'package:flutter_automation_runner/src/automation_localized_text.dart';
 export 'package:flutter_automation_runner/src/definition/automation_flow_definition.dart';
+export 'package:flutter_automation_runner/src/definition/automation_flow_group.dart';
 export 'package:flutter_automation_runner/src/definition/flow_block.dart';
 export 'package:flutter_automation_runner/src/definition/flow_finder.dart';
 export 'package:flutter_automation_runner/src/definition/flow_item.dart';

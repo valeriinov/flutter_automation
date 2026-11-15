@@ -16,3 +16,4 @@ export 'package:flutter_automation_runner/src/automation_runner_config.dart';
 export 'package:flutter_automation_runner/src/automation_runner_exception.dart';
 export 'package:flutter_automation_runner/src/automation_screen_answer.dart';
 export 'package:flutter_automation_runner/src/run_flows.dart';
+export 'package:flutter_automation_runner/automation_recording.dart';

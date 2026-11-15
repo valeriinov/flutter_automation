@@ -8,6 +8,7 @@ import 'package:flutter_automation_runner/src/automation_host_finders.dart';
 import 'package:flutter_automation_runner/src/automation_localized_text.dart';
 import 'package:flutter_automation_runner/src/automation_runner_exception.dart';
 import 'package:flutter_automation_runner/src/automation_step_label.dart';
+import 'package:flutter_automation_runner/src/definition/flow_action_names.dart';
 
 typedef _FinderResolver =
     AutomationFinderSpec Function(Object? json, String subject);
@@ -326,9 +327,6 @@ final class AutomationProbe {
 /// fails before the run touches the app. A run therefore either walks the whole
 /// flow or reports which step stopped it.
 final class AutomationStep {
-  static const _probeSeriesAction = 'probeSeries';
-  static const _traceStartAction = 'traceStart';
-  static const _traceStopAction = 'traceStop';
   static const _defaultTimeout = Duration(seconds: 10);
   static const _defaultScrollDuration = Duration(seconds: 6);
   static const _defaultScrollFrequency = 60;
@@ -527,12 +525,15 @@ final class AutomationStep {
   /// unless it declares how long the screen stays still first. A scroll takes
   /// the default that each scroll takes.
   static Duration _resolveDurationFallback(String action) {
-    return action == _traceStartAction ? Duration.zero : _defaultScrollDuration;
+    return action == FlowActionNames.traceStart
+        ? Duration.zero
+        : _defaultScrollDuration;
   }
 
   /// Whether the step's window is time and has no honest default.
   static bool _needsDeclaredDuration(String action) {
-    return action == _probeSeriesAction || action == _traceStopAction;
+    return action == FlowActionNames.probeSeries ||
+        action == FlowActionNames.traceStop;
   }
 
   static List<AutomationProbe> _readProbes(
@@ -540,7 +541,7 @@ final class AutomationStep {
     String action,
     _FinderResolver resolveFinder,
   ) {
-    if (action != _probeSeriesAction) {
+    if (action != FlowActionNames.probeSeries) {
       return const [];
     }
 

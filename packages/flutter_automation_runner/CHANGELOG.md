@@ -1,5 +1,19 @@
 # Changelog
 
+## 0.7.0
+
+- Depends on `flutter_automation` 0.7.0.
+- New option `--record <dir>`: writes `<dir>/<flow>/<variant>.json` with the
+  steps, the timings and the requests of each step. It needs a full run and
+  writes the recording of a run that passed only.
+- New options `--qa-catalogue <file>` and `--recordings <dir>`: write the
+  catalogue of the QA panel. They need no device.
+- New `AutomationFlowGroup`, `AutomationFlowDefinition.group` and
+  `AutomationFlowDefinition.isInQaCatalogue`: the QA catalogue lists the flows
+  that set it.
+- `AutomationCatalogueBuilder` takes no `blocks` parameter.
+- New library `automation_recording.dart`.
+
 ## 0.6.1
 
 - Depends on `flutter_automation` 0.6.1.
