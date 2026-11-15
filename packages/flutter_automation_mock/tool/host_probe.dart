@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:flutter_automation/automation_target.dart';
+import 'package:flutter_automation_mock/mock_catalogue.dart';
 import 'package:flutter_automation_mock/mock_section.dart';
 
 enum _ProbeTarget with AutomationIdComposer {
@@ -17,6 +18,7 @@ final _catalog = MockSection<_CatalogSettings>(
   name: 'catalog',
   fromJson: _CatalogSettings.fromJson,
   profiles: {'empty': (settings) => _CatalogSettings(isEmpty: true)},
+  restartKeys: {'isEmpty'},
 );
 
 final class _CatalogSettings {
@@ -38,8 +40,13 @@ void main() {
     MockOverride.failures({'/items': {}}),
   ]);
   final isEmpty = scenario.settingsOf(_catalog).isEmpty;
+  final catalogue = AutomationCatalogue.fromJson(const {'flows': []});
+  final isRestart = _catalog.changesRestartKey(const {}, scenario.toJson());
 
-  if (target.id != 'probe.button.submit' || isEmpty != true) {
+  if (target.id != 'probe.button.submit' ||
+      isEmpty != true ||
+      !isRestart ||
+      catalogue.flows.isNotEmpty) {
     throw StateError('Unexpected probe result: ${target.id} $isEmpty');
   }
 

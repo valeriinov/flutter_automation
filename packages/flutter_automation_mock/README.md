@@ -11,6 +11,7 @@ see [`flutter_automation_mock_dio`](../flutter_automation_mock_dio).
 | --- | --- | --- |
 | `package:flutter_automation_mock/mock_section.dart` | Yes, no Flutter import | `MockSection`, `MockOverride`, `MockScenario`, `MockLatencyProfile`, `MockCommands`. |
 | `package:flutter_automation_mock/flutter_automation_mock.dart` | No, imports Flutter | Everything above, plus `AutomationMock`, `MockApi`, `MockApiEndpoint`, `MockApiTransport`, `MockBackend`, `MockScenarioBackend`, `MockJournal`, request and response types. |
+| `package:flutter_automation_mock/mock_catalogue.dart` | Yes, no Flutter import | `AutomationCatalogue`, its flows and steps: the data of the QA panel. |
 
 Declare each `MockSection` in a file that imports only `mock_section.dart`. A
 flow on the host then names a profile by Dart symbol and the host builds without
@@ -65,6 +66,26 @@ replaces its section with the keys that differ from the defaults. A key that a
 function sets back to its default therefore leaves the scenario. A variant
 continues the list of overrides of its flow: the flow overrides come first, then
 the ones of the variant.
+
+### Keep the state of a tester
+
+`AutomationStateStore(directory)` writes `state.json` (mode, scenario,
+overrides, walk), `presets/<name>.json` and `runs/<id>/report.json` (the last
+20) atomically. Pass it to `AutomationMock.init` as `stateStore`. The mock then
+starts from the scenario in `state.json`. A scenario file that `scenario.apply`
+saved wins over it, also when the file holds an empty scenario. Then the mock
+also starts without the walk and without the outcome failures of `state.json`.
+`scenario.apply` ends the walk. The mock never writes `mode`.
+
+`mock.saveOutcomeFailures(failures)` keeps the `failures` JSON of the outcome a
+tester chose, and `mock.outcomeFailures` reads it back after a restart. The
+panel uses it to tell the failures of the outcome from the overrides of the
+tester.
+
+`mock.updateScenario(next)` and `mock.setFailure(path, failure)` replace the
+scenario at once, save it and call `onScenarioUpdated`. They neither reseed the
+state nor clear the journal. `mock.requiresRestart(next)` is true when `next`
+differs from the launch scenario in a key that `MockSection.restartKeys` lists.
 
 ### Start the mock
 
@@ -176,9 +197,9 @@ reaches the network.
 | Change | When it takes effect |
 | --- | --- |
 | Failed paths | At once. The backend reads them on each request. |
-| Latency profile, latency seed | After `rebuild()` in `onScenarioApplied`. The backend builds its latency once per `rebuild()`. |
+| Latency profile, latency seed | After `rebuild()` in `onScenarioApplied` or `onScenarioUpdated`. The backend builds its latency once per `rebuild()`. |
 | Settings read with `settingsOf` at the time of use | At once. |
-| Endpoints of a `MockScenarioBackend` | At once, after `rebuild()` in `onScenarioApplied`. |
+| Endpoints of a `MockScenarioBackend` | At once, after `rebuild()` in `onScenarioApplied` or `onScenarioUpdated`. |
 | An object that a substitute seeds from the scenario when it creates it (storage, database) | After a restart of the app. |
 | What the app reads once at launch (session, the link or push that opened it) | After a restart. The runner restarts the app after `scenario.apply`. |
 | Whether the app runs on the mock, and which objects have a substitute | At build time: `isEnabled` is a compile-time constant. |

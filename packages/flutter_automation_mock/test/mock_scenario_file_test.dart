@@ -11,6 +11,7 @@ void main() {
   group('MockScenarioFile Tests', () {
     _mockScenarioFile_should_consumeWhatItSaved();
     _mockScenarioFile_should_removeTheFileAfterConsuming();
+    _mockScenarioFile_should_createAMissingFolderOnSave();
     _mockScenarioFile_should_answerAnEmptyObjectWithoutAFile();
     _mockScenarioFile_should_answerAnEmptyObjectForBrokenJson();
     _mockScenarioFile_should_answerAnEmptyObjectForANonObject();
@@ -50,6 +51,16 @@ void _mockScenarioFile_should_removeTheFileAfterConsuming() {
     await MockScenarioFile.consume(_directory.path);
 
     expect(_file.existsSync(), isFalse);
+  });
+}
+
+void _mockScenarioFile_should_createAMissingFolderOnSave() {
+  test('MockScenarioFile should create a missing folder on save', () async {
+    final folder = '${_directory.path}/missing/deeper';
+
+    await MockScenarioFile.save(folder, {'latency': 'fast'});
+
+    expect(await MockScenarioFile.consume(folder), {'latency': 'fast'});
   });
 }
 

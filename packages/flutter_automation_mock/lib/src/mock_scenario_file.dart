@@ -13,7 +13,10 @@ abstract final class MockScenarioFile {
   static const _fileName = 'mock_scenario.json';
 
   /// Saves [json], a scenario as JSON, in [directory] for the next launch.
+  ///
+  /// Creates [directory] when it does not exist.
   static Future<void> save(String directory, Map<String, Object?> json) async {
+    await Directory(directory).create(recursive: true);
     await _resolveFile(directory).writeAsString(jsonEncode(json));
   }
 
@@ -22,10 +25,18 @@ abstract final class MockScenarioFile {
   /// Answers an empty object when it left none or left a file that is not a
   /// JSON object.
   static Future<Map<String, Object?>> consume(String directory) async {
+    return await tryConsume(directory) ?? const {};
+  }
+
+  /// Reads and removes the scenario [save] left in [directory].
+  ///
+  /// Answers `null` when it left no file, and an empty object when the file is
+  /// not a JSON object.
+  static Future<Map<String, Object?>?> tryConsume(String directory) async {
     final file = _resolveFile(directory);
 
     if (!file.existsSync()) {
-      return const {};
+      return null;
     }
 
     try {

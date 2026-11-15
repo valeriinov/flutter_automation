@@ -18,3 +18,7 @@ export 'src/scenario/mock_section.dart';
 export 'src/scenario/mock_override.dart';
 export 'src/scenario/mock_scenario.dart';
 export 'src/scenario/mock_commands.dart';
+export 'src/state/automation_mode.dart';
+export 'src/state/automation_state.dart';
+export 'src/state/automation_state_store.dart';
+export 'src/state/automation_walk_progress.dart';

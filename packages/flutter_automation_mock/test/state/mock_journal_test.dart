@@ -31,6 +31,8 @@ void main() {
     _mockJournal_should_completeWaitForResponsesOnceEveryRequestIsAnswered();
     _mockJournal_should_completeWaitForResponsesWithNoRequestAwaitingOne();
     _mockJournal_should_completeWaitForResponsesOnceEmptied();
+    _mockJournal_should_readTheRecordsWithoutEmptyingTheJournal();
+    _mockJournal_should_notifyListenersWhenItChanges();
   });
 }
 
@@ -255,6 +257,36 @@ void _mockJournal_should_keepTheLaunchRecordApartFromTheRecordsARead() {
       expect(_sut.launch, {'kind': 'detail', 'language': 'en'});
     },
   );
+}
+
+void _mockJournal_should_readTheRecordsWithoutEmptyingTheJournal() {
+  test('MockJournal should read the records without emptying the journal', () {
+    _sut.add(_TestRecordKind.request, {'path': _requestPath});
+
+    final first = _sut.records;
+    final second = _sut.records;
+
+    expect(first, hasLength(1));
+    expect(second, first);
+    expect(() => first.add(const {}), throwsUnsupportedError);
+  });
+}
+
+void _mockJournal_should_notifyListenersWhenItChanges() {
+  test('MockJournal should notify listeners when it changes', () {
+    int notifications = 0;
+
+    void listener() => notifications += 1;
+
+    _sut.addListener(listener);
+
+    final record = _sut.addRequest({'path': _requestPath});
+
+    _sut.attachResponse(record, statusCode: 200, body: const {});
+    _sut.clear();
+    _sut.removeListener(listener);
+    expect(notifications, 3);
+  });
 }
 
 enum _TestRecordKind { request, stream, state, detail }

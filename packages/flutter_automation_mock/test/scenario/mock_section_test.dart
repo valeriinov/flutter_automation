@@ -16,6 +16,9 @@ void main() {
     _mockSection_should_overrideTheSectionByAFunction();
     _mockSection_should_readItsSectionOutOfTheScenarioJson();
     _mockSection_should_readDefaultsWhenTheSectionIsMissing();
+    _mockSection_should_flagAChangeOfARestartKey();
+    _mockSection_should_ignoreAChangeOfAKeyThatNeedsNoRestart();
+    _mockSection_should_treatAnAbsentKeyAndItsDefaultAsEqual();
   });
 }
 
@@ -83,6 +86,42 @@ void _mockSection_should_readDefaultsWhenTheSectionIsMissing() {
     expect(settings.itemCount, 3);
   });
 }
+
+void _mockSection_should_flagAChangeOfARestartKey() {
+  test('MockSection should flag a change of a restart key', () {
+    final changed = _restartSection.changesRestartKey(const {}, {
+      'catalog': {'itemCount': 0},
+    });
+
+    expect(changed, isTrue);
+  });
+}
+
+void _mockSection_should_ignoreAChangeOfAKeyThatNeedsNoRestart() {
+  test('MockSection should ignore a change of a key that needs no restart', () {
+    final changed = _section.changesRestartKey(const {}, {
+      'catalog': {'itemCount': 0},
+    });
+
+    expect(changed, isFalse);
+  });
+}
+
+void _mockSection_should_treatAnAbsentKeyAndItsDefaultAsEqual() {
+  test('MockSection should treat an absent key and its default as equal', () {
+    final changed = _restartSection.changesRestartKey(const {}, {
+      'catalog': {'itemCount': 3},
+    });
+
+    expect(changed, isFalse);
+  });
+}
+
+final _restartSection = MockSection<_CatalogSettings>(
+  name: 'catalog',
+  fromJson: _CatalogSettings.fromJson,
+  restartKeys: {'itemCount'},
+);
 
 final class _CatalogSettings {
   final int itemCount;

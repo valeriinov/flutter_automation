@@ -10,6 +10,11 @@ final _catalog = MockSection<Map<String, Object?>>(
   name: 'catalog',
   fromJson: _readJson,
 );
+final _launch = MockSection<Map<String, Object?>>(
+  name: 'launch',
+  fromJson: _readJson,
+  restartKeys: {'isSignedIn'},
+);
 const _scenarioJson = <String, Object?>{
   'latency': 'fast',
   'failures': {
@@ -21,6 +26,8 @@ const _scenarioJson = <String, Object?>{
 final _directory = Directory.systemTemp.createTempSync('automation_mock');
 final _file = File('${_directory.path}/mock_scenario.json');
 final _events = <String>[];
+final _store = AutomationStateStore(_directory.path);
+final _stateFile = File('${_directory.path}/state.json');
 
 void main() {
   _setup();
@@ -42,6 +49,19 @@ void main() {
     _automationMock_should_defaultTheLatencyToRealisticWithSeedZero();
     _automationMock_should_readTheFailuresOfTheScenario();
     _automationMock_should_startWithoutSections();
+    _automationMock_should_updateTheScenarioWithoutSeedingAgain();
+    _automationMock_should_keepTheJournalOnUpdate();
+    _automationMock_should_setAndRemoveAFailureKeepingTheOtherKeys();
+    _automationMock_should_requireARestartForARestartKeyOnly();
+    _automationMock_should_compareTheRestartKeysWithTheLaunchScenario();
+    _automationMock_should_keepTheChoiceAcrossTwoColdStarts();
+    _automationMock_should_preferTheAppliedScenarioFileToTheState();
+    _automationMock_should_keepTheWalkAcrossColdStarts();
+    _automationMock_should_keepTheModeOnSetFailure();
+    _automationMock_should_startFromAnEmptyScenarioFileNotFromTheState();
+    _automationMock_should_dropTheWalkWhenAScenarioFileStartsTheApp();
+    _automationMock_should_keepTheOutcomeFailuresAcrossColdStarts();
+    _automationMock_should_endTheWalkOnTheApplyCommand();
   });
 }
 
@@ -51,6 +71,10 @@ void _setup() {
 
     if (_file.existsSync()) {
       _file.deleteSync();
+    }
+
+    if (_stateFile.existsSync()) {
+      _stateFile.deleteSync();
     }
   });
   tearDownAll(() {
@@ -304,6 +328,240 @@ void _automationMock_should_startWithoutSections() {
   });
 }
 
+void _automationMock_should_updateTheScenarioWithoutSeedingAgain() {
+  test(
+    'AutomationMock should update the scenario without seeding again',
+    () async {
+      final mock = await _init(
+        onScenarioApplied: (_) => _events.add('applied'),
+        onScenarioUpdated: (scenario) => _events.add('updated'),
+      );
+
+      await mock.updateScenario(MockScenario.fromJson(_scenarioJson));
+
+      expect(mock.scenario.toJson(), _scenarioJson);
+      expect(_events, ['updated']);
+      expect(_file.existsSync(), isFalse);
+      expect((await _store.read()).scenario, _scenarioJson);
+    },
+  );
+}
+
+void _automationMock_should_keepTheJournalOnUpdate() {
+  test('AutomationMock should keep the journal on update', () async {
+    final mock = await _init();
+
+    mock.journal.add(MockRequestRecordKind.request, {'path': '/items'});
+
+    await mock.updateScenario(MockScenario.fromJson(_scenarioJson));
+
+    expect(mock.journal.records, hasLength(1));
+  });
+}
+
+void _automationMock_should_setAndRemoveAFailureKeepingTheOtherKeys() {
+  test(
+    'AutomationMock should set and remove a failure keeping the other keys',
+    () async {
+      final mock = await _init();
+
+      await mock.updateScenario(MockScenario.fromJson(_scenarioJson));
+      await mock.setFailure(
+        '/auth',
+        const MockApiFailure(statusCode: 503, message: 'down'),
+      );
+
+      expect(mock.failures.keys, ['/items', '/auth']);
+      expect(mock.failures['/auth']?.statusCode, 503);
+      expect(mock.scenario.toJson()['latency'], 'fast');
+
+      await mock.setFailure('/auth', null);
+      await mock.setFailure('/items', null);
+
+      expect(mock.failures, isEmpty);
+      expect(mock.scenario.toJson().containsKey('failures'), isFalse);
+      expect(mock.scenario.toJson()['catalog'], {'itemCount': 0});
+    },
+  );
+}
+
+void _automationMock_should_requireARestartForARestartKeyOnly() {
+  test(
+    'AutomationMock should require a restart for a restart key only',
+    () async {
+      final mock = await _init();
+
+      expect(
+        mock.requiresRestart(
+          MockScenario.fromJson({
+            'failures': {'/items': {}},
+          }),
+        ),
+        isFalse,
+      );
+      expect(
+        mock.requiresRestart(
+          MockScenario.fromJson({
+            'launch': {'isSignedIn': true},
+          }),
+        ),
+        isTrue,
+      );
+    },
+  );
+}
+
+void _automationMock_should_compareTheRestartKeysWithTheLaunchScenario() {
+  test(
+    'AutomationMock should compare the restart keys with the launch scenario',
+    () async {
+      final mock = await _init();
+
+      final changed = MockScenario.fromJson({
+        'launch': {'isSignedIn': true},
+      });
+
+      await mock.updateScenario(changed);
+
+      expect(mock.requiresRestart(changed), isTrue);
+      expect(mock.requiresRestart(const MockScenario([])), isFalse);
+    },
+  );
+}
+
+void _automationMock_should_keepTheChoiceAcrossTwoColdStarts() {
+  test(
+    'AutomationMock should keep the choice across two cold starts',
+    () async {
+      final first = await _init();
+
+      await first.updateScenario(MockScenario.fromJson(_scenarioJson));
+
+      final second = await _init();
+      final third = await _init();
+
+      expect(second.scenario.toJson(), _scenarioJson);
+      expect(third.scenario.toJson(), _scenarioJson);
+    },
+  );
+}
+
+void _automationMock_should_preferTheAppliedScenarioFileToTheState() {
+  test(
+    'AutomationMock should prefer the applied scenario file to the state',
+    () async {
+      await _store.write(const AutomationState(scenario: _scenarioJson));
+      await _file.writeAsString(jsonEncode({'latency': 'slow'}));
+
+      final mock = await _init();
+
+      expect(mock.scenario.toJson(), {'latency': 'slow'});
+    },
+  );
+}
+
+void _automationMock_should_keepTheWalkAcrossColdStarts() {
+  test('AutomationMock should keep the walk across cold starts', () async {
+    final first = await _init();
+
+    await first.saveWalk(
+      const AutomationWalkProgress(flow: 'login', variant: 'otp', stepIndex: 2),
+    );
+
+    final second = await _init();
+
+    expect(second.walk?.stepIndex, 2);
+    expect(second.walk?.flow, 'login');
+  });
+}
+
+void _automationMock_should_keepTheModeOnSetFailure() {
+  test('AutomationMock should keep the mode on setFailure', () async {
+    final mock = await _init();
+
+    await _store.write(const AutomationState());
+    await mock.setFailure('/items', const MockApiFailure(message: 'down'));
+
+    expect((await _store.read()).mode, isNot(AutomationMode.mock));
+    expect((await _store.read()).scenario, isNotEmpty);
+  });
+}
+
+void _automationMock_should_startFromAnEmptyScenarioFileNotFromTheState() {
+  test(
+    'AutomationMock should start from an empty scenario file, not the state',
+    () async {
+      await _store.write(const AutomationState(scenario: _scenarioJson));
+      await _file.writeAsString(jsonEncode(<String, Object?>{}));
+
+      final mock = await _init();
+
+      expect(mock.scenario.toJson(), isEmpty);
+    },
+  );
+}
+
+void _automationMock_should_dropTheWalkWhenAScenarioFileStartsTheApp() {
+  test(
+    'AutomationMock should drop the walk when a scenario file starts the app',
+    () async {
+      await _store.write(
+        const AutomationState(
+          walk: AutomationWalkProgress(flow: 'login', variant: 'otp'),
+          outcomeFailures: {
+            '/items': {'statusCode': 500},
+          },
+        ),
+      );
+      await _file.writeAsString(jsonEncode(<String, Object?>{}));
+
+      final mock = await _init();
+
+      expect(mock.walk, isNull);
+      expect(mock.outcomeFailures, isEmpty);
+    },
+  );
+}
+
+void _automationMock_should_keepTheOutcomeFailuresAcrossColdStarts() {
+  test(
+    'AutomationMock should keep the outcome failures across cold starts',
+    () async {
+      const failures = {
+        '/items': {'statusCode': 500},
+      };
+
+      final first = await _init();
+
+      await first.saveOutcomeFailures(failures);
+
+      final second = await _init();
+
+      expect(second.outcomeFailures, failures);
+    },
+  );
+}
+
+void _automationMock_should_endTheWalkOnTheApplyCommand() {
+  test('AutomationMock should end the walk on the apply command', () async {
+    final mock = await _init();
+
+    await mock.saveWalk(
+      const AutomationWalkProgress(flow: 'login', variant: 'otp'),
+    );
+    await mock.saveOutcomeFailures(const {
+      '/items': {'statusCode': 500},
+    });
+    await _send({'command': 'scenario.apply', 'scenario': _scenarioJson});
+
+    final state = await _store.read();
+
+    expect(mock.walk, isNull);
+    expect(state.walk, isNull);
+    expect(state.outcomeFailures, isEmpty);
+  });
+}
+
 List<Duration> _measureDelays(MockLatency latency) {
   final delays = <Duration>[];
 
@@ -324,13 +582,16 @@ List<Duration> _measureDelays(MockLatency latency) {
 Future<AutomationMock> _init({
   bool isEnabled = true,
   MockScenarioAppliedCallback? onScenarioApplied,
+  MockScenarioUpdatedCallback? onScenarioUpdated,
   Duration journalResponseTimeout = const Duration(seconds: 10),
 }) {
   return AutomationMock.init(
     isEnabled: isEnabled,
     scenarioDirectory: _directory.path,
-    sections: [_catalog],
+    stateStore: _store,
+    sections: [_catalog, _launch],
     onScenarioApplied: onScenarioApplied,
+    onScenarioUpdated: onScenarioUpdated,
     journalResponseTimeout: journalResponseTimeout,
   );
 }

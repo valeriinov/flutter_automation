@@ -1,5 +1,29 @@
 # Changelog
 
+## 0.7.0
+
+- Depends on `flutter_automation` 0.7.0.
+- New `AutomationStateStore`: the files of a tester in one folder
+  (`state.json`, `presets/<name>.json`, `runs/<id>/report.json`, the last 20).
+- New `AutomationMock.init` parameters `stateStore` and `onScenarioUpdated`.
+  The mock starts from the scenario in `state.json`. A scenario that
+  `scenario.apply` saved wins over it, also when its scenario is empty, and
+  the mock then starts without the walk and the outcome failures.
+  `scenario.apply` ends the walk.
+- `AutomationStateStore.update` reads, changes and writes `state.json` in one
+  step. The writes of one folder run one after another.
+- New methods `updateScenario`, `setFailure`, `requiresRestart`, `saveWalk`,
+  `saveOutcomeFailures` and getters `launchScenario`, `stateStore`, `walk`,
+  `outcomeFailures`. `updateScenario` neither
+  reseeds nor clears the journal.
+- New optional `MockSection.restartKeys`: the settings the app reads once at
+  launch. The default is an empty set.
+- `MockScenarioFile.save` creates its folder.
+- `MockJournal` is a `ChangeNotifier` and has a `records` getter that does
+  not clear the journal.
+- New library `mock_catalogue.dart`: `AutomationCatalogue` and its flows and
+  steps. It has no `dart:io` and no runner type.
+
 ## 0.6.1
 
 - Depends on `flutter_automation` 0.6.1.

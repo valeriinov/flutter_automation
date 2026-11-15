@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:collection';
 import 'dart:convert';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter_automation_mock/src/state/mock_request_record_kind.dart';
 
 /// {@category Utils}
@@ -20,7 +21,11 @@ import 'package:flutter_automation_mock/src/state/mock_request_record_kind.dart'
 /// The journal keeps the newest records only and drops the oldest one once it
 /// is full. A run that never reads it again therefore holds a bounded amount of
 /// memory.
-class MockJournal {
+///
+/// The journal notifies its listeners when a record joins, when an answer joins
+/// a request and when it empties. [records] reads the records without emptying
+/// the journal.
+class MockJournal extends ChangeNotifier {
   static const _capacity = 1024;
   static const _seqKey = 'seq';
   static const _kindKey = 'kind';
@@ -38,6 +43,9 @@ class MockJournal {
   /// The record of the launch, kept apart from the records that a read empties.
   /// The mock writes it before a run reads the journal for the first time.
   Map<String, Object?>? get launch => _launch;
+
+  /// Every record, oldest first, without emptying the journal.
+  List<Map<String, Object?>> get records => List.unmodifiable(_records);
 
   /// Records written through [addRequest] that carry no answer yet.
   List<Map<String, Object?>> get requestsAwaitingResponse {
@@ -63,6 +71,8 @@ class MockJournal {
     if (_records.length > _capacity) {
       _records.removeFirst();
     }
+
+    notifyListeners();
 
     return record;
   }
@@ -107,6 +117,7 @@ class MockJournal {
 
     _requestsAwaitingResponse.remove(record);
     _maybeCompleteResponses();
+    notifyListeners();
   }
 
   /// Completes once every record written through [addRequest] carries its
@@ -138,6 +149,7 @@ class MockJournal {
     _nextSeq = 0;
 
     _maybeCompleteResponses();
+    notifyListeners();
   }
 
   void _maybeCompleteResponses() {
