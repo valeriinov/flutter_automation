@@ -15,10 +15,23 @@ List<FlowStep> _buildSignInSteps(FlowParams params) => const [
 /// Signs in and reads the catalog: with items, and empty.
 final catalogFlow = AutomationFlowDefinition(
   name: 'catalog',
+  group: const AutomationFlowGroup(
+    name: 'catalog',
+    title: AutomationLocalizedText({'en': 'Catalog', 'uk': 'Каталог'}),
+  ),
+  title: const AutomationLocalizedText({
+    'en': 'Sign in and read the catalog',
+    'uk': 'Вхід і перегляд каталогу',
+  }),
   defaultVariant: 'items',
+  isInQaCatalogue: true,
   variants: [
     FlowVariant(
       'items',
+      title: const AutomationLocalizedText({
+        'en': 'Catalog with items',
+        'uk': 'Каталог з товарами',
+      }),
       items: [
         const Use(signIn),
         const WaitFor(ByTarget(ExampleTarget.catalogList)),
@@ -28,6 +41,10 @@ final catalogFlow = AutomationFlowDefinition(
     ),
     FlowVariant(
       'empty',
+      title: const AutomationLocalizedText({
+        'en': 'Empty catalog',
+        'uk': 'Порожній каталог',
+      }),
       items: [
         const Use(signIn),
         const WaitFor(ByTarget(ExampleTarget.catalogEmpty)),

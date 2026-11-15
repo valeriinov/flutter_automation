@@ -1,0 +1,153 @@
+{
+  "groups": [
+    {
+      "name": "catalog",
+      "title": {
+        "en": "Catalog",
+        "uk": "Каталог"
+      }
+    }
+  ],
+  "flows": [
+    {
+      "name": "catalog",
+      "group": "catalog",
+      "title": {
+        "en": "Sign in and read the catalog",
+        "uk": "Вхід і перегляд каталогу"
+      },
+      "defaultVariant": "items",
+      "variants": [
+        {
+          "name": "items",
+          "title": {
+            "en": "Catalog with items",
+            "uk": "Каталог з товарами"
+          },
+          "scenario": {
+            "catalogSection": {
+              "itemCount": 5
+            }
+          },
+          "items": [
+            "signIn",
+            "waitFor",
+            "waitFor"
+          ],
+          "steps": [
+            {
+              "label": "waitFor example.screen.loginScreen",
+              "requests": []
+            },
+            {
+              "label": "tap example.button.loginButton",
+              "requests": []
+            },
+            {
+              "label": "waitFor example.screen.catalogScreen",
+              "requests": [
+                {
+                  "method": "GET",
+                  "path": "/catalog/items",
+                  "statusCode": 200,
+                  "response": {
+                    "items": [
+                      {
+                        "id": 1,
+                        "title": "Item 1"
+                      },
+                      {
+                        "id": 2,
+                        "title": "Item 2"
+                      },
+                      {
+                        "id": 3,
+                        "title": "Item 3"
+                      },
+                      {
+                        "id": 4,
+                        "title": "Item 4"
+                      },
+                      {
+                        "id": 5,
+                        "title": "Item 5"
+                      }
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "label": "waitFor example.panel.catalogList",
+              "requests": []
+            },
+            {
+              "label": "waitFor example.tile.catalogItem.5",
+              "requests": []
+            }
+          ]
+        },
+        {
+          "name": "empty",
+          "title": {
+            "en": "Empty catalog",
+            "uk": "Порожній каталог"
+          },
+          "scenario": {
+            "catalogSection": {
+              "itemCount": 0
+            }
+          },
+          "items": [
+            "signIn",
+            "waitFor"
+          ],
+          "steps": [
+            {
+              "label": "waitFor example.screen.loginScreen",
+              "requests": []
+            },
+            {
+              "label": "tap example.button.loginButton",
+              "requests": []
+            },
+            {
+              "label": "waitFor example.screen.catalogScreen",
+              "requests": [
+                {
+                  "method": "GET",
+                  "path": "/catalog/items",
+                  "statusCode": 200,
+                  "response": {
+                    "items": []
+                  }
+                }
+              ]
+            },
+            {
+              "label": "waitFor example.label.catalogEmpty",
+              "requests": []
+            }
+          ]
+        }
+      ],
+      "fork": {
+        "stepIndex": 2,
+        "method": "GET",
+        "path": "/catalog/items",
+        "branches": [
+          {
+            "variant": "items",
+            "statusCode": 200,
+            "label": "catalogSection.itemCount=5"
+          },
+          {
+            "variant": "empty",
+            "statusCode": 200,
+            "label": "catalogSection.itemCount=0"
+          }
+        ]
+      }
+    }
+  ]
+}

@@ -21,15 +21,21 @@ dependencies:
     path: ../packages/flutter_automation_mock
   flutter_automation_mock_dio:
     path: ../packages/flutter_automation_mock_dio
+  flutter_automation_panel:
+    path: ../packages/flutter_automation_panel
   path_provider: ^2.1.5
 
 dev_dependencies:
   flutter_lints: ^6.0.0
+  flutter_test:
+    sdk: flutter
   flutter_automation_runner:
     path: ../packages/flutter_automation_runner
 
 flutter:
   uses-material-design: true
+  assets:
+    - assets/qa_catalogue.json
 
 # Values the runner reads from this file.
 flutter_automation:

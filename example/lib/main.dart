@@ -11,6 +11,7 @@ import 'package:example/example_app.dart';
 import 'package:example/mock/catalog_mock_section.dart';
 import 'package:example/mock/mock_catalog_api.dart';
 import 'package:example/mock/example_mock_settings.dart';
+import 'package:example/panel/example_panel.dart';
 
 Future<void> main() async {
   final screenNameObserver = ScreenNameObserver();
@@ -36,8 +37,12 @@ Future<void> main() async {
   final mock = await AutomationMock.init(
     isEnabled: isMockEnabled,
     scenarioDirectory: (await getTemporaryDirectory()).path,
+    stateStore: AutomationStateStore(
+      '${(await getApplicationSupportDirectory()).path}/automation',
+    ),
     sections: isMockEnabled ? [catalogMockSection] : const [],
     onScenarioApplied: (scenario) => backend?.rebuild(),
+    onScenarioUpdated: (scenario) => backend?.rebuild(),
   );
 
   final dio = Dio(BaseOptions(baseUrl: 'https://api.example.test'));
@@ -72,6 +77,9 @@ Future<void> main() async {
       catalogApi: CatalogApi(dio),
       screenNameObserver: screenNameObserver,
       locale: locale,
+      panelController: isMockEnabled
+          ? await buildExamplePanel(mock: mock, onRestartRequired: () {})
+          : null,
     ),
   );
 }

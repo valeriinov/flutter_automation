@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_automation_panel/flutter_automation_panel.dart';
 
 import 'package:example/automation/screen_name_observer.dart';
 import 'package:example/catalog/catalog_api.dart';
@@ -12,11 +13,16 @@ class ExampleApp extends StatelessWidget {
   final ScreenNameObserver screenNameObserver;
   final ValueListenable<Locale> locale;
 
+  /// The controller of the QA panel, missing when the app runs without the
+  /// mock.
+  final AutomationPanelController? panelController;
+
   const ExampleApp({
     super.key,
     required this.catalogApi,
     required this.screenNameObserver,
     required this.locale,
+    this.panelController,
   });
 
   @override
@@ -27,12 +33,28 @@ class ExampleApp extends StatelessWidget {
         title: 'Example',
         locale: value,
         navigatorObservers: [screenNameObserver],
+        builder: _buildLauncher,
         initialRoute: LoginScreen.routeName,
         onGenerateRoute: (settings) => MaterialPageRoute<void>(
           settings: settings,
           builder: (context) => _buildScreen(context, settings.name),
         ),
       ),
+    );
+  }
+
+  Widget _buildLauncher(BuildContext context, Widget? child) {
+    final controller = panelController;
+    final app = child ?? const SizedBox.shrink();
+
+    if (controller == null) {
+      return app;
+    }
+
+    return AutomationPanelLauncher(
+      controller: controller,
+      isVisible: true,
+      child: app,
     );
   }
 
