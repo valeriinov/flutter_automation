@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.7.0
+
+- No change; released together with the other packages.
+
 ## 0.6.1
 
 - No change; released together with the other packages.

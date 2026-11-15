@@ -53,7 +53,9 @@ Answer this before you touch anything. It decides whether a file needs an edit.
 | --- | --- |
 | a value that a flow declares in its `scenario` | nothing: no rebuild; the next run pushes it and restarts the app |
 | the failed paths | nothing: the backend reads them on each request |
-| the latency profile or the latency seed | nothing to edit: the backend builds them again at `rebuild()`, which `onScenarioApplied` calls |
+| a value that the QA panel sets through `AutomationMock.updateScenario` or `setFailure` | nothing: it applies at once, with no new seed and no journal reset |
+| a setting that `MockSection.restartKeys` lists | a restart of the app: the app reads it once at launch or seeds it into storage |
+| the latency profile or the latency seed | nothing to edit: the backend builds them again at `rebuild()`, which `onScenarioApplied` and `onScenarioUpdated` call |
 | a default of a settings class, or the code that reads it | a hot **restart**, which re-seeds the state; a hot reload does not |
 | the define that turns the mock on, or the choice of substitutes | a fresh `flutter run`, because the choice is a compile-time constant |
 
@@ -141,6 +143,16 @@ reached from a flow.
 2. Run **Post-edit steps**.
 3. Report what the user sees after a hot restart. A settings change is verified by
    reading and tests, not by a run. Say so plainly unless you launched the app.
+
+## Restart keys and the state files
+
+A setting that the app reads once, at launch or into storage, goes in
+`MockSection.restartKeys`. The QA panel marks a profile that changes such a key
+and asks the project for a restart through `requiresRestart`. Every other
+setting applies at once. `AutomationStateStore` keeps `state.json` (mode,
+scenario, overrides, walk), the presets and the last 20 run reports in one
+folder. The mock starts from `state.json`. A scenario that `scenario.apply`
+saved wins over it.
 
 ## Keeping documents in sync
 

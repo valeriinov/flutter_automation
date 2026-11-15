@@ -376,6 +376,16 @@ code. Skip a part that exists: a second run adds nothing to `main`.
    ),
    ```
 
+7. Optional: add the QA panel. Add `flutter_automation_panel` to the
+   dependencies. Pass `stateStore: AutomationStateStore(directory)` and
+   `onScenarioUpdated` to `AutomationMock.init`. Build the panel with
+   `AutomationPanelDefinition` and put `AutomationPanelLauncher` in the
+   `builder` of the app. Generate its catalogue with
+   `fvm dart run tool/run_flows.dart --qa-catalogue assets/qa_catalogue.json
+   --recordings <dir>`
+   and list the file as an asset. The `example/` app of the package repository
+   shows the whole wiring.
+
 Run `fvm dart format .` and `fvm dart analyze`.
 
 ## 8. Write the `## Automation` section of `AGENTS.md`

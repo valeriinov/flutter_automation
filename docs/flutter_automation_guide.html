@@ -309,6 +309,12 @@ tr:first-child td { border-top: 0; }
       url: https://github.com/valeriinov/flutter_automation.git
       path: packages/flutter_automation_mock_dio
       ref: &lt;tag&gt;
+  # Only with the mock, for the QA panel.
+  flutter_automation_panel:
+    git:
+      url: https://github.com/valeriinov/flutter_automation.git
+      path: packages/flutter_automation_panel
+      ref: &lt;tag&gt;
 
 dev_dependencies:
   flutter_automation_runner:
@@ -476,8 +482,9 @@ Future&lt;void&gt; main(List&lt;String&gt; args) =&gt; runFlows(args, [homeFlow]
         <table>
           <tr><td><code>flutter_automation</code></td><td><span data-l="en">The base: targets, the command registry, the build switches.</span><span data-l="uk">Основа: таргети, реєстр команд, перемикачі збірки.</span></td></tr>
           <tr><td><code>flutter_automation_driver</code></td><td><span data-l="en">The driver extension in the app and the finders the runner uses.</span><span data-l="uk">Розширення драйвера в застосунку і фіндери, якими користується раннер.</span></td></tr>
-          <tr><td><code>flutter_automation_mock</code></td><td><span data-l="en">The mock: sections, scenario, transport, journal. Knows no HTTP client.</span><span data-l="uk">Мок: секції, сценарій, транспорт, журнал. Не знає жодного HTTP-клієнта.</span></td></tr>
+          <tr><td><code>flutter_automation_mock</code></td><td><span data-l="en">The mock: sections, scenario, transport, journal, the state files of a tester, the catalogue model. Knows no HTTP client.</span><span data-l="uk">Мок: секції, сценарій, транспорт, журнал, файли стану тестувальника, модель каталогу. Не знає жодного HTTP-клієнта.</span></td></tr>
           <tr><td><code>flutter_automation_mock_dio</code></td><td><span data-l="en">A Dio adapter that answers requests from the mock.</span><span data-l="uk">Адаптер Dio, який відповідає на запити з мока.</span></td></tr>
+          <tr><td><code>flutter_automation_panel</code></td><td><span data-l="en">The builder of the QA panel: blocks, pages, the QA button, the mode controller. It has a style of its own and takes no theme from the app.</span><span data-l="uk">Конструктор QA-панелі: блоки, сторінки, кнопка QA, контролер режиму. Має власний стиль і не бере тему застосунку.</span></td></tr>
           <tr><td><code>flutter_automation_runner</code><br><span class="small">dev_dependency</span></td><td><span data-l="en"><code>runFlows</code> and the Dart library for flows.</span><span data-l="uk"><code>runFlows</code> і Dart-бібліотека для флоу.</span></td></tr>
         </table>
       </div>
@@ -573,6 +580,7 @@ final catalogFlow = AutomationFlowDefinition(
           <li><code>'items'</code><span><span data-l="en">The runner sets the mock to the <code>fullShelf</code> profile and restarts the app. Then it signs in and waits for the catalog screen.</span><span data-l="uk">Раннер ставить мок у профіль <code>fullShelf</code> і перезапускає застосунок. Потім входить і чекає на екран каталогу.</span></span></li>
           <li><code>'empty'</code><span><span data-l="en">The same path on the <code>emptyShelf</code> profile. It waits for the label of the empty catalog.</span><span data-l="uk">Той самий шлях на профілі <code>emptyShelf</code>. Він чекає на напис порожнього каталогу.</span></span></li>
           <li><code>defaultVariant: 'items'</code><span><span data-l="en">The variant that runs when the command names none.</span><span data-l="uk">Варіант, що запускається, коли команда жодного не називає.</span></span></li>
+          <li><code>group: AutomationFlowGroup(...)</code><span><span data-l="en">The group that the flow belongs to. It holds a name and a caption per locale. The catalogue of the panel and the atlas sort flows by it.</span><span data-l="uk">Група, до якої належить флоу. Вона має назву і підпис для кожної локалі. Каталог панелі та атлас сортують флоу за нею.</span></span></li>
         </ul>
       </details>
       <div class="box">
@@ -657,6 +665,8 @@ final mock = await AutomationMock.init(
               <li><code>isMockEnabled</code><span><span data-l="en">True only with both defines. A compile-time constant, so the release build drops the mock code.</span><span data-l="uk">True лише з обома define. Константа часу компіляції, тож release-збірка викидає код мока.</span></span></li>
               <li><code>scenarioDirectory</code><span><span data-l="en">The folder where the scenario waits for the next launch. The runner restarts the app after it sends a scenario.</span><span data-l="uk">Папка, де сценарій чекає на наступний запуск. Раннер перезапускає застосунок після надсилання сценарію.</span></span></li>
               <li><code>onScenarioApplied</code><span><span data-l="en">Runs after a new scenario arrives. <code>rebuild()</code> lets the backend take the new latency and endpoints.</span><span data-l="uk">Виконується, коли надходить новий сценарій. <code>rebuild()</code> дає бекенду взяти нову затримку і ендпоінти.</span></span></li>
+              <li><code>stateStore</code><span><span data-l="en">Optional. An <code>AutomationStateStore</code> over a folder that the system does not clean. The mock starts from the scenario in its <code>state.json</code> only when no scenario file exists. A scenario file that <code>scenario.apply</code> saved wins over it, also when the file holds <code>{}</code>: a flow variant without a scenario starts from the defaults of the sections. Then the mock also starts without the walk and the outcome failures of <code>state.json</code>, and <code>scenario.apply</code> ends the walk. <code>saveOutcomeFailures</code> keeps the failures of the outcome a tester chose, and <code>outcomeFailures</code> reads them back after a restart. Only <code>AutomationModeController</code> writes the <code>mode</code> of <code>state.json</code>; the mock keeps it when it saves the scenario and the walk.</span><span data-l="uk">Необовʼязковий. <code>AutomationStateStore</code> над папкою, яку система не чистить. Мок стартує зі сценарію з її <code>state.json</code> лише тоді, коли файлу сценарію немає. Файл сценарію, який зберіг <code>scenario.apply</code>, має пріоритет, навіть якщо він містить <code>{}</code>: варіант флоу без сценарію стартує зі стандартних значень секцій. Тоді мок також стартує без проходу і без помилок результату з <code>state.json</code>, а <code>scenario.apply</code> завершує прохід. <code>saveOutcomeFailures</code> зберігає помилки результату, який обрав тестувальник, а <code>outcomeFailures</code> читає їх після перезапуску. Поле <code>mode</code> у <code>state.json</code> пише лише <code>AutomationModeController</code>; мок зберігає його, коли записує сценарій і прохід.</span></span></li>
+              <li><code>onScenarioUpdated</code><span><span data-l="en">Optional. Runs after <code>updateScenario</code> or <code>setFailure</code> replaced the scenario. Call <code>rebuild()</code> there too.</span><span data-l="uk">Необовʼязковий. Виконується після того, як <code>updateScenario</code> або <code>setFailure</code> замінили сценарій. Викликайте там і <code>rebuild()</code>.</span></span></li>
               <li><code>journalResponseTimeout</code><span><span data-l="en">Optional, 10 seconds by default. It sets how long <code>journal.read</code> waits for the requests the mock still has to answer. <code>mock.journalResponseTimeout</code> gives the value to a test that waits the same way.</span><span data-l="uk">Необовʼязковий, за замовчуванням 10 секунд. Задає, скільки <code>journal.read</code> чекає на запити, на які мок ще не відповів. <code>mock.journalResponseTimeout</code> віддає це значення тесту, який чекає так само.</span></span></li>
             </ul>
           </details>
@@ -728,9 +738,45 @@ dio.httpClientAdapter = mock.substitute(
         <h3><span data-l="en">When a change takes effect</span><span data-l="uk">Коли зміна набирає сили</span></h3>
         <table>
           <tr><td><span data-l="en">Failed paths; settings read with <code>settingsOf</code></span><span data-l="uk">Шляхи з помилкою; налаштування через <code>settingsOf</code></span></td><td><span data-l="en">At once.</span><span data-l="uk">Одразу.</span></td></tr>
-          <tr><td><span data-l="en">Latency, endpoints of <code>MockScenarioBackend</code></span><span data-l="uk">Затримка, ендпоінти <code>MockScenarioBackend</code></span></td><td><span data-l="en">After <code>rebuild()</code> in <code>onScenarioApplied</code>.</span><span data-l="uk">Після <code>rebuild()</code> в <code>onScenarioApplied</code>.</span></td></tr>
+          <tr><td><span data-l="en"><code>updateScenario</code>, <code>setFailure</code></span><span data-l="uk"><code>updateScenario</code>, <code>setFailure</code></span></td><td><span data-l="en">At once, with no new seed and no journal reset. A key in <code>MockSection.restartKeys</code> still needs a restart: <code>requiresRestart</code> tells.</span><span data-l="uk">Одразу, без нового засіву і без скидання журналу. Ключ із <code>MockSection.restartKeys</code> усе одно потребує перезапуску: про це каже <code>requiresRestart</code>.</span></td></tr>
+          <tr><td><span data-l="en">Latency, endpoints of <code>MockScenarioBackend</code></span><span data-l="uk">Затримка, ендпоінти <code>MockScenarioBackend</code></span></td><td><span data-l="en">After <code>rebuild()</code> in <code>onScenarioApplied</code> or <code>onScenarioUpdated</code>.</span><span data-l="uk">Після <code>rebuild()</code> в <code>onScenarioApplied</code> або <code>onScenarioUpdated</code>.</span></td></tr>
           <tr><td><span data-l="en">Storage seeded at creation; what the app reads once at launch</span><span data-l="uk">Сховище, засіяне при створенні; те, що застосунок читає один раз на старті</span></td><td><span data-l="en">After a restart. The runner restarts the app after <code>scenario.apply</code>.</span><span data-l="uk">Після перезапуску. Раннер перезапускає застосунок після <code>scenario.apply</code>.</span></td></tr>
           <tr><td><span data-l="en">Whether the mock is on, which objects have a substitute</span><span data-l="uk">Чи ввімкнено мок, які об'єкти мають заміну</span></td><td><span data-l="en">At build time.</span><span data-l="uk">Під час збірки.</span></td></tr>
+        </table>
+      </div>
+    </section>
+
+    <section>
+      <div class="stage-head"><h2><span data-l="en">The QA panel</span><span data-l="uk">QA-панель</span></h2></div>
+      <p><span data-l="en">A tester picks a flow and its outcome, changes the answer of one request and walks the app by hand, all without a restart. The package <code>flutter_automation_panel</code> gives the blocks. The project builds its panel from them, the way it builds a flow from blocks.</span><span data-l="uk">Тестувальник обирає флоу і результат, змінює відповідь одного запиту і проходить застосунок руками, і все це без перезапуску. Пакет <code>flutter_automation_panel</code> дає блоки. Проєкт збирає з них свою панель так само, як збирає флоу з блоків.</span></p>
+      <div class="code"><button class="copy" type="button"></button><pre><code>final controller = AutomationPanelController(
+  AutomationPanelDefinition(
+    mock: mock,
+    catalogue: AutomationCatalogue.fromJson(catalogueJson),
+    onRestartRequired: showRestartScreen,
+    pages: [
+      AutomationPanelPage(label: 'Flows', builder: (_) =&gt; const AutomationFlowsPage()),
+      AutomationPanelPage(label: 'Log', builder: (_) =&gt; const AutomationJournalPage()),
+    ],
+  ),
+);
+
+MaterialApp(
+  builder: (context, child) =&gt; AutomationPanelLauncher(
+    controller: controller,
+    isVisible: showDebugTools,
+    child: child ?? const SizedBox(),
+  ),
+);</code></pre></div>
+      <div class="box">
+        <table>
+          <tr><td><code>AutomationModeController</code></td><td><span data-l="en">The mode, server or mock, without a screen. <code>switchTo</code> writes it to <code>state.json</code> and calls <code>onRestartRequired</code>. <code>AutomationMockModeTile</code> and <code>showAutomationMockModeSheet</code> are ready UI for it. The project owns the debug menu and the gesture that opens it.</span><span data-l="uk">Режим, сервер або мок, без екрана. <code>switchTo</code> записує його в <code>state.json</code> і викликає <code>onRestartRequired</code>. <code>AutomationMockModeTile</code> і <code>showAutomationMockModeSheet</code> дають готовий інтерфейс. Меню налагодження і жест, що його відкриває, робить проєкт.</span></td></tr>
+          <tr><td><code>AutomationPanelDefinition</code></td><td><span data-l="en">The mock, the catalogue, the pages and the callbacks <code>onRestartRequired</code> and <code>onStart</code>. The panel navigates and restarts through these callbacks only.</span><span data-l="uk">Мок, каталог, сторінки і колбеки <code>onRestartRequired</code> та <code>onStart</code>. Панель навігує і перезапускає лише через ці колбеки.</span></td></tr>
+          <tr><td><code>AutomationPanelLauncher</code></td><td><span data-l="en">The QA button that the tester drags, the panel it opens and the strip of a manual walk. The project decides with <code>isVisible</code> when they show. <code>wrapButton</code> wraps the button so the project can mark it for automation, and <code>startPosition</code> sets where it stands before the drag.</span><span data-l="uk">Кнопка QA, яку тестувальник перетягує, панель, яку вона відкриває, і плашка ручного проходу. Проєкт через <code>isVisible</code> вирішує, коли їх показувати. <code>wrapButton</code> загортає кнопку, щоб позначити її для автоматизації, а <code>startPosition</code> задає її початкове місце.</span></td></tr>
+          <tr><td><code>AutomationPanelFrame</code>, <code>AutomationRequestRow</code>, <code>AutomationFlowStep</code>, <code>AutomationWalkPlaque</code>, <code>showAutomationPanelSheet</code></td><td><span data-l="en">The blocks. The panel has its own theme, <code>AutomationPanelTheme</code>, and its interface is in English only.</span><span data-l="uk">Блоки. Панель має власну тему, <code>AutomationPanelTheme</code>, а її інтерфейс лише англійською.</span></td></tr>
+          <tr><td><code>MockSection.restartKeys</code></td><td><span data-l="en">The settings the app reads once at launch or seeds into storage. The panel marks a profile that changes one with a restart sign and asks the project for a restart.</span><span data-l="uk">Налаштування, які застосунок читає один раз на старті або засіває у сховище. Панель позначає профіль, що змінює одне з них, знаком перезапуску і просить проєкт про перезапуск.</span></td></tr>
+          <tr><td><code>AutomationStateStore</code></td><td><span data-l="en">The files of a tester in one folder: <code>state.json</code> (mode, scenario, overrides, walk), <code>presets/&lt;name&gt;.json</code>, <code>runs/&lt;id&gt;/report.json</code> (the last 20). Only the packages write them.</span><span data-l="uk">Файли тестувальника в одній папці: <code>state.json</code> (режим, сценарій, підміни, прохід), <code>presets/&lt;name&gt;.json</code>, <code>runs/&lt;id&gt;/report.json</code> (останні 20). Пишуть їх лише пакети.</span></td></tr>
+          <tr><td><code>AutomationCatalogue</code></td><td><span data-l="en">The flows of the panel as JSON. <code>--qa-catalogue</code> builds it from the flows and the recordings. A flow is in the catalogue only when its <code>AutomationFlowDefinition</code> sets <code>isInQaCatalogue: true</code>. Nothing else decides it.</span><span data-l="uk">Флоу панелі як JSON. Його будує <code>--qa-catalogue</code> із флоу і записів прогонів. Флоу потрапляє в каталог лише тоді, коли його <code>AutomationFlowDefinition</code> має <code>isInQaCatalogue: true</code>. Інше це не визначає.</span></td></tr>
         </table>
       </div>
     </section>
@@ -746,6 +792,8 @@ dio.httpClientAdapter = mock.substitute(
           <tr><td><code>--no-scenario</code></td><td><span data-l="en">Does not push the scenario into the app.</span><span data-l="uk">Не надсилає сценарій у застосунок.</span></td></tr>
           <tr><td><code>--locale &lt;code&gt;</code></td><td><span data-l="en">Restarts the app in that language. Needs <code>localeApplier</code>, no mock.</span><span data-l="uk">Перезапускає застосунок цією мовою. Потребує <code>localeApplier</code>, мок не потрібен.</span></td></tr>
           <tr><td><code>--capture &lt;dir&gt;</code></td><td><span data-l="en">Records the frames, requests and journal of each step. Needs the mock.</span><span data-l="uk">Записує кадри, запити і журнал кожного кроку. Потребує мока.</span></td></tr>
+          <tr><td><code>--record &lt;dir&gt;</code></td><td><span data-l="en">Writes the recording of the run to <code>&lt;dir&gt;/&lt;flow&gt;/&lt;variant&gt;.json</code>: steps, timings and the requests of each step with the code and the body of the answer. Needs the mock. It writes only the recording of a full run that passed. It rejects <code>--shoot</code> and <code>--until</code>. A failed run keeps the older recording.</span><span data-l="uk">Записує запис прогону в <code>&lt;dir&gt;/&lt;flow&gt;/&lt;variant&gt;.json</code>: кроки, тайминги і запити кожного кроку з кодом і тілом відповіді. Потребує мока. Записує лише повний прогін, що пройшов. Відхиляє <code>--shoot</code> і <code>--until</code>. Невдалий прогін залишає старий запис.</span></td></tr>
+          <tr><td><code>--qa-catalogue &lt;file&gt;</code></td><td><span data-l="en">Writes the catalogue of the panel out of the flows and, with <code>--recordings &lt;dir&gt;</code>, the recordings. It takes the flows that set <code>isInQaCatalogue: true</code>. Needs no device.</span><span data-l="uk">Записує каталог панелі з флоу і, з <code>--recordings &lt;dir&gt;</code>, із записів прогонів. Бере флоу з <code>isInQaCatalogue: true</code>. Пристрій не потрібен.</span></td></tr>
           <tr><td><code>--timeline-out &lt;path&gt;</code></td><td><span data-l="en">Writes the raw timeline of a traced window.</span><span data-l="uk">Записує сирий таймлайн трасованого вікна.</span></td></tr>
           <tr><td><code>--system-keyboard</code></td><td><span data-l="en">Lets the system keyboard rise over a focused field for the whole run.</span><span data-l="uk">Дає системній клавіатурі підніматися над полем у фокусі на весь запуск.</span></td></tr>
         </table>

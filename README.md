@@ -58,9 +58,10 @@ mock.
 | --- | --- |
 | [`flutter_automation`](packages/flutter_automation) | Target markup, command registry, build switches. |
 | [`flutter_automation_driver`](packages/flutter_automation_driver) | Driver extension for the app and the finders the host uses. |
-| [`flutter_automation_mock`](packages/flutter_automation_mock) | Scenario, `MockSection`, `AutomationMock`, `MockScenarioBackend`, transport and journal. HTTP-client free. |
+| [`flutter_automation_mock`](packages/flutter_automation_mock) | Scenario, `MockSection`, `AutomationMock`, `AutomationStateStore`, `MockScenarioBackend`, transport, journal and the catalogue model. HTTP-client free. |
 | [`flutter_automation_mock_dio`](packages/flutter_automation_mock_dio) | `MockDioHttpClientAdapter` that answers Dio requests from the mock. |
-| [`flutter_automation_runner`](packages/flutter_automation_runner) | `runFlows` and the Dart flow definition. |
+| [`flutter_automation_panel`](packages/flutter_automation_panel) | Builder of the QA panel: blocks, pages, the QA button, the mode controller. Own style. |
+| [`flutter_automation_runner`](packages/flutter_automation_runner) | `runFlows`, the Dart flow definition, `--record` (full runs that passed) and `--qa-catalogue` (flows with `isInQaCatalogue: true`). |
 
 ## Install
 
@@ -72,34 +73,40 @@ dependencies:
     git:
       url: https://github.com/valeriinov/flutter_automation.git
       path: packages/flutter_automation
-      ref: 0.6.1
+      ref: 0.7.0
   flutter_automation_driver:
     git:
       url: https://github.com/valeriinov/flutter_automation.git
       path: packages/flutter_automation_driver
-      ref: 0.6.1
+      ref: 0.7.0
   flutter_automation_mock:
     git:
       url: https://github.com/valeriinov/flutter_automation.git
       path: packages/flutter_automation_mock
-      ref: 0.6.1
+      ref: 0.7.0
   # Only for an app that uses Dio.
   flutter_automation_mock_dio:
     git:
       url: https://github.com/valeriinov/flutter_automation.git
       path: packages/flutter_automation_mock_dio
-      ref: 0.6.1
+      ref: 0.7.0
+  # Only with the mock, for the QA panel.
+  flutter_automation_panel:
+    git:
+      url: https://github.com/valeriinov/flutter_automation.git
+      path: packages/flutter_automation_panel
+      ref: 0.7.0
 
 dev_dependencies:
   flutter_automation_runner:
     git:
       url: https://github.com/valeriinov/flutter_automation.git
       path: packages/flutter_automation_runner
-      ref: 0.6.1
+      ref: 0.7.0
 ```
 
-Skip `flutter_automation_mock` and `flutter_automation_mock_dio` when the app
-needs no mock. The runner pulls in the other packages it needs.
+Skip `flutter_automation_mock`, `flutter_automation_mock_dio` and
+`flutter_automation_panel` when the app needs no mock. The runner pulls in the other packages it needs.
 
 ## Quick start
 
