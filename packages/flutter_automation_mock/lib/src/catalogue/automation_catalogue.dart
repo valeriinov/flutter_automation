@@ -30,8 +30,8 @@ final class AutomationCatalogueGroup {
 
 /// {@category Utils}
 ///
-/// The flows a tester can walk, the groups that sort them, and the requests
-/// each step sends.
+/// The flows a tester can walk, the groups that sort them, the requests each
+/// step sends, and the date settings a date finder of a step needs.
 ///
 /// The runner writes the catalogue as a JSON file out of the flows and the
 /// recordings of their runs. The panel and the player read it. The library
@@ -39,6 +39,8 @@ final class AutomationCatalogueGroup {
 final class AutomationCatalogue {
   static const _groupsKey = 'groups';
   static const _flowsKey = 'flows';
+  static const _dateFormatsKey = 'dateFormats';
+  static const _dateValueKeysKey = 'dateValueKeys';
 
   /// Groups in display order.
   final List<AutomationCatalogueGroup> groups;
@@ -46,7 +48,20 @@ final class AutomationCatalogue {
   /// Flows in display order.
   final List<AutomationCatalogueFlow> flows;
 
-  const AutomationCatalogue({this.groups = const [], this.flows = const []});
+  /// Pattern that a `dateText` finder writes a date in, by locale code. The
+  /// tokens are `yyyy`, `MM` and `dd`.
+  final Map<String, String> dateFormats;
+
+  /// Value key template of each declared date finder, by the name of the
+  /// finder, such as `day.tile.{yyyyMMdd}`.
+  final Map<String, String> dateValueKeys;
+
+  const AutomationCatalogue({
+    this.groups = const [],
+    this.flows = const [],
+    this.dateFormats = const {},
+    this.dateValueKeys = const {},
+  });
 
   /// Reads the catalogue out of [json].
   factory AutomationCatalogue.fromJson(Map<String, Object?> json) {
@@ -59,6 +74,8 @@ final class AutomationCatalogue {
         json,
         _flowsKey,
       ).map(AutomationCatalogueFlow.fromJson).toList(growable: false),
+      dateFormats: CatalogueJson.tryText(json, _dateFormatsKey) ?? const {},
+      dateValueKeys: CatalogueJson.tryText(json, _dateValueKeysKey) ?? const {},
     );
   }
 
@@ -67,6 +84,8 @@ final class AutomationCatalogue {
     return {
       _groupsKey: groups.map((group) => group.toJson()).toList(),
       _flowsKey: flows.map((flow) => flow.toJson()).toList(),
+      if (dateFormats.isNotEmpty) _dateFormatsKey: dateFormats,
+      if (dateValueKeys.isNotEmpty) _dateValueKeysKey: dateValueKeys,
     };
   }
 }

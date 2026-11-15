@@ -1,4 +1,4 @@
-import 'package:flutter_automation_runner/src/automation_date_pattern.dart';
+import 'package:flutter_automation/automation_date_pattern.dart';
 import 'package:flutter_automation_runner/src/automation_finder_spec.dart';
 import 'package:flutter_automation_runner/src/automation_runner_exception.dart';
 
@@ -77,11 +77,6 @@ final class AutomationFinderKind {
       'A $kindName finder takes an int "dayOffset".',
     );
   }
-
-  /// The day `dayOffset` days after [anchor].
-  static DateTime resolveDate(DateTime anchor, int dayOffset) {
-    return DateTime(anchor.year, anchor.month, anchor.day + dayOffset);
-  }
 }
 
 /// {@category Utils}
@@ -121,7 +116,6 @@ final class AutomationFinderRegistry {
 
   static const _descendantName = 'descendant';
   static const _ancestorName = 'ancestor';
-  static const _templatePlaceholder = r'\{([^}]+)\}';
 
   final Map<String, AutomationFinderKind> _kinds;
 
@@ -269,15 +263,12 @@ final class AutomationFinderRegistry {
     String template,
   ) {
     return AutomationFinderKind(name, (json, context) {
-      final date = AutomationFinderKind.resolveDate(
-        context.anchorOf(name),
-        AutomationFinderKind.readDayOffset(json, name),
-      );
-
       return AutomationValueKeySpec(
-        template.replaceAllMapped(RegExp(_templatePlaceholder), (match) {
-          return AutomationDatePattern.format(date, match.group(1) ?? '');
-        }),
+        AutomationDatePattern.writeDayKey(
+          context.anchorOf(name),
+          AutomationFinderKind.readDayOffset(json, name),
+          template,
+        ),
       );
     });
   }
@@ -318,13 +309,12 @@ final class AutomationFinderRegistry {
       );
     }
 
-    final date = AutomationFinderKind.resolveDate(
+    return AutomationDatePattern.writeDayText(
       context.anchorOf(dateTextName),
       dayOffset,
+      pattern,
+      time: time,
     );
-    final dateText = AutomationDatePattern.format(date, pattern);
-
-    return time == null ? dateText : '$dateText $time';
   }
 }
 

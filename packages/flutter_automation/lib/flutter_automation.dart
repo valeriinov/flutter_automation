@@ -1,3 +1,4 @@
+export 'automation_date_pattern.dart';
 export 'automation_target.dart';
 export 'src/automation_command_handler.dart';
 export 'src/automation_command_registry.dart';

@@ -1,11 +1,14 @@
-import 'dart:math';
-
 import 'package:collection/collection.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_automation_mock/flutter_automation_mock.dart';
 import 'package:flutter_automation_mock/mock_catalogue.dart';
+import 'package:flutter_automation_panel/src/pages/automation_catalogue_text.dart';
 import 'package:flutter_automation_panel/src/panel/automation_journal_record.dart';
 import 'package:flutter_automation_panel/src/panel/automation_panel_definition.dart';
+import 'package:flutter_automation_panel/src/panel/automation_run_summary.dart';
+import 'package:flutter_automation_panel/src/player/automation_flow_player.dart';
+import 'package:flutter_automation_panel/src/player/automation_player_exception.dart';
 
 /// {@category StateManagement}
 ///
@@ -14,14 +17,18 @@ import 'package:flutter_automation_panel/src/panel/automation_panel_definition.d
 /// The controller applies a change to the mock at once and tells its listeners.
 /// A scenario that an agent command replaces does not reach the listeners.
 ///
-/// The controller also follows the journal of the mock: a request of a later
-/// step moves the manual walk forward. It handles the system back button while
-/// the panel is open, so the project creates it before the app builds its
-/// widgets.
+/// The controller also drives the walk of a flow. A manual walk does one
+/// action per [playNext]. An autorun does every step in a row. The
+/// [AutomationFlowPlayer] does each step inside the app. The controller
+/// handles the system back button while the panel is open and while a walk
+/// runs. The project therefore creates it before the app builds its widgets.
 class AutomationPanelController extends ChangeNotifier
     with WidgetsBindingObserver {
   /// The definition the panel shows.
   final AutomationPanelDefinition definition;
+
+  /// Plays the steps of the walk inside the app.
+  final AutomationFlowPlayer player;
 
   /// Key of the navigator that holds the pages of the panel.
   final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
@@ -29,27 +36,48 @@ class AutomationPanelController extends ChangeNotifier
   /// Whether the panel page of the app shows now.
   bool isPanelOpen = false;
 
-  /// Whether the walk strip is open.
+  /// Whether the walk plaque is open.
   bool isWalkExpanded = false;
 
-  /// Whether the tester swiped the walk strip away.
-  bool isWalkHidden = false;
+  /// Whether the player does a step now.
+  bool isWalkBusy = false;
+
+  /// Whether the launcher shows its controls. The launcher sets it. A walk
+  /// blocks the finger and the system back button only while it is true.
+  bool isLauncherVisible = false;
+
+  /// Why the player stopped, missing when it did not.
+  String? walkFailure;
+
+  /// What the last autorun did, missing until an autorun ends.
+  AutomationRunSummary? runSummary;
 
   /// Title of the outcome that the tester chose last, missing when none.
   String? outcomeTitle;
 
   Map<String, MockApiFailure> _variantFailures = const {};
-  int _lastSeenSeq = -1;
+  int _resolvedForkStep = -1;
+  int _runToken = 0;
+  bool _hasResumed = false;
   bool _isDisposed = false;
+  Stopwatch? _runWatch;
 
   /// Creates the controller of [definition].
-  AutomationPanelController(this.definition) {
+  ///
+  /// The [player] parameter plays the steps. It defaults to a player over the
+  /// `playerSettings` and the `catalogue` of [definition].
+  AutomationPanelController(this.definition, {AutomationFlowPlayer? player})
+    : player =
+          player ??
+          AutomationFlowPlayer(
+            settings: definition.playerSettings,
+            catalogue: definition.catalogue,
+          ) {
     _variantFailures = _readFailures({
       MockScenario.failuresKey: mock.outcomeFailures,
     });
 
     WidgetsFlutterBinding.ensureInitialized().addObserver(this);
-    mock.journal.addListener(_followJournal);
   }
 
   /// The mock the panel changes.
@@ -64,7 +92,7 @@ class AutomationPanelController extends ChangeNotifier
   /// Whether the scenario differs from the mock defaults.
   bool get isChanged => mock.scenario.toJson().isNotEmpty;
 
-  /// The manual walk in progress, missing when none runs.
+  /// The walk in progress, missing when none runs.
   AutomationWalkProgress? get walk => mock.walk;
 
   /// The flow of the walk in progress, missing when none runs.
@@ -78,23 +106,101 @@ class AutomationPanelController extends ChangeNotifier
     return _findFlow(current.flow);
   }
 
-  /// The steps the walk shows: the steps of its variant that a person sees.
-  List<AutomationCatalogueStep> get walkSteps {
-    final variant = _walkVariant;
-
-    if (variant == null) {
-      return const [];
-    }
-
-    return variant.steps.where((step) => !step.isService).toList();
-  }
-
-  AutomationCatalogueVariant? get _walkVariant {
+  /// The variant the walk follows, missing when none runs.
+  AutomationCatalogueVariant? get walkVariant {
     final current = walk;
 
     return walkFlow?.variants.firstWhereOrNull(
       (variant) => variant.name == current?.variant,
     );
+  }
+
+  /// The steps of the walk, service steps included. [AutomationWalkProgress]
+  /// counts in these steps.
+  List<AutomationCatalogueStep> get walkSteps => walkVariant?.steps ?? const [];
+
+  /// Whether a walk is in progress and its variant is in the catalogue.
+  bool get isWalkActive => walk != null && walkVariant != null;
+
+  /// Whether the walk blocks the finger and the system back button: a walk is
+  /// in progress and the launcher shows its controls.
+  bool get isInputBlocked => isLauncherVisible && isWalkActive;
+
+  /// Whether an autorun plays its steps now. The launcher hides the plaque
+  /// and the QA button then.
+  bool get isAutorunPlaying {
+    return walk?.mode == AutomationWalkMode.autorun && isWalkBusy;
+  }
+
+  /// Whether the walk has done every step.
+  bool get isWalkFinished {
+    final current = walk;
+
+    return current != null && current.stepIndex >= walkSteps.length;
+  }
+
+  /// The next action of the walk, missing when none is left.
+  AutomationCatalogueStep? get nextAction {
+    final current = walk;
+    final steps = walkSteps;
+
+    if (current == null) {
+      return null;
+    }
+
+    return steps
+        .skip(current.stepIndex)
+        .firstWhereOrNull(AutomationFlowPlayer.isAction);
+  }
+
+  /// How many actions the walk has done.
+  int get doneActionCount {
+    final current = walk;
+
+    return walkSteps
+        .take(current?.stepIndex ?? 0)
+        .where(AutomationFlowPlayer.isAction)
+        .length;
+  }
+
+  /// How many actions the variant of the walk holds.
+  int get actionCount {
+    return walkSteps.where(AutomationFlowPlayer.isAction).length;
+  }
+
+  /// The fork the walk waits at, missing when the walk stands elsewhere, the
+  /// tester chose already or fewer than two branches can be taken.
+  AutomationCatalogueFork? get pendingFork {
+    final fork = walkFlow?.fork;
+    final current = walk;
+
+    if (fork == null || current == null) {
+      return null;
+    }
+
+    final isAtFork = current.stepIndex == fork.stepIndex;
+
+    if (!isAtFork || _resolvedForkStep == fork.stepIndex) {
+      return null;
+    }
+
+    return forkChoices.length < 2 ? null : fork;
+  }
+
+  /// The branches the tester can take at the fork without a restart.
+  List<AutomationCatalogueBranch> get forkChoices {
+    final flow = walkFlow;
+    final fork = flow?.fork;
+
+    if (flow == null || fork == null) {
+      return const [];
+    }
+
+    return fork.branches.where((branch) {
+      final variant = _findVariant(flow, branch.variant);
+
+      return variant != null && !requiresRestart(variant.scenario);
+    }).toList();
   }
 
   Map<String, MockApiFailure> get _testerFailures {
@@ -124,7 +230,7 @@ class AutomationPanelController extends ChangeNotifier
     final navigator = navigatorKey.currentState;
 
     if (!isPanelOpen || navigator == null) {
-      return false;
+      return isInputBlocked;
     }
 
     final didPop = await navigator.maybePop();
@@ -166,8 +272,8 @@ class AutomationPanelController extends ChangeNotifier
   ///
   /// The [scenario] parameter is the scenario JSON of the outcome.
   /// The [title] parameter names the outcome in the status row.
-  /// The [walk] parameter is a manual walk to save with the scenario, so a
-  /// restart keeps it.
+  /// The [walk] parameter is a walk to save with the scenario, so a restart
+  /// keeps it.
   /// Returns whether the scenario needs a restart of the app that has not
   /// happened yet. A project then stops here and starts no flow.
   Future<bool> applyOutcome(
@@ -175,34 +281,11 @@ class AutomationPanelController extends ChangeNotifier
     String? title,
     AutomationWalkProgress? walk,
   }) async {
-    final tester = _testerFailures;
+    final saved = await _saveOutcome(scenario, title: title, walk: walk);
 
-    _variantFailures = _readFailures(scenario);
+    await _askForRestart(saved.before, saved.next);
 
-    await mock.saveOutcomeFailures(_failuresMap(_variantFailures));
-
-    final next = MockScenario.fromJson({
-      ...scenario,
-      ..._failuresJson({..._variantFailures, ...tester}),
-    });
-    final before = mock.scenario;
-
-    outcomeTitle = title;
-
-    if (walk != null) {
-      isWalkHidden = false;
-      isWalkExpanded = false;
-
-      await mock.saveWalk(walk);
-    }
-
-    await mock.updateScenario(next);
-
-    notifyListeners();
-
-    await _askForRestart(before, next);
-
-    return mock.requiresRestart(next);
+    return mock.requiresRestart(saved.next);
   }
 
   /// Replaces the scenario with [scenario], as `updateScenario` does.
@@ -228,7 +311,7 @@ class AutomationPanelController extends ChangeNotifier
     _variantFailures = const {};
 
     await mock.saveOutcomeFailures(const {});
-    await mock.saveWalk(null);
+    await exitWalk();
     await updateScenario(const MockScenario([]));
   }
 
@@ -237,56 +320,112 @@ class AutomationPanelController extends ChangeNotifier
     return mock.requiresRestart(MockScenario.fromJson(scenario));
   }
 
-  /// Starts a manual walk of [variant] of [flow].
-  Future<void> startWalk(String flow, String variant) async {
-    isWalkHidden = false;
+  /// Saves a walk of [variant] of [flow] with the scenario of the variant and
+  /// calls `onRestartRequired` of the definition once, whatever the scenario
+  /// held before. The walk begins after the restart.
+  ///
+  /// The [flow] parameter is the name of the flow. The [variant] parameter is
+  /// the name of the variant. The [mode] parameter says who moves the walk.
+  /// The [shouldShowTouches] and [shouldSignalEnd] parameters are the options
+  /// of an autorun.
+  Future<void> startWalk(
+    String flow,
+    String variant, {
+    AutomationWalkMode mode = AutomationWalkMode.manual,
+    bool shouldShowTouches = true,
+    bool shouldSignalEnd = true,
+  }) async {
+    final chosen = _findVariant(_findFlow(flow), variant);
+
+    _runToken += 1;
+    _resolvedForkStep = -1;
+    isWalkBusy = false;
     isWalkExpanded = false;
+    walkFailure = null;
+    runSummary = null;
 
-    await mock.saveWalk(AutomationWalkProgress(flow: flow, variant: variant));
-
-    notifyListeners();
+    await _saveOutcome(
+      chosen?.scenario ?? const {},
+      title: AutomationCatalogueText.english(chosen?.title, variant),
+      walk: AutomationWalkProgress(
+        flow: flow,
+        variant: variant,
+        mode: mode,
+        shouldShowTouches: shouldShowTouches,
+        shouldSignalEnd: shouldSignalEnd,
+      ),
+    );
+    await definition.onRestartRequired();
   }
 
-  /// Moves the walk to the step [stepIndex].
-  Future<void> moveWalk(int stepIndex) async {
-    final current = walk;
+  /// Does the next action of the walk and the waits that follow it.
+  ///
+  /// The walk stops before the fork, where the tester picks a branch, and when
+  /// the player cannot do a step. [walkFailure] then holds the reason.
+  Future<void> playNext() => _play(isUntilAction: true);
 
-    if (current == null || current.stepIndex == stepIndex) {
+  /// Does every step left of the walk. An autorun ends with [runSummary].
+  Future<void> runWalk() => _play(isUntilAction: false);
+
+  /// Takes the branch [variant] at the fork the walk waits at: the scenario of
+  /// the variant applies and the walk goes on in the variant.
+  Future<void> chooseBranch(String variant) async {
+    final current = walk;
+    final flow = walkFlow;
+    final fork = pendingFork;
+    final chosen = flow == null ? null : _findVariant(flow, variant);
+
+    if (current == null || fork == null || chosen == null) {
       return;
     }
 
-    await mock.saveWalk(current.atStep(stepIndex));
+    _resolvedForkStep = fork.stepIndex;
 
-    notifyListeners();
+    await applyOutcome(
+      chosen.scenario,
+      title: AutomationCatalogueText.english(chosen.title, variant),
+      walk: current.onVariant(variant),
+    );
   }
 
-  /// Ends the walk.
-  Future<void> finishWalk() async {
+  /// Ends the walk and gives the finger back. The app stays on its screen.
+  Future<void> exitWalk() async {
+    _runToken += 1;
+    _resolvedForkStep = -1;
+    isWalkBusy = false;
+    isWalkExpanded = false;
+    walkFailure = null;
+    runSummary = null;
+
     await mock.saveWalk(null);
 
     notifyListeners();
   }
 
-  /// Opens or closes the walk strip.
+  /// Starts the autorun that the last launch saved. The launcher calls it once
+  /// after its first frame.
+  void resumeWalk() {
+    if (_hasResumed) {
+      return;
+    }
+
+    _hasResumed = true;
+
+    if (walk?.mode == AutomationWalkMode.autorun) {
+      runWalk();
+    }
+  }
+
+  /// Opens or closes the walk plaque.
   void toggleWalk() {
     isWalkExpanded = !isWalkExpanded;
 
     notifyListeners();
   }
 
-  /// Hides the walk strip until the tester opens the panel again.
-  void hideWalk() {
-    isWalkHidden = true;
-    isWalkExpanded = false;
-
-    notifyListeners();
-  }
-
-  /// Shows the panel page of the app and shows the walk strip again when the
-  /// tester hid it.
+  /// Shows the panel page of the app.
   void openPanel() {
     isPanelOpen = true;
-    isWalkHidden = false;
 
     notifyListeners();
   }
@@ -310,9 +449,10 @@ class AutomationPanelController extends ChangeNotifier
   @override
   void dispose() {
     _isDisposed = true;
+    _runToken += 1;
 
     WidgetsBinding.instance.removeObserver(this);
-    mock.journal.removeListener(_followJournal);
+    player.dispose();
     super.dispose();
   }
 
@@ -367,6 +507,36 @@ class AutomationPanelController extends ChangeNotifier
     };
   }
 
+  Future<({MockScenario before, MockScenario next})> _saveOutcome(
+    Map<String, Object?> scenario, {
+    String? title,
+    AutomationWalkProgress? walk,
+  }) async {
+    final tester = _testerFailures;
+
+    _variantFailures = _readFailures(scenario);
+
+    await mock.saveOutcomeFailures(_failuresMap(_variantFailures));
+
+    final next = MockScenario.fromJson({
+      ...scenario,
+      ..._failuresJson({..._variantFailures, ...tester}),
+    });
+    final before = mock.scenario;
+
+    outcomeTitle = title;
+
+    if (walk != null) {
+      await mock.saveWalk(walk);
+    }
+
+    await mock.updateScenario(next);
+
+    notifyListeners();
+
+    return (before: before, next: next);
+  }
+
   Future<void> _askForRestart(MockScenario before, MockScenario next) async {
     if (!_changesRestartKey(before, next)) {
       return;
@@ -386,49 +556,140 @@ class AutomationPanelController extends ChangeNotifier
     );
   }
 
-  void _followJournal() {
-    final records = mock.journal.records;
-
-    if (records.isEmpty) {
-      _lastSeenSeq = -1;
-
-      return;
-    }
-
-    records.forEach(_followRecord);
+  AutomationCatalogueVariant? _findVariant(
+    AutomationCatalogueFlow? flow,
+    String name,
+  ) {
+    return flow?.variants.firstWhereOrNull((variant) => variant.name == name);
   }
 
-  void _followRecord(Map<String, Object?> record) {
-    final seq = AutomationJournalRecord.seqOf(record);
-    final path = AutomationJournalRecord.pathOf(record);
-
-    if (seq == null || path == null) {
+  Future<void> _play({required bool isUntilAction}) async {
+    if (walk == null || walkVariant == null || isWalkBusy) {
       return;
     }
 
-    if (seq <= _lastSeenSeq) {
-      return;
-    }
+    final token = ++_runToken;
 
-    _lastSeenSeq = seq;
+    isWalkBusy = true;
+    walkFailure = null;
+    _runWatch ??= Stopwatch()..start();
 
-    _moveWalkPast(path);
-  }
+    notifyListeners();
 
-  void _moveWalkPast(String path) {
-    final current = walk;
-    final steps = walkSteps;
-
-    if (current == null) {
-      return;
-    }
-
-    for (int index = current.stepIndex; index < steps.length; index += 1) {
-      if (steps[index].requests.any((request) => request.path == path)) {
-        moveWalk(min(index + 1, steps.length - 1));
-
-        return;
+    try {
+      await _playSteps(token, isUntilAction: isUntilAction);
+    } on AutomationPlayerException catch (error) {
+      _recordFailure(token, error.reason);
+    } on Object catch (error) {
+      _recordFailure(token, 'The step failed: $error');
+    } finally {
+      if (token == _runToken) {
+        isWalkBusy = false;
       }
     }
+
+    if (token != _runToken) {
+      return;
+    }
+
+    await _finishAutorun();
+
+    notifyListeners();
+  }
+
+  Future<void> _playSteps(int token, {required bool isUntilAction}) async {
+    final steps = walkSteps;
+    bool didAction = false;
+
+    while (token == _runToken) {
+      final progress = walk;
+
+      if (progress == null || progress.stepIndex >= steps.length) {
+        return;
+      }
+
+      final step = steps[progress.stepIndex];
+
+      if (_shouldPause(step, didAction, isUntilAction: isUntilAction)) {
+        return;
+      }
+
+      await player.play(step, isStopped: () => token != _runToken);
+
+      if (token != _runToken) {
+        return;
+      }
+
+      didAction = didAction || AutomationFlowPlayer.isAction(step);
+
+      await mock.saveWalk(progress.atStep(progress.stepIndex + 1));
+
+      notifyListeners();
+    }
+  }
+
+  bool _shouldPause(
+    AutomationCatalogueStep step,
+    bool didAction, {
+    required bool isUntilAction,
+  }) {
+    final isNextAction = didAction && AutomationFlowPlayer.isAction(step);
+
+    return isUntilAction && (isNextAction || pendingFork != null);
+  }
+
+  void _recordFailure(int token, String reason) {
+    if (token == _runToken) {
+      walkFailure = reason;
+      isWalkExpanded = true;
+    }
+  }
+
+  Future<void> _finishAutorun() async {
+    final current = walk;
+    final variant = walkVariant;
+
+    if (current == null || variant == null || walkFailure != null) {
+      return;
+    }
+
+    if (current.mode != AutomationWalkMode.autorun || !isWalkFinished) {
+      return;
+    }
+
+    runSummary = AutomationRunSummary(
+      flow: current.flow,
+      variant: current.variant,
+      outcome: AutomationCatalogueText.english(variant.title, variant.name),
+      stepCount: actionCount,
+      duration: _runWatch?.elapsed ?? Duration.zero,
+      requests: _readRunRequests(),
+      shouldShowTouches: current.shouldShowTouches,
+      shouldSignalEnd: current.shouldSignalEnd,
+    );
+    _runWatch = null;
+
+    await mock.saveWalk(null);
+
+    if (current.shouldSignalEnd) {
+      await _signalEnd();
+    }
+  }
+
+  List<AutomationCatalogueRequest> _readRunRequests() {
+    return [
+      for (final record in mock.journal.records)
+        if (AutomationJournalRecord.pathOf(record) != null)
+          AutomationCatalogueRequest(
+            method: AutomationJournalRecord.methodOf(record),
+            path: AutomationJournalRecord.pathOf(record) ?? '',
+            statusCode: AutomationJournalRecord.statusCodeOf(record),
+          ),
+    ];
+  }
+
+  Future<void> _signalEnd() async {
+    await HapticFeedback.vibrate();
+    await SystemSound.play(SystemSoundType.alert);
   }
 }

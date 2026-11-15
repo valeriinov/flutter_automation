@@ -105,6 +105,7 @@ void main() {
     _automationRecording_should_assignRequestsOfAPlainRecordRunAsACapture();
     _automationRecording_should_roundTripThroughJson();
     _automationRecording_should_markServiceSteps();
+    _automationRecording_should_keepTheStepJson();
   });
 }
 
@@ -198,5 +199,25 @@ void _automationRecording_should_markServiceSteps() {
     });
 
     expect(recording.steps.map((step) => step.isService), [true, false]);
+  });
+}
+
+void _automationRecording_should_keepTheStepJson() {
+  test('AutomationRecording should keep the step JSON', () {
+    const step = {
+      'action': 'tap',
+      'finder': {'by': 'valueKey', 'value': 'login.sign_in'},
+    };
+    final recording = AutomationRecording.fromReport({
+      'flow': 'login',
+      'variant': 'otp',
+      'ok': true,
+      'steps': [
+        {'label': 'tap', 'action': 'tap', 'ok': true, 'step': step},
+      ],
+    });
+    final restored = AutomationRecording.fromJson(recording.toJson());
+
+    expect(restored.steps.single.step, step);
   });
 }

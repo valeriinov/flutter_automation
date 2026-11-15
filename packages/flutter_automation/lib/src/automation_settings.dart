@@ -11,6 +11,8 @@ const String _frameProfilingFlag = 'ENABLE_AUTOMATION_FRAME_PROFILING';
 
 const String _localeKeysFlag = 'ENABLE_AUTOMATION_LOCALE_KEYS';
 
+const String _markingFlag = 'ENABLE_AUTOMATION_MARKING';
+
 /// Settings of the agent-driven UI automation.
 ///
 /// The switch turns on Flutter Driver and the automation targets an agent uses
@@ -27,6 +29,21 @@ abstract final class AutomationSettings {
   /// branch guarded by it together with the automation code it reaches.
   static const bool isEnabled =
       !kReleaseMode && bool.fromEnvironment(_automationFlag);
+
+  /// Whether the build marks the automation targets and the locale keys of
+  /// its text, without a driver.
+  ///
+  /// A QA release build sets the define so that an in-app player finds its
+  /// targets. The define has no `kReleaseMode` condition. [isEnabled] implies
+  /// it. The value is a compile-time constant. A build without the define
+  /// drops every target id with the code that builds it.
+  ///
+  /// ```shell
+  /// fvm flutter build apk --release \
+  ///   --dart-define=ENABLE_AUTOMATION_MARKING=true
+  /// ```
+  static const bool isMarkingEnabled =
+      isEnabled || bool.fromEnvironment(_markingFlag);
 
   /// Whether an automation run raises the semantics tree.
   ///
@@ -78,12 +95,15 @@ abstract final class AutomationSettings {
   /// Whether every translation string carries the invisible mark of its locale
   /// key, read back from the rendered text by a screen flows capture.
   ///
-  /// Set only by the capture launch, on top of [isEnabled]:
+  /// Set by the capture launch on top of [isEnabled]. A build that sets
+  /// `ENABLE_AUTOMATION_MARKING` marks its locale keys too. An in-app player
+  /// then finds a text by its key:
   ///
   /// ```shell
   /// fvm flutter run --dart-define=ENABLE_AUTOMATION=true \
   ///   --dart-define=ENABLE_AUTOMATION_LOCALE_KEYS=true
   /// ```
   static const bool isLocaleKeyMarkingEnabled =
-      isEnabled && bool.fromEnvironment(_localeKeysFlag);
+      (isEnabled && bool.fromEnvironment(_localeKeysFlag)) ||
+      bool.fromEnvironment(_markingFlag);
 }

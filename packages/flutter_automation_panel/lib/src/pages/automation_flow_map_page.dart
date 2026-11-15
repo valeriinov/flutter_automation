@@ -1,13 +1,12 @@
 import 'package:collection/collection.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_automation_mock/flutter_automation_mock.dart';
 import 'package:flutter_automation_mock/mock_catalogue.dart';
 import 'package:flutter_automation_panel/src/blocks/automation_flow_step.dart';
 import 'package:flutter_automation_panel/src/blocks/automation_panel_button.dart';
-import 'package:flutter_automation_panel/src/blocks/automation_panel_button_group.dart';
 import 'package:flutter_automation_panel/src/blocks/automation_panel_frame.dart';
 import 'package:flutter_automation_panel/src/blocks/automation_panel_radio_tile.dart';
 import 'package:flutter_automation_panel/src/blocks/automation_request_row.dart';
+import 'package:flutter_automation_panel/src/blocks/automation_restart_note.dart';
 import 'package:flutter_automation_panel/src/pages/automation_catalogue_text.dart';
 import 'package:flutter_automation_panel/src/panel/automation_panel_controller.dart';
 import 'package:flutter_automation_panel/src/panel/automation_panel_scope.dart';
@@ -17,11 +16,12 @@ import 'package:flutter_automation_panel/src/theme/automation_panel_theme.dart';
 /// {@category Widgets}
 ///
 /// The map of one flow: its steps with their requests and its fork. The tester
-/// picks an outcome at the fork, overrides the answer of a request and starts
-/// the flow or only sets its state.
+/// picks the branches that a restart applies, overrides the answer of a request
+/// and starts the walk.
 ///
-/// A start that needs a restart of the app saves the state and the walk, asks
-/// the project to restart and starts nothing.
+/// A start saves the scenario and the walk, asks the project to restart the
+/// app and starts nothing. The walk begins when the tester opens the app
+/// again. The tester picks the other branches at the fork, during the walk.
 class AutomationFlowMapPage extends StatefulWidget {
   /// The flow to show.
   final AutomationCatalogueFlow flow;
@@ -39,12 +39,32 @@ class _AutomationFlowMapPageState extends State<AutomationFlowMapPage> {
     return widget.flow.fork == null && widget.flow.variants.length > 1;
   }
 
+  List<AutomationCatalogueBranch> get _beforeStartBranches {
+    final branches = widget.flow.fork?.branches ?? const [];
+
+    return branches.where((branch) => branch.isChosenBeforeStart).toList();
+  }
+
   AutomationCatalogueVariant? get _selectedVariant {
     final variants = widget.flow.variants;
-    final name = _variantName ?? widget.flow.defaultVariant;
+    final name = _variantName ?? _resolveInitialName();
 
     return variants.firstWhereOrNull((variant) => variant.name == name) ??
         variants.firstOrNull;
+  }
+
+  String? _resolveInitialName() {
+    final branches = _beforeStartBranches;
+    final defaultName = widget.flow.defaultVariant;
+    final isDefaultListed = branches.any(
+      (branch) => branch.variant == defaultName,
+    );
+
+    if (branches.isEmpty || isDefaultListed) {
+      return defaultName;
+    }
+
+    return branches.first.variant;
   }
 
   @override
@@ -65,9 +85,7 @@ class _AutomationFlowMapPageState extends State<AutomationFlowMapPage> {
           ? null
           : _Footer(
               variant: variant,
-              controller: controller,
-              onApplyAndStart: () => _applyAndStart(controller, variant),
-              onSetState: () => _applyOutcome(controller, variant),
+              onStart: () => _start(controller, variant),
             ),
       child: ListView(
         padding: const EdgeInsets.fromLTRB(
@@ -101,6 +119,7 @@ class _AutomationFlowMapPageState extends State<AutomationFlowMapPage> {
               index: shown[position].$1,
               step: shown[position].$2,
               selectedVariant: variant?.name,
+              beforeStartBranches: _beforeStartBranches,
               onVariantSelected: _select,
             ),
         ],
@@ -135,38 +154,11 @@ class _AutomationFlowMapPageState extends State<AutomationFlowMapPage> {
     setState(() => _variantName = variant.name);
   }
 
-  Future<bool> _applyOutcome(
-    AutomationPanelController controller,
-    AutomationCatalogueVariant variant, {
-    AutomationWalkProgress? walk,
-  }) {
-    return controller.applyOutcome(
-      variant.scenario,
-      title: AutomationCatalogueText.english(variant.title, variant.name),
-      walk: walk,
-    );
-  }
-
-  Future<void> _applyAndStart(
+  Future<void> _start(
     AutomationPanelController controller,
     AutomationCatalogueVariant variant,
-  ) async {
-    final needsRestart = await _applyOutcome(
-      controller,
-      variant,
-      walk: AutomationWalkProgress(
-        flow: widget.flow.name,
-        variant: variant.name,
-      ),
-    );
-
-    if (needsRestart) {
-      return;
-    }
-
-    controller.closePanel();
-
-    await controller.definition.onStart?.call(widget.flow.name, variant.name);
+  ) {
+    return controller.startWalk(widget.flow.name, variant.name);
   }
 }
 
@@ -206,6 +198,7 @@ class _StepTile extends StatelessWidget {
   final int index;
   final AutomationCatalogueStep step;
   final String? selectedVariant;
+  final List<AutomationCatalogueBranch> beforeStartBranches;
   final ValueChanged<AutomationCatalogueVariant> onVariantSelected;
 
   const _StepTile({
@@ -216,6 +209,7 @@ class _StepTile extends StatelessWidget {
     required this.index,
     required this.step,
     required this.selectedVariant,
+    required this.beforeStartBranches,
     required this.onVariantSelected,
   });
 
@@ -248,6 +242,8 @@ class _StepTile extends StatelessWidget {
               isSelected: option.$1.name == selectedVariant,
               onSelected: () => onVariantSelected(option.$1),
             ),
+        if (fork != null && isFork && beforeStartBranches.isEmpty)
+          const _ForkHint(),
       ],
     );
   }
@@ -255,23 +251,18 @@ class _StepTile extends StatelessWidget {
   List<(AutomationCatalogueVariant, String?)> _forkOptions(
     AutomationCatalogueFork fork,
   ) {
-    final branched = <String>{};
+    final listed = beforeStartBranches.isEmpty
+        ? fork.branches
+        : beforeStartBranches;
     final options = <(AutomationCatalogueVariant, String?)>[];
 
-    for (final branch in fork.branches) {
+    for (final branch in listed) {
       final variant = flow.variants.firstWhereOrNull(
         (variant) => variant.name == branch.variant,
       );
 
       if (variant != null) {
-        branched.add(variant.name);
         options.add((variant, branch.label));
-      }
-    }
-
-    for (final variant in flow.variants) {
-      if (!branched.contains(variant.name)) {
-        options.add((variant, null));
       }
     }
 
@@ -293,18 +284,25 @@ class _StepTile extends StatelessWidget {
   }
 }
 
+class _ForkHint extends StatelessWidget {
+  const _ForkHint();
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = AutomationPanelTheme.of(context);
+
+    return Text(
+      'The walk offers these branches at this step.',
+      style: theme.textStyle(size: 13, color: theme.textSecondary),
+    );
+  }
+}
+
 class _Footer extends StatelessWidget {
   final AutomationCatalogueVariant variant;
-  final AutomationPanelController controller;
-  final VoidCallback onApplyAndStart;
-  final VoidCallback onSetState;
+  final VoidCallback onStart;
 
-  const _Footer({
-    required this.variant,
-    required this.controller,
-    required this.onApplyAndStart,
-    required this.onSetState,
-  });
+  const _Footer({required this.variant, required this.onStart});
 
   @override
   Widget build(BuildContext context) {
@@ -330,47 +328,15 @@ class _Footer extends StatelessWidget {
           ),
           style: theme.textStyle(size: 13, color: theme.textSecondary),
         ),
-        if (controller.requiresRestart(variant.scenario)) const _RestartNote(),
-        AutomationPanelButtonGroup(
-          buttons: [
-            AutomationPanelButton(
-              label: 'Apply and start',
-              kind: AutomationPanelButtonKind.primary,
-              onPressed: onApplyAndStart,
-            ),
-            AutomationPanelButton(label: 'Set state', onPressed: onSetState),
-          ],
+        const AutomationRestartNote(
+          text: 'The app restarts. Open it again to begin the walk.',
+        ),
+        AutomationPanelButton(
+          label: 'Restart and begin',
+          kind: AutomationPanelButtonKind.primary,
+          onPressed: onStart,
         ),
       ],
-    );
-  }
-}
-
-class _RestartNote extends StatelessWidget {
-  const _RestartNote();
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = AutomationPanelTheme.of(context);
-
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-      decoration: BoxDecoration(
-        color: theme.restartSoft,
-        borderRadius: BorderRadius.circular(AutomationPanelTheme.buttonRadius),
-      ),
-      child: Row(
-        spacing: AutomationPanelTheme.gapSmall,
-        children: [
-          Icon(Icons.refresh, size: 20, color: theme.restart),
-          Expanded(
-            child: Text(
-              'Launch settings change: the app restarts',
-              style: theme.textStyle(size: 13, color: theme.restartText),
-            ),
-          ),
-        ],
-      ),
     );
   }
 }

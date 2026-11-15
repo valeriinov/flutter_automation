@@ -10,7 +10,11 @@ void main() {
     _automationRequestRow_should_nameTheOverrideAndClearIt();
     _automationRequestRow_should_keepTheLastPathSegment();
     _automationPanelButtonGroup_should_shareARowOnlyForShortLabels();
-    _automationWalkPlaque_should_hideOnASwipeUp();
+    _automationPanelSheet_should_keepTheHeadWhileTheBodyScrolls();
+    _automationPanelSheet_should_notMoveAShortSheet();
+    _automationPanelSheet_should_holdAListTile();
+    _automationWalkPlaque_should_reportADragDown();
+    _automationWalkPlaque_should_exitFromItsHeader();
   });
 }
 
@@ -101,9 +105,9 @@ bool _stacksVertically(WidgetTester tester) {
   return next.dy > top.dy;
 }
 
-void _automationWalkPlaque_should_hideOnASwipeUp() {
-  testWidgets('AutomationWalkPlaque should hide on a swipe up', (tester) async {
-    int hidden = 0;
+void _automationWalkPlaque_should_reportADragDown() {
+  testWidgets('AutomationWalkPlaque should report a drag down', (tester) async {
+    double moved = 0;
 
     await _pump(
       tester,
@@ -114,17 +118,133 @@ void _automationWalkPlaque_should_hideOnASwipeUp() {
           overrideCount: 0,
           isExpanded: false,
           onToggle: () {},
-          onHide: () => hidden += 1,
+          onExit: () {},
+          onDragged: (delta) => moved += delta,
           child: const SizedBox(),
         ),
       ),
     );
-    await tester.fling(
-      find.byType(AutomationWalkPlaque),
-      const Offset(0, -80),
-      800,
+
+    final line = find.text('Sign-in · step 1 of 4');
+    final before = tester.getTopLeft(line);
+
+    await tester.drag(line, const Offset(0, 120));
+    await tester.pump();
+
+    expect(moved, greaterThan(80));
+    expect(tester.getTopLeft(line), before);
+  });
+}
+
+void _automationWalkPlaque_should_exitFromItsHeader() {
+  testWidgets('AutomationWalkPlaque should exit from its header', (
+    tester,
+  ) async {
+    int exits = 0;
+    int toggles = 0;
+
+    await _pump(
+      tester,
+      Align(
+        alignment: Alignment.topCenter,
+        child: AutomationWalkPlaque(
+          title: 'Sign-in · step 1 of 4',
+          overrideCount: 0,
+          isExpanded: false,
+          onToggle: () => toggles += 1,
+          onExit: () => exits += 1,
+          child: const SizedBox(),
+        ),
+      ),
     );
 
-    expect(hidden, 1);
+    expect(find.text('Exit'), findsOneWidget);
+
+    await tester.tap(find.text('Exit'));
+
+    expect(exits, 1);
+    expect(toggles, 0);
+  });
+}
+
+Future<void> _openSheet(WidgetTester tester, {required int rowCount}) async {
+  await tester.pumpWidget(
+    MaterialApp(
+      home: Builder(
+        builder: (context) {
+          return TextButton(
+            onPressed: () => showAutomationPanelSheet<void>(
+              context: context,
+              builder: (_) => AutomationPanelSheet(
+                title: 'Sheet title',
+                child: Column(
+                  children: [
+                    for (int row = 0; row < rowCount; row += 1)
+                      SizedBox(height: 50, child: Text('Row $row')),
+                  ],
+                ),
+              ),
+            ),
+            child: const Text('Open'),
+          );
+        },
+      ),
+    ),
+  );
+  await tester.tap(find.text('Open'));
+  await tester.pumpAndSettle();
+}
+
+void _automationPanelSheet_should_keepTheHeadWhileTheBodyScrolls() {
+  testWidgets(
+    'AutomationPanelSheet should keep the head while the body scrolls',
+    (tester) async {
+      await _openSheet(tester, rowCount: 30);
+
+      final title = tester.getTopLeft(find.text('Sheet title'));
+      final row = tester.getTopLeft(find.text('Row 0'));
+
+      await tester.drag(find.text('Row 1'), const Offset(0, -200));
+      await tester.pumpAndSettle();
+
+      expect(tester.getTopLeft(find.text('Sheet title')), title);
+      expect(tester.getTopLeft(find.text('Row 0')).dy, lessThan(row.dy));
+    },
+  );
+}
+
+void _automationPanelSheet_should_notMoveAShortSheet() {
+  testWidgets('AutomationPanelSheet should not move a short sheet', (
+    tester,
+  ) async {
+    await _openSheet(tester, rowCount: 2);
+
+    final title = tester.getTopLeft(find.text('Sheet title'));
+    final row = tester.getTopLeft(find.text('Row 0'));
+
+    await tester.drag(find.text('Row 0'), const Offset(0, -200));
+    await tester.pumpAndSettle();
+
+    expect(tester.getTopLeft(find.text('Sheet title')), title);
+    expect(tester.getTopLeft(find.text('Row 0')), row);
+  });
+}
+
+void _automationPanelSheet_should_holdAListTile() {
+  testWidgets('AutomationPanelSheet should hold a ListTile', (tester) async {
+    await _pump(
+      tester,
+      AutomationPanelSheet(
+        title: 'Sheet title',
+        child: SwitchListTile(
+          value: true,
+          onChanged: (_) {},
+          title: const Text('Mock mode'),
+        ),
+      ),
+    );
+
+    expect(tester.takeException(), isNull);
+    expect(find.text('Mock mode'), findsOneWidget);
   });
 }

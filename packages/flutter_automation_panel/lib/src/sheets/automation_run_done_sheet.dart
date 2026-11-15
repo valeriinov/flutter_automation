@@ -27,8 +27,9 @@ class AutomationRunDoneSheet extends StatelessWidget {
   /// Requests the run sent, in order.
   final List<AutomationCatalogueRequest> requests;
 
-  /// Called when the tester taps Share logs.
-  final VoidCallback onShare;
+  /// Called when the tester taps Share logs, missing when the project shares
+  /// nothing. The sheet then hides the button.
+  final VoidCallback? onShare;
 
   /// Called when the tester taps Run again.
   final VoidCallback onRunAgain;
@@ -41,9 +42,9 @@ class AutomationRunDoneSheet extends StatelessWidget {
     required this.stepCount,
     required this.duration,
     required this.requests,
-    required this.onShare,
     required this.onRunAgain,
     required this.onExit,
+    this.onShare,
     super.key,
   });
 
@@ -70,11 +71,12 @@ class AutomationRunDoneSheet extends StatelessWidget {
               statusCode: request.statusCode,
             ),
           const SizedBox(height: 4),
-          AutomationPanelButton(
-            label: 'Share logs',
-            kind: AutomationPanelButtonKind.primary,
-            onPressed: onShare,
-          ),
+          if (onShare != null)
+            AutomationPanelButton(
+              label: 'Share logs',
+              kind: AutomationPanelButtonKind.primary,
+              onPressed: onShare,
+            ),
           AutomationPanelButton(label: 'Run again', onPressed: onRunAgain),
           AutomationPanelButton(
             label: 'Exit run',

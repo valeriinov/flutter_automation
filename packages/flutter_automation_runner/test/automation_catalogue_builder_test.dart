@@ -135,7 +135,7 @@ void _automationCatalogueBuilder_should_showAForkWhenBodiesDiffer() {
       'accepted',
       'rejected',
     ]);
-    expect(fork?.branches.first.label, 'latency=fast');
+    expect(fork?.branches.first.label, 'accepted');
   });
 }
 

@@ -123,6 +123,8 @@ final class AutomationRunner {
 
   final String? _timelineOutPath;
 
+  final List<MockSection<Object?>> _sections;
+
   AutomationDevice? _device;
   Map<String, Object?>? _frames;
 
@@ -131,13 +133,17 @@ final class AutomationRunner {
   /// The [args] parameter is the command line. The [config] parameter is the
   /// project's values. The [flows] parameter maps a flow name to its flow
   /// object. The [blocks] parameter maps a block name to its block object.
+  /// The [sections] parameter lists the sections of the mock, which the
+  /// catalogue reads the `restartKeys` of.
   AutomationRunner(
     this.args, {
     required this.config,
     required Map<String, Object?> flows,
     required Map<String, Object?> blocks,
+    List<MockSection<Object?>> sections = const [],
   }) : _flows = flows,
        _blocks = blocks,
+       _sections = sections,
        _stages = AutomationCaptureStages.fromArgs(args),
        _timelineOutPath = _tryReadTimelineOutPath(args);
 
@@ -149,14 +155,17 @@ final class AutomationRunner {
   ///
   /// The [args] parameter is the command line. The [config] parameter is the
   /// project's values. The [flows] parameter holds the flows a run may ask for.
+  /// The [sections] parameter lists the sections of the mock.
   factory AutomationRunner.fromDefinitions(
     List<String> args, {
     required AutomationRunnerConfig config,
     required List<AutomationFlowDefinition> flows,
+    List<MockSection<Object?>> sections = const [],
   }) {
     return AutomationRunner(
       args,
       config: config,
+      sections: sections,
       flows: _indexByName(
         flows.map((flow) => (name: flow.name, json: flow.toJson())),
         'flow',
@@ -352,6 +361,10 @@ final class AutomationRunner {
               stage: stage,
             ));
 
+      if (recordPath != null) {
+        _addPlayJson(results, step);
+      }
+
       steps.addAll(results);
 
       if (step.isUserAction) {
@@ -492,6 +505,9 @@ final class AutomationRunner {
     final catalogue = AutomationCatalogueBuilder(
       flows: _flows,
       recordings: recordings,
+      sections: _sections,
+      dateFormats: config.dateFormats,
+      dateValueKeys: config.dateValueKeys,
     ).build();
     final file = File(path);
 
@@ -1644,6 +1660,12 @@ final class AutomationRunner {
       'target': ?step.target,
       'block': ?step.block,
     };
+  }
+
+  void _addPlayJson(List<Map<String, Object?>> results, AutomationStep step) {
+    for (final result in results) {
+      result['step'] = step.toPlayJson();
+    }
   }
 
   Future<Object?> _sendStep(FlutterDriver driver, AutomationStep step) async {

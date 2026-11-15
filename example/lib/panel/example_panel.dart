@@ -34,6 +34,10 @@ Future<AutomationPanelController> buildExamplePanel({
           builder: (_) => const AutomationFlowsPage(),
         ),
         AutomationPanelPage(
+          label: 'Autorun',
+          builder: (_) => const AutomationAutorunPage(),
+        ),
+        AutomationPanelPage(
           label: 'Sections',
           builder: (_) => AutomationSectionsPage(
             sections: [

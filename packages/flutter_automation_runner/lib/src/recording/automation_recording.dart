@@ -79,6 +79,10 @@ final class AutomationRecordedStep {
   /// Block the step came from, missing for an inline step.
   final String? block;
 
+  /// The step as the flow JSON holds it, with each block parameter
+  /// substituted, missing when the run did not keep it.
+  final Map<String, Object?>? step;
+
   /// How long the step took in milliseconds, missing when the run did not time
   /// it.
   final int? ms;
@@ -103,6 +107,7 @@ final class AutomationRecordedStep {
     required this.ok,
     this.target,
     this.block,
+    this.step,
     this.ms,
     this.error,
     this.screenshot,
@@ -119,6 +124,7 @@ final class AutomationRecordedStep {
       ok: json['ok'] != false,
       target: CatalogueJson.tryString(json, 'target'),
       block: CatalogueJson.tryString(json, 'block'),
+      step: CatalogueJson.tryObject(json, 'step'),
       ms: ms is int ? ms : null,
       error: CatalogueJson.tryString(json, 'error'),
       screenshot: CatalogueJson.tryString(json, 'screenshot'),
@@ -139,6 +145,7 @@ final class AutomationRecordedStep {
       'action': action,
       'target': ?target,
       'block': ?block,
+      'step': ?step,
       'ms': ?ms,
       'ok': ok,
       'error': ?error,

@@ -1,3 +1,4 @@
+import 'package:flutter_automation_mock/mock_catalogue.dart';
 import 'package:flutter_driver/flutter_driver.dart';
 
 import 'package:flutter_automation_runner/src/automation_block_library.dart';
@@ -488,6 +489,31 @@ final class AutomationStep {
       if (text != null) 'text': text,
       if (dx != 0 || dy != 0) 'dx': dx,
       if (dx != 0 || dy != 0) 'dy': dy,
+    };
+  }
+
+  /// The step as the JSON a recording keeps and the panel plays.
+  ///
+  /// The JSON holds the action, the finder with each block parameter
+  /// substituted, the text, the title and the timeout. A scroll adds its drag,
+  /// its duration and its frequency. A scroll without a drag holds the finger
+  /// for its duration.
+  Map<String, Object?> toPlayJson() {
+    final isScroll = action == 'scroll';
+    final isDrag = dx != 0 || dy != 0;
+
+    return {
+      AutomationCatalogueStep.actionKey: action,
+      AutomationCatalogueStep.labelKey: label,
+      AutomationCatalogueStep.titleKey: ?title?.toJson(),
+      AutomationCatalogueStep.timeoutMsKey: timeout.inMilliseconds,
+      AutomationCatalogueStep.finderKey: ?target,
+      AutomationCatalogueStep.textKey: ?text,
+      if (isDrag) AutomationCatalogueStep.dxKey: dx,
+      if (isDrag) AutomationCatalogueStep.dyKey: dy,
+      if (isScroll)
+        AutomationCatalogueStep.durationMsKey: duration.inMilliseconds,
+      if (isScroll) AutomationCatalogueStep.frequencyKey: frequency,
     };
   }
 

@@ -85,6 +85,7 @@ final class AutomationCatalogueBranch {
   static const _variantKey = 'variant';
   static const _statusCodeKey = 'statusCode';
   static const _labelKey = 'label';
+  static const _isChosenBeforeStartKey = 'isChosenBeforeStart';
 
   /// Name of the variant that takes the branch.
   final String variant;
@@ -92,13 +93,21 @@ final class AutomationCatalogueBranch {
   /// Status code the variant gets at the fork, missing when the run saw none.
   final int? statusCode;
 
-  /// The difference of the scenario of the variant from the others.
+  /// What names the branch for the tester: the title of the variant.
   final String label;
+
+  /// Whether the tester picks the branch before the walk starts, because its
+  /// scenario changes a setting that only a restart of the app applies.
+  ///
+  /// Every branch of a fork carries the same value: the tester picks the whole
+  /// fork before the start or at the fork.
+  final bool isChosenBeforeStart;
 
   const AutomationCatalogueBranch({
     required this.variant,
     required this.label,
     this.statusCode,
+    this.isChosenBeforeStart = false,
   });
 
   /// Reads the branch out of [json].
@@ -109,6 +118,7 @@ final class AutomationCatalogueBranch {
       variant: CatalogueJson.tryString(json, _variantKey) ?? '',
       label: CatalogueJson.tryString(json, _labelKey) ?? '',
       statusCode: statusCode is int ? statusCode : null,
+      isChosenBeforeStart: json[_isChosenBeforeStartKey] == true,
     );
   }
 
@@ -118,36 +128,41 @@ final class AutomationCatalogueBranch {
       _variantKey: variant,
       _statusCodeKey: ?statusCode,
       _labelKey: label,
+      if (isChosenBeforeStart) _isChosenBeforeStartKey: true,
     };
   }
 }
 
 /// {@category Utils}
 ///
-/// The first request at which the variants of a flow get different answers.
+/// The place where the variants of a flow part: the earlier of the first step
+/// at which they differ and the first request at which they get different
+/// answers.
 final class AutomationCatalogueFork {
   static const _stepIndexKey = 'stepIndex';
   static const _methodKey = 'method';
   static const _pathKey = 'path';
   static const _branchesKey = 'branches';
 
-  /// Index of the step in which the request happens.
+  /// Index of the step at which the variants part.
   final int stepIndex;
 
-  /// HTTP method of the request.
-  final String method;
+  /// HTTP method of the request that parts the variants, missing when their
+  /// steps part them.
+  final String? method;
 
-  /// Path of the request.
-  final String path;
+  /// Path of the request that parts the variants, missing when their steps
+  /// part them.
+  final String? path;
 
   /// One branch per variant.
   final List<AutomationCatalogueBranch> branches;
 
   const AutomationCatalogueFork({
     required this.stepIndex,
-    required this.method,
-    required this.path,
     required this.branches,
+    this.method,
+    this.path,
   });
 
   /// Reads the fork out of [json].
@@ -156,8 +171,8 @@ final class AutomationCatalogueFork {
 
     return AutomationCatalogueFork(
       stepIndex: stepIndex is int ? stepIndex : 0,
-      method: CatalogueJson.tryString(json, _methodKey) ?? '',
-      path: CatalogueJson.tryString(json, _pathKey) ?? '',
+      method: CatalogueJson.tryString(json, _methodKey),
+      path: CatalogueJson.tryString(json, _pathKey),
       branches: CatalogueJson.objects(
         json,
         _branchesKey,
@@ -169,8 +184,8 @@ final class AutomationCatalogueFork {
   Map<String, Object?> toJson() {
     return {
       _stepIndexKey: stepIndex,
-      _methodKey: method,
-      _pathKey: path,
+      _methodKey: ?method,
+      _pathKey: ?path,
       _branchesKey: branches.map((branch) => branch.toJson()).toList(),
     };
   }

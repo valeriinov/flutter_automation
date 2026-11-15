@@ -1,11 +1,11 @@
 import 'dart:async';
 
 import 'package:flutter_automation_mock/flutter_automation_mock.dart';
+import 'package:flutter_automation_panel/flutter_automation_panel.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'test_utils/sample_panel.dart';
 
-const _verifyPath = '/auth/otp';
 const _launchKeyScenario = {
   'auth': {'isSignedInOnLaunch': false},
 };
@@ -20,23 +20,46 @@ void main() {
     _failureOf_should_matchTheParentPathOfAPathId();
     _setFailure_should_clearTheOverrideOfTheParentPath();
     _applyOutcome_should_keepTheOutcomeFailuresAcrossARestart();
-    _journal_should_moveTheWalkOnANewRequest();
-    _journal_should_notMoveTheWalkOnAResponse();
+    _startWalk_should_saveTheWalkAndAskForOneRestart();
+    _startWalk_should_keepTheModeAcrossARestart();
+    _resumeWalk_should_runAnAutorunFromTheFirstStep();
+    _playNext_should_doOneActionAndStopAtTheFork();
+    _chooseBranch_should_applyTheScenarioAndLetTheWalkGoOn();
+    _playNext_should_stopWithTheReasonOfAFailedStep();
+    _forkChoices_should_leaveOutABranchThatNeedsARestart();
+    _exitWalk_should_endTheWalkAndGiveTheFingerBack();
+    _didPopRoute_should_beHandledWhileAWalkRuns();
+    _didPopRoute_should_stayFreeWhileTheLauncherIsHidden();
+    _startWalk_should_askForARestartWhenTheScenarioHoldsTheKey();
+    _playNext_should_openThePlaqueOnAFailure();
+    _playNext_should_turnAnyErrorIntoAFailure();
+    _runWalk_should_finishAnAutorunOfAVariantWithNoSteps();
+    _runWalk_should_tryAgainAfterAFailure();
+    _isAutorunPlaying_should_holdOnlyWhileTheAutorunPlays();
   });
 }
 
 Future<SamplePanel> _createSample({
   FutureOr<void> Function()? onRestartRequired,
   SamplePanel? restartOf,
+  AutomationFlowPlayer? player,
 }) async {
   final sample = await SamplePanel.create(
     onRestartRequired: onRestartRequired,
     restartOf: restartOf,
+    player: player,
+    catalogue: sampleCatalogueWithSession,
   );
 
   addTearDown(() => _disposeAfterWrites(sample));
 
   return sample;
+}
+
+Future<void> _waitUntil(bool Function() isMet) async {
+  for (int round = 0; round < 500 && !isMet(); round += 1) {
+    await Future<void>.delayed(const Duration(milliseconds: 10));
+  }
 }
 
 Future<void> _disposeAfterWrites(SamplePanel sample) async {
@@ -168,31 +191,296 @@ void _applyOutcome_should_keepTheOutcomeFailuresAcrossARestart() {
   });
 }
 
-void _journal_should_moveTheWalkOnANewRequest() {
-  test('the controller should move the walk on a new request', () async {
-    final sample = await _createSample();
+void _startWalk_should_saveTheWalkAndAskForOneRestart() {
+  test('startWalk should save the walk and ask for one restart', () async {
+    final plain = await _createSample();
 
-    await sample.controller.startWalk('login', 'signUpNeeded');
+    await plain.controller.startWalk('login', 'signUpNeeded');
 
-    sample.mock.journal.addRequest({'method': 'POST', 'path': _verifyPath});
-    expect(sample.mock.walk?.stepIndex, 2);
+    final launchKey = await _createSample();
+
+    await launchKey.controller.startWalk('session', 'signedOut');
+
+    expect(plain.events, ['restart']);
+    expect(launchKey.events, ['restart']);
+    expect(plain.mock.walk?.variant, 'signUpNeeded');
+    expect(plain.mock.walk?.stepIndex, 0);
   });
 }
 
-void _journal_should_notMoveTheWalkOnAResponse() {
-  test('the controller should not move the walk on a response', () async {
-    final sample = await _createSample();
+void _startWalk_should_keepTheModeAcrossARestart() {
+  test('startWalk should keep the mode across a restart', () async {
+    final first = await _createSample();
+
+    await first.controller.startWalk(
+      'login',
+      'signUpNeeded',
+      mode: AutomationWalkMode.autorun,
+      shouldShowTouches: false,
+    );
+
+    final second = await _createSample(restartOf: first);
+
+    expect(second.controller.walk?.mode, AutomationWalkMode.autorun);
+    expect(second.controller.walk?.shouldShowTouches, isFalse);
+    expect(second.controller.walk?.stepIndex, 0);
+  });
+}
+
+void _resumeWalk_should_runAnAutorunFromTheFirstStep() {
+  test('resumeWalk should run an autorun from the first step', () async {
+    final first = await _createSample();
+
+    await first.controller.startWalk(
+      'login',
+      'signUpNeeded',
+      mode: AutomationWalkMode.autorun,
+      shouldSignalEnd: false,
+    );
+
+    final player = RecordingPlayer();
+
+    final second = await _createSample(restartOf: first, player: player);
+
+    second.controller.resumeWalk();
+
+    await _waitUntil(() => second.controller.runSummary != null);
+
+    expect(player.played.first, 'Phone screen');
+    expect(player.played, hasLength(5));
+    expect(second.controller.runSummary?.stepCount, 2);
+    expect(second.mock.walk, isNull);
+  });
+}
+
+void _playNext_should_doOneActionAndStopAtTheFork() {
+  test('playNext should do one action and stop at the fork', () async {
+    final player = RecordingPlayer();
+
+    final sample = await _createSample(player: player);
+
+    await sample.controller.startWalk('login', 'signUpNeeded');
+    await sample.controller.playNext();
+
+    expect(player.played, ['Phone screen', 'After code entry']);
+    expect(sample.mock.walk?.stepIndex, 2);
+    expect(sample.controller.pendingFork, isNotNull);
+
+    await sample.controller.playNext();
+
+    expect(player.played, hasLength(2));
+  });
+}
+
+void _chooseBranch_should_applyTheScenarioAndLetTheWalkGoOn() {
+  test(
+    'chooseBranch should apply the scenario and let the walk go on',
+    () async {
+      final player = RecordingPlayer();
+
+      final sample = await _createSample(player: player);
+
+      await sample.controller.startWalk('login', 'signUpNeeded');
+      await sample.controller.playNext();
+      await sample.controller.chooseBranch('accountExists');
+
+      expect(sample.mock.walk?.variant, 'accountExists');
+      expect(sample.mock.scenario.toJson()['auth'], {'codeDelay': 0});
+      expect(sample.controller.pendingFork, isNull);
+
+      await sample.controller.playNext();
+
+      expect(player.played.last, 'trace');
+      expect(sample.controller.isWalkFinished, isTrue);
+    },
+  );
+}
+
+void _playNext_should_stopWithTheReasonOfAFailedStep() {
+  test('playNext should stop with the reason of a failed step', () async {
+    final player = RecordingPlayer(failingLabel: 'After code entry');
+
+    final sample = await _createSample(player: player);
+
+    await sample.controller.startWalk('login', 'signUpNeeded');
+    await sample.controller.playNext();
+
+    expect(sample.controller.walkFailure, contains('did not appear'));
+    expect(sample.mock.walk?.stepIndex, 1);
+    expect(sample.controller.isWalkBusy, isFalse);
+  });
+}
+
+void _forkChoices_should_leaveOutABranchThatNeedsARestart() {
+  test('forkChoices should leave out a branch that needs a restart', () async {
+    final first = await _createSample();
+
+    await first.controller.startWalk('session', 'signedIn');
+
+    final second = await _createSample(restartOf: first);
+
+    expect(second.controller.forkChoices.map((branch) => branch.variant), [
+      'signedIn',
+    ]);
+    expect(second.controller.pendingFork, isNull);
+  });
+}
+
+void _exitWalk_should_endTheWalkAndGiveTheFingerBack() {
+  test('exitWalk should end the walk and give the finger back', () async {
+    final sample = await _createSample(player: RecordingPlayer());
 
     await sample.controller.startWalk('login', 'signUpNeeded');
 
-    final record = sample.mock.journal.addRequest({
-      'method': 'POST',
-      'path': _verifyPath,
-    });
+    expect(sample.controller.isWalkActive, isTrue);
 
-    await sample.controller.moveWalk(0);
+    await sample.controller.exitWalk();
 
-    sample.mock.journal.attachResponse(record, statusCode: 200, body: {});
-    expect(sample.mock.walk?.stepIndex, 0);
+    expect(sample.controller.isWalkActive, isFalse);
+    expect(sample.mock.walk, isNull);
+  });
+}
+
+void _didPopRoute_should_beHandledWhileAWalkRuns() {
+  test('didPopRoute should be handled while a walk runs', () async {
+    final sample = await _createSample(player: RecordingPlayer());
+
+    sample.controller.isLauncherVisible = true;
+
+    expect(await sample.controller.didPopRoute(), isFalse);
+
+    await sample.controller.startWalk('login', 'signUpNeeded');
+
+    expect(await sample.controller.didPopRoute(), isTrue);
+
+    await sample.controller.exitWalk();
+
+    expect(await sample.controller.didPopRoute(), isFalse);
+  });
+}
+
+void _didPopRoute_should_stayFreeWhileTheLauncherIsHidden() {
+  test('didPopRoute should stay free while the launcher is hidden', () async {
+    final sample = await _createSample(player: RecordingPlayer());
+
+    await sample.controller.startWalk('login', 'signUpNeeded');
+
+    expect(sample.controller.isWalkActive, isTrue);
+    expect(await sample.controller.didPopRoute(), isFalse);
+  });
+}
+
+void _startWalk_should_askForARestartWhenTheScenarioHoldsTheKey() {
+  test('startWalk should ask for a restart when the scenario holds the '
+      'restart key', () async {
+    final sample = await _createSample();
+
+    await sample.controller.applyOutcome(_launchKeyScenario);
+    await sample.controller.startWalk('session', 'signedOut');
+
+    expect(sample.events, ['restart', 'restart']);
+    expect(sample.mock.walk?.variant, 'signedOut');
+  });
+}
+
+void _playNext_should_openThePlaqueOnAFailure() {
+  test('playNext should open the plaque on a failure', () async {
+    final player = RecordingPlayer(failingLabel: 'After code entry');
+
+    final sample = await _createSample(player: player);
+
+    await sample.controller.startWalk('login', 'signUpNeeded');
+    await sample.controller.playNext();
+
+    expect(sample.controller.isWalkExpanded, isTrue);
+  });
+}
+
+void _playNext_should_turnAnyErrorIntoAFailure() {
+  test('playNext should turn any error into a failure', () async {
+    final player = RecordingPlayer(
+      failingLabel: 'After code entry',
+      failingError: StateError('boom'),
+    );
+
+    final sample = await _createSample(player: player);
+
+    await sample.controller.startWalk('login', 'signUpNeeded');
+    await sample.controller.playNext();
+
+    expect(sample.controller.walkFailure, contains('boom'));
+    expect(sample.controller.isWalkBusy, isFalse);
+    expect(sample.controller.isWalkExpanded, isTrue);
+  });
+}
+
+void _runWalk_should_finishAnAutorunOfAVariantWithNoSteps() {
+  test('runWalk should finish an autorun of a variant with no steps', () async {
+    final sample = await _createSample(player: RecordingPlayer());
+
+    await sample.controller.startWalk(
+      'itemCreate',
+      'a',
+      mode: AutomationWalkMode.autorun,
+      shouldSignalEnd: false,
+    );
+    await sample.controller.runWalk();
+
+    expect(sample.controller.runSummary?.stepCount, 0);
+    expect(sample.mock.walk, isNull);
+    expect(sample.controller.isWalkBusy, isFalse);
+  });
+}
+
+void _runWalk_should_tryAgainAfterAFailure() {
+  test('runWalk should try again after a failure', () async {
+    final player = RecordingPlayer(failingLabel: 'After code entry');
+
+    final sample = await _createSample(player: player);
+
+    await sample.controller.startWalk(
+      'login',
+      'signUpNeeded',
+      mode: AutomationWalkMode.autorun,
+      shouldSignalEnd: false,
+    );
+    await sample.controller.runWalk();
+
+    expect(sample.controller.walkFailure, isNotNull);
+    expect(sample.controller.runSummary, isNull);
+
+    player.failingLabel = null;
+
+    await sample.controller.runWalk();
+
+    expect(sample.controller.walkFailure, isNull);
+    expect(sample.controller.runSummary?.stepCount, 2);
+  });
+}
+
+void _isAutorunPlaying_should_holdOnlyWhileTheAutorunPlays() {
+  test('isAutorunPlaying should hold only while the autorun plays', () async {
+    final release = Completer<void>();
+    final player = RecordingPlayer(hold: release.future);
+
+    final sample = await _createSample(player: player);
+
+    await sample.controller.startWalk(
+      'login',
+      'signUpNeeded',
+      mode: AutomationWalkMode.autorun,
+      shouldSignalEnd: false,
+    );
+
+    expect(sample.controller.isAutorunPlaying, isFalse);
+
+    final run = sample.controller.runWalk();
+
+    expect(sample.controller.isAutorunPlaying, isTrue);
+    release.complete();
+
+    await run;
+
+    expect(sample.controller.isAutorunPlaying, isFalse);
   });
 }

@@ -27,6 +27,6 @@ melos:
     analyze:
       run: fvm dart run melos exec -c 1 -- fvm dart analyze
     test:
-      run: fvm dart run melos exec --dir-exists=test -- fvm flutter test
+      run: fvm dart run melos exec --dir-exists=test -- fvm flutter test --dart-define=ENABLE_AUTOMATION_MARKING=true
     format:
       run: fvm dart run melos exec -- fvm dart format .

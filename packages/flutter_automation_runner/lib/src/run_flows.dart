@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:flutter_automation_mock/mock_section.dart';
 import 'package:flutter_automation_runner/src/automation_runner.dart';
 import 'package:flutter_automation_runner/src/automation_runner_config.dart';
 import 'package:flutter_automation_runner/src/automation_runner_exception.dart';
@@ -19,17 +20,21 @@ import 'package:flutter_automation_runner/src/definition/automation_flow_definit
 /// The [args] parameter is the command line. The [flows] parameter holds the
 /// flows a run may ask for; the blocks their variants use come with them. The
 /// [config] parameter is the project's values, read from
-/// `pubspec.yaml` of the working directory when the caller passes none.
+/// `pubspec.yaml` of the working directory when the caller passes none. The
+/// [sections] parameter lists the sections of the mock, whose `restartKeys`
+/// mark the branches a tester picks before the walk starts.
 Future<void> runFlows(
   List<String> args,
   List<AutomationFlowDefinition> flows, {
   AutomationRunnerConfig? config,
+  List<MockSection<Object?>> sections = const [],
 }) async {
   try {
     await AutomationRunner.fromDefinitions(
       args,
       config: config ?? AutomationRunnerConfig.read(),
       flows: flows,
+      sections: sections,
     ).run();
   } on AutomationRunnerException catch (error) {
     stderr.writeln(error.message);

@@ -1,0 +1,241 @@
+import 'package:collection/collection.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter_automation_mock/flutter_automation_mock.dart';
+import 'package:flutter_automation_mock/mock_catalogue.dart';
+import 'package:flutter_automation_panel/src/blocks/automation_panel_button.dart';
+import 'package:flutter_automation_panel/src/blocks/automation_panel_count.dart';
+import 'package:flutter_automation_panel/src/blocks/automation_panel_label.dart';
+import 'package:flutter_automation_panel/src/blocks/automation_panel_radio_tile.dart';
+import 'package:flutter_automation_panel/src/blocks/automation_panel_switch_tile.dart';
+import 'package:flutter_automation_panel/src/blocks/automation_restart_note.dart';
+import 'package:flutter_automation_panel/src/pages/automation_catalogue_text.dart';
+import 'package:flutter_automation_panel/src/panel/automation_panel_controller.dart';
+import 'package:flutter_automation_panel/src/panel/automation_panel_scope.dart';
+import 'package:flutter_automation_panel/src/player/automation_flow_player.dart';
+import 'package:flutter_automation_panel/src/theme/automation_panel_theme.dart';
+
+/// {@category Widgets}
+///
+/// The Autorun tab: the tester picks a flow and an outcome, sets what the run
+/// shows and starts an autorun.
+///
+/// The start saves the scenario and the walk, asks the project to restart the
+/// app and starts nothing. The autorun begins when the tester opens the app
+/// again.
+class AutomationAutorunPage extends StatefulWidget {
+  const AutomationAutorunPage({super.key});
+
+  @override
+  State<AutomationAutorunPage> createState() => _AutomationAutorunPageState();
+}
+
+class _AutomationAutorunPageState extends State<AutomationAutorunPage> {
+  String? _flowName;
+  String? _variantName;
+  bool _shouldShowTouches = true;
+  bool _shouldSignalEnd = true;
+
+  @override
+  Widget build(BuildContext context) {
+    final controller = AutomationPanelScope.of(context);
+    final flows = controller.definition.catalogue.flows;
+    final flow = _selectFlow(flows);
+    final variant = _selectVariant(flow);
+
+    return Column(
+      children: [
+        Expanded(
+          child: ListView(
+            padding: const EdgeInsets.all(AutomationPanelTheme.gapLarge),
+            children: [
+              const AutomationPanelLabel(text: 'Flow'),
+              const SizedBox(height: AutomationPanelTheme.gapSmall),
+              for (final candidate in flows)
+                Padding(
+                  padding: const EdgeInsets.only(
+                    bottom: AutomationPanelTheme.gapSmall,
+                  ),
+                  child: AutomationPanelRadioTile(
+                    title: AutomationCatalogueText.english(
+                      candidate.title,
+                      candidate.name,
+                    ),
+                    isSelected: candidate.name == flow?.name,
+                    onPressed: () => _selectFlowByName(candidate.name),
+                  ),
+                ),
+              if (flow != null) ...[
+                const SizedBox(height: AutomationPanelTheme.gapMedium),
+                const AutomationPanelLabel(text: 'Outcome'),
+                const SizedBox(height: AutomationPanelTheme.gapSmall),
+                for (final candidate in flow.variants)
+                  Padding(
+                    padding: const EdgeInsets.only(
+                      bottom: AutomationPanelTheme.gapSmall,
+                    ),
+                    child: AutomationPanelRadioTile(
+                      title: AutomationCatalogueText.english(
+                        candidate.title,
+                        candidate.name,
+                      ),
+                      subtitle: _describe(candidate),
+                      isSelected: candidate.name == variant?.name,
+                      onPressed: () => _selectVariantByName(candidate.name),
+                    ),
+                  ),
+              ],
+              const SizedBox(height: AutomationPanelTheme.gapMedium),
+              const AutomationPanelLabel(text: 'Recording'),
+              const SizedBox(height: AutomationPanelTheme.gapSmall),
+              _Recording(
+                shouldShowTouches: _shouldShowTouches,
+                shouldSignalEnd: _shouldSignalEnd,
+                onTouchesChanged: (value) {
+                  setState(() => _shouldShowTouches = value);
+                },
+                onSignalChanged: (value) {
+                  setState(() => _shouldSignalEnd = value);
+                },
+              ),
+            ],
+          ),
+        ),
+        _Footer(
+          onStart: flow == null || variant == null
+              ? null
+              : () => _start(controller, flow, variant),
+        ),
+      ],
+    );
+  }
+
+  AutomationCatalogueFlow? _selectFlow(List<AutomationCatalogueFlow> flows) {
+    return flows.firstWhereOrNull((flow) => flow.name == _flowName) ??
+        flows.firstOrNull;
+  }
+
+  AutomationCatalogueVariant? _selectVariant(AutomationCatalogueFlow? flow) {
+    final variants = flow?.variants ?? const <AutomationCatalogueVariant>[];
+    final name = _variantName ?? flow?.defaultVariant;
+
+    return variants.firstWhereOrNull((variant) => variant.name == name) ??
+        variants.firstOrNull;
+  }
+
+  String _describe(AutomationCatalogueVariant variant) {
+    final steps = variant.steps.where(AutomationFlowPlayer.isAction).length;
+
+    return describeCount(steps, 'step');
+  }
+
+  void _selectFlowByName(String name) {
+    setState(() {
+      _flowName = name;
+      _variantName = null;
+    });
+  }
+
+  void _selectVariantByName(String name) {
+    setState(() => _variantName = name);
+  }
+
+  Future<void> _start(
+    AutomationPanelController controller,
+    AutomationCatalogueFlow flow,
+    AutomationCatalogueVariant variant,
+  ) {
+    return controller.startWalk(
+      flow.name,
+      variant.name,
+      mode: AutomationWalkMode.autorun,
+      shouldShowTouches: _shouldShowTouches,
+      shouldSignalEnd: _shouldSignalEnd,
+    );
+  }
+}
+
+class _Recording extends StatelessWidget {
+  final bool shouldShowTouches;
+  final bool shouldSignalEnd;
+  final ValueChanged<bool> onTouchesChanged;
+  final ValueChanged<bool> onSignalChanged;
+
+  const _Recording({
+    required this.shouldShowTouches,
+    required this.shouldSignalEnd,
+    required this.onTouchesChanged,
+    required this.onSignalChanged,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = AutomationPanelTheme.of(context);
+
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: theme.surface,
+        borderRadius: BorderRadius.circular(AutomationPanelTheme.cardRadius),
+        border: Border.all(color: theme.line),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(
+          horizontal: AutomationPanelTheme.gapMedium,
+        ),
+        child: Column(
+          children: [
+            AutomationPanelSwitchTile(
+              title: 'Show touches',
+              subtitle: 'A circle where you tap',
+              isOn: shouldShowTouches,
+              onChanged: onTouchesChanged,
+            ),
+            AutomationPanelSwitchTile(
+              title: 'Signal at the end',
+              subtitle: 'Vibration and sound',
+              isOn: shouldSignalEnd,
+              onChanged: onSignalChanged,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _Footer extends StatelessWidget {
+  final VoidCallback? onStart;
+
+  const _Footer({required this.onStart});
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = AutomationPanelTheme.of(context);
+
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: theme.surface,
+        border: Border(top: BorderSide(color: theme.line)),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(AutomationPanelTheme.gapLarge),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          spacing: AutomationPanelTheme.gapSmall,
+          children: [
+            const AutomationRestartNote(
+              text:
+                  'The app restarts and runs the flow by itself. Start screen '
+                  'recording first.',
+            ),
+            AutomationPanelButton(
+              label: 'Restart and run',
+              kind: AutomationPanelButtonKind.primary,
+              onPressed: onStart,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}

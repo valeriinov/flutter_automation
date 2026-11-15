@@ -37,14 +37,32 @@
           "steps": [
             {
               "label": "waitFor example.screen.loginScreen",
+              "action": "waitFor",
+              "finder": {
+                "by": "valueKey",
+                "value": "example.screen.loginScreen"
+              },
+              "timeoutMs": 10000,
               "requests": []
             },
             {
               "label": "tap example.button.loginButton",
+              "action": "tap",
+              "finder": {
+                "by": "valueKey",
+                "value": "example.button.loginButton"
+              },
+              "timeoutMs": 10000,
               "requests": []
             },
             {
               "label": "waitFor example.screen.catalogScreen",
+              "action": "waitFor",
+              "finder": {
+                "by": "valueKey",
+                "value": "example.screen.catalogScreen"
+              },
+              "timeoutMs": 10000,
               "requests": [
                 {
                   "method": "GET",
@@ -79,10 +97,22 @@
             },
             {
               "label": "waitFor example.panel.catalogList",
+              "action": "waitFor",
+              "finder": {
+                "by": "valueKey",
+                "value": "example.panel.catalogList"
+              },
+              "timeoutMs": 10000,
               "requests": []
             },
             {
               "label": "waitFor example.tile.catalogItem.5",
+              "action": "waitFor",
+              "finder": {
+                "by": "valueKey",
+                "value": "example.tile.catalogItem.5"
+              },
+              "timeoutMs": 10000,
               "requests": []
             }
           ]
@@ -105,14 +135,32 @@
           "steps": [
             {
               "label": "waitFor example.screen.loginScreen",
+              "action": "waitFor",
+              "finder": {
+                "by": "valueKey",
+                "value": "example.screen.loginScreen"
+              },
+              "timeoutMs": 10000,
               "requests": []
             },
             {
               "label": "tap example.button.loginButton",
+              "action": "tap",
+              "finder": {
+                "by": "valueKey",
+                "value": "example.button.loginButton"
+              },
+              "timeoutMs": 10000,
               "requests": []
             },
             {
               "label": "waitFor example.screen.catalogScreen",
+              "action": "waitFor",
+              "finder": {
+                "by": "valueKey",
+                "value": "example.screen.catalogScreen"
+              },
+              "timeoutMs": 10000,
               "requests": [
                 {
                   "method": "GET",
@@ -126,6 +174,12 @@
             },
             {
               "label": "waitFor example.label.catalogEmpty",
+              "action": "waitFor",
+              "finder": {
+                "by": "valueKey",
+                "value": "example.label.catalogEmpty"
+              },
+              "timeoutMs": 10000,
               "requests": []
             }
           ]
@@ -139,12 +193,12 @@
           {
             "variant": "items",
             "statusCode": 200,
-            "label": "catalogSection.itemCount=5"
+            "label": "Catalog with items"
           },
           {
             "variant": "empty",
             "statusCode": 200,
-            "label": "catalogSection.itemCount=0"
+            "label": "Empty catalog"
           }
         ]
       }

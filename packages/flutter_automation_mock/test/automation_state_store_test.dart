@@ -11,6 +11,8 @@ void main() {
   group('AutomationStateStore Tests', () {
     _automationStateStore_should_readTheDefaultStateWithoutAFile();
     _automationStateStore_should_readWhatItWroteAndKeepTheFile();
+    _automationStateStore_should_keepTheModeOfTheWalk();
+    _automationStateStore_should_readAWalkSavedWithoutAMode();
     _automationStateStore_should_readTheDefaultStateFromBrokenJson();
     _automationStateStore_should_leaveNoTemporaryFile();
     _automationStateStore_should_deleteTheStateOnReset();
@@ -71,6 +73,40 @@ void _automationStateStore_should_readWhatItWroteAndKeepTheFile() {
       expect(second.walk?.variant, 'otp');
     },
   );
+}
+
+void _automationStateStore_should_keepTheModeOfTheWalk() {
+  test('AutomationStateStore should keep the mode of the walk', () async {
+    await _sut.write(
+      const AutomationState(
+        walk: AutomationWalkProgress(
+          flow: 'login',
+          variant: 'otp',
+          mode: AutomationWalkMode.autorun,
+          shouldShowTouches: false,
+        ),
+      ),
+    );
+
+    final walk = (await _sut.read()).walk;
+
+    expect(walk?.mode, AutomationWalkMode.autorun);
+    expect(walk?.shouldShowTouches, isFalse);
+    expect(walk?.shouldSignalEnd, isTrue);
+  });
+}
+
+void _automationStateStore_should_readAWalkSavedWithoutAMode() {
+  test('AutomationStateStore should read a walk saved without a mode', () {
+    final walk = AutomationWalkProgress.tryFromJson({
+      'flow': 'login',
+      'variant': 'otp',
+      'step': 3,
+    });
+
+    expect(walk?.mode, AutomationWalkMode.manual);
+    expect(walk?.stepIndex, 3);
+  });
 }
 
 void _automationStateStore_should_readTheDefaultStateFromBrokenJson() {

@@ -8,6 +8,9 @@ class AutomationPanelSwitchTile extends StatelessWidget {
   /// Title of the choice.
   final String title;
 
+  /// Hint under the title, missing when the choice needs none.
+  final String? subtitle;
+
   /// Whether the switch is on.
   final bool isOn;
 
@@ -18,12 +21,14 @@ class AutomationPanelSwitchTile extends StatelessWidget {
     required this.title,
     required this.isOn,
     required this.onChanged,
+    this.subtitle,
     super.key,
   });
 
   @override
   Widget build(BuildContext context) {
     final theme = AutomationPanelTheme.of(context);
+    final subtitle = this.subtitle;
 
     return ConstrainedBox(
       constraints: const BoxConstraints(
@@ -31,7 +36,22 @@ class AutomationPanelSwitchTile extends StatelessWidget {
       ),
       child: Row(
         children: [
-          Expanded(child: Text(title, style: theme.textStyle(size: 14))),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(title, style: theme.textStyle(size: 14)),
+                if (subtitle != null)
+                  Text(
+                    subtitle,
+                    style: theme.textStyle(
+                      size: 13,
+                      color: theme.textSecondary,
+                    ),
+                  ),
+              ],
+            ),
+          ),
           Switch(value: isOn, onChanged: onChanged),
         ],
       ),

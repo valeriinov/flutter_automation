@@ -5,17 +5,18 @@ import 'package:flutter_automation/src/automation_target.dart';
 /// {@category Extensions}
 ///
 /// Extension on [Widget] that makes an element addressable by an agent that
-/// drives the app on a simulator.
+/// drives the app on a simulator or by an in-app player.
 ///
 /// Keeps the automation layer out of the widgets themselves. A call site marks
 /// an element with one trailing call. It does not add a parameter, wrap the
 /// subtree or reach for `Semantics` by hand.
 extension WidgetAutomationTarget on Widget {
-  /// Attaches [target] to this widget for the duration of an automation run.
+  /// Attaches [target] to this widget when the build marks targets
+  /// ([AutomationSettings.isMarkingEnabled]).
   ///
   /// The id reaches the agent through two channels: the Flutter Driver
   /// `ByValueKey` finder and the `accessibilityIdentifier` of the native
-  /// accessibility tree. Outside an automation run, and when [target] is null,
+  /// accessibility tree. Without target marking, and when [target] is null,
   /// the method returns the widget untouched, so the tree of a regular build
   /// stays as it was.
   ///
@@ -25,7 +26,7 @@ extension WidgetAutomationTarget on Widget {
   ///     .automationTarget(FormAutomationTarget.agreement)
   /// ```
   Widget automationTarget(AutomationTarget? target) {
-    if (!AutomationSettings.isEnabled || target == null) {
+    if (!AutomationSettings.isMarkingEnabled || target == null) {
       return this;
     }
 

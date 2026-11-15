@@ -55,10 +55,23 @@ final class AutomationCatalogueRequest {
 /// {@category Utils}
 ///
 /// One step of a variant with the requests the app sent in it.
+///
+/// A step that carries an [action] is one a player can do: the [finder], the
+/// [text] and the drag distance say on what and how.
 final class AutomationCatalogueStep {
-  static const _labelKey = 'label';
-  static const _isServiceKey = 'isService';
-  static const _requestsKey = 'requests';
+  /// Keys of the step JSON, which the runner writes and the player reads.
+  static const labelKey = 'label';
+  static const isServiceKey = 'isService';
+  static const actionKey = 'action';
+  static const finderKey = 'finder';
+  static const textKey = 'text';
+  static const titleKey = 'title';
+  static const timeoutMsKey = 'timeoutMs';
+  static const dxKey = 'dx';
+  static const dyKey = 'dy';
+  static const durationMsKey = 'durationMs';
+  static const frequencyKey = 'frequency';
+  static const requestsKey = 'requests';
 
   /// Short words that name the step.
   final String label;
@@ -67,23 +80,78 @@ final class AutomationCatalogueStep {
   /// is no action of the tester.
   final bool isService;
 
+  /// Driver action of the step, missing when the catalogue holds none.
+  final String? action;
+
+  /// Finder JSON of the element the step acts on, missing for a step that
+  /// addresses none.
+  final Map<String, Object?>? finder;
+
+  /// Text an `enterText` step writes, missing for the rest.
+  final String? text;
+
+  /// What the person does in the step, by locale, missing when the flow names
+  /// none.
+  final Map<String, String>? title;
+
+  /// How long a player waits for the step in milliseconds, missing for the
+  /// default.
+  final int? timeoutMs;
+
+  /// Horizontal distance of a `scroll` in logical pixels, missing for none.
+  final double? dx;
+
+  /// Vertical distance of a `scroll` in logical pixels, missing for none.
+  final double? dy;
+
+  /// How long a `scroll` spreads its pointer moves in milliseconds, missing
+  /// for none.
+  final int? durationMs;
+
+  /// Pointer moves per second of a `scroll`, missing for none.
+  final int? frequency;
+
   /// Requests the app sent while the step ran.
   final List<AutomationCatalogueRequest> requests;
 
   const AutomationCatalogueStep({
     required this.label,
     this.isService = false,
+    this.action,
+    this.finder,
+    this.text,
+    this.title,
+    this.timeoutMs,
+    this.dx,
+    this.dy,
+    this.durationMs,
+    this.frequency,
     this.requests = const [],
   });
 
   /// Reads the step out of [json].
   factory AutomationCatalogueStep.fromJson(Map<String, Object?> json) {
+    final timeoutMs = json[timeoutMsKey];
+    final dx = json[dxKey];
+    final dy = json[dyKey];
+    final durationMs = json[durationMsKey];
+    final frequency = json[frequencyKey];
+
     return AutomationCatalogueStep(
-      label: CatalogueJson.tryString(json, _labelKey) ?? '',
-      isService: json[_isServiceKey] == true,
+      label: CatalogueJson.tryString(json, labelKey) ?? '',
+      isService: json[isServiceKey] == true,
+      action: CatalogueJson.tryString(json, actionKey),
+      finder: CatalogueJson.tryObject(json, finderKey),
+      text: CatalogueJson.tryString(json, textKey),
+      title: CatalogueJson.tryText(json, titleKey),
+      timeoutMs: timeoutMs is int ? timeoutMs : null,
+      dx: dx is num ? dx.toDouble() : null,
+      dy: dy is num ? dy.toDouble() : null,
+      durationMs: durationMs is int ? durationMs : null,
+      frequency: frequency is int ? frequency : null,
       requests: CatalogueJson.objects(
         json,
-        _requestsKey,
+        requestsKey,
       ).map(AutomationCatalogueRequest.fromJson).toList(growable: false),
     );
   }
@@ -91,9 +159,18 @@ final class AutomationCatalogueStep {
   /// The step as JSON.
   Map<String, Object?> toJson() {
     return {
-      _labelKey: label,
-      if (isService) _isServiceKey: true,
-      _requestsKey: requests.map((request) => request.toJson()).toList(),
+      labelKey: label,
+      if (isService) isServiceKey: true,
+      actionKey: ?action,
+      finderKey: ?finder,
+      textKey: ?text,
+      titleKey: ?title,
+      timeoutMsKey: ?timeoutMs,
+      dxKey: ?dx,
+      dyKey: ?dy,
+      durationMsKey: ?durationMs,
+      frequencyKey: ?frequency,
+      requestsKey: requests.map((request) => request.toJson()).toList(),
     };
   }
 }

@@ -4,7 +4,7 @@ export 'package:flutter_automation_runner/src/automation_block_library.dart';
 export 'package:flutter_automation_runner/src/automation_capture.dart';
 export 'package:flutter_automation_runner/src/automation_capture_stages.dart';
 export 'package:flutter_automation_runner/src/automation_coverage_manifest.dart';
-export 'package:flutter_automation_runner/src/automation_date_pattern.dart';
+export 'package:flutter_automation/automation_date_pattern.dart';
 export 'package:flutter_automation_runner/src/automation_device.dart';
 export 'package:flutter_automation_runner/src/automation_finder_kind.dart';
 export 'package:flutter_automation_runner/src/automation_finder_spec.dart';

@@ -1,8 +1,11 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_automation_mock/flutter_automation_mock.dart';
+import 'package:flutter_automation_mock/mock_catalogue.dart';
 import 'package:flutter_automation_panel/flutter_automation_panel.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -18,24 +21,42 @@ void main() {
     _automationPanelLauncher_should_showTheButtonOnlyWhenVisible();
     _automationPanelLauncher_should_wrapOnlyTheButton();
     _automationPanelLauncher_should_placeTheButtonAtTheStartPosition();
-    _automationWalkStrip_should_offerTheNextResponse();
+    _automationWalkStrip_should_leadTheWalkActionByAction();
+    _automationWalkStrip_should_exitTheWalk();
+    _automationAutorunPage_should_saveAnAutorunAndAskForARestart();
+    _automationPanelLauncher_should_blockTheFingerWhileAWalkRuns();
+    _automationPanelLauncher_should_keepTheBackButtonOnTheFirstScreen();
+    _automationPanelLauncher_should_showOnlyTheTouchCircleInAnAutorun();
+    _automationFlowMapPage_should_offerTheBranchesThatNeedARestart();
     _automationModeController_should_saveTheModeAndAskForARestart();
-    _automationFlowMapPage_should_notStartWhenTheOutcomeNeedsARestart();
+    _automationFlowMapPage_should_saveTheWalkAndAskForARestartOnStart();
     _automationSectionsPage_should_replaceTheProfileOfASection();
     _automationSectionsPage_should_offerTheDefaultProfile();
     _automationSectionsPage_should_nameAnUnknownSettingCustom();
     _automationPanelLauncher_should_sendTheBackButtonToThePanel();
     _automationPresetsSheet_should_rejectABadName();
+    _automationWalkStrip_should_exitAfterADragFarDown();
+    _automationWalkStrip_should_bringTheControlsBackAfterAnAutorunFailure();
+    _automationMockModeTile_should_switchTheModeOnAPanelTile();
   });
 }
 
-Future<SamplePanel> _pumpPage(WidgetTester tester, Widget page) async {
+Future<SamplePanel> _pumpPage(
+  WidgetTester tester,
+  Widget page, {
+  AutomationFlowPlayer? player,
+  AutomationCatalogue? catalogue,
+}) async {
   tester.view.devicePixelRatio = 2;
   tester.view.physicalSize = const Size(780, 1688);
 
   addTearDown(tester.view.reset);
 
-  final sample = await createSamplePanel(tester);
+  final sample = await createSamplePanel(
+    tester,
+    player: player,
+    catalogue: catalogue,
+  );
 
   await tester.pumpWidget(hostApp(child: panelHost(sample, page)));
 
@@ -51,14 +72,14 @@ void _automationFlowMapPage_should_setAFailureFromTheResponseSheet() {
         AutomationFlowMapPage(flow: sampleCatalogue.flows.first),
       );
 
-      await tester.tap(find.text('sign-up'));
+      await tester.tap(find.text('otp'));
       await tester.pumpAndSettle();
       await tester.tap(find.text('429'));
       await tester.pump();
       await tester.tap(find.text('Apply'));
       await tester.pumpAndSettle();
 
-      expect(sample.mock.failures[signUpPath]?.statusCode, 429);
+      expect(sample.mock.failures[verifyPath]?.statusCode, 429);
     },
   );
 }
@@ -73,7 +94,7 @@ void _automationFlowMapPage_should_removeAnOverrideWithItsCross() {
       );
 
       await tester.runAsync(
-        () => sample.controller.setFailure(signUpPath, const MockApiFailure()),
+        () => sample.controller.setFailure(verifyPath, const MockApiFailure()),
       );
       await tester.pump();
 
@@ -234,34 +255,203 @@ void _automationPanelLauncher_should_placeTheButtonAtTheStartPosition() {
   );
 }
 
-void _automationWalkStrip_should_offerTheNextResponse() {
-  testWidgets('AutomationWalkStrip should offer the next response', (
+Future<SamplePanel> _pumpStrip(WidgetTester tester) async {
+  final sample = await _pumpPage(
+    tester,
+    const SizedBox(),
+    player: RecordingPlayer(),
+  );
+
+  await tester.runAsync(
+    () => sample.controller.startWalk('login', 'signUpNeeded'),
+  );
+
+  sample.controller.toggleWalk();
+
+  await tester.pumpWidget(
+    hostApp(
+      child: panelHost(
+        sample,
+        Align(
+          alignment: Alignment.topCenter,
+          child: AutomationWalkStrip(controller: sample.controller),
+        ),
+      ),
+    ),
+  );
+
+  return sample;
+}
+
+void _automationWalkStrip_should_leadTheWalkActionByAction() {
+  testWidgets('AutomationWalkStrip should lead the walk action by action', (
     tester,
   ) async {
-    final sample = await _pumpPage(tester, const SizedBox());
+    await _pumpStrip(tester);
 
-    await tester.runAsync(() async {
-      await sample.controller.startWalk('login', 'signUpNeeded');
-      await sample.controller.moveWalk(2);
-    });
+    expect(find.textContaining('step 1 of 2'), findsOneWidget);
+    expect(find.text('Type the code'), findsOneWidget);
 
-    sample.controller.toggleWalk();
+    await tester.tap(find.text('Next step'));
+    await _settle(
+      tester,
+      until: () => _isShown(find.text('CHOOSE THE BRANCH')),
+    );
+
+    expect(find.text('CHOOSE THE BRANCH'), findsOneWidget);
+    expect(find.text('Next step'), findsNothing);
+
+    await tester.tap(find.text('Account exists'));
+    await _settle(
+      tester,
+      until: () => _isShown(find.text('Create the account')),
+    );
+
+    expect(find.text('Create the account'), findsOneWidget);
+    expect(find.textContaining('step 2 of 2'), findsOneWidget);
+  });
+}
+
+void _automationWalkStrip_should_exitTheWalk() {
+  testWidgets('AutomationWalkStrip should exit the walk', (tester) async {
+    final sample = await _pumpStrip(tester);
+
+    await tester.tap(find.text('Exit'));
+    await _settle(tester, until: () => _isGone(find.text('Next step')));
+
+    expect(sample.mock.walk, isNull);
+    expect(find.text('Next step'), findsNothing);
+  });
+}
+
+void _automationAutorunPage_should_saveAnAutorunAndAskForARestart() {
+  testWidgets(
+    'AutomationAutorunPage should save an autorun and ask to restart',
+    (tester) async {
+      final sample = await _pumpPage(
+        tester,
+        const AutomationAutorunPage(),
+        player: RecordingPlayer(),
+      );
+
+      await tester.tap(find.byType(Switch).first);
+      await tester.tap(find.text('Restart and run'));
+      await _settle(tester, until: () => sample.events.isNotEmpty);
+
+      expect(sample.mock.walk?.mode, AutomationWalkMode.autorun);
+      expect(sample.mock.walk?.flow, 'login');
+      expect(sample.mock.walk?.shouldShowTouches, isFalse);
+      expect(sample.events, ['restart']);
+    },
+  );
+}
+
+Widget _launcherOver(SamplePanel sample, Widget child) {
+  return hostApp(
+    child: AutomationPanelLauncher(
+      controller: sample.controller,
+      isVisible: true,
+      child: child,
+    ),
+  );
+}
+
+void _automationPanelLauncher_should_blockTheFingerWhileAWalkRuns() {
+  testWidgets('AutomationPanelLauncher should block the finger in a walk', (
+    tester,
+  ) async {
+    int taps = 0;
+
+    final sample = await _pumpPage(
+      tester,
+      const SizedBox(),
+      player: RecordingPlayer(),
+    );
 
     await tester.pumpWidget(
-      hostApp(
-        child: panelHost(
-          sample,
-          Align(
-            alignment: Alignment.topCenter,
-            child: AutomationWalkStrip(controller: sample.controller),
+      _launcherOver(
+        sample,
+        Center(
+          child: ElevatedButton(
+            onPressed: () => taps += 1,
+            child: const Text('App button'),
           ),
         ),
       ),
     );
+    await tester.tap(find.text('App button'));
 
-    expect(find.textContaining('step 3 of 4'), findsOneWidget);
-    expect(find.text('Mock response'), findsOneWidget);
-    expect(find.text('No network'), findsOneWidget);
+    expect(taps, 1);
+
+    await tester.runAsync(
+      () => sample.controller.startWalk('login', 'signUpNeeded'),
+    );
+    await tester.pump();
+    await tester.tap(find.text('App button'), warnIfMissed: false);
+
+    expect(taps, 1);
+    expect(find.text('Exit'), findsOneWidget);
+
+    await tester.runAsync(sample.controller.exitWalk);
+    await tester.pump();
+    await tester.tap(find.text('App button'));
+
+    expect(taps, 2);
+  });
+}
+
+void _automationPanelLauncher_should_showOnlyTheTouchCircleInAnAutorun() {
+  testWidgets('AutomationPanelLauncher should show no controls in an autorun', (
+    tester,
+  ) async {
+    final release = Completer<void>();
+
+    final sample = await _pumpPage(
+      tester,
+      const SizedBox(),
+      player: RecordingPlayer(hold: release.future),
+    );
+
+    await tester.pumpWidget(_launcherOver(sample, const SizedBox()));
+
+    expect(find.text('QA'), findsOneWidget);
+
+    await tester.runAsync(
+      () => sample.controller.startWalk(
+        'login',
+        'signUpNeeded',
+        mode: AutomationWalkMode.autorun,
+        shouldSignalEnd: false,
+      ),
+    );
+
+    unawaited(sample.controller.runWalk());
+
+    await tester.pump();
+
+    expect(find.text('QA'), findsNothing);
+    expect(find.text('Exit'), findsNothing);
+    expect(find.byType(AutomationTouchIndicator), findsOneWidget);
+    release.complete();
+
+    await _settle(tester, until: () => sample.controller.runSummary != null);
+  });
+}
+
+void _automationFlowMapPage_should_offerTheBranchesThatNeedARestart() {
+  testWidgets('AutomationFlowMapPage should offer the branches of a restart', (
+    tester,
+  ) async {
+    await _pumpPage(
+      tester,
+      AutomationFlowMapPage(flow: sessionFlow),
+      catalogue: sampleCatalogueWithSession,
+    );
+
+    expect(find.text('Signed in'), findsWidgets);
+    expect(find.text('Signed out'), findsOneWidget);
+    expect(find.text('Set state'), findsNothing);
+    expect(find.text('Apply and start'), findsNothing);
   });
 }
 
@@ -295,6 +485,10 @@ void _automationModeController_should_saveTheModeAndAskForARestart() {
   );
 }
 
+bool _isShown(Finder finder) => finder.evaluate().isNotEmpty;
+
+bool _isGone(Finder finder) => finder.evaluate().isEmpty;
+
 Future<void> _settle(WidgetTester tester, {bool Function()? until}) async {
   final rounds = until == null ? 30 : 500;
 
@@ -326,9 +520,9 @@ Object? _authSettings(SamplePanel sample) {
   return sample.mock.scenario.toJson()['auth'];
 }
 
-void _automationFlowMapPage_should_notStartWhenTheOutcomeNeedsARestart() {
+void _automationFlowMapPage_should_saveTheWalkAndAskForARestartOnStart() {
   testWidgets(
-    'AutomationFlowMapPage should not start when the outcome needs a restart',
+    'AutomationFlowMapPage should save the walk and ask for a restart',
     (tester) async {
       final sample = await _pumpPage(
         tester,
@@ -337,10 +531,11 @@ void _automationFlowMapPage_should_notStartWhenTheOutcomeNeedsARestart() {
 
       sample.controller.openPanel();
 
-      await tester.tap(find.text('Apply and start'));
+      await tester.tap(find.text('Restart and begin'));
       await _settle(tester, until: () => sample.events.isNotEmpty);
 
       expect(sample.mock.walk?.flow, 'login');
+      expect(sample.mock.walk?.mode, AutomationWalkMode.manual);
       expect(sample.events, ['restart']);
       expect(sample.controller.isPanelOpen, isTrue);
     },
@@ -459,4 +654,150 @@ void _automationPresetsSheet_should_rejectABadName() {
 
     expect(find.text('Use a name without a slash.'), findsOneWidget);
   });
+}
+
+void _automationWalkStrip_should_exitAfterADragFarDown() {
+  testWidgets('AutomationWalkStrip should exit after a drag far down', (
+    tester,
+  ) async {
+    final sample = await _pumpPage(
+      tester,
+      const SizedBox(),
+      player: RecordingPlayer(),
+    );
+
+    await tester.runAsync(
+      () => sample.controller.startWalk('login', 'signUpNeeded'),
+    );
+    await tester.pumpWidget(_launcherOver(sample, const SizedBox()));
+
+    final title = find.textContaining('step 1 of 2');
+    final before = tester.getTopLeft(title);
+
+    await tester.drag(title, const Offset(0, 400));
+    await tester.pump();
+
+    expect(tester.getTopLeft(title).dy - before.dy, greaterThan(300));
+
+    await tester.tap(find.text('Exit'));
+    await _settle(tester, until: () => sample.mock.walk == null);
+
+    expect(sample.mock.walk, isNull);
+  });
+}
+
+void _automationWalkStrip_should_bringTheControlsBackAfterAnAutorunFailure() {
+  testWidgets('AutomationWalkStrip should retry an autorun after a failure', (
+    tester,
+  ) async {
+    final player = RecordingPlayer(failingLabel: 'After code entry');
+
+    final sample = await _pumpPage(tester, const SizedBox(), player: player);
+
+    await tester.runAsync(
+      () => sample.controller.startWalk(
+        'login',
+        'signUpNeeded',
+        mode: AutomationWalkMode.autorun,
+        shouldSignalEnd: false,
+      ),
+    );
+    await tester.pumpWidget(_launcherOver(sample, const SizedBox()));
+    await _settle(tester, until: () => sample.controller.walkFailure != null);
+
+    expect(find.text('QA'), findsOneWidget);
+    expect(find.text('Try again'), findsOneWidget);
+    expect(find.textContaining('did not appear'), findsOneWidget);
+
+    player.failingLabel = null;
+
+    await tester.tap(find.text('Try again'));
+    await _settle(tester, until: () => sample.controller.runSummary != null);
+
+    expect(sample.controller.runSummary, isNotNull);
+  });
+}
+
+void _automationMockModeTile_should_switchTheModeOnAPanelTile() {
+  testWidgets('AutomationMockModeTile should switch the mode on a panel tile', (
+    tester,
+  ) async {
+    final directory = Directory.systemTemp.createTempSync('mode_tile');
+    int restarts = 0;
+    final controller = AutomationModeController(
+      store: AutomationStateStore(directory.path),
+      mode: AutomationMode.server,
+      onRestartRequired: () => restarts += 1,
+    );
+
+    addTearDown(() => directory.deleteSync(recursive: true));
+    addTearDown(controller.dispose);
+
+    await tester.pumpWidget(
+      hostApp(child: AutomationMockModeTile(controller: controller)),
+    );
+
+    expect(find.byType(AutomationPanelSwitchTile), findsOneWidget);
+
+    await tester.tap(find.byType(Switch));
+    await _settle(tester, until: () => restarts > 0);
+
+    expect(controller.nextMode, AutomationMode.mock);
+  });
+}
+
+void _automationPanelLauncher_should_keepTheBackButtonOnTheFirstScreen() {
+  testWidgets(
+    'AutomationPanelLauncher should keep the back button on the first screen',
+    (tester) async {
+      final reports = <Object?>[];
+
+      tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
+      tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
+        SystemChannels.platform,
+        (call) async {
+          if (call.method == 'SystemNavigator.setFrameworkHandlesBack') {
+            reports.add(call.arguments);
+          }
+
+          return null;
+        },
+      );
+      addTearDown(() {
+        tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
+          SystemChannels.platform,
+          null,
+        );
+      });
+
+      final sample = await _pumpPage(
+        tester,
+        const SizedBox(),
+        player: RecordingPlayer(),
+      );
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: const Scaffold(body: SizedBox()),
+          builder: (context, child) => AutomationPanelLauncher(
+            controller: sample.controller,
+            isVisible: true,
+            child: child ?? const SizedBox(),
+          ),
+        ),
+      );
+      await tester.runAsync(
+        () => sample.controller.startWalk('login', 'signUpNeeded'),
+      );
+      await tester.pump();
+
+      expect(reports.last, isTrue);
+
+      await tester.tap(find.text('Exit'));
+      await _settle(tester, until: () => reports.last == false);
+
+      expect(reports.last, isFalse);
+    },
+    variant: TargetPlatformVariant.only(TargetPlatform.android),
+  );
 }

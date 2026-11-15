@@ -14,6 +14,7 @@ void main() {
     _flowMap_should_matchTheGolden();
     _response_should_matchTheGolden();
     _sections_should_matchTheGolden();
+    _walk_should_matchTheGolden();
     _walkOpen_should_matchTheGolden();
     _runDone_should_matchTheGolden();
   });
@@ -141,30 +142,45 @@ void _sections_should_matchTheGolden() {
   });
 }
 
+Widget _walkOverApp(SamplePanel sample) {
+  return Stack(
+    children: [
+      const ColoredBox(color: Color(0xFFFFFFFF), child: SizedBox.expand()),
+      Positioned(
+        left: 12,
+        right: 12,
+        top: 12,
+        child: Material(
+          type: MaterialType.transparency,
+          child: AutomationWalkStrip(controller: sample.controller),
+        ),
+      ),
+    ],
+  );
+}
+
+Future<void> _arrangeWalk(SamplePanel sample) async {
+  await sample.controller.startWalk('login', 'signUpNeeded');
+  await SamplePanel.moveWalk(sample, 1);
+  await sample.controller.setFailure(signUpPath, const MockApiFailure());
+}
+
+void _walk_should_matchTheGolden() {
+  testWidgets('Walk should match the golden', tags: _goldenTag, (tester) async {
+    await _pumpScreen(tester, _walkOverApp, arrange: _arrangeWalk);
+    await _expectGolden('walk');
+  });
+}
+
 void _walkOpen_should_matchTheGolden() {
   testWidgets('WalkOpen should match the golden', tags: _goldenTag, (
     tester,
   ) async {
     await _pumpScreen(
       tester,
-      (sample) => Stack(
-        children: [
-          const ColoredBox(color: Color(0xFFFFFFFF), child: SizedBox.expand()),
-          Positioned(
-            left: 12,
-            right: 12,
-            top: 12,
-            child: Material(
-              type: MaterialType.transparency,
-              child: AutomationWalkStrip(controller: sample.controller),
-            ),
-          ),
-        ],
-      ),
+      _walkOverApp,
       arrange: (sample) async {
-        await sample.controller.startWalk('login', 'signUpNeeded');
-        await sample.controller.moveWalk(2);
-        await sample.controller.setFailure(signUpPath, const MockApiFailure());
+        await _arrangeWalk(sample);
 
         sample.controller.isWalkExpanded = true;
       },

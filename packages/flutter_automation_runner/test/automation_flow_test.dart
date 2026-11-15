@@ -103,6 +103,9 @@ void main() {
     _automationStep_should_omitBlockAndTargetFromReportWhenAbsent();
     _automationStep_should_tellUserActionsFromWaitsAndHolds();
     _automationStep_should_readTitleOfInlineStep();
+    _automationStep_should_writePlayJsonWithSubstitutedFinder();
+    _automationStep_should_writeTheDragOfAScrollInPlayJson();
+    _automationStep_should_writeTheHoldOfAScrollWithoutDragInPlayJson();
     _automationStep_should_leaveTitleOutOfReport();
     _automationStep_should_rejectMalformedTitleNamingStepAndBlock();
     _automationStep_should_rejectRepeatedProbeName();
@@ -322,6 +325,60 @@ void _automationStep_should_readTitleOfInlineStep() {
 
     expect(step.title?.read('en'), 'Type the amount 650');
     expect(step.title?.read('uk'), 'Ввести суму 650');
+  });
+}
+
+void _automationStep_should_writePlayJsonWithSubstitutedFinder() {
+  test('AutomationStep should write play JSON with a substituted finder', () {
+    final json = _readFlow(items: [_openBlock]).steps.first.toPlayJson();
+
+    expect(json['action'], 'tap');
+    expect(json['finder'], {'by': 'text', 'value': 'Jane Smith'});
+    expect(json['title'], {
+      'en': 'Open the item of Jane Smith',
+      'uk': 'Відкрити товар Jane Smith',
+    });
+    expect(json['timeoutMs'], 10000);
+  });
+}
+
+void _automationStep_should_writeTheDragOfAScrollInPlayJson() {
+  test('AutomationStep should write the drag of a scroll in play JSON', () {
+    final step = AutomationStep.fromJson(
+      {
+        'action': 'scroll',
+        'finder': {'by': 'valueKey', 'value': 'feed'},
+        'dx': 0,
+        'dy': -300,
+      },
+      block: null,
+      finders: _finders,
+      locale: _locale,
+    );
+    final json = step.toPlayJson();
+
+    expect(json['dy'], -300);
+    expect(json['durationMs'], 6000);
+    expect(json['frequency'], 60);
+  });
+}
+
+void _automationStep_should_writeTheHoldOfAScrollWithoutDragInPlayJson() {
+  test('AutomationStep should write the hold of a scroll without a drag', () {
+    final step = AutomationStep.fromJson(
+      {
+        'action': 'scroll',
+        'finder': {'by': 'valueKey', 'value': 'feed'},
+        'durationMs': 1500,
+      },
+      block: null,
+      finders: _finders,
+      locale: _locale,
+    );
+    final json = step.toPlayJson();
+
+    expect(json['durationMs'], 1500);
+    expect(json.containsKey('dy'), isFalse);
   });
 }
 

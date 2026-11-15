@@ -4,18 +4,15 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_automation_mock/flutter_automation_mock.dart';
 import 'package:flutter_automation_mock/mock_catalogue.dart';
 import 'package:flutter_automation_panel/src/panel/automation_panel_page.dart';
+import 'package:flutter_automation_panel/src/player/automation_player_settings.dart';
 import 'package:flutter_automation_panel/src/theme/automation_panel_theme.dart';
 
 /// {@category Utils}
 ///
-/// Callback that starts a flow variant in the app.
-typedef AutomationFlowStarter =
-    FutureOr<void> Function(String flow, String variant);
-
-/// {@category Utils}
-///
 /// What a project hands to the panel: the mock, the catalogue of flows, the
-/// pages and the callbacks that only the project can do.
+/// pages and the callbacks that only the project can do. The panel calls
+/// `onRestartRequired` once at each start of a walk, so the project shows its
+/// restart screen.
 ///
 /// A project builds its panel from pages, the way it builds its flows from
 /// blocks. The panel adds no page of its own.
@@ -36,13 +33,16 @@ final class AutomationPanelDefinition {
   /// Look of the panel.
   final AutomationPanelTheme theme;
 
-  /// Called when a change needs a restart of the app. The project shows its
-  /// restart screen.
+  /// Called when a change needs a restart of the app, and once at each start
+  /// of a walk. The project shows its restart screen.
   final FutureOr<void> Function() onRestartRequired;
 
-  /// Called when the tester starts a flow. The project opens the first screen
-  /// of the flow. The panel is already closed.
-  final AutomationFlowStarter? onStart;
+  /// Called when the tester taps Share logs after an autorun. The sheet hides
+  /// the button when it is missing.
+  final FutureOr<void> Function()? onShareLogs;
+
+  /// What the player reads a step with, and how fast it moves.
+  final AutomationPlayerSettings playerSettings;
 
   const AutomationPanelDefinition({
     required this.mock,
@@ -51,6 +51,7 @@ final class AutomationPanelDefinition {
     required this.onRestartRequired,
     this.backendErrorCodes = const [],
     this.theme = const AutomationPanelTheme.light(),
-    this.onStart,
+    this.onShareLogs,
+    this.playerSettings = const AutomationPlayerSettings(),
   });
 }

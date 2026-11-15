@@ -1,8 +1,13 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_automation_mock/flutter_automation_mock.dart';
 import 'package:flutter_automation_panel/src/panel/automation_panel.dart';
 import 'package:flutter_automation_panel/src/panel/automation_panel_controller.dart';
 import 'package:flutter_automation_panel/src/panel/automation_panel_scope.dart';
 import 'package:flutter_automation_panel/src/panel/automation_walk_strip.dart';
+import 'package:flutter_automation_panel/src/player/automation_flow_player.dart';
+import 'package:flutter_automation_panel/src/player/automation_input_gate.dart';
+import 'package:flutter_automation_panel/src/player/automation_touch_indicator.dart';
+import 'package:flutter_automation_panel/src/sheets/automation_run_done_sheet.dart';
 import 'package:flutter_automation_panel/src/theme/automation_panel_theme.dart';
 
 /// {@category Widgets}
@@ -12,11 +17,18 @@ import 'package:flutter_automation_panel/src/theme/automation_panel_theme.dart';
 /// The launcher stands above the screens of the app, usually in the `builder`
 /// of the `MaterialApp`. It brings its own [Navigator] and its own theme, so it
 /// needs nothing from the app but a [Directionality], a [MediaQuery] and
-/// [MaterialLocalizations]. The tester drags the button. While a manual walk
-/// runs, the walk strip stands above the app.
+/// [MaterialLocalizations]. The tester drags the button.
+///
+/// While a walk runs, an [AutomationInputGate] covers the app, its dialogs and
+/// its sheets, so only the player touches the screen. The walk plaque and the
+/// button stay under the finger. An autorun shows the touch circle only while
+/// it plays its steps. A failure brings the plaque back.
 ///
 /// While the panel is open, the system back button goes to the panel, never to
-/// the app under it. The [AutomationPanelController] handles that button.
+/// the app under it. While a walk runs, the button does nothing. The
+/// [AutomationPanelController] handles that button. The launcher then reports
+/// a [NavigationNotification] that can pop, so Android sends the button to the
+/// framework also on the first screen of the app.
 class AutomationPanelLauncher extends StatefulWidget {
   static const _buttonSize = 48.0;
   static const _edgeGap = 16.0;
@@ -55,10 +67,50 @@ class AutomationPanelLauncher extends StatefulWidget {
 }
 
 class _AutomationPanelLauncherState extends State<AutomationPanelLauncher> {
+  final _outerKey = GlobalKey();
   Offset? _position;
+  bool _canAppPop = false;
+  bool _holdsBack = false;
+
+  @override
+  void initState() {
+    super.initState();
+
+    widget.controller.isLauncherVisible = widget.isVisible;
+    widget.controller.addListener(_maybeReportBack);
+    _maybeReportBack();
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      widget.controller.resumeWalk();
+    });
+  }
+
+  @override
+  void didUpdateWidget(AutomationPanelLauncher oldWidget) {
+    super.didUpdateWidget(oldWidget);
+
+    if (oldWidget.controller != widget.controller) {
+      oldWidget.controller.isLauncherVisible = false;
+      oldWidget.controller.removeListener(_maybeReportBack);
+      widget.controller.addListener(_maybeReportBack);
+    }
+
+    widget.controller.isLauncherVisible = widget.isVisible;
+    _maybeReportBack();
+  }
 
   @override
   Widget build(BuildContext context) {
+    return KeyedSubtree(
+      key: _outerKey,
+      child: NotificationListener<NavigationNotification>(
+        onNotification: _onAppNavigation,
+        child: _buildLayers(),
+      ),
+    );
+  }
+
+  Widget _buildLayers() {
     return ListenableBuilder(
       listenable: widget.controller,
       builder: (context, _) {
@@ -69,23 +121,55 @@ class _AutomationPanelLauncherState extends State<AutomationPanelLauncher> {
 
         return Stack(
           children: [
-            Positioned.fill(child: widget.child),
-            if (widget.isVisible && !controller.isPanelOpen) ...[
-              _WalkStripLayer(controller: controller),
-              _QaButton(
-                position: _position ?? _resolveStartPosition(size, padding),
-                theme: theme,
-                wrapButton: widget.wrapButton,
-                onPressed: controller.openPanel,
-                onDragged: (delta) => _drag(delta, size, padding),
+            Positioned.fill(
+              child: AutomationInputGate(
+                isBlocked: () => _isFingerBlocked(controller),
+                child: widget.child,
               ),
+            ),
+            if (widget.isVisible && _shouldShowTouches(controller))
+              Positioned.fill(
+                child: AutomationTouchIndicator(
+                  player: controller.player,
+                  theme: theme,
+                ),
+              ),
+            if (widget.isVisible && !controller.isPanelOpen) ...[
+              if (!controller.isAutorunPlaying)
+                _WalkStripLayer(controller: controller),
+              if (!controller.isAutorunPlaying)
+                _QaButton(
+                  player: controller.player,
+                  position: _position ?? _resolveStartPosition(size, padding),
+                  theme: theme,
+                  wrapButton: widget.wrapButton,
+                  onPressed: controller.openPanel,
+                  onDragged: (delta) => _drag(delta, size, padding),
+                ),
             ],
             if (widget.isVisible && controller.isPanelOpen)
               Positioned.fill(child: _PanelLayer(controller: controller)),
+            if (widget.isVisible && controller.runSummary != null)
+              Positioned.fill(child: _RunDoneLayer(controller: controller)),
           ],
         );
       },
     );
+  }
+
+  bool _onAppNavigation(NavigationNotification notification) {
+    _canAppPop = notification.canHandlePop;
+
+    return _holdsBack;
+  }
+
+  bool _isFingerBlocked(AutomationPanelController controller) {
+    return controller.isInputBlocked && !controller.player.isInjecting;
+  }
+
+  bool _shouldShowTouches(AutomationPanelController controller) {
+    return controller.isWalkActive &&
+        (controller.walk?.shouldShowTouches ?? false);
   }
 
   void _drag(Offset delta, Size size, EdgeInsets padding) {
@@ -118,33 +202,91 @@ class _AutomationPanelLauncherState extends State<AutomationPanelLauncher> {
       size.height - padding.bottom - AutomationPanelLauncher._bottomGap,
     );
   }
+
+  void _maybeReportBack() {
+    final controller = widget.controller;
+    final holdsBack = controller.isInputBlocked || controller.isPanelOpen;
+
+    if (holdsBack == _holdsBack) {
+      return;
+    }
+
+    _holdsBack = holdsBack;
+    WidgetsBinding.instance.addPostFrameCallback((_) => _reportBack());
+  }
+
+  void _reportBack() {
+    final outerContext = _outerKey.currentContext;
+
+    if (outerContext == null) {
+      return;
+    }
+
+    NavigationNotification(
+      canHandlePop: _holdsBack || _canAppPop,
+    ).dispatch(outerContext);
+  }
+
+  @override
+  void dispose() {
+    widget.controller.isLauncherVisible = false;
+    widget.controller.removeListener(_maybeReportBack);
+
+    super.dispose();
+  }
 }
 
-class _WalkStripLayer extends StatelessWidget {
+class _WalkStripLayer extends StatefulWidget {
+  static const _edgeGap = 12.0;
+  static const _reservedBottom = 160.0;
+
   final AutomationPanelController controller;
 
   const _WalkStripLayer({required this.controller});
+
+  @override
+  State<_WalkStripLayer> createState() => _WalkStripLayerState();
+}
+
+class _WalkStripLayerState extends State<_WalkStripLayer> {
+  double _dragOffset = 0;
 
   @override
   Widget build(BuildContext context) {
     final top = MediaQuery.paddingOf(context).top;
 
     return Positioned(
-      left: 12,
-      right: 12,
-      top: top + 12,
-      child: Theme(
-        data: controller.definition.theme.toThemeData(),
-        child: Material(
-          type: MaterialType.transparency,
-          child: AutomationWalkStrip(controller: controller),
+      left: _WalkStripLayer._edgeGap,
+      right: _WalkStripLayer._edgeGap,
+      top: top + _WalkStripLayer._edgeGap + _dragOffset,
+      child: AutomationInputPassThrough(
+        isPassing: () => widget.controller.player.isInjecting,
+        child: Theme(
+          data: widget.controller.definition.theme.toThemeData(),
+          child: Material(
+            type: MaterialType.transparency,
+            child: AutomationWalkStrip(
+              controller: widget.controller,
+              onDragged: _drag,
+            ),
+          ),
         ),
       ),
     );
   }
+
+  void _drag(double delta) {
+    final maxOffset =
+        MediaQuery.sizeOf(context).height - _WalkStripLayer._reservedBottom;
+
+    setState(() {
+      _dragOffset = (_dragOffset + delta).clamp(0, maxOffset);
+    });
+  }
 }
 
 class _QaButton extends StatelessWidget {
+  final AutomationFlowPlayer player;
   final Offset position;
   final AutomationPanelTheme theme;
   final Widget Function(Widget button)? wrapButton;
@@ -152,6 +294,7 @@ class _QaButton extends StatelessWidget {
   final ValueChanged<Offset> onDragged;
 
   const _QaButton({
+    required this.player,
     required this.position,
     required this.theme,
     required this.wrapButton,
@@ -194,7 +337,10 @@ class _QaButton extends StatelessWidget {
     return Positioned(
       left: position.dx,
       top: position.dy,
-      child: wrap == null ? button : wrap(button),
+      child: AutomationInputPassThrough(
+        isPassing: () => player.isInjecting,
+        child: wrap == null ? button : wrap(button),
+      ),
     );
   }
 }
@@ -221,6 +367,47 @@ class _PanelLayer extends StatelessWidget {
                 builder: (_) => const AutomationPanel(),
               ),
             ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _RunDoneLayer extends StatelessWidget {
+  final AutomationPanelController controller;
+
+  const _RunDoneLayer({required this.controller});
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = controller.definition.theme;
+    final summary = controller.runSummary;
+
+    if (summary == null) {
+      return const SizedBox.shrink();
+    }
+
+    return Theme(
+      data: theme.toThemeData(),
+      child: Material(
+        color: theme.scrim,
+        child: Align(
+          alignment: Alignment.bottomCenter,
+          child: AutomationRunDoneSheet(
+            outcome: summary.outcome,
+            stepCount: summary.stepCount,
+            duration: summary.duration,
+            requests: summary.requests,
+            onShare: controller.definition.onShareLogs,
+            onRunAgain: () => controller.startWalk(
+              summary.flow,
+              summary.variant,
+              mode: AutomationWalkMode.autorun,
+              shouldShowTouches: summary.shouldShowTouches,
+              shouldSignalEnd: summary.shouldSignalEnd,
+            ),
+            onExit: controller.exitWalk,
           ),
         ),
       ),

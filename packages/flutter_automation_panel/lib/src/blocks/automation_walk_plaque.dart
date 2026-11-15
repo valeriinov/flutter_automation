@@ -4,12 +4,14 @@ import 'package:flutter_automation_panel/src/theme/automation_panel_theme.dart';
 
 /// {@category Widgets}
 ///
-/// The plaque that follows a manual walk of a flow. It is one line when
-/// collapsed. A tap opens its [child]. A swipe up calls [onHide], so the plaque
-/// does not cover a screen recording.
+/// The plaque that leads a walk of a flow. It is one line when collapsed. A
+/// tap opens its [child]. The tester drags the plaque down to see what it
+/// covers, and taps the stop icon to exit the walk.
+///
+/// The plaque does not move itself. The owner moves it in [onDragged], so the
+/// area that takes the finger moves with the plaque.
 class AutomationWalkPlaque extends StatelessWidget {
   static const _shadowBlur = 24.0;
-  static const _swipeVelocity = 200.0;
 
   /// The line of the collapsed plaque, such as the flow and the step.
   final String title;
@@ -23,19 +25,24 @@ class AutomationWalkPlaque extends StatelessWidget {
   /// Called when the tester taps the line.
   final VoidCallback onToggle;
 
-  /// Called when the tester swipes the plaque up.
-  final VoidCallback onHide;
+  /// Called when the tester taps the stop icon.
+  final VoidCallback onExit;
 
   /// Content of the expanded plaque.
   final Widget child;
+
+  /// Called with the vertical move, in pixels, while the tester drags the
+  /// plaque. A drag does nothing when it is missing.
+  final ValueChanged<double>? onDragged;
 
   const AutomationWalkPlaque({
     required this.title,
     required this.overrideCount,
     required this.isExpanded,
     required this.onToggle,
-    required this.onHide,
+    required this.onExit,
     required this.child,
+    this.onDragged,
     super.key,
   });
 
@@ -47,7 +54,7 @@ class AutomationWalkPlaque extends StatelessWidget {
     );
 
     return GestureDetector(
-      onVerticalDragEnd: _handleSwipe,
+      onVerticalDragUpdate: (details) => onDragged?.call(details.delta.dy),
       child: DecoratedBox(
         decoration: BoxDecoration(
           borderRadius: radius,
@@ -71,6 +78,7 @@ class AutomationWalkPlaque extends StatelessWidget {
                 overrideCount: overrideCount,
                 isExpanded: isExpanded,
                 onToggle: onToggle,
+                onExit: onExit,
               ),
               if (isExpanded)
                 Padding(
@@ -88,81 +96,136 @@ class AutomationWalkPlaque extends StatelessWidget {
       ),
     );
   }
-
-  void _handleSwipe(DragEndDetails details) {
-    if (details.velocity.pixelsPerSecond.dy < -_swipeVelocity) {
-      onHide();
-    }
-  }
 }
 
 class _Line extends StatelessWidget {
+  static const _exitDiameter = 24.0;
+
   final String title;
   final int overrideCount;
   final bool isExpanded;
   final VoidCallback onToggle;
+  final VoidCallback onExit;
 
   const _Line({
     required this.title,
     required this.overrideCount,
     required this.isExpanded,
     required this.onToggle,
+    required this.onExit,
   });
 
   @override
   Widget build(BuildContext context) {
     final theme = AutomationPanelTheme.of(context);
 
-    return InkWell(
-      onTap: onToggle,
-      borderRadius: BorderRadius.circular(999),
-      child: ConstrainedBox(
-        constraints: const BoxConstraints(
-          minHeight: AutomationPanelTheme.touchTarget,
-        ),
-        child: Padding(
-          padding: const EdgeInsets.only(left: 14, right: 4),
-          child: Row(
-            spacing: AutomationPanelTheme.gapSmall,
-            children: [
-              DecoratedBox(
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: theme.accent,
-                ),
-                child: const SizedBox.square(dimension: 8),
+    return ConstrainedBox(
+      constraints: const BoxConstraints(
+        minHeight: AutomationPanelTheme.touchTarget,
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            child: InkWell(
+              onTap: onToggle,
+              borderRadius: const BorderRadius.horizontal(
+                left: Radius.circular(999),
               ),
-              Expanded(
-                child: Text.rich(
-                  TextSpan(
-                    text: title,
-                    children: [
-                      if (overrideCount > 0)
-                        TextSpan(
-                          text: ' · ${describeOverrideCount(overrideCount)}',
-                          style: TextStyle(
-                            color: theme.danger,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                    ],
-                  ),
-                  style: theme.textStyle(size: 13),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
+              child: Padding(
+                padding: const EdgeInsets.only(left: 14, top: 8, bottom: 8),
+                child: Row(
+                  spacing: AutomationPanelTheme.gapSmall,
+                  children: [
+                    DecoratedBox(
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: theme.accent,
+                      ),
+                      child: const SizedBox.square(dimension: 8),
+                    ),
+                    Expanded(child: _Title(title, overrideCount)),
+                  ],
                 ),
               ),
-              SizedBox.square(
-                dimension: AutomationPanelTheme.touchTarget,
-                child: Icon(
-                  isExpanded ? Icons.expand_less : Icons.expand_more,
-                  color: theme.textSecondary,
-                ),
-              ),
-            ],
+            ),
           ),
-        ),
+          InkWell(
+            onTap: onExit,
+            borderRadius: BorderRadius.circular(AutomationPanelTheme.gapSmall),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  DecoratedBox(
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: theme.danger,
+                    ),
+                    child: SizedBox.square(
+                      dimension: _exitDiameter,
+                      child: Icon(Icons.stop, size: 16, color: theme.surface),
+                    ),
+                  ),
+                  Text(
+                    'Exit',
+                    style: theme.textStyle(
+                      size: 10,
+                      weight: FontWeight.w600,
+                      color: theme.danger,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          InkWell(
+            onTap: onToggle,
+            child: SizedBox.square(
+              dimension: AutomationPanelTheme.touchTarget,
+              child: Icon(
+                isExpanded ? Icons.expand_less : Icons.expand_more,
+                color: theme.textSecondary,
+              ),
+            ),
+          ),
+        ],
       ),
     );
+  }
+}
+
+class _Title extends StatelessWidget {
+  final String title;
+  final int overrideCount;
+
+  const _Title(this.title, this.overrideCount);
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = AutomationPanelTheme.of(context);
+
+    return Text.rich(
+      TextSpan(
+        text: title,
+        children: [
+          if (overrideCount > 0)
+            TextSpan(
+              text: ' · ${_describeCount()}',
+              style: TextStyle(
+                color: theme.danger,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+        ],
+      ),
+      style: theme.textStyle(size: 13),
+      maxLines: 2,
+      overflow: TextOverflow.ellipsis,
+    );
+  }
+
+  String _describeCount() {
+    return describeOverrideCount(overrideCount).replaceAll(' ', '\u00A0');
   }
 }

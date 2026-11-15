@@ -1,5 +1,8 @@
+import 'dart:convert';
+
 import 'package:collection/collection.dart';
 import 'package:flutter_automation_mock/mock_catalogue.dart';
+import 'package:flutter_automation_mock/mock_section.dart';
 
 import 'package:flutter_automation_runner/src/recording/automation_recording.dart';
 
@@ -12,27 +15,46 @@ import 'package:flutter_automation_runner/src/recording/automation_recording.dar
 /// The recording of a variant counts only when its run passed. A step that
 /// serves the run stays in and carries a mark.
 ///
-/// The fork of a flow is the first request at which the answers of two
-/// variants differ in their code or their body. A request is the n-th call of
-/// one method and path inside its variant. Each branch carries the difference
-/// of the scenario of its variant.
+/// The fork of a flow stands at the earlier of two places. The first is the
+/// first step at which two variants differ in the action, finder or text. The
+/// builder reads the step fork only where every variant kept the step JSON.
+/// The second is the first request at which their answers differ in the code
+/// or the body. A request is the n-th call of one method and path inside its
+/// variant.
+///
+/// A branch carries the title of its variant. The tester picks a branch before
+/// the start when its scenario differs in a restart key of a section from the
+/// scenario of another branch. An empty scenario counts as a scenario.
 final class AutomationCatalogueBuilder {
   static const _isInQaCatalogueKey = 'isInQaCatalogue';
-  static const _maxLabelParts = 3;
   static const _equality = DeepCollectionEquality();
 
   final Map<String, Object?> _flows;
   final List<AutomationRecording> _recordings;
+  final List<MockSection<Object?>> _sections;
+  final Map<String, String> _dateFormats;
+  final Map<String, String> _dateValueKeys;
 
   /// Creates a builder.
   ///
   /// The [flows] parameter maps a flow name to its flow JSON.
   /// The [recordings] parameter holds the recordings of the runs.
+  /// The [sections] parameter lists the sections of the mock, whose
+  /// `restartKeys` decide which branch is chosen before the start.
+  /// The [dateFormats] and [dateValueKeys] parameters are the date settings of
+  /// the project. The catalogue carries them, so the player reads a date
+  /// finder as the runner does.
   const AutomationCatalogueBuilder({
     required Map<String, Object?> flows,
     required List<AutomationRecording> recordings,
+    List<MockSection<Object?>> sections = const [],
+    Map<String, String> dateFormats = const {},
+    Map<String, String> dateValueKeys = const {},
   }) : _flows = flows,
-       _recordings = recordings;
+       _recordings = recordings,
+       _sections = sections,
+       _dateFormats = dateFormats,
+       _dateValueKeys = dateValueKeys;
 
   /// The catalogue of the flows a tester walks.
   AutomationCatalogue build() {
@@ -51,6 +73,8 @@ final class AutomationCatalogueBuilder {
     return AutomationCatalogue(
       groups: groups.values.toList(growable: false),
       flows: flows,
+      dateFormats: _dateFormats,
+      dateValueKeys: _dateValueKeys,
     );
   }
 
@@ -110,23 +134,15 @@ final class AutomationCatalogueBuilder {
       items: CatalogueJson.asList(json['items']).map(_describeItem).toList(),
       steps: [
         for (final step in recording?.steps ?? const <AutomationRecordedStep>[])
-          AutomationCatalogueStep(
-            label: step.label,
-            isService: step.isService,
-            requests: step.requests.map(_describeRequest).toList(),
-          ),
+          AutomationCatalogueStep.fromJson({
+            ...?step.step,
+            AutomationCatalogueStep.labelKey: step.label,
+            AutomationCatalogueStep.isServiceKey: step.isService,
+            AutomationCatalogueStep.requestsKey: [
+              for (final request in step.requests) request.toJson(),
+            ],
+          }),
       ],
-    );
-  }
-
-  AutomationCatalogueRequest _describeRequest(
-    AutomationRecordingRequest request,
-  ) {
-    return AutomationCatalogueRequest(
-      method: request.method,
-      path: request.path,
-      statusCode: request.statusCode,
-      response: request.response,
     );
   }
 
@@ -144,12 +160,62 @@ final class AutomationCatalogueBuilder {
   AutomationCatalogueFork? _findFork(
     List<AutomationCatalogueVariant> variants,
   ) {
-    final walked = variants.where((variant) => variant.steps.isNotEmpty);
+    final walked = variants
+        .where((variant) => variant.steps.isNotEmpty)
+        .toList(growable: false);
 
     if (walked.length < 2) {
       return null;
     }
 
+    final byStep = _tryBuildStepFork(walked);
+    final byRequest = _tryBuildRequestFork(walked);
+
+    if (byStep == null || byRequest == null) {
+      return byStep ?? byRequest;
+    }
+
+    return byRequest.stepIndex < byStep.stepIndex ? byRequest : byStep;
+  }
+
+  AutomationCatalogueFork? _tryBuildStepFork(
+    List<AutomationCatalogueVariant> walked,
+  ) {
+    final length = walked.map((variant) => variant.steps.length).min;
+
+    for (int index = 0; index < length; index += 1) {
+      if (_stepsPartAt(walked, index)) {
+        return AutomationCatalogueFork(
+          stepIndex: index,
+          branches: [
+            for (final variant in walked) _buildBranch(variant, walked),
+          ],
+        );
+      }
+    }
+
+    return null;
+  }
+
+  bool _stepsPartAt(List<AutomationCatalogueVariant> walked, int index) {
+    if (walked.any((variant) => variant.steps[index].action == null)) {
+      return false;
+    }
+
+    final keys = walked.map((variant) => _stepKeyAt(variant, index)).toSet();
+
+    return keys.length > 1;
+  }
+
+  String _stepKeyAt(AutomationCatalogueVariant variant, int index) {
+    final step = variant.steps[index];
+
+    return '${step.action}|${jsonEncode(step.finder)}|${step.text}';
+  }
+
+  AutomationCatalogueFork? _tryBuildRequestFork(
+    List<AutomationCatalogueVariant> walked,
+  ) {
     final calls = {for (final variant in walked) variant: _indexCalls(variant)};
     final keys = _orderKeys(calls.values);
 
@@ -219,11 +285,7 @@ final class AutomationCatalogueBuilder {
       path: callKey.$2,
       branches: [
         for (final MapEntry(:key, :value) in answers.entries)
-          AutomationCatalogueBranch(
-            variant: key.name,
-            statusCode: value.request.statusCode,
-            label: _describeDifference(key, answers.keys),
-          ),
+          _buildBranch(key, answers.keys, statusCode: value.request.statusCode),
       ],
     );
   }
@@ -238,44 +300,38 @@ final class AutomationCatalogueBuilder {
     );
   }
 
-  String _describeDifference(
+  AutomationCatalogueBranch _buildBranch(
     AutomationCatalogueVariant variant,
-    Iterable<AutomationCatalogueVariant> all,
-  ) {
-    final leaves = {
-      for (final other in all) other.name: _flatten(other.scenario),
-    };
-    final own = leaves[variant.name] ?? const {};
-    final differing = own.entries
-        .where(
-          (leaf) => leaves.values.any(
-            (other) => !_equality.equals(other[leaf.key], leaf.value),
-          ),
-        )
-        .map((leaf) => '${leaf.key}=${leaf.value}')
-        .take(_maxLabelParts)
-        .toList();
-
-    return differing.isEmpty ? variant.name : differing.join(', ');
+    Iterable<AutomationCatalogueVariant> all, {
+    int? statusCode,
+  }) {
+    return AutomationCatalogueBranch(
+      variant: variant.name,
+      statusCode: statusCode,
+      label: _describeVariant(variant),
+      isChosenBeforeStart: all.any(
+        (other) => _needsRestartBetween(other, variant),
+      ),
+    );
   }
 
-  Map<String, Object?> _flatten(
-    Map<String, Object?> json, [
-    String prefix = '',
-  ]) {
-    final leaves = <String, Object?>{};
+  String _describeVariant(AutomationCatalogueVariant variant) {
+    final title = variant.title;
 
-    for (final MapEntry(:key, :value) in json.entries) {
-      final path = prefix.isEmpty ? key : '$prefix.$key';
-
-      if (value is Map<String, Object?> && value.isNotEmpty) {
-        leaves.addAll(_flatten(value, path));
-      } else {
-        leaves[path] = value;
-      }
+    if (title == null || title.isEmpty) {
+      return variant.name;
     }
 
-    return leaves;
+    return title['en'] ?? title.values.first;
+  }
+
+  bool _needsRestartBetween(
+    AutomationCatalogueVariant first,
+    AutomationCatalogueVariant second,
+  ) {
+    return _sections.any(
+      (section) => section.changesRestartKey(first.scenario, second.scenario),
+    );
   }
 }
 
