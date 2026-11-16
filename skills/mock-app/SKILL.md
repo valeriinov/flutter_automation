@@ -52,8 +52,8 @@ Answer this before you touch anything. It decides whether a file needs an edit.
 | Changed | Costs |
 | --- | --- |
 | a value that a flow declares in its `scenario` | nothing: no rebuild; the next run pushes it and restarts the app |
-| the failed paths | nothing: the backend reads them on each request |
-| a value that the QA panel sets through `AutomationMock.updateScenario` or `setFailure` | nothing: it applies at once, with no new seed and no journal reset |
+| the failed paths or the latencies of single paths | nothing: the backend reads them on each request |
+| a value that the QA panel sets through `AutomationMock.updateScenario`, `setFailure` or `setLatency` | nothing: it applies at once, with no new seed and no journal reset |
 | a setting that `MockSection.restartKeys` lists | a restart of the app: the app reads it once at launch or seeds it into storage |
 | the latency profile or the latency seed | nothing to edit: the backend builds them again at `rebuild()`, which `onScenarioApplied` and `onScenarioUpdated` call |
 | a default of a settings class, or the code that reads it | a hot **restart**, which re-seeds the state; a hot reload does not |
@@ -81,11 +81,13 @@ file**.
   not read is dropped in silence. The run then proves something other than what
   was asked. A `Duration` field is a number in JSON. Read its unit out of the
   `fromJson` of the class instead of guessing it.
-- Three keys sit above the sections:
+- Four keys sit above the sections:
   - `latency` is a latency profile name. The fast profile adds no delay.
   - `latencySeed` makes two runs spend the same wall clock.
   - `failures` is keyed by endpoint path. `{"statusCode": 500}` answers an error.
     `{"isConnectionError": true}` answers a request that never reaches the backend.
+  - `latencies` is keyed by endpoint path. `"slow"` gives that path its own
+    latency profile; the other paths keep `latency`.
 - The scenario applies its overrides in order. A typed override receives the
   settings that the overrides before it built. It replaces its section with the
   keys that differ from the defaults. A variant continues the overrides of its

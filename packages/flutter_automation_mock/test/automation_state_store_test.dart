@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter_automation_mock/flutter_automation_mock.dart';
@@ -20,6 +21,7 @@ void main() {
     _automationStateStore_should_rejectAPresetNameWithASeparator();
     _automationStateStore_should_keepTheNewestRuns();
     _automationStateStore_should_keepTheRunItJustSaved();
+    _automationStateStore_should_writeAReportAsIndentedJson();
     _automationStateStore_should_rejectDotNames();
     _automationStateStore_should_writeInParallelWithoutLoss();
   });
@@ -194,6 +196,24 @@ void _automationStateStore_should_keepTheRunItJustSaved() {
     expect(runs, hasLength(AutomationStateStore.maxRuns));
     expect(runs, contains('a-oldest-name'));
     expect((await _sut.readRun('a-oldest-name'))['n'], 1);
+  });
+}
+
+void _automationStateStore_should_writeAReportAsIndentedJson() {
+  test('AutomationStateStore should write a report as indented JSON', () async {
+    final file = await _sut.saveRun('run-1', {
+      'outcome': 'ok',
+      'steps': [1],
+    });
+
+    expect(
+      await file.readAsString(),
+      const JsonEncoder.withIndent('  ').convert({
+        'outcome': 'ok',
+        'steps': [1],
+      }),
+    );
+    expect(await file.readAsString(), contains('\n  "outcome": "ok",\n'));
   });
 }
 

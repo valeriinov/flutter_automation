@@ -57,8 +57,9 @@ final catalogSection = MockSection<CatalogSettings>(
 A profile is a function over the settings. The key of a setting is written once,
 in the settings class. `catalogSection.profile('empty')` gives a `MockOverride`.
 `catalogSection.override((settings) => ...)` gives one for a function the flow
-holds. `MockOverride.latency(MockLatencyProfile.slow)`, `.latencySeed(7)` and
-`.failures({...})` set the latency profile, its seed and the failed paths.
+holds. `MockOverride.latency(MockLatencyProfile.slow)`, `.latencySeed(7)`,
+`.failures({...})` and `.latencies({...})` set the latency profile, its seed,
+the failed paths and the latency profiles of single paths.
 
 A flow lists overrides in `scenario:`. The scenario applies them in order. A
 typed override receives the settings that the overrides before it built, and it
@@ -85,8 +86,8 @@ tester chose, and `mock.outcomeFailures` reads it back after a restart. The
 panel uses it to tell the failures of the outcome from the overrides of the
 tester.
 
-`mock.updateScenario(next)` and `mock.setFailure(path, failure)` replace the
-scenario at once, save it and call `onScenarioUpdated`. They neither reseed the
+`mock.updateScenario(next)`, `mock.setFailure(path, failure)` and
+`mock.setLatency(path, profile)` replace the scenario at once, save it and call `onScenarioUpdated`. They neither reseed the
 state nor clear the journal. `mock.requiresRestart(next)` is true when `next`
 differs from the launch scenario in a key that `MockSection.restartKeys` lists.
 

@@ -12,6 +12,7 @@ import 'package:flutter_automation_mock/src/state/automation_state_store.dart';
 import 'package:flutter_automation_mock/src/state/automation_walk_progress.dart';
 import 'package:flutter_automation_mock/src/state/mock_journal.dart';
 import 'package:flutter_automation_mock/src/transport/mock_latency.dart';
+import 'package:flutter_automation_mock/src/transport/mock_latency_profile.dart';
 
 /// {@category Utils}
 ///
@@ -164,6 +165,12 @@ class AutomationMock {
   /// (0 when absent).
   MockLatency get latency => MockScenarioReader.readLatency(_scenario);
 
+  /// Latency profiles of single paths of the `latencies` key of the
+  /// [scenario]: path to profile.
+  Map<String, MockLatencyProfile> get latencies {
+    return MockScenarioReader.readLatencies(_scenario);
+  }
+
   /// Failed paths of the `failures` key of the [scenario]: path to failure.
   Map<String, MockApiFailure> get failures {
     return MockScenarioReader.readFailures(_scenario);
@@ -202,25 +209,17 @@ class AutomationMock {
   /// The [path] parameter is the path of the request.
   /// The [failure] parameter is the answer that replaces the payload.
   Future<void> setFailure(String path, MockApiFailure? failure) {
-    final json = _scenario.toJson();
-    final current = json[MockScenario.failuresKey];
-    final failures = <String, Object?>{
-      if (current is Map<String, Object?>) ...current,
-    };
+    return _updatePathValue(MockScenario.failuresKey, path, failure?.toJson());
+  }
 
-    if (failure == null) {
-      failures.remove(path);
-    } else {
-      failures[path] = failure.toJson();
-    }
-
-    if (failures.isEmpty) {
-      json.remove(MockScenario.failuresKey);
-    } else {
-      json[MockScenario.failuresKey] = failures;
-    }
-
-    return updateScenario(MockScenario.fromJson(json));
+  /// Makes the path [path] answer after the delay of [profile], or after the
+  /// delay of the `latency` key when [profile] is `null`. Every other key of
+  /// the scenario stays.
+  ///
+  /// The [path] parameter is the path of the request.
+  /// The [profile] parameter is the latency profile of the path.
+  Future<void> setLatency(String path, MockLatencyProfile? profile) {
+    return _updatePathValue(MockScenario.latenciesKey, path, profile?.name);
   }
 
   /// Whether [next] holds a change that only a restart of the app applies.
@@ -291,6 +290,28 @@ class AutomationMock {
         outcomeFailures: outcomeFailures,
       ),
     );
+  }
+
+  Future<void> _updatePathValue(String key, String path, Object? value) {
+    final json = _scenario.toJson();
+    final current = json[key];
+    final values = <String, Object?>{
+      if (current is Map<String, Object?>) ...current,
+    };
+
+    if (value == null) {
+      values.remove(path);
+    } else {
+      values[path] = value;
+    }
+
+    if (values.isEmpty) {
+      json.remove(key);
+    } else {
+      json[key] = values;
+    }
+
+    return updateScenario(MockScenario.fromJson(json));
   }
 
   void _registerCommands() {

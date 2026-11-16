@@ -39,4 +39,21 @@ abstract final class MockScenarioReader {
         if (value is Map<String, Object?>) key: MockApiFailure.fromJson(value),
     };
   }
+
+  /// Latency profiles of single paths of the `latencies` key of [scenario]:
+  /// path to profile. A value that names no profile is skipped.
+  static Map<String, MockLatencyProfile> readLatencies(MockScenario scenario) {
+    final latencies = scenario.toJson()[MockScenario.latenciesKey];
+
+    if (latencies is! Map<String, Object?>) {
+      return const {};
+    }
+
+    final profiles = MockLatencyProfile.values.asNameMap();
+
+    return {
+      for (final MapEntry(:key, :value) in latencies.entries)
+        key: ?profiles[value],
+    };
+  }
 }

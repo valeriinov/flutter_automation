@@ -14,6 +14,7 @@ void main() {
     _mockScenarioBackend_should_buildItsEndpointsOnCreation();
     _mockScenarioBackend_should_changeItsEndpointsOnRebuild();
     _mockScenarioBackend_should_readTheFailuresFromTheScenarioOnEachRequest();
+    _mockScenarioBackend_should_readTheLatenciesFromTheScenarioOnEachRequest();
     _mockScenarioBackend_should_holdOneLatencyBetweenRebuilds();
     _mockScenarioBackend_should_giveTwoRequestsInARowDifferentDelays();
     _mockScenarioBackend_should_readTheLatencyOfTheScenarioOnRebuild();
@@ -68,6 +69,25 @@ void _mockScenarioBackend_should_readTheFailuresFromTheScenarioOnEachRequest() {
 
     expect(sut.failures.keys, [_firstPath]);
     expect(sut.failures[_firstPath]?.statusCode, 503);
+  });
+}
+
+void
+_mockScenarioBackend_should_readTheLatenciesFromTheScenarioOnEachRequest() {
+  test('MockScenarioBackend should read the latencies on each request', () {
+    MockScenario scenario = const MockScenario([]);
+    final sut = _createBackend(
+      readScenario: () => scenario,
+      buildApis: () => const [],
+    );
+
+    expect(sut.latencies, isEmpty);
+
+    scenario = MockScenario([
+      MockOverride.latencies({_firstPath: 'slow', _secondPath: 'unknown'}),
+    ]);
+
+    expect(sut.latencies, {_firstPath: MockLatencyProfile.slow});
   });
 }
 

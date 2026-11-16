@@ -35,6 +35,9 @@ void main() {
     _automationSectionsPage_should_nameAnUnknownSettingCustom();
     _automationPanel_should_nameAChangedMockWithNoOutcomeCustom();
     _automationSectionsPage_should_describeTheDelayOfTheLatency();
+    _automationResponseSheet_should_applyALatencyWithTheMockAnswer();
+    _automationResponseSheet_should_clearBothOverridesOnUseMockResponse();
+    _automationResponseSheet_should_dropTheErrorOnASecondTapOfItsCode();
     _automationPanelLauncher_should_sendTheBackButtonToThePanel();
     _automationPresetsSheet_should_rejectABadName();
     _automationAutorunPage_should_narrowTheFlowsBySearch();
@@ -640,6 +643,96 @@ void _automationSectionsPage_should_describeTheDelayOfTheLatency() {
 
       expect(find.text(AutomationPanelStrings.noDelay), findsOneWidget);
     },
+  );
+}
+
+void _automationResponseSheet_should_applyALatencyWithTheMockAnswer() {
+  testWidgets(
+    'AutomationResponseSheet should apply a latency with the mock answer',
+    (tester) async {
+      final applied = <(MockApiFailure?, MockLatencyProfile?)>[];
+
+      await _pumpResponseSheet(tester, applied);
+      await tester.tap(find.text(AutomationPanelStrings.latencySlow));
+      await tester.pump();
+
+      expect(find.text(AutomationPanelStrings.delayOf(1000, 3000)), findsOne);
+
+      await tester.tap(find.text(AutomationPanelStrings.apply));
+      await tester.pump();
+
+      expect(applied, [(null, MockLatencyProfile.slow)]);
+    },
+  );
+}
+
+void _automationResponseSheet_should_clearBothOverridesOnUseMockResponse() {
+  testWidgets(
+    'AutomationResponseSheet should clear both overrides on use mock response',
+    (tester) async {
+      final applied = <(MockApiFailure?, MockLatencyProfile?)>[];
+
+      await _pumpResponseSheet(
+        tester,
+        applied,
+        initial: const MockApiFailure(statusCode: 429),
+        initialLatency: MockLatencyProfile.slow,
+      );
+
+      expect(find.text(AutomationPanelStrings.delayOf(1000, 3000)), findsOne);
+
+      await tester.tap(find.text(AutomationPanelStrings.useMockResponse));
+      await tester.pump();
+
+      expect(applied, [(null, null)]);
+    },
+  );
+}
+
+void _automationResponseSheet_should_dropTheErrorOnASecondTapOfItsCode() {
+  testWidgets(
+    'AutomationResponseSheet should drop the error on a second tap of its code',
+    (tester) async {
+      final applied = <(MockApiFailure?, MockLatencyProfile?)>[];
+
+      await _pumpResponseSheet(
+        tester,
+        applied,
+        initial: const MockApiFailure(statusCode: 429),
+        initialLatency: MockLatencyProfile.slow,
+      );
+      await tester.tap(find.text('429'));
+      await tester.pump();
+      await tester.tap(find.text(AutomationPanelStrings.apply));
+      await tester.pump();
+
+      expect(applied, [(null, MockLatencyProfile.slow)]);
+    },
+  );
+}
+
+Future<void> _pumpResponseSheet(
+  WidgetTester tester,
+  List<(MockApiFailure?, MockLatencyProfile?)> applied, {
+  MockApiFailure? initial,
+  MockLatencyProfile? initialLatency,
+}) async {
+  tester.view.physicalSize = const Size(800, 2400);
+
+  addTearDown(tester.view.resetPhysicalSize);
+
+  await tester.pumpWidget(
+    hostApp(
+      child: AutomationResponseSheet(
+        method: 'GET',
+        path: '/profile/me',
+        mockDescription: 'the profile',
+        initial: initial,
+        initialLatency: initialLatency,
+        onApply: (failure, latency) => applied.add((failure, latency)),
+        onClose: () {},
+      ),
+    ),
   );
 }
 

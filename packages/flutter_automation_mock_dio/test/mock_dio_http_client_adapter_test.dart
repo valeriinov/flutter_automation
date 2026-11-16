@@ -480,6 +480,9 @@ final class _TestMockBackend implements MockBackend {
   @override
   final MockLatency latency;
 
+  @override
+  final Map<String, MockLatencyProfile> latencies = const {};
+
   _TestMockBackend({
     required this.endpointResolver,
     this.failures = const {},

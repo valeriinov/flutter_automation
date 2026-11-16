@@ -1,12 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_automation_mock/flutter_automation_mock.dart';
 import 'package:flutter_automation_panel/src/blocks/automation_code_badge.dart';
+import 'package:flutter_automation_panel/src/blocks/automation_latency_note.dart';
 import 'package:flutter_automation_panel/src/blocks/automation_panel_button.dart';
 import 'package:flutter_automation_panel/src/blocks/automation_panel_button_group.dart';
 import 'package:flutter_automation_panel/src/blocks/automation_panel_chips.dart';
 import 'package:flutter_automation_panel/src/blocks/automation_panel_option.dart';
 import 'package:flutter_automation_panel/src/blocks/automation_panel_radio_tile.dart';
 import 'package:flutter_automation_panel/src/blocks/automation_panel_label.dart';
+import 'package:flutter_automation_panel/src/blocks/automation_panel_segments.dart';
 import 'package:flutter_automation_panel/src/blocks/automation_panel_sheet.dart';
 import 'package:flutter_automation_panel/src/panel/automation_panel_controller.dart';
 import 'package:flutter_automation_panel/src/theme/automation_panel_theme.dart';
@@ -15,10 +17,12 @@ import 'package:flutter_automation_panel/src/theme/automation_panel_strings.dart
 /// {@category Widgets}
 ///
 /// The sheet that sets the answer of one request: an error code, a backend
-/// error code and a message, or no network.
+/// error code and a message, or no network, and the latency of the request.
 ///
-/// The mock answer is the default. Nothing selects it: the button
-/// [onApply] with `null` removes the override.
+/// The mock answer is the default. A tap on a chosen code clears it. Apply
+/// with no error chosen keeps the mock answer and sets only the latency. Use
+/// mock response calls [onApply] with `null` for both and removes every
+/// override of the request.
 class AutomationResponseSheet extends StatefulWidget {
   /// HTTP method of the request.
   final String method;
@@ -32,14 +36,23 @@ class AutomationResponseSheet extends StatefulWidget {
   /// What the mock answer holds, in words.
   final String mockDescription;
 
-  /// The override the request has now, missing when it has none.
+  /// The failure the request has now, missing when it has none.
   final MockApiFailure? initial;
+
+  /// The latency profile of the request alone now, missing when the request
+  /// follows every request.
+  final MockLatencyProfile? initialLatency;
+
+  /// The latency profile of every request.
+  final MockLatencyProfile globalLatency;
 
   /// Backend error codes the sheet offers as chips.
   final List<String> backendErrorCodes;
 
-  /// Called with the override the tester sets, or `null` for the mock answer.
-  final ValueChanged<MockApiFailure?> onApply;
+  /// Called with the failure and the latency profile the tester sets. A `null`
+  /// failure keeps the mock answer, and a `null` profile follows every request.
+  final void Function(MockApiFailure? failure, MockLatencyProfile? latency)
+  onApply;
 
   /// Called when the tester closes the sheet.
   final VoidCallback onClose;
@@ -52,6 +65,8 @@ class AutomationResponseSheet extends StatefulWidget {
     required this.onClose,
     this.mockStatusCode,
     this.initial,
+    this.initialLatency,
+    this.globalLatency = MockLatencyProfile.realistic,
     this.backendErrorCodes = const [],
     super.key,
   });
@@ -69,6 +84,7 @@ class _AutomationResponseSheetState extends State<AutomationResponseSheet> {
   int? _statusCode;
   String? _errorCode;
   bool _isNoNetwork = false;
+  MockLatencyProfile? _latency;
 
   List<int> get _offeredStatusCodes {
     final chosen = _statusCode;
@@ -98,6 +114,7 @@ class _AutomationResponseSheetState extends State<AutomationResponseSheet> {
     _errorCode = initial?.errorCode;
     _isNoNetwork = initial?.isConnectionError ?? false;
     _messageController.text = initial?.message ?? '';
+    _latency = widget.initialLatency;
   }
 
   @override
@@ -125,7 +142,7 @@ class _AutomationResponseSheetState extends State<AutomationResponseSheet> {
             selected: _isNoNetwork ? null : _statusCode,
             selectedColor: theme.danger,
             customLabel: AutomationPanelStrings.custom,
-            onChanged: _selectStatusCode,
+            onChanged: _toggleStatusCode,
             onCustomPressed: _askForStatusCode,
           ),
           const AutomationPanelLabel(
@@ -140,7 +157,7 @@ class _AutomationResponseSheetState extends State<AutomationResponseSheet> {
             selectedColor: theme.danger,
             isMono: true,
             customLabel: AutomationPanelStrings.custom,
-            onChanged: _selectErrorCode,
+            onChanged: _toggleErrorCode,
             onCustomPressed: _askForErrorCode,
           ),
           const AutomationPanelLabel(text: AutomationPanelStrings.message),
@@ -152,6 +169,26 @@ class _AutomationResponseSheetState extends State<AutomationResponseSheet> {
             activeColor: theme.danger,
             onPressed: _toggleNoNetwork,
           ),
+          const AutomationPanelLabel(
+            text: AutomationPanelStrings.requestLatency,
+          ),
+          AutomationPanelSegments<MockLatencyProfile?>(
+            options: [
+              const AutomationPanelOption(
+                value: null,
+                label: AutomationPanelStrings.defaultName,
+              ),
+              for (final MapEntry(:key, :value)
+                  in AutomationLatencyNote.labels.entries)
+                AutomationPanelOption(value: key, label: value),
+            ],
+            selected: _latency,
+            onChanged: _selectLatency,
+          ),
+          AutomationLatencyNote(
+            profile: _latency ?? widget.globalLatency,
+            isInherited: _latency == null,
+          ),
           AutomationPanelButtonGroup(
             buttons: [
               AutomationPanelButton(
@@ -161,7 +198,7 @@ class _AutomationResponseSheetState extends State<AutomationResponseSheet> {
               ),
               AutomationPanelButton(
                 label: AutomationPanelStrings.useMockResponse,
-                onPressed: () => widget.onApply(null),
+                onPressed: () => widget.onApply(null, null),
               ),
             ],
           ),
@@ -174,6 +211,26 @@ class _AutomationResponseSheetState extends State<AutomationResponseSheet> {
   void dispose() {
     _messageController.dispose();
     super.dispose();
+  }
+
+  void _toggleStatusCode(int code) {
+    if (code == _statusCode) {
+      setState(() => _statusCode = null);
+
+      return;
+    }
+
+    _selectStatusCode(code);
+  }
+
+  void _toggleErrorCode(String code) {
+    if (code == _errorCode) {
+      setState(() => _errorCode = null);
+
+      return;
+    }
+
+    _selectErrorCode(code);
   }
 
   void _selectStatusCode(int code) {
@@ -192,6 +249,10 @@ class _AutomationResponseSheetState extends State<AutomationResponseSheet> {
 
   void _toggleNoNetwork() {
     setState(() => _isNoNetwork = !_isNoNetwork);
+  }
+
+  void _selectLatency(MockLatencyProfile? profile) {
+    setState(() => _latency = profile);
   }
 
   Future<void> _askForStatusCode() async {
@@ -226,21 +287,29 @@ class _AutomationResponseSheetState extends State<AutomationResponseSheet> {
   }
 
   void _apply() {
-    if (_isNoNetwork) {
-      widget.onApply(const MockApiFailure(isConnectionError: true));
+    widget.onApply(_tryBuildFailure(), _latency);
+  }
 
-      return;
+  MockApiFailure? _tryBuildFailure() {
+    if (_isNoNetwork) {
+      return const MockApiFailure(isConnectionError: true);
     }
 
     final message = _messageController.text.trim();
 
-    widget.onApply(
-      MockApiFailure(
-        statusCode: _statusCode ?? 500,
-        errorCode: _errorCode,
-        message: message.isEmpty ? null : message,
-      ),
+    if (!_hasError(message)) {
+      return null;
+    }
+
+    return MockApiFailure(
+      statusCode: _statusCode ?? 500,
+      errorCode: _errorCode,
+      message: message.isEmpty ? null : message,
     );
+  }
+
+  bool _hasError(String message) {
+    return _statusCode != null || _errorCode != null || message.isNotEmpty;
   }
 }
 
@@ -366,7 +435,8 @@ class _TextPromptState extends State<_TextPrompt> {
 /// The [context] parameter is the context of the panel.
 /// The [controller] parameter is the controller that holds the overrides.
 /// The [path] parameter is the path of the request. The sheet shows the
-/// override that [AutomationPanelController.failureOf] names for it.
+/// overrides that [AutomationPanelController.failureOf] and
+/// [AutomationPanelController.latencyOf] name for it.
 /// The [mockDescription] parameter says what the mock answer holds.
 /// The [method] parameter is the HTTP method, empty when it is unknown.
 /// The [mockStatusCode] parameter is the status code of the mock answer.
@@ -387,10 +457,12 @@ Future<void> showAutomationResponseSheet({
         mockStatusCode: mockStatusCode,
         mockDescription: mockDescription,
         initial: controller.failureOf(path),
+        initialLatency: controller.latencyOf(path),
+        globalLatency: controller.mock.latency.profile,
         backendErrorCodes: controller.definition.backendErrorCodes,
         onClose: () => Navigator.of(sheetContext).pop(),
-        onApply: (failure) {
-          controller.setFailure(path, failure);
+        onApply: (failure, latency) {
+          controller.setResponse(path, failure: failure, latency: latency);
           Navigator.of(sheetContext).pop();
         },
       );

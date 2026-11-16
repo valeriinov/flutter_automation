@@ -1,6 +1,7 @@
 import 'package:flutter_automation_mock/src/contract/mock_api_failure.dart';
 import 'package:flutter_automation_mock/src/transport/mock_api_endpoint_resolver.dart';
 import 'package:flutter_automation_mock/src/transport/mock_latency.dart';
+import 'package:flutter_automation_mock/src/transport/mock_latency_profile.dart';
 
 /// {@category Utils}
 ///
@@ -15,6 +16,10 @@ abstract interface class MockBackend {
 
   /// Delay an answer waits out before it reaches the app.
   MockLatency get latency;
+
+  /// Latency profiles that replace the profile of [latency] for single paths,
+  /// keyed by path.
+  Map<String, MockLatencyProfile> get latencies;
 
   /// Failures answered in place of the payload, keyed by path.
   Map<String, MockApiFailure> get failures;

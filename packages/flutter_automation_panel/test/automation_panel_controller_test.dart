@@ -20,6 +20,11 @@ void main() {
     _failureOf_should_matchTheParentPathOfAPathId();
     _setFailure_should_clearTheOverrideOfTheParentPath();
     _applyOutcome_should_keepTheOutcomeFailuresAcrossARestart();
+    _applyOutcome_should_keepTheLatenciesOfTheTester();
+    _latencyOf_should_matchTheParentPathOfAPathId();
+    _failureOf_should_leaveAnExactEndpointUnderAPathIdAlone();
+    _overrideCount_should_countAPathWithAFailureAndALatencyOnce();
+    _clearOverride_should_clearTheFailureAndTheLatency();
     _startWalk_should_saveTheWalkAndAskForOneRestart();
     _startWalk_should_keepTheModeAcrossARestart();
     _resumeWalk_should_runAnAutorunFromTheFirstStep();
@@ -178,6 +183,98 @@ void _setFailure_should_clearTheOverrideOfTheParentPath() {
   });
 }
 
+void _applyOutcome_should_keepTheLatenciesOfTheTester() {
+  test('applyOutcome should keep the latencies of the tester', () async {
+    final sample = await _createSample();
+
+    final controller = sample.controller;
+
+    await controller.setLatency('/b', MockLatencyProfile.slow);
+    await controller.applyOutcome(_failureScenario('/c'));
+
+    expect(controller.latencies, {'/b': MockLatencyProfile.slow});
+    expect(controller.failures.keys, ['/c']);
+  });
+}
+
+void _latencyOf_should_matchTheParentPathOfAPathId() {
+  test('latencyOf should match the parent path of a path id', () async {
+    final sample = await _createSample();
+
+    final controller = sample.controller;
+
+    await controller.setLatency('/items', MockLatencyProfile.slow);
+
+    expect(controller.latencyOf('/items/7'), MockLatencyProfile.slow);
+    expect(controller.latencyOf('/items/7/photos'), MockLatencyProfile.slow);
+    expect(controller.latencyOf('/other'), isNull);
+
+    await controller.setLatency('/items/7', null);
+
+    expect(controller.latencies, isEmpty);
+  });
+}
+
+void _failureOf_should_leaveAnExactEndpointUnderAPathIdAlone() {
+  test(
+    'failureOf should leave an exact endpoint under a path id alone',
+    () async {
+      final sample = await _createSample();
+
+      final controller = sample.controller;
+
+      await controller.setResponse(
+        '/items',
+        failure: const MockApiFailure(),
+        latency: MockLatencyProfile.slow,
+      );
+
+      expect(controller.failureOf('/items/list'), isNull);
+      expect(controller.latencyOf('/items/list'), isNull);
+      expect(controller.failureOf('/items/7'), isNotNull);
+    },
+  );
+}
+
+void _overrideCount_should_countAPathWithAFailureAndALatencyOnce() {
+  test(
+    'overrideCount should count a path with a failure and a latency once',
+    () async {
+      final sample = await _createSample();
+
+      final controller = sample.controller;
+
+      await controller.setResponse(
+        '/a',
+        failure: const MockApiFailure(),
+        latency: MockLatencyProfile.slow,
+      );
+      await controller.setLatency('/b', MockLatencyProfile.fast);
+
+      expect(controller.overrideCount, 2);
+    },
+  );
+}
+
+void _clearOverride_should_clearTheFailureAndTheLatency() {
+  test('clearOverride should clear the failure and the latency', () async {
+    final sample = await _createSample();
+
+    final controller = sample.controller;
+
+    await controller.setResponse(
+      '/a',
+      failure: const MockApiFailure(),
+      latency: MockLatencyProfile.slow,
+    );
+    await controller.clearOverride('/a');
+
+    expect(controller.failures, isEmpty);
+    expect(controller.latencies, isEmpty);
+    expect(controller.overrideCount, 0);
+  });
+}
+
 void _applyOutcome_should_keepTheOutcomeFailuresAcrossARestart() {
   test('applyOutcome should keep the outcome failures apart from the tester '
       'overrides across a restart', () async {
@@ -305,7 +402,7 @@ void _finishWalk_should_saveTheReportOfAManualWalk() {
     expect(summary?.variant, 'accountExists');
     expect(sample.mock.walk, isNull);
     expect(report?.path, endsWith('report.json'));
-    expect(report?.readAsStringSync(), contains('"mode":"manual"'));
+    expect(report?.readAsStringSync(), contains('"mode": "manual"'));
   });
 }
 

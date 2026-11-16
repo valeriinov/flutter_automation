@@ -90,8 +90,12 @@ class AutomationPanelController extends ChangeNotifier
   /// Failed paths the scenario holds.
   Map<String, MockApiFailure> get failures => mock.failures;
 
-  /// How many requests answer with an override.
-  int get overrideCount => failures.length;
+  /// Latency profiles of single paths the scenario holds.
+  Map<String, MockLatencyProfile> get latencies => mock.latencies;
+
+  /// How many requests answer with an override: a failure, a latency of
+  /// their own or both.
+  int get overrideCount => {...failures.keys, ...latencies.keys}.length;
 
   /// Whether the scenario differs from the mock defaults.
   bool get isChanged => mock.scenario.toJson().isNotEmpty;
@@ -225,16 +229,26 @@ class AutomationPanelController extends ChangeNotifier
   /// The failure that replaces the answer of [path], missing when the mock
   /// answers it.
   ///
-  /// A failure set for a path also fails the paths one segment longer, as the
-  /// mock does for an endpoint with a path id.
+  /// A failure set for an endpoint with a path id also fails each request
+  /// under it, as the mock does. The panel needs `readEndpointResolver` of
+  /// the definition for it.
   MockApiFailure? failureOf(String path) {
-    final key = _resolveFailureKey(path);
+    final current = failures;
+    final key = _resolvePathKey(current, path);
 
-    if (key == null) {
-      return null;
-    }
+    return key == null ? null : current[key];
+  }
 
-    return failures[key];
+  /// The latency profile of [path] alone, missing when [path] answers after
+  /// the latency of every request.
+  ///
+  /// A profile set for an endpoint with a path id also holds for each request
+  /// under it, as a failure does.
+  MockLatencyProfile? latencyOf(String path) {
+    final current = latencies;
+    final key = _resolvePathKey(current, path);
+
+    return key == null ? null : current[key];
   }
 
   @override
@@ -258,10 +272,12 @@ class AutomationPanelController extends ChangeNotifier
   /// is `null`.
   ///
   /// A `null` [failure] clears the override that [failureOf] names for
-  /// [path], also when the override stands on the shorter path.
+  /// [path], also when the override stands on the endpoint of [path].
   Future<void> setFailure(String path, MockApiFailure? failure) async {
     final before = mock.scenario;
-    final key = failure == null ? _resolveFailureKey(path) ?? path : path;
+    final key = failure == null
+        ? _resolvePathKey(failures, path) ?? path
+        : path;
     final isOutcomeFailure =
         failure == null && _variantFailures.containsKey(key);
 
@@ -277,6 +293,39 @@ class AutomationPanelController extends ChangeNotifier
 
     notifyListeners();
   }
+
+  /// Makes [path] answer after the delay of [profile], or after the latency
+  /// of every request when [profile] is `null`.
+  ///
+  /// A `null` [profile] clears the profile that [latencyOf] names for [path],
+  /// also when the profile stands on the endpoint of [path].
+  Future<void> setLatency(String path, MockLatencyProfile? profile) async {
+    final key = profile == null
+        ? _resolvePathKey(latencies, path) ?? path
+        : path;
+
+    await mock.setLatency(key, profile);
+
+    notifyListeners();
+  }
+
+  /// Sets both overrides of [path]: its [failure] and its [latency], as
+  /// [setFailure] and [setLatency] set each one.
+  ///
+  /// The [path] parameter is the path of the request.
+  /// The [failure] parameter is the failure, `null` for the mock answer.
+  /// The [latency] parameter is the profile, `null` to follow every request.
+  Future<void> setResponse(
+    String path, {
+    MockApiFailure? failure,
+    MockLatencyProfile? latency,
+  }) async {
+    await setFailure(path, failure);
+    await setLatency(path, latency);
+  }
+
+  /// Clears every override of [path]: its failure and its latency.
+  Future<void> clearOverride(String path) => setResponse(path);
 
   /// Replaces the scenario with [scenario] and keeps the overrides of the
   /// tester. The failures of the outcome and the overrides of the tester merge,
@@ -503,21 +552,15 @@ class AutomationPanelController extends ChangeNotifier
     );
   }
 
-  String? _resolveFailureKey(String path) {
-    final current = failures;
-    final parentEnd = path.lastIndexOf('/');
-
-    if (current.containsKey(path)) {
+  String? _resolvePathKey(Map<String, Object> overrides, String path) {
+    if (overrides.containsKey(path)) {
       return path;
     }
 
-    if (parentEnd <= 0) {
-      return null;
-    }
+    final endpoint = definition.readEndpointResolver?.call().tryResolve(path);
+    final endpointPath = endpoint?.path;
 
-    final parent = path.substring(0, parentEnd);
-
-    return current.containsKey(parent) ? parent : null;
+    return overrides.containsKey(endpointPath) ? endpointPath : null;
   }
 
   Map<String, MockApiFailure> _readFailures(Map<String, Object?> scenario) {
@@ -562,6 +605,7 @@ class AutomationPanelController extends ChangeNotifier
     final next = MockScenario.fromJson({
       ...scenario,
       ..._failuresJson({..._variantFailures, ...tester}),
+      ..._latenciesJson(scenario),
     });
     final before = mock.scenario;
 
@@ -576,6 +620,21 @@ class AutomationPanelController extends ChangeNotifier
     notifyListeners();
 
     return (before: before, next: next);
+  }
+
+  Map<String, Object?> _latenciesJson(Map<String, Object?> scenario) {
+    final outcome = scenario[MockScenario.latenciesKey];
+    final latencies = {
+      if (outcome is Map<String, Object?>) ...outcome,
+      for (final MapEntry(:key, :value) in this.latencies.entries)
+        key: value.name,
+    };
+
+    if (latencies.isEmpty) {
+      return const {};
+    }
+
+    return {MockScenario.latenciesKey: latencies};
   }
 
   Future<void> _askForRestart(MockScenario before, MockScenario next) async {

@@ -36,6 +36,11 @@ class MockOverride {
   MockOverride.failures(Map<String, Object?> failures)
     : this(MockScenario.failuresKey, failures);
 
+  /// Creates the override of the latency of single paths: path to the enum
+  /// name of a latency profile.
+  MockOverride.latencies(Map<String, Object?> latencies)
+    : this(MockScenario.latenciesKey, latencies);
+
   /// The [scenario] JSON after this override applied.
   ///
   /// The [scenario] parameter is the JSON the earlier overrides built.

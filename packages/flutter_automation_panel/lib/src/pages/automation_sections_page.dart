@@ -1,6 +1,7 @@
 import 'package:collection/collection.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_automation_mock/flutter_automation_mock.dart';
+import 'package:flutter_automation_panel/src/blocks/automation_latency_note.dart';
 import 'package:flutter_automation_panel/src/blocks/automation_panel_card.dart';
 import 'package:flutter_automation_panel/src/blocks/automation_panel_count.dart';
 import 'package:flutter_automation_panel/src/blocks/automation_panel_frame.dart';
@@ -27,12 +28,6 @@ import 'package:flutter_automation_panel/src/theme/automation_panel_strings.dart
 /// A section shows `Default` when it holds no setting, the title of a profile
 /// when its settings equal that profile, and `Custom` otherwise.
 class AutomationSectionsPage extends StatefulWidget {
-  static const _latencyLabels = {
-    MockLatencyProfile.fast: AutomationPanelStrings.latencyFast,
-    MockLatencyProfile.realistic: AutomationPanelStrings.latencyRealistic,
-    MockLatencyProfile.slow: AutomationPanelStrings.latencySlow,
-  };
-
   /// The sections the page lists, in order.
   final List<AutomationSectionPanel> sections;
 
@@ -64,14 +59,14 @@ class _AutomationSectionsPageState extends State<AutomationSectionsPage> {
         AutomationPanelSegments<MockLatencyProfile>(
           options: [
             for (final MapEntry(:key, :value)
-                in AutomationSectionsPage._latencyLabels.entries)
+                in AutomationLatencyNote.labels.entries)
               AutomationPanelOption(value: key, label: value),
           ],
           selected: controller.mock.latency.profile,
           onChanged: (profile) => _selectLatency(controller, profile),
         ),
         const SizedBox(height: AutomationPanelTheme.gapSmall),
-        _LatencyNote(profile: controller.mock.latency.profile),
+        AutomationLatencyNote(profile: controller.mock.latency.profile),
         for (final section in widget.sections.where(_matchesQuery)) ...[
           const SizedBox(height: AutomationPanelTheme.gapMedium),
           _SectionCard(section: section, controller: controller),
@@ -152,35 +147,6 @@ MockScenario _scenarioWithProfile(
   ]);
 }
 
-class _LatencyNote extends StatelessWidget {
-  final MockLatencyProfile profile;
-
-  const _LatencyNote({required this.profile});
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = AutomationPanelTheme.of(context);
-
-    return Text(
-      _describe(),
-      style: theme.textStyle(size: 13, color: theme.textSecondary),
-    );
-  }
-
-  String _describe() {
-    final maxDelay = profile.maxDelay;
-
-    if (maxDelay == Duration.zero) {
-      return AutomationPanelStrings.noDelay;
-    }
-
-    return AutomationPanelStrings.delayOf(
-      profile.minDelay.inMilliseconds,
-      maxDelay.inMilliseconds,
-    );
-  }
-}
-
 class _SectionCard extends StatelessWidget {
   final AutomationSectionPanel section;
   final AutomationPanelController controller;
@@ -193,7 +159,7 @@ class _SectionCard extends StatelessWidget {
     final api = section.api;
     final endpoints = api?.endpoints ?? const <MockApiEndpoint>[];
     final overrides = endpoints
-        .where((endpoint) => controller.failureOf(endpoint.path) != null)
+        .where((endpoint) => _hasOverride(endpoint.path))
         .length;
 
     return AutomationPanelCard(
@@ -218,6 +184,11 @@ class _SectionCard extends StatelessWidget {
           ),
       ],
     );
+  }
+
+  bool _hasOverride(String path) {
+    return controller.failureOf(path) != null ||
+        controller.latencyOf(path) != null;
   }
 
   String _describeProfile(MockSection<Object?> mockSection) {
@@ -352,9 +323,9 @@ class _RequestsPage extends StatelessWidget {
                 endpoint: endpoint,
                 title: requestTitles[endpoint.path] ?? endpoint.path,
                 failure: controller.failureOf(endpoint.path),
+                latency: controller.latencyOf(endpoint.path),
                 onPressed: () => _openResponse(context, controller, endpoint),
-                onClearOverride: () =>
-                    controller.setFailure(endpoint.path, null),
+                onClearOverride: () => controller.clearOverride(endpoint.path),
               ),
               const SizedBox(height: AutomationPanelTheme.gapMedium),
             ],

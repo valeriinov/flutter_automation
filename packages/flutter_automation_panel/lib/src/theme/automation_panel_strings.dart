@@ -58,6 +58,9 @@ abstract final class AutomationPanelStrings {
   /// Latency profile with long delays.
   static const latencySlow = 'Slow';
 
+  /// Label of the latency choice of one request.
+  static const requestLatency = 'Latency of this request';
+
   /// Note of the latency profile with no delay.
   static const noDelay = 'Answers at once, with no delay';
 
@@ -254,6 +257,12 @@ abstract final class AutomationPanelStrings {
   static String delayOf(int minMs, int maxMs) {
     return 'Answers in $minMs–$maxMs ms';
   }
+
+  /// The latency line of a request that follows every request.
+  static String asEveryRequest(String delay) => 'As every request. $delay';
+
+  /// The latency part of an override row.
+  static String latencyOverrideOf(String profile) => '$profile latency';
 
   /// How long a run took.
   static String seconds(int seconds) => '$seconds s';

@@ -46,6 +46,11 @@ final class AutomationPanelDefinition {
   /// What the player reads a step with, and how fast it moves.
   final AutomationPlayerSettings playerSettings;
 
+  /// Reads the endpoints of the mock backend, so an override of an endpoint
+  /// with a path id shows on each request under it, as the mock applies it.
+  /// Without it the panel matches an override on the exact path only.
+  final MockApiEndpointResolver Function()? readEndpointResolver;
+
   const AutomationPanelDefinition({
     required this.mock,
     required this.catalogue,
@@ -55,5 +60,6 @@ final class AutomationPanelDefinition {
     this.theme = const AutomationPanelTheme.light(),
     this.onShare,
     this.playerSettings = const AutomationPlayerSettings(),
+    this.readEndpointResolver,
   });
 }

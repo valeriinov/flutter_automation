@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_automation_mock/flutter_automation_mock.dart';
 import 'package:flutter_automation_panel/src/blocks/automation_code_badge.dart';
+import 'package:flutter_automation_panel/src/blocks/automation_latency_note.dart';
 import 'package:flutter_automation_panel/src/theme/automation_panel_theme.dart';
 import 'package:flutter_automation_panel/src/theme/automation_panel_strings.dart';
 
@@ -9,8 +10,8 @@ import 'package:flutter_automation_panel/src/theme/automation_panel_strings.dart
 /// One request: the code of its answer and its path. The path keeps its last
 /// segment and shortens in the middle.
 ///
-/// A request with a [failure] shows a red row that names the override and
-/// holds a cross that removes it.
+/// A request with a [failure] or a [latency] shows a red row that names the
+/// override and holds a cross that removes it.
 class AutomationRequestRow extends StatelessWidget {
   static const _crossWidth = 48.0;
   static const _overrideHeight = 52.0;
@@ -27,6 +28,10 @@ class AutomationRequestRow extends StatelessWidget {
   /// The failure that replaces the answer, missing for the mock answer.
   final MockApiFailure? failure;
 
+  /// The latency profile of the request alone, missing when the request
+  /// follows every request.
+  final MockLatencyProfile? latency;
+
   /// Called when the tester taps the row.
   final VoidCallback? onPressed;
 
@@ -38,6 +43,7 @@ class AutomationRequestRow extends StatelessWidget {
     required this.path,
     this.statusCode,
     this.failure,
+    this.latency,
     this.onPressed,
     this.onClearOverride,
     super.key,
@@ -45,9 +51,7 @@ class AutomationRequestRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final failure = this.failure;
-
-    if (failure == null) {
+    if (failure == null && latency == null) {
       return _PlainRow(
         method: method,
         path: path,
@@ -59,25 +63,41 @@ class AutomationRequestRow extends StatelessWidget {
     return _OverrideRow(
       method: method,
       path: path,
-      failure: failure,
+      description: describeOverride(failure: failure, latency: latency),
       onPressed: onPressed,
       onClearOverride: onClearOverride,
     );
   }
 
-  /// The words that name [failure] on an override row.
-  static String describeOverride(MockApiFailure failure) {
+  /// The words that name the overrides of a request on an override row.
+  ///
+  /// The [failure] parameter is the failure of the request.
+  /// The [latency] parameter is the latency profile of the request alone.
+  static String describeOverride({
+    MockApiFailure? failure,
+    MockLatencyProfile? latency,
+  }) {
+    final latencyLabel = AutomationLatencyNote.labels[latency];
+
+    return AutomationPanelStrings.overrideOf(
+      [
+        if (failure != null) _describeFailure(failure),
+        if (latencyLabel != null)
+          AutomationPanelStrings.latencyOverrideOf(latencyLabel),
+      ].join(' · '),
+    );
+  }
+
+  static String _describeFailure(MockApiFailure failure) {
     if (failure.isConnectionError) {
-      return AutomationPanelStrings.overrideOf(
-        AutomationPanelStrings.noNetwork,
-      );
+      return AutomationPanelStrings.noNetwork;
     }
 
     final detail = failure.errorCode ?? failure.message;
 
     return detail == null
-        ? AutomationPanelStrings.overrideOf('${failure.statusCode}')
-        : AutomationPanelStrings.overrideOf('${failure.statusCode} $detail');
+        ? '${failure.statusCode}'
+        : '${failure.statusCode} $detail';
   }
 }
 
@@ -130,14 +150,14 @@ class _PlainRow extends StatelessWidget {
 class _OverrideRow extends StatelessWidget {
   final String method;
   final String path;
-  final MockApiFailure failure;
+  final String description;
   final VoidCallback? onPressed;
   final VoidCallback? onClearOverride;
 
   const _OverrideRow({
     required this.method,
     required this.path,
-    required this.failure,
+    required this.description,
     required this.onPressed,
     required this.onClearOverride,
   });
@@ -173,7 +193,7 @@ class _OverrideRow extends StatelessWidget {
                     children: [
                       _PathText(method: method, path: path),
                       Text(
-                        AutomationRequestRow.describeOverride(failure),
+                        description,
                         style: theme.textStyle(
                           size: 13,
                           weight: FontWeight.w600,

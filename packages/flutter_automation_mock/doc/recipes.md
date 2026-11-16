@@ -105,9 +105,10 @@ dio.httpClientAdapter = mock.substitute(
 );
 ```
 
-The `MockScenarioBackend` takes the latency and the failures from the scenario.
-A flow sets them with `MockOverride.latency(MockLatencyProfile.slow)` and
-`MockOverride.failures({...})`. Paths that no `MockApi` owns go to
+The `MockScenarioBackend` takes the latency, the failures and the latencies of
+single paths from the scenario. A flow sets them with
+`MockOverride.latency(MockLatencyProfile.slow)`, `MockOverride.failures({...})`
+and `MockOverride.latencies({'/items': 'slow'})`. Paths that no `MockApi` owns go to
 `networkAdapter`.
 
 ## shared_preferences

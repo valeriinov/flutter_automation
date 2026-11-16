@@ -1,5 +1,18 @@
 # Changelog
 
+## Unreleased
+
+- New scenario key `latencies`: path to the name of a latency profile. That
+  path answers after the delay of its own profile; every other path keeps
+  `latency`. The delay still comes from the seeded generator, so two runs
+  spend the same wall clock. A value that names no profile is skipped.
+- New `MockOverride.latencies`, `MockScenarioReader.readLatencies`,
+  `AutomationMock.latencies` and `AutomationMock.setLatency(path, profile)`.
+- `AutomationStateStore` writes `state.json`, the presets and `report.json`
+  as indented JSON, so a shared report reads line by line.
+- `MockBackend` takes `latencies`, and `MockLatency.waitOut` takes the profile
+  of a single path. A project with its own `MockBackend` adds the getter.
+
 ## 0.8.4
 
 - Version bump with `flutter_automation_panel` 0.8.4.

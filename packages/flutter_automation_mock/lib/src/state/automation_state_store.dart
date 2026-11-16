@@ -21,6 +21,7 @@ final class AutomationStateStore {
   /// How many run reports the store keeps.
   static const maxRuns = 20;
 
+  static const _encoder = JsonEncoder.withIndent('  ');
   static const _stateFileName = 'state.json';
   static const _presetsFolder = 'presets';
   static const _runsFolder = 'runs';
@@ -221,7 +222,7 @@ final class AutomationStateStore {
       '${file.path}.$_temporaryCounter$_temporaryExtension',
     );
 
-    await temporary.writeAsString(jsonEncode(json), flush: true);
+    await temporary.writeAsString(_encoder.convert(json), flush: true);
     await temporary.rename(file.path);
   }
 }

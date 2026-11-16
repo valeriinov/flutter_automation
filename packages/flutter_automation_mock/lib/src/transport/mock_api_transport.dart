@@ -5,6 +5,7 @@ import 'package:flutter_automation_mock/src/contract/mock_api_response.dart';
 import 'package:flutter_automation_mock/src/state/mock_journal.dart';
 import 'package:flutter_automation_mock/src/transport/mock_connection_exception.dart';
 import 'package:flutter_automation_mock/src/transport/mock_backend.dart';
+import 'package:flutter_automation_mock/src/transport/mock_latency_profile.dart';
 
 /// {@category Utils}
 ///
@@ -69,7 +70,7 @@ class MockApiTransport {
 
     final record = _journal.addRequest(_toRecordFields(request));
 
-    await _backend.latency.waitOut();
+    await _backend.latency.waitOut(_tryResolveLatency(endpoint, request));
 
     final failure = _tryResolveFailure(endpoint, request);
 
@@ -108,6 +109,17 @@ class MockApiTransport {
       _bytesKey: ?request.bytes?.length,
       _acceptLanguageKey: ?request.acceptLanguage,
     };
+  }
+
+  /// The latency profile the backend names for the path of this request, if
+  /// it names one. Matched as [_tryResolveFailure] matches a failure.
+  MockLatencyProfile? _tryResolveLatency(
+    MockApiEndpoint endpoint,
+    MockApiRequest request,
+  ) {
+    final latencies = _backend.latencies;
+
+    return latencies[request.path] ?? latencies[endpoint.path];
   }
 
   /// The failure the backend names for this request, if it names one.

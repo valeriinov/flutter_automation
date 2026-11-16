@@ -4,6 +4,7 @@ import 'package:flutter_automation_mock/src/scenario/mock_scenario.dart';
 import 'package:flutter_automation_mock/src/scenario/mock_scenario_reader.dart';
 import 'package:flutter_automation_mock/src/transport/mock_api_endpoint_resolver.dart';
 import 'package:flutter_automation_mock/src/transport/mock_latency.dart';
+import 'package:flutter_automation_mock/src/transport/mock_latency_profile.dart';
 import 'package:flutter_automation_mock/src/transport/mock_backend.dart';
 
 /// {@category Utils}
@@ -48,6 +49,11 @@ final class MockScenarioBackend implements MockBackend {
 
   @override
   MockLatency get latency => _latency;
+
+  @override
+  Map<String, MockLatencyProfile> get latencies {
+    return MockScenarioReader.readLatencies(_readScenario());
+  }
 
   @override
   Map<String, MockApiFailure> get failures {

@@ -147,8 +147,10 @@ section:
   section declares.
 - `section.override((settings) => settings.copyWith(field: value))` changes the
   settings it names.
-- `MockOverride.latency(<profile enum>)`, `MockOverride.latencySeed(<int>)` and
-  `MockOverride.failures({'<path>': {...}})` set the keys above the sections.
+- `MockOverride.latency(<profile enum>)`, `MockOverride.latencySeed(<int>)`,
+  `MockOverride.failures({'<path>': {...}})` and
+  `MockOverride.latencies({'<path>': '<profile name>'})` set the keys above the
+  sections.
 
 **Read the `MockSection` and its settings class before you name a profile or a
 field.** **Mock configuration file** names the file. A profile name that the

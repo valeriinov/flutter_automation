@@ -19,8 +19,11 @@ class MockLatency {
     : _random = Random(seed);
 
   /// Waits out the delay of the next answer.
-  Future<void> waitOut() {
-    final delay = _resolveDelay();
+  ///
+  /// The [override] parameter is the profile of a single path that replaces
+  /// [profile]. The delay still comes from the seeded generator.
+  Future<void> waitOut([MockLatencyProfile? override]) {
+    final delay = _resolveDelay(override ?? profile);
 
     if (delay == Duration.zero) {
       return Future<void>.value();
@@ -29,7 +32,7 @@ class MockLatency {
     return Future<void>.delayed(delay);
   }
 
-  Duration _resolveDelay() {
+  Duration _resolveDelay(MockLatencyProfile profile) {
     final minMs = profile.minDelay.inMilliseconds;
     final spreadMs = profile.maxDelay.inMilliseconds - minMs;
 

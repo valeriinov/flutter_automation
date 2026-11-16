@@ -5,6 +5,7 @@ library;
 export 'package:flutter_automation_panel/src/blocks/automation_code_badge.dart';
 export 'package:flutter_automation_panel/src/blocks/automation_flow_step.dart';
 export 'package:flutter_automation_panel/src/blocks/automation_flow_tile.dart';
+export 'package:flutter_automation_panel/src/blocks/automation_latency_note.dart';
 export 'package:flutter_automation_panel/src/blocks/automation_panel_button.dart';
 export 'package:flutter_automation_panel/src/blocks/automation_panel_button_group.dart';
 export 'package:flutter_automation_panel/src/blocks/automation_panel_card.dart';

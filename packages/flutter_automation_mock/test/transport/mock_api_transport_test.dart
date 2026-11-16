@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:fake_async/fake_async.dart';
 import 'package:flutter_automation_mock/flutter_automation_mock.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -37,6 +38,14 @@ final _disconnectedTransport = MockApiTransport(
   journal: _journal,
 );
 
+final _slowPathTransport = MockApiTransport(
+  backend: _TestBackend(
+    endpointResolver: _endpointResolver,
+    latencies: {_ownedPath: MockLatencyProfile.slow},
+  ),
+  journal: _journal,
+);
+
 void main() {
   _setup();
   group('MockApiTransport Tests', () {
@@ -47,6 +56,7 @@ void main() {
     _mockApiTransport_should_recordTheRequestWithItsStatus();
     _mockApiTransport_should_recordAConnectionFailureAsAnswered();
     _mockApiTransport_should_throwForAPathNoEndpointOwns();
+    _mockApiTransport_should_waitOutTheLatencyOfASinglePath();
   });
 }
 
@@ -154,6 +164,27 @@ void _mockApiTransport_should_throwForAPathNoEndpointOwns() {
   });
 }
 
+void _mockApiTransport_should_waitOutTheLatencyOfASinglePath() {
+  test('MockApiTransport should wait out the latency of a single path', () {
+    fakeAsync((async) {
+      bool isSlowAnswered = false;
+      bool isOtherAnswered = false;
+
+      _slowPathTransport
+          .answer(const MockApiRequest(path: _ownedPath, body: {}))
+          .then((_) => isSlowAnswered = true);
+      _slowPathTransport
+          .answer(const MockApiRequest(path: _failingPath, body: {}))
+          .then((_) => isOtherAnswered = true);
+      async.elapse(MockLatencyProfile.slow.minDelay ~/ 2);
+      expect(isOtherAnswered, isTrue);
+      expect(isSlowAnswered, isFalse);
+      async.elapse(MockLatencyProfile.slow.maxDelay);
+      expect(isSlowAnswered, isTrue);
+    });
+  });
+}
+
 MockApiResponse _respondOk(MockApiRequest _) =>
     const MockApiResponse(body: {'ok': true});
 
@@ -165,12 +196,19 @@ final class _TestBackend implements MockBackend {
   final Map<String, MockApiFailure> failures;
 
   @override
+  final Map<String, MockLatencyProfile> latencies;
+
+  @override
   final MockLatency latency = MockLatency(
     profile: MockLatencyProfile.fast,
     seed: 1,
   );
 
-  _TestBackend({required this.endpointResolver, this.failures = const {}});
+  _TestBackend({
+    required this.endpointResolver,
+    this.failures = const {},
+    this.latencies = const {},
+  });
 
   @override
   Map<String, Object?> buildFailureBody(MockApiFailure failure) {

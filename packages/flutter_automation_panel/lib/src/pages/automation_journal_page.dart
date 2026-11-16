@@ -66,7 +66,8 @@ class _AutomationJournalPageState extends State<AutomationJournalPage> {
               path: path,
               statusCode: AutomationJournalRecord.statusCodeOf(record),
               failure: controller.failureOf(path),
-              onClearOverride: () => controller.setFailure(path, null),
+              latency: controller.latencyOf(path),
+              onClearOverride: () => controller.clearOverride(path),
               onPressed: () => showAutomationResponseSheet(
                 context: context,
                 controller: controller,

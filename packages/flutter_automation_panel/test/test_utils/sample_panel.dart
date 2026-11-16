@@ -274,6 +274,7 @@ final class SamplePanel {
       catalogue: catalogue ?? sampleCatalogue,
       theme: sampleTheme,
       backendErrorCodes: const ['tooManyRequests', 'invalidPhone'],
+      readEndpointResolver: () => _sampleEndpointResolver,
       onRestartRequired: onRestartRequired ?? () => events.add('restart'),
       pages: [
         AutomationPanelPage(
@@ -327,6 +328,25 @@ final class SamplePanel {
     if (directory.existsSync()) {
       directory.deleteSync(recursive: true);
     }
+  }
+}
+
+final _sampleEndpointResolver = MockApiEndpointResolver([
+  _SampleApi(),
+  _ItemsApi(),
+]);
+
+class _ItemsApi implements MockApi {
+  @override
+  List<MockApiEndpoint> get endpoints {
+    return [
+      MockApiEndpoint(path: '/items', respond: _respondEmpty, hasPathId: true),
+      MockApiEndpoint(path: '/items/list', respond: _respondEmpty),
+    ];
+  }
+
+  static MockApiResponse _respondEmpty(MockApiRequest _) {
+    return const MockApiResponse(body: {});
   }
 }
 

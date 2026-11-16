@@ -1,5 +1,29 @@
 # Changelog
 
+## Unreleased
+
+- The Response sheet sets the latency of one request: Default (the latency of
+  every request), Fast, Real or Slow, with the delay line under it. Apply with
+  no error chosen keeps the mock answer and sets only the latency. A second
+  tap on a chosen code clears it. Use mock response and the cross of a request
+  row clear both the error and the latency.
+- A request row with a latency of its own is an override row, such as
+  `Override: 500 · Slow latency`. The status row and the section cards count
+  a request with an error, a latency or both once.
+- A start of a walk or an autorun keeps every latency the scenario holds; an
+  outcome adds its own on top.
+- New `AutomationPanelDefinition.readEndpointResolver`. With it the panel
+  matches an override as the mock does: on the exact path, else on the
+  endpoint with a path id that owns the path. An exact endpoint under another
+  path, such as `/banners/content` under `/banners`, no longer shows the
+  override of the shorter path, for failures and latencies alike. Without it
+  the panel matches the exact path only.
+- New `AutomationLatencyNote`, `AutomationPanelController.latencies`,
+  `latencyOf`, `setLatency`, `setResponse` and `clearOverride`.
+  `AutomationRequestRow` takes `latency`, `describeOverride` takes named
+  `failure` and `latency`, and `AutomationResponseSheet.onApply` takes the
+  failure and the latency.
+
 ## 0.8.4
 
 - A line under Response latency tells the delay of the chosen profile in

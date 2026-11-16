@@ -232,8 +232,9 @@ class _StepTile extends StatelessWidget {
               path: request.path,
               statusCode: request.statusCode,
               failure: controller.failureOf(request.path),
+              latency: controller.latencyOf(request.path),
               onPressed: () => _openResponse(context, request),
-              onClearOverride: () => controller.setFailure(request.path, null),
+              onClearOverride: () => controller.clearOverride(request.path),
             ),
         if (fork != null && isFork)
           for (final option in _forkOptions(fork))

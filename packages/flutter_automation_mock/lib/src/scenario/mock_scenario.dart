@@ -17,6 +17,9 @@ final class MockScenario {
   /// Key of the failed paths in the scenario JSON.
   static const failuresKey = 'failures';
 
+  /// Key of the latency profiles of single paths in the scenario JSON.
+  static const latenciesKey = 'latencies';
+
   /// Overrides in the order they apply.
   final List<MockOverride> overrides;
 

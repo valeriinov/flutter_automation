@@ -52,6 +52,7 @@ void main() {
     _automationMock_should_updateTheScenarioWithoutSeedingAgain();
     _automationMock_should_keepTheJournalOnUpdate();
     _automationMock_should_setAndRemoveAFailureKeepingTheOtherKeys();
+    _automationMock_should_setAndRemoveALatencyKeepingTheOtherKeys();
     _automationMock_should_requireARestartForARestartKeyOnly();
     _automationMock_should_compareTheRestartKeysWithTheLaunchScenario();
     _automationMock_should_keepTheChoiceAcrossTwoColdStarts();
@@ -380,6 +381,28 @@ void _automationMock_should_setAndRemoveAFailureKeepingTheOtherKeys() {
 
       expect(mock.failures, isEmpty);
       expect(mock.scenario.toJson().containsKey('failures'), isFalse);
+      expect(mock.scenario.toJson()['catalog'], {'itemCount': 0});
+    },
+  );
+}
+
+void _automationMock_should_setAndRemoveALatencyKeepingTheOtherKeys() {
+  test(
+    'AutomationMock should set and remove a latency keeping the other keys',
+    () async {
+      final mock = await _init();
+
+      await mock.updateScenario(MockScenario.fromJson(_scenarioJson));
+      await mock.setLatency('/auth', MockLatencyProfile.slow);
+
+      expect(mock.latencies, {'/auth': MockLatencyProfile.slow});
+      expect(mock.failures.keys, ['/items']);
+      expect(mock.scenario.toJson()['latency'], 'fast');
+
+      await mock.setLatency('/auth', null);
+
+      expect(mock.latencies, isEmpty);
+      expect(mock.scenario.toJson().containsKey('latencies'), isFalse);
       expect(mock.scenario.toJson()['catalog'], {'itemCount': 0});
     },
   );
