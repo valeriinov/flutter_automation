@@ -1,5 +1,27 @@
 # Changelog
 
+## 0.8.1
+
+- New `AutomationPanelStrings`: every text of the panel, in English. The
+  widgets take their texts only from it.
+- The walk plaque follows the walk controls design. Collapsed: a cross (Exit),
+  the flow and the step, and a round Next step button. Open: a collapse button
+  in the head, a scrolled body and pinned Exit and Next step buttons; Try again
+  after a failure and Finish when no action is left. Only the head takes the
+  drag. The corner radius moves with the height. `AutomationWalkPlaque` takes
+  `flowTitle`, `collapsedStep`, `expandedStep`, `nextLabel`, `isFinishing` and
+  `onNext`.
+- At a fork the variant of the walk is the selected branch
+  (`AutomationPanelController.selectedBranch`, `selectBranch`), and Next step
+  takes it.
+- `AutomationPanelController.finishWalk` ends a manual walk with the run sheet.
+  A run of either mode saves `runs/<time>/report.json`. `AutomationRunSummary`
+  holds `mode` and `report`.
+- `AutomationPanelDefinition.onShare(File report)` replaces `onShareLogs`.
+- The run sheet pins Share logs, Run again and Exit under the scrolled
+  requests. Exit is the main button. `AutomationPanelSheet` takes a `footer`. `AutomationPanelButton`
+  takes `leadingIcon` and `trailingIcon`.
+
 ## 0.8.0
 
 - New `AutomationFlowPlayer`, `AutomationPlayerSettings`,

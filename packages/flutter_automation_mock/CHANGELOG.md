@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.8.1
+
+- Version bump with `flutter_automation_panel` 0.8.1.
+
 ## 0.8.0
 
 - `AutomationCatalogueStep` carries `action`, `finder`, `text`, `title`,
