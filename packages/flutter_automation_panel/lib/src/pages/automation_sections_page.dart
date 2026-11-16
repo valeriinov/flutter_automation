@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_automation_mock/flutter_automation_mock.dart';
 import 'package:flutter_automation_panel/src/blocks/automation_latency_note.dart';
 import 'package:flutter_automation_panel/src/blocks/automation_panel_card.dart';
-import 'package:flutter_automation_panel/src/blocks/automation_panel_count.dart';
 import 'package:flutter_automation_panel/src/blocks/automation_panel_frame.dart';
 import 'package:flutter_automation_panel/src/blocks/automation_panel_label.dart';
 import 'package:flutter_automation_panel/src/blocks/automation_panel_option.dart';
@@ -43,25 +42,26 @@ class _AutomationSectionsPageState extends State<AutomationSectionsPage> {
 
   @override
   Widget build(BuildContext context) {
+    final strings = AutomationPanelStrings.of(context);
     final controller = AutomationPanelScope.of(context);
 
     return ListView(
       padding: const EdgeInsets.all(AutomationPanelTheme.gapLarge),
       children: [
         AutomationPanelSearchField(
-          hint: AutomationPanelStrings.sectionSearchHint,
+          hint: strings.sectionSearchHint,
           onChanged: (value) => setState(() => _query = value),
         ),
         const SizedBox(height: AutomationPanelTheme.gapMedium),
-        const AutomationPanelLabel(
-          text: AutomationPanelStrings.responseLatency,
-        ),
+        AutomationPanelLabel(text: strings.responseLatency),
         const SizedBox(height: AutomationPanelTheme.gapMedium),
         AutomationPanelSegments<MockLatencyProfile>(
           options: [
-            for (final MapEntry(:key, :value)
-                in AutomationLatencyNote.labels.entries)
-              AutomationPanelOption(value: key, label: value),
+            for (final profile in MockLatencyProfile.values)
+              AutomationPanelOption(
+                value: profile,
+                label: strings.latencyLabel(profile),
+              ),
           ],
           selected: controller.mock.latency.profile,
           onChanged: (profile) => _selectLatency(controller, profile),
@@ -77,14 +77,15 @@ class _AutomationSectionsPageState extends State<AutomationSectionsPage> {
   }
 
   bool _matchesQuery(AutomationSectionPanel section) {
+    final languageCode = AutomationPanelStrings.of(context).languageCode;
     final endpoints = section.api?.endpoints ?? const <MockApiEndpoint>[];
 
     return matchesSearchQuery(_query, [
-      section.title,
-      ?section.description,
+      section.title.resolve(languageCode),
+      ?section.description?.resolve(languageCode),
       ?section.section?.name,
       for (final endpoint in endpoints) endpoint.path,
-      for (final endpoint in endpoints) ?section.requestTitles[endpoint.path],
+      for (final endpoint in endpoints) ?endpoint.title?.resolve(languageCode),
     ]);
   }
 
@@ -108,6 +109,8 @@ class _SectionCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final strings = AutomationPanelStrings.of(context);
+    final languageCode = strings.languageCode;
     final mockSection = section.section;
     final api = section.api;
     final endpoints = api?.endpoints ?? const <MockApiEndpoint>[];
@@ -116,21 +119,21 @@ class _SectionCard extends StatelessWidget {
         .length;
 
     return AutomationPanelCard(
-      title: section.title,
-      subtitle: section.description,
+      title: section.title.resolve(languageCode),
+      subtitle: section.description?.resolve(languageCode),
       children: [
         if (mockSection != null)
           AutomationPanelCardRow(
-            label: AutomationPanelStrings.profile,
-            value: _describeProfile(mockSection),
+            label: strings.profile,
+            value: _describeProfile(mockSection, strings),
             onPressed: () => _openProfiles(context, mockSection),
           ),
         if (api != null)
           AutomationPanelCardRow(
-            label: AutomationPanelStrings.requests,
+            label: strings.requests,
             overrideValue: overrides == 0
                 ? null
-                : describeOverrideCount(overrides),
+                : strings.overrideCount(overrides),
             note: overrides == 0
                 ? '${endpoints.length}'
                 : '· ${endpoints.length}',
@@ -145,11 +148,14 @@ class _SectionCard extends StatelessWidget {
         controller.latencyOf(path) != null;
   }
 
-  String _describeProfile(MockSection<Object?> mockSection) {
+  String _describeProfile(
+    MockSection<Object?> mockSection,
+    AutomationPanelStrings strings,
+  ) {
     return AutomationProfileSelection.read(
       controller,
       mockSection,
-    ).describe(section);
+    ).describe(section, strings);
   }
 
   Future<void> _openProfiles(
@@ -175,9 +181,10 @@ class _SectionCard extends StatelessWidget {
     return Navigator.of(context).push(
       MaterialPageRoute<void>(
         builder: (_) => _RequestsPage(
-          title: section.title,
+          title: section.title.resolve(
+            AutomationPanelStrings.of(context).languageCode,
+          ),
           endpoints: endpoints,
-          requestTitles: section.requestTitles,
         ),
       ),
     );
@@ -206,9 +213,10 @@ class _ProfileSheetState extends State<_ProfileSheet> {
 
   @override
   Widget build(BuildContext context) {
+    final strings = AutomationPanelStrings.of(context);
     final theme = AutomationPanelTheme.of(context);
     final section = widget.section;
-    final description = section.description;
+    final description = section.description?.resolve(strings.languageCode);
     final profileNames = widget.mockSection.profileNames;
     final selection = AutomationProfileSelection.read(
       widget.controller,
@@ -216,7 +224,9 @@ class _ProfileSheetState extends State<_ProfileSheet> {
     );
 
     return AutomationPanelSheet(
-      title: '${section.title} profile',
+      title: strings.profileSheetTitle(
+        section.title.resolve(strings.languageCode),
+      ),
       onClose: () => Navigator.of(context).pop(),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -229,14 +239,14 @@ class _ProfileSheetState extends State<_ProfileSheet> {
             ),
           if (profileNames.length > _ProfileSheet.maxProfilesWithoutSearch)
             AutomationPanelSearchField(
-              hint: AutomationPanelStrings.profileSearchHint,
+              hint: strings.profileSearchHint,
               onChanged: (value) => setState(() => _query = value),
             ),
           for (final name in [null, ...profileNames].where(_matchesQuery))
             AutomationPanelRadioTile(
               title: _resolveTitle(name),
               subtitle: _describeProfile(name),
-              code: _resolveCode(name),
+              code: name,
               needsRestart: _needsRestart(name),
               isSelected: name == null
                   ? selection.isDefault
@@ -254,31 +264,34 @@ class _ProfileSheetState extends State<_ProfileSheet> {
       return _query.trim().isEmpty;
     }
 
+    final languageCode = AutomationPanelStrings.of(context).languageCode;
+    final profile = widget.mockSection.profiles[profileName];
+
     return matchesSearchQuery(_query, [
       profileName,
-      ?widget.section.profileTitles[profileName],
-      ?widget.section.profileDescriptions[profileName],
+      ?profile?.title.resolve(languageCode),
+      ?profile?.description?.resolve(languageCode),
     ]);
   }
 
   String _resolveTitle(String? profileName) {
+    final strings = AutomationPanelStrings.of(context);
+
     if (profileName == null) {
-      return AutomationPanelStrings.defaultName;
+      return strings.defaultName;
     }
 
-    return widget.section.profileTitles[profileName] ?? profileName;
-  }
-
-  String? _resolveCode(String? profileName) {
-    final hasTitle = widget.section.profileTitles.containsKey(profileName);
-
-    return hasTitle ? profileName : null;
+    return widget.section.profileTitle(profileName, strings.languageCode);
   }
 
   String? _describeProfile(String? profileName) {
+    final strings = AutomationPanelStrings.of(context);
+
     return profileName == null
-        ? AutomationPanelStrings.defaultProfileDescription
-        : widget.section.profileDescriptions[profileName];
+        ? strings.defaultProfileDescription
+        : widget.mockSection.profiles[profileName]?.description?.resolve(
+            strings.languageCode,
+          );
   }
 
   bool _needsRestart(String? profileName) {
@@ -308,22 +321,19 @@ class _ProfileSheetState extends State<_ProfileSheet> {
 class _RequestsPage extends StatelessWidget {
   final String title;
   final List<MockApiEndpoint> endpoints;
-  final Map<String, String> requestTitles;
 
-  const _RequestsPage({
-    required this.title,
-    required this.endpoints,
-    required this.requestTitles,
-  });
+  const _RequestsPage({required this.title, required this.endpoints});
 
   @override
   Widget build(BuildContext context) {
+    final strings = AutomationPanelStrings.of(context);
     final controller = AutomationPanelScope.of(context);
+    final languageCode = strings.languageCode;
     final theme = AutomationPanelTheme.of(context);
 
     return AutomationPanelFrame(
       title: title,
-      subtitle: AutomationPanelStrings.requests,
+      subtitle: strings.requests,
       onBack: () => Navigator.of(context).pop(),
       onClose: controller.closePanel,
       child: Material(
@@ -334,10 +344,11 @@ class _RequestsPage extends StatelessWidget {
             for (final endpoint in endpoints) ...[
               MockEndpointPanel(
                 endpoint: endpoint,
-                title: requestTitles[endpoint.path] ?? endpoint.path,
+                title: _titleOf(endpoint, languageCode),
                 failure: controller.failureOf(endpoint.path),
                 latency: controller.latencyOf(endpoint.path),
-                onPressed: () => _openResponse(context, controller, endpoint),
+                onPressed: () =>
+                    _openResponse(context, controller, endpoint, languageCode),
                 onClearOverride: () => controller.clearOverride(endpoint.path),
               ),
               const SizedBox(height: AutomationPanelTheme.gapMedium),
@@ -352,12 +363,17 @@ class _RequestsPage extends StatelessWidget {
     BuildContext context,
     AutomationPanelController controller,
     MockApiEndpoint endpoint,
+    String languageCode,
   ) {
     return showAutomationResponseSheet(
       context: context,
       controller: controller,
       path: endpoint.path,
-      mockDescription: requestTitles[endpoint.path] ?? endpoint.path,
+      mockDescription: _titleOf(endpoint, languageCode),
     );
+  }
+
+  String _titleOf(MockApiEndpoint endpoint, String languageCode) {
+    return endpoint.title?.resolve(languageCode) ?? endpoint.path;
   }
 }

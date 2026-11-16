@@ -58,19 +58,21 @@ class _AutomationPanelState extends State<AutomationPanel> {
     BuildContext context,
     AutomationPanelController controller,
   ) {
+    final strings = AutomationPanelStrings.of(context);
+
     return AutomationPanelStatus(
-      text: controller.outcomeTitle ?? _resolveStateTitle(controller),
+      text: controller.outcomeTitle ?? _resolveStateTitle(strings, controller),
       changeCount: AutomationPanelChanges.read(controller).count,
       isChanged: controller.isChanged,
       onPressed: () => _openChanges(context),
       actions: [
         AutomationPanelStatusAction(
-          label: AutomationPanelStrings.presets,
+          label: strings.presets,
           onPressed: () => _openPresets(context, controller),
         ),
         if (controller.isChanged)
           AutomationPanelStatusAction(
-            label: AutomationPanelStrings.reset,
+            label: strings.reset,
             onPressed: () => showAutomationResetSheet(
               context: context,
               controller: controller,
@@ -80,10 +82,11 @@ class _AutomationPanelState extends State<AutomationPanel> {
     );
   }
 
-  String _resolveStateTitle(AutomationPanelController controller) {
-    return controller.isChanged
-        ? AutomationPanelStrings.customMock
-        : AutomationPanelStrings.defaultMock;
+  String _resolveStateTitle(
+    AutomationPanelStrings strings,
+    AutomationPanelController controller,
+  ) {
+    return controller.isChanged ? strings.customMock : strings.defaultMock;
   }
 
   Future<void> _openChanges(BuildContext context) {

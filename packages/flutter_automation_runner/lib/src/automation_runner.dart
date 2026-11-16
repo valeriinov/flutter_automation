@@ -28,6 +28,7 @@ import 'package:flutter_automation_runner/src/definition/automation_flow_definit
 import 'package:flutter_automation_runner/src/definition/flow_action_names.dart';
 import 'package:flutter_automation_runner/src/definition/flow_block.dart';
 import 'package:flutter_automation_runner/src/recording/automation_catalogue_builder.dart';
+import 'package:flutter_automation_runner/src/recording/automation_catalogue_check.dart';
 import 'package:flutter_automation_runner/src/recording/automation_recording.dart';
 import 'package:flutter_automation_runner/src/recording/automation_recording_files.dart';
 
@@ -70,7 +71,13 @@ typedef _KeyboardScreenshot = ({
 /// the run to `<directory>/<flow>/<variant>.json`: the steps, their timings and
 /// the requests the mock answered in each one. `--qa-catalogue <file>` writes
 /// the catalogue of the panel out of the flows and the recordings in the
-/// `--recordings <directory>` folder; it uses no device.
+/// `--recordings <directory>` folder; it uses no device. Add `--check` to
+/// write nothing and test that the file and the recordings are up to date. For
+/// each variant of a flow in the catalogue, the check finds a missing
+/// recording, a recording of a failed run, and step labels that differ from the
+/// flow. It also finds a recording that no flow or variant holds. It prints
+/// one line of JSON with `ok` and the `problems`. It exits with code 1 when
+/// there is a problem.
 /// `--timeline-out <path>` writes the raw timeline that a traced window
 /// downloaded, in the Chrome trace format that DevTools and Perfetto open. It
 /// gives what the frame summary does not: a mark's arguments and the full list
@@ -99,6 +106,7 @@ final class AutomationRunner {
   static const _recordOption = '--record';
   static const _qaCatalogueOption = '--qa-catalogue';
   static const _recordingsOption = '--recordings';
+  static const _checkFlag = '--check';
   static const _systemKeyboardFlag = '--system-keyboard';
   static const _localeOption = '--locale';
   static const _uriCachePath = '.dart_tool/automation_runner_uri';
@@ -248,7 +256,8 @@ final class AutomationRunner {
       '[$_uriOption <dart vm service uri>] [$_timelineOutOption <path>] '
       '[$_dryRunFlag] [$_catalogueFlag] [$_noScenarioFlag] '
       '[$_recordOption <directory>] '
-      '[$_qaCatalogueOption <file> [$_recordingsOption <directory>]] '
+      '[$_qaCatalogueOption <file> [$_recordingsOption <directory>] '
+      '[$_checkFlag]] '
       '[$_captureOption <directory> '
       '[${AutomationCaptureStages.shootOption} <stage,stage>] '
       '[${AutomationCaptureStages.untilOption} <stage>]] '
@@ -273,7 +282,7 @@ final class AutomationRunner {
     final qaCataloguePath = _tryReadOption(_qaCatalogueOption, 'a file path');
 
     if (qaCataloguePath != null) {
-      _writeQaCatalogue(qaCataloguePath);
+      _runQaCatalogue(qaCataloguePath);
 
       return;
     }
@@ -497,7 +506,7 @@ final class AutomationRunner {
     }
   }
 
-  void _writeQaCatalogue(String path) {
+  void _runQaCatalogue(String path) {
     final recordingsPath = _tryReadOption(_recordingsOption, 'a directory');
     final recordings = recordingsPath == null
         ? const <AutomationRecording>[]
@@ -509,15 +518,52 @@ final class AutomationRunner {
       dateFormats: config.dateFormats,
       dateValueKeys: config.dateValueKeys,
     ).build();
+    final text = const JsonEncoder.withIndent('  ').convert(catalogue.toJson());
+
+    if (args.contains(_checkFlag)) {
+      _checkQaCatalogue(path, text, recordings);
+
+      return;
+    }
+
     final file = File(path);
 
     file.parent.createSync(recursive: true);
-    file.writeAsStringSync(
-      const JsonEncoder.withIndent('  ').convert(catalogue.toJson()),
-    );
+    file.writeAsStringSync(text);
     stdout.writeln(
       jsonEncode({'qaCatalogue': path, 'flows': catalogue.flows.length}),
     );
+  }
+
+  void _checkQaCatalogue(
+    String path,
+    String text,
+    List<AutomationRecording> recordings,
+  ) {
+    final file = File(path);
+    final problems = [
+      if (!file.existsSync() || file.readAsStringSync() != text)
+        '$path: the file is out of date',
+      ...AutomationCatalogueCheck(
+        flows: _flows,
+        blocks: _blocks,
+        finders: config.finderRegistry,
+        locale: config.defaultLocale,
+        recordings: recordings,
+      ).findProblems(),
+    ];
+
+    stdout.writeln(
+      jsonEncode({
+        'qaCatalogue': path,
+        'ok': problems.isEmpty,
+        'problems': problems,
+      }),
+    );
+
+    if (problems.isNotEmpty) {
+      exitCode = 1;
+    }
   }
 
   String? _tryReadOption(String option, String expected) {

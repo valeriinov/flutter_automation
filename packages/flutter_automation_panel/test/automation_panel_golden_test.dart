@@ -21,6 +21,7 @@ void main() {
     _walk_should_matchTheGolden();
     _walkOpen_should_matchTheGolden();
     _runDone_should_matchTheGolden();
+    _restartOverlay_should_matchTheGolden();
   });
 }
 
@@ -203,7 +204,7 @@ void _profiles_should_matchTheGolden() {
     tester,
   ) async {
     await _pumpScreen(tester, (_) => const AutomationPanel(initialTab: 1));
-    await tester.tap(find.text(AutomationPanelStrings.profile).first);
+    await tester.tap(find.text(sampleStrings.profile).first);
     await tester.pumpAndSettle();
     await _expectGolden('profiles', finder: find.byType(MaterialApp));
   });
@@ -217,9 +218,9 @@ void _confirm_should_matchTheGolden() {
       tester,
       (_) => _confirmOverApp(
         AutomationConfirmSheet(
-          title: AutomationPanelStrings.resetChangesQuestion('3 changes'),
-          message: AutomationPanelStrings.resetMessage,
-          confirmLabel: AutomationPanelStrings.reset,
+          title: sampleStrings.resetChangesQuestion('3 changes'),
+          message: sampleStrings.resetMessage,
+          confirmLabel: sampleStrings.reset,
           onConfirmPressed: () {},
         ),
       ),
@@ -236,9 +237,9 @@ void _restart_should_matchTheGolden() {
       tester,
       (_) => _confirmOverApp(
         AutomationConfirmSheet(
-          title: AutomationPanelStrings.restartQuestion,
-          message: AutomationPanelStrings.restartMessage,
-          confirmLabel: AutomationPanelStrings.apply,
+          title: sampleStrings.restartQuestion,
+          message: sampleStrings.restartMessage,
+          confirmLabel: sampleStrings.apply,
           onConfirmPressed: () {},
         ),
       ),
@@ -329,4 +330,35 @@ Widget _confirmOverApp(AutomationConfirmSheet sheet) {
       Align(alignment: Alignment.bottomCenter, child: sheet),
     ],
   );
+}
+
+void _restartOverlay_should_matchTheGolden() {
+  testWidgets('RestartOverlay should match the golden', tags: _goldenTag, (
+    tester,
+  ) async {
+    tester.view.devicePixelRatio = 2;
+    tester.view.physicalSize = const Size(780, 1688);
+
+    addTearDown(tester.view.reset);
+
+    final isRestartRequired = ValueNotifier(true);
+
+    addTearDown(isRestartRequired.dispose);
+
+    await tester.pumpWidget(
+      MaterialApp(
+        debugShowCheckedModeBanner: false,
+        home: AutomationRestartOverlay(
+          isRestartRequired: isRestartRequired,
+          theme: sampleTheme,
+          child: const Scaffold(body: SizedBox()),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    await _expectGolden(
+      'restart_overlay',
+      finder: find.byType(AutomationRestartOverlay),
+    );
+  });
 }

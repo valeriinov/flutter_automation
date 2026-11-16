@@ -11,8 +11,9 @@ a variant, a mock scenario and a run.
 
 Read the `## Automation` section of the project `AGENTS.md` first. This skill
 names its fields in bold: **Flow run command**, **Launch**, **Flows folder**,
-**Targets folder**, **Mock configuration file**, **Default flow**, **After an
-edit**, **Post-edit steps**, **Format-change places**, **Learned rules**. A
+**Targets folder**, **Mock configuration file**, **QA catalogue**, **Default
+flow**, **After an edit**, **Post-edit steps**, **Format-change places**,
+**Learned rules**. A
 missing field: ask the user once and write the answer into the section.
 
 Three facts decide most sessions:
@@ -220,7 +221,15 @@ Options:
   walks a flow in a release QA build (`ENABLE_AUTOMATION_MARKING` and
   `ENABLE_MOCK` set) with no driver. A change of the step
   format or of the finder kinds changes the recording, the catalogue and the
-  player together.
+  player together. `--qa-catalogue <file> [--recordings <dir>] --check` writes
+  nothing. It prints `{"qaCatalogue", "ok", "problems"}` and exits with code 1
+  when `problems` is not empty. A line of `problems` is one of these, with its
+  action:
+    - `the file is out of date`: run the command again without `--check`.
+    - `no recording`: `--record` the variant.
+    - `the recording is of a failed run`: `--record` the variant.
+    - `the step labels differ from the flow`: `--record` the variant.
+    - `no flow holds this recording`: delete the recording.
 - `--shoot` and `--until` limit a `--capture` run to some stages.
 
 A capture and a run of several variants start from the main session, in the
@@ -323,6 +332,17 @@ exactly one fix. An agent that runs no workflow does the same loop by hand.
 After a flow, a block, a target or a mock key changes, run the **After an edit**
 commands and every item of **Post-edit steps**. A step that the field does not
 list is not part of the project.
+
+A flow with `isInQaCatalogue: true` feeds the QA panel. After you add or change
+one of its variants, run the loop:
+
+1. Walk the variant with `--record` on a device. The runner writes the recording
+   of the passed run.
+2. Run the **QA catalogue** command. It rebuilds the catalogue asset.
+3. Run the same command with `--check`. It must print `"ok":true`. Act on each line of
+   `problems` as the `--qa-catalogue` list says.
+
+A **QA catalogue** of `none` means that the project has no QA panel: skip the loop.
 
 ## 8. Verify
 

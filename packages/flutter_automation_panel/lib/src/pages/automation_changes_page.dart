@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_automation_mock/flutter_automation_mock.dart';
-import 'package:flutter_automation_panel/src/blocks/automation_latency_note.dart';
 import 'package:flutter_automation_panel/src/blocks/automation_panel_button.dart';
 import 'package:flutter_automation_panel/src/blocks/automation_panel_frame.dart';
 import 'package:flutter_automation_panel/src/blocks/automation_panel_label.dart';
@@ -30,6 +29,7 @@ class AutomationChangesPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final strings = AutomationPanelStrings.of(context);
     final controller = AutomationPanelScope.of(context);
     final theme = AutomationPanelTheme.of(context);
 
@@ -39,12 +39,12 @@ class AutomationChangesPage extends StatelessWidget {
         final isChanged = controller.isChanged;
 
         return AutomationPanelFrame(
-          title: AutomationPanelStrings.changes,
+          title: strings.changes,
           onBack: () => Navigator.of(context).pop(),
           onClose: controller.closePanel,
           footer: isChanged
               ? AutomationPanelButton(
-                  label: AutomationPanelStrings.resetAll,
+                  label: strings.resetAll,
                   onPressed: () => showAutomationResetSheet(
                     context: context,
                     controller: controller,
@@ -71,6 +71,7 @@ class _ChangeList extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final strings = AutomationPanelStrings.of(context);
     final outcomeTitle = controller.outcomeTitle;
     final changes = AutomationPanelChanges.read(controller);
     final profiles = changes.profiles;
@@ -81,29 +82,24 @@ class _ChangeList extends StatelessWidget {
       padding: const EdgeInsets.all(AutomationPanelTheme.gapLarge),
       children: [
         if (outcomeTitle != null) ...[
-          _ChangeRow(
-            title: AutomationPanelStrings.outcome,
-            value: outcomeTitle,
-          ),
+          _ChangeRow(title: strings.outcome, value: outcomeTitle),
           const SizedBox(height: AutomationPanelTheme.gapMedium),
         ],
         if (changes.hasLatency) ...[
           _ChangeRow(
-            title: AutomationPanelStrings.responseLatency,
-            value:
-                AutomationLatencyNote.labels[controller.mock.latency.profile] ??
-                '',
+            title: strings.responseLatency,
+            value: strings.latencyLabel(controller.mock.latency.profile),
             onRemove: () => _removeKey(context, MockScenario.latencyKey),
           ),
           const SizedBox(height: AutomationPanelTheme.gapMedium),
         ],
         if (profiles.isNotEmpty) ...[
-          const AutomationPanelLabel(text: AutomationPanelStrings.profiles),
+          AutomationPanelLabel(text: strings.profiles),
           const SizedBox(height: AutomationPanelTheme.gapSmall),
           for (final section in profiles) ...[
             _ChangeRow(
-              title: section.title,
-              value: _describeProfile(section),
+              title: section.title.resolve(strings.languageCode),
+              value: _describeProfile(section, strings),
               onRemove: () => _removeProfile(context, section),
             ),
             const SizedBox(height: AutomationPanelTheme.gapSmall),
@@ -111,7 +107,7 @@ class _ChangeList extends StatelessWidget {
           const SizedBox(height: AutomationPanelTheme.gapSmall),
         ],
         if (paths.isNotEmpty) ...[
-          const AutomationPanelLabel(text: AutomationPanelStrings.requests),
+          AutomationPanelLabel(text: strings.requests),
           const SizedBox(height: AutomationPanelTheme.gapSmall),
           for (final path in paths) ...[
             AutomationRequestRow(
@@ -123,7 +119,7 @@ class _ChangeList extends StatelessWidget {
                 context: context,
                 controller: controller,
                 path: path,
-                mockDescription: AutomationPanelStrings.lastAnswer,
+                mockDescription: strings.lastAnswer,
               ),
               onClearOverride: () => controller.clearOverride(path),
             ),
@@ -132,14 +128,12 @@ class _ChangeList extends StatelessWidget {
           const SizedBox(height: AutomationPanelTheme.gapSmall),
         ],
         if (otherKeys.isNotEmpty) ...[
-          const AutomationPanelLabel(
-            text: AutomationPanelStrings.otherSettings,
-          ),
+          AutomationPanelLabel(text: strings.otherSettings),
           const SizedBox(height: AutomationPanelTheme.gapSmall),
           for (final key in otherKeys) ...[
             _ChangeRow(
               title: key,
-              value: AutomationPanelStrings.custom,
+              value: strings.custom,
               onRemove: () => _removeKey(context, key),
             ),
             const SizedBox(height: AutomationPanelTheme.gapSmall),
@@ -149,7 +143,10 @@ class _ChangeList extends StatelessWidget {
     );
   }
 
-  String _describeProfile(AutomationSectionPanel section) {
+  String _describeProfile(
+    AutomationSectionPanel section,
+    AutomationPanelStrings strings,
+  ) {
     final mockSection = section.section;
 
     if (mockSection == null) {
@@ -159,7 +156,7 @@ class _ChangeList extends StatelessWidget {
     return AutomationProfileSelection.read(
       controller,
       mockSection,
-    ).describe(section);
+    ).describe(section, strings);
   }
 
   void _removeProfile(BuildContext context, AutomationSectionPanel section) {
@@ -200,6 +197,7 @@ class _ChangeRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final strings = AutomationPanelStrings.of(context);
     final theme = AutomationPanelTheme.of(context);
     final onRemove = this.onRemove;
 
@@ -249,7 +247,7 @@ class _ChangeRow extends StatelessWidget {
             else
               IconButton(
                 onPressed: onRemove,
-                tooltip: AutomationPanelStrings.removeOverride,
+                tooltip: strings.removeOverride,
                 icon: Icon(Icons.close, size: 20, color: theme.danger),
               ),
           ],
@@ -264,11 +262,12 @@ class _NothingChanged extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final strings = AutomationPanelStrings.of(context);
     final theme = AutomationPanelTheme.of(context);
 
     return Center(
       child: Text(
-        AutomationPanelStrings.nothingChanged,
+        strings.nothingChanged,
         style: theme.textStyle(size: 14, color: theme.textSecondary),
       ),
     );

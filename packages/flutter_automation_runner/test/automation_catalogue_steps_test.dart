@@ -12,6 +12,7 @@ const _flowName = 'login';
 
 final _launch = MockSection<Map<String, Object?>>(
   name: _launchSection,
+  title: const AutomationLocalizedText({'en': 'Launch'}),
   fromJson: (json) => json,
   restartKeys: {'isSignedIn'},
 );

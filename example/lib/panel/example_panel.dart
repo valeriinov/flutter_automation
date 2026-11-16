@@ -1,5 +1,4 @@
-import 'dart:convert';
-
+import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_automation_mock/flutter_automation_mock.dart';
 import 'package:flutter_automation_mock/mock_catalogue.dart';
@@ -15,47 +14,26 @@ const catalogueAsset = 'assets/qa_catalogue.json';
 /// section of the catalog.
 ///
 /// The [mock] parameter is the mock of the app.
-/// The [onRestartRequired] parameter shows the restart screen of the app.
+/// The [isRestartRequired] parameter is the flag the restart screen of the app
+/// listens to.
 Future<AutomationPanelController> buildExamplePanel({
   required AutomationMock mock,
-  required void Function() onRestartRequired,
+  required ValueNotifier<bool> isRestartRequired,
 }) async {
-  final json = jsonDecode(await rootBundle.loadString(catalogueAsset));
-  final catalogue = AutomationCatalogue.fromJson(json as Map<String, Object?>);
+  final catalogue = await AutomationCatalogueAsset.load(
+    rootBundle,
+    catalogueAsset,
+  );
 
   return AutomationPanelController(
-    AutomationPanelDefinition(
+    AutomationPanelDefinition.standard(
       mock: mock,
-      catalogue: catalogue,
-      onRestartRequired: onRestartRequired,
-      pages: [
-        AutomationPanelPage(
-          label: 'Flows',
-          builder: (_) => const AutomationFlowsPage(),
-        ),
-        AutomationPanelPage(
-          label: 'Autorun',
-          builder: (_) => const AutomationAutorunPage(),
-        ),
-        AutomationPanelPage(
-          label: 'Sections',
-          builder: (_) => AutomationSectionsPage(
-            sections: [
-              AutomationSectionPanel(
-                title: 'Catalog',
-                section: catalogMockSection,
-                api: MockCatalogApi(mock),
-                profileTitles: const {
-                  'emptyShelf': 'Empty shelf',
-                  'fullShelf': 'Full shelf',
-                },
-              ),
-            ],
-          ),
-        ),
-        AutomationPanelPage(
-          label: 'Log',
-          builder: (_) => const AutomationJournalPage(),
+      catalogue: catalogue ?? const AutomationCatalogue(),
+      isRestartRequired: isRestartRequired,
+      sections: [
+        AutomationSectionPanel.fromSection(
+          catalogMockSection,
+          api: MockCatalogApi(mock),
         ),
       ],
     ),

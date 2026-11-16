@@ -1,3 +1,5 @@
+export 'src/scenario/automation_localized_text.dart';
+export 'src/scenario/mock_profile.dart';
 export 'src/scenario/mock_commands.dart';
 export 'src/scenario/mock_section.dart';
 export 'src/scenario/mock_override.dart';

@@ -10,8 +10,9 @@ Dio adapter of the `flutter_automation_mock` and `flutter_automation_mock_dio`
 packages.
 
 Read the `## Automation` section of the project `AGENTS.md` first. This skill uses
-the fields **Launch**, **Mock configuration file**, **After an edit**,
-**Post-edit steps**, **Format-change places** and **Learned rules** (bold names). A
+the fields **Launch**, **Mock configuration file**, **Debug menu**, **After an
+edit**, **Post-edit steps**, **Format-change places** and **Learned rules** (bold
+names). A
 missing field: ask the user once and write the answer into the section. A
 **Mock configuration file** of `none` means that the project has no mock: offer the
 `setup-automation` skill (in Claude Code with the plugin:
@@ -68,8 +69,9 @@ everyone.
 ## Request to setting
 
 A `MockSection<S>` is one section of the mock. Its `name` is the section key in the
-scenario JSON. `fromJson` builds the settings class `S`. `profiles` holds
-functions over the settings, each with a name. Find the sections in the **Mock configuration
+scenario JSON. `title` is the name of the section in the QA panel. `fromJson` builds the settings class `S`.
+`profiles` holds a `MockProfile` for each name: a function over the settings and its required
+`title`, with an optional `description`. Find the sections in the **Mock configuration
 file**.
 
 - A request for a ready-made state: look for a `profile` of the section
@@ -110,6 +112,12 @@ file**.
 request also implies a value. A request for a state with a detail is a profile
 plus one override, not one of them.
 
+**Add a profile.** Add a `MockProfile` to `profiles` of the section: the function over
+the settings (`copyWith` of the fields it changes) and a `title` as an
+`AutomationLocalizedText`, such as `{'en': 'Empty shelf'}`. Add a `description` when the
+title does not say what the profile changes. The QA panel shows the texts, so a profile
+without a title does not compile.
+
 **Reproduce a loader, a race or a timeout.** Raise the latency profile to the slow
 one. Spinners, disabled buttons and double-tap races last long enough to see. Use
 the fast profile when the run measures the app and not the network.
@@ -120,7 +128,7 @@ code in the api that owns the path.
 
 **Add a mock api for a section that has none.** Write a class that implements
 `MockApi` with one `MockApiEndpoint` per endpoint it owns (`path`, `respond`,
-`hasPathId` for a path that ends in an id). Add it to the list that the project
+`hasPathId` for a path that ends in an id, `title` for the name in the QA panel). Add it to the list that the project
 passes to the transport, and add the state it reads to the mock state. The
 `MockApiEndpointResolver` sends a path that no api owns to the network, and
 `MockApiTransport` answers the rest. The Dio adapter of
@@ -150,15 +158,22 @@ reached from a flow.
 
 A setting that the app reads once, at launch or into storage, goes in
 `MockSection.restartKeys`. The QA panel marks a profile that changes such a key
-and asks the project for a restart through `requiresRestart`. Every other
-setting applies at once. `AutomationStateStore` keeps `state.json` (mode,
-scenario, overrides, walk), the presets and the last 20 run reports in one
-folder. The mock starts from `state.json`. A scenario that `scenario.apply`
-saved wins over it.
+and sets `isRestartRequired`, which `AutomationRestartOverlay` shows. Every other
+setting applies at once. In a debug build, the panel controller asserts that each
+key of `restartKeys` appears in the `toJson` of the default settings or of a
+profile. A failed assert names the section and the key: fix the spelling in the
+section.
+
+`AutomationStateStore` keeps `state.json` (mode, scenario, overrides, walk), the
+presets and the last 20 run reports in one folder. The mock starts from
+`state.json`. A scenario that `scenario.apply` saved wins over it. The mode of the
+app, mock or server, is part of `state.json`. A tester switches it with
+`AutomationMockModeTile` in the file that **Debug menu** names. A **Debug menu**
+of `none` means that the app has no switch: the mode comes from the build.
 
 A start of a flow in the QA panel saves the scenario of the variant and a walk
-with its mode, `manual` or `autorun`, and always restarts the app. The in-app
-player of `flutter_automation_panel` then does the steps of the variant. A
+with its mode, `manual` or `autorun`, and asks the tester to close and open the
+app. The in-app player of `flutter_automation_panel` then does the steps of the variant. A
 branch whose scenario differs from another branch in a restart key is picked
 before the restart. The panel finds the targets only in a build with
 `ENABLE_AUTOMATION_MARKING=true`.

@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_automation_mock/flutter_automation_mock.dart';
 import 'package:flutter_automation_panel/src/blocks/automation_panel_button.dart';
 import 'package:flutter_automation_panel/src/blocks/automation_panel_button_group.dart';
-import 'package:flutter_automation_panel/src/blocks/automation_panel_count.dart';
 import 'package:flutter_automation_panel/src/blocks/automation_panel_sheet.dart';
 import 'package:flutter_automation_panel/src/panel/automation_panel_changes.dart';
 import 'package:flutter_automation_panel/src/panel/automation_panel_controller.dart';
@@ -31,25 +30,31 @@ class AutomationConfirmSheet extends StatelessWidget {
   /// Called after the tester confirms.
   final VoidCallback onConfirmPressed;
 
+  /// The texts of the sheet, the strings of the nearest panel when missing.
+  final AutomationPanelStrings? strings;
+
   const AutomationConfirmSheet({
     required this.title,
     required this.message,
     required this.confirmLabel,
     required this.onConfirmPressed,
+    this.strings,
     super.key,
   });
 
   @override
   Widget build(BuildContext context) {
     final theme = AutomationPanelTheme.of(context);
+    final strings = this.strings ?? AutomationPanelStrings.of(context);
 
     return AutomationPanelSheet(
       title: title,
+      strings: strings,
       onClose: () => Navigator.of(context).pop(),
       footer: AutomationPanelButtonGroup(
         buttons: [
           AutomationPanelButton(
-            label: AutomationPanelStrings.cancel,
+            label: strings.cancel,
             onPressed: () => Navigator.of(context).pop(),
           ),
           AutomationPanelButton(
@@ -76,15 +81,18 @@ class AutomationConfirmSheet extends StatelessWidget {
 ///
 /// Shows an [AutomationConfirmSheet] over [context].
 ///
-/// The [title], [message], [confirmLabel] and [onConfirmPressed] parameters
-/// are those of the sheet.
+/// The [title], [message], [confirmLabel], [onConfirmPressed] and [strings]
+/// parameters are those of the sheet.
 Future<void> showAutomationConfirmSheet({
   required BuildContext context,
   required String title,
   required String message,
   required String confirmLabel,
   required VoidCallback onConfirmPressed,
+  AutomationPanelStrings? strings,
 }) {
+  final sheetStrings = strings ?? AutomationPanelStrings.of(context);
+
   return showAutomationPanelSheet<void>(
     context: context,
     builder: (_) => AutomationConfirmSheet(
@@ -92,6 +100,7 @@ Future<void> showAutomationConfirmSheet({
       message: message,
       confirmLabel: confirmLabel,
       onConfirmPressed: onConfirmPressed,
+      strings: sheetStrings,
     ),
   );
 }
@@ -109,22 +118,22 @@ Future<void> showAutomationResetSheet({
   required AutomationPanelController controller,
   VoidCallback? onReset,
 }) {
+  final strings = controller.definition.strings;
   final count = AutomationPanelChanges.read(controller).count;
   final restarts = controller.requiresRestart(const {});
 
   return showAutomationConfirmSheet(
     context: context,
     title: count == 0
-        ? AutomationPanelStrings.resetQuestion
-        : AutomationPanelStrings.resetChangesQuestion(
-            describeCount(count, AutomationPanelStrings.changeNoun),
-          ),
+        ? strings.resetQuestion
+        : strings.resetChangesQuestion(strings.changeCount(count)),
     message: restarts
-        ? '${AutomationPanelStrings.resetMessage} '
-              '${AutomationPanelStrings.appRestarts}'
-        : AutomationPanelStrings.resetMessage,
-    confirmLabel: AutomationPanelStrings.reset,
+        ? '${strings.resetMessage} '
+              '${strings.appRestarts}'
+        : strings.resetMessage,
+    confirmLabel: strings.reset,
     onConfirmPressed: () => _reset(controller, onReset),
+    strings: strings,
   );
 }
 
@@ -133,17 +142,23 @@ Future<void> showAutomationResetSheet({
 /// Shows the sheet that asks the tester to apply a change that only a restart
 /// of the app applies.
 ///
-/// The [onConfirmPressed] parameter applies the change.
+/// The [onConfirmPressed] parameter applies the change. The [strings]
+/// parameter holds the texts of the sheet, the strings of the nearest panel
+/// when missing.
 Future<void> showAutomationRestartSheet({
   required BuildContext context,
   required VoidCallback onConfirmPressed,
+  AutomationPanelStrings? strings,
 }) {
+  final sheetStrings = strings ?? AutomationPanelStrings.of(context);
+
   return showAutomationConfirmSheet(
     context: context,
-    title: AutomationPanelStrings.restartQuestion,
-    message: AutomationPanelStrings.restartMessage,
-    confirmLabel: AutomationPanelStrings.apply,
+    title: sheetStrings.restartQuestion,
+    message: sheetStrings.restartMessage,
+    confirmLabel: sheetStrings.apply,
     onConfirmPressed: onConfirmPressed,
+    strings: sheetStrings,
   );
 }
 

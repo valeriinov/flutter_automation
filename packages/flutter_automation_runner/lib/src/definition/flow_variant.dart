@@ -1,6 +1,5 @@
 import 'package:flutter_automation_mock/mock_section.dart';
 
-import 'package:flutter_automation_runner/src/automation_localized_text.dart';
 import 'package:flutter_automation_runner/src/automation_flow_entry.dart';
 import 'package:flutter_automation_runner/src/definition/flow_item.dart';
 

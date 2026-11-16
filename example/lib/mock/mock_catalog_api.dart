@@ -10,7 +10,11 @@ final class MockCatalogApi implements MockApi {
 
   @override
   List<MockApiEndpoint> get endpoints => [
-    MockApiEndpoint(path: '/catalog/items', respond: _respondItems),
+    MockApiEndpoint(
+      path: '/catalog/items',
+      title: AutomationLocalizedText({'en': 'Catalog items'}),
+      respond: _respondItems,
+    ),
   ];
 
   MockApiResponse _respondItems(MockApiRequest request) {

@@ -37,17 +37,23 @@ final class AutomationProfileSelection {
   }
 
   /// The words a card shows for this selection of [section]: `Default`, the
-  /// title of the profile, or `Custom`.
-  String describe(AutomationSectionPanel section) {
+  /// title of the profile, or `Custom`. The [strings] parameter holds the words
+  /// and the language of the profile title.
+  String describe(
+    AutomationSectionPanel section,
+    AutomationPanelStrings strings,
+  ) {
     final name = profileName;
 
     if (isDefault) {
-      return AutomationPanelStrings.defaultName;
+      return strings.defaultName;
     }
 
-    return name == null
-        ? AutomationPanelStrings.custom
-        : section.profileTitles[name] ?? name;
+    if (name == null) {
+      return strings.custom;
+    }
+
+    return section.profileTitle(name, strings.languageCode);
   }
 
   /// The scenario of [controller] with [mockSection] set to the profile

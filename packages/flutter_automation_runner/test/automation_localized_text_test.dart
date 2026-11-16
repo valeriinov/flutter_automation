@@ -7,26 +7,26 @@ const _key = 'title';
 const _subject = 'Block "order_remove_item"';
 
 void main() {
-  group('AutomationLocalizedText Tests', () {
-    _automationLocalizedText_should_returnNullWhenAbsent();
-    _automationLocalizedText_should_readBothLanguages();
-    _automationLocalizedText_should_readAnySetOfLocales();
-    _automationLocalizedText_should_rejectLocaleWithoutText();
-    _automationLocalizedText_should_rejectMalformedTexts();
+  group('AutomationLocalizedTextJson Tests', () {
+    _automationLocalizedTextJson_should_returnNullWhenAbsent();
+    _automationLocalizedTextJson_should_readBothLanguages();
+    _automationLocalizedTextJson_should_readAnySetOfLocales();
+    _automationLocalizedTextJson_should_rejectLocaleWithoutText();
+    _automationLocalizedTextJson_should_rejectMalformedTexts();
   });
 }
 
-void _automationLocalizedText_should_returnNullWhenAbsent() {
-  test('AutomationLocalizedText should return null when absent', () {
-    final text = AutomationLocalizedText.tryRead(const {}, _key, _subject);
+void _automationLocalizedTextJson_should_returnNullWhenAbsent() {
+  test('AutomationLocalizedTextJson should return null when absent', () {
+    final text = AutomationLocalizedTextJson.tryRead(const {}, _key, _subject);
 
     expect(text, isNull);
   });
 }
 
-void _automationLocalizedText_should_readBothLanguages() {
-  test('AutomationLocalizedText should read both languages', () {
-    final text = AutomationLocalizedText.tryRead(
+void _automationLocalizedTextJson_should_readBothLanguages() {
+  test('AutomationLocalizedTextJson should read both languages', () {
+    final text = AutomationLocalizedTextJson.tryRead(
       const {
         _key: {'en': 'Remove the item', 'uk': 'Видалити товар'},
       },
@@ -39,9 +39,9 @@ void _automationLocalizedText_should_readBothLanguages() {
   });
 }
 
-void _automationLocalizedText_should_readAnySetOfLocales() {
-  test('AutomationLocalizedText should read any set of locales', () {
-    final text = AutomationLocalizedText.tryRead(
+void _automationLocalizedTextJson_should_readAnySetOfLocales() {
+  test('AutomationLocalizedTextJson should read any set of locales', () {
+    final text = AutomationLocalizedTextJson.tryRead(
       const {
         _key: {'de': 'Angebot ablehnen'},
       },
@@ -50,20 +50,19 @@ void _automationLocalizedText_should_readAnySetOfLocales() {
     );
 
     expect(text?.read('de'), 'Angebot ablehnen');
-    expect(text?.toJson(), {'de': 'Angebot ablehnen'});
   });
 }
 
-void _automationLocalizedText_should_rejectLocaleWithoutText() {
-  test('AutomationLocalizedText should reject locale without text', () {
+void _automationLocalizedTextJson_should_rejectLocaleWithoutText() {
+  test('AutomationLocalizedTextJson should reject locale without text', () {
     const text = AutomationLocalizedText({'en': 'Remove the item'});
 
     expect(() => text.read('uk'), throwsA(isA<AutomationRunnerException>()));
   });
 }
 
-void _automationLocalizedText_should_rejectMalformedTexts() {
-  test('AutomationLocalizedText should reject malformed texts', () {
+void _automationLocalizedTextJson_should_rejectMalformedTexts() {
+  test('AutomationLocalizedTextJson should reject malformed texts', () {
     const malformedTexts = [
       'Remove the item',
       <String, Object?>{},
@@ -74,8 +73,11 @@ void _automationLocalizedText_should_rejectMalformedTexts() {
 
     for (final malformed in malformedTexts) {
       expect(
-        () =>
-            AutomationLocalizedText.tryRead({_key: malformed}, _key, _subject),
+        () => AutomationLocalizedTextJson.tryRead(
+          {_key: malformed},
+          _key,
+          _subject,
+        ),
         throwsA(
           isA<AutomationRunnerException>().having(
             (error) => error.message,

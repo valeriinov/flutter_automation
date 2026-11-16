@@ -155,7 +155,7 @@ void _automationSectionsPage_should_markProfilesThatNeedARestart() {
       await tester.pumpAndSettle();
 
       expect(
-        find.textContaining(AutomationPanelStrings.restartsTheApp),
+        find.textContaining(sampleStrings.restartsTheApp),
         findsNWidgets(2),
       );
     },
@@ -330,12 +330,12 @@ void _automationWalkStrip_should_leadTheWalkActionByAction() {
     await tester.tap(find.text('Next step'));
     await _settle(
       tester,
-      until: () => _isShown(find.text(AutomationPanelStrings.finish)),
+      until: () => _isShown(find.text(sampleStrings.finish)),
     );
 
     expect(sample.mock.walk?.variant, 'accountExists');
 
-    await tester.tap(find.text(AutomationPanelStrings.finish));
+    await tester.tap(find.text(sampleStrings.finish));
     await _settle(tester, until: () => sample.controller.runSummary != null);
 
     expect(sample.controller.runSummary?.mode, AutomationWalkMode.manual);
@@ -366,12 +366,12 @@ void _automationAutorunPage_should_saveAnAutorunAndAskForARestart() {
 
       await tester.tap(find.byType(Switch).first);
       await tester.tap(find.text('Restart and run'));
-      await _settle(tester, until: () => sample.events.isNotEmpty);
+      await _settle(tester, until: () => sample.isRestartRequired.value);
 
       expect(sample.mock.walk?.mode, AutomationWalkMode.autorun);
       expect(sample.mock.walk?.flow, 'login');
       expect(sample.mock.walk?.shouldShowTouches, isFalse);
-      expect(sample.events, ['restart']);
+      expect(sample.isRestartRequired.value, isTrue);
     },
   );
 }
@@ -491,11 +491,14 @@ void _automationModeController_should_saveTheModeAndAskForARestart() {
     () async {
       final directory = Directory.systemTemp.createTempSync('mode_controller');
       final store = AutomationStateStore(directory.path);
-      int restarts = 0;
+      final isRestartRequired = ValueNotifier(false);
+
+      addTearDown(isRestartRequired.dispose);
+
       final controller = AutomationModeController(
         store: store,
         mode: AutomationMode.server,
-        onRestartRequired: () => restarts += 1,
+        isRestartRequired: isRestartRequired,
       );
 
       await store.write(const AutomationState(scenario: {'latency': 'fast'}));
@@ -508,7 +511,7 @@ void _automationModeController_should_saveTheModeAndAskForARestart() {
       directory.deleteSync(recursive: true);
       expect(saved['mode'], 'mock');
       expect(saved['scenario'], {'latency': 'fast'});
-      expect(restarts, 1);
+      expect(isRestartRequired.value, isTrue);
       expect(controller.nextMode, AutomationMode.mock);
       expect(controller.mode, AutomationMode.server);
     },
@@ -562,11 +565,11 @@ void _automationFlowMapPage_should_saveTheWalkAndAskForARestartOnStart() {
       sample.controller.openPanel();
 
       await tester.tap(find.text('Restart and begin'));
-      await _settle(tester, until: () => sample.events.isNotEmpty);
+      await _settle(tester, until: () => sample.isRestartRequired.value);
 
       expect(sample.mock.walk?.flow, 'login');
       expect(sample.mock.walk?.mode, AutomationWalkMode.manual);
-      expect(sample.events, ['restart']);
+      expect(sample.isRestartRequired.value, isTrue);
       expect(sample.controller.isPanelOpen, isTrue);
     },
   );
@@ -582,14 +585,14 @@ void _automationSectionsPage_should_replaceTheProfileOfASection() {
       await tester.pumpAndSettle();
       await tester.tap(find.text('Sign-up needed'));
       await tester.pumpAndSettle();
-      await tester.tap(find.text(AutomationPanelStrings.apply));
+      await tester.tap(find.text(sampleStrings.apply));
       await _settle(tester);
       await tester.tap(find.text('Profile').first);
       await tester.pumpAndSettle();
       await tester.tap(find.text('Slow code'));
       await _settle(tester);
 
-      expect(find.text(AutomationPanelStrings.restartQuestion), findsNothing);
+      expect(find.text(sampleStrings.restartQuestion), findsNothing);
       expect(_authSettings(sample), {'codeDelay': 3});
     },
   );
@@ -625,17 +628,14 @@ void _automationPanel_should_nameAChangedMockWithNoOutcomeCustom() {
     (tester) async {
       await _pumpSections(tester);
 
-      expect(find.text(AutomationPanelStrings.defaultMock), findsOneWidget);
+      expect(find.text(sampleStrings.defaultMock), findsOneWidget);
 
-      await tester.tap(find.text(AutomationPanelStrings.latencySlow));
+      await tester.tap(find.text(sampleStrings.latencySlow));
       await _settle(tester);
 
-      expect(find.text(AutomationPanelStrings.defaultMock), findsNothing);
+      expect(find.text(sampleStrings.defaultMock), findsNothing);
       expect(
-        find.text(
-          '${AutomationPanelStrings.customMock} · 1 change',
-          findRichText: true,
-        ),
+        find.text('${sampleStrings.customMock} · 1 change', findRichText: true),
         findsOneWidget,
       );
     },
@@ -648,23 +648,17 @@ void _automationSectionsPage_should_describeTheDelayOfTheLatency() {
     (tester) async {
       await _pumpSections(tester);
 
-      expect(
-        find.text(AutomationPanelStrings.delayOf(150, 400)),
-        findsOneWidget,
-      );
+      expect(find.text(sampleStrings.delayOf(150, 400)), findsOneWidget);
 
-      await tester.tap(find.text(AutomationPanelStrings.latencySlow));
+      await tester.tap(find.text(sampleStrings.latencySlow));
       await _settle(tester);
 
-      expect(
-        find.text(AutomationPanelStrings.delayOf(1000, 3000)),
-        findsOneWidget,
-      );
+      expect(find.text(sampleStrings.delayOf(1000, 3000)), findsOneWidget);
 
-      await tester.tap(find.text(AutomationPanelStrings.latencyFast));
+      await tester.tap(find.text(sampleStrings.latencyFast));
       await _settle(tester);
 
-      expect(find.text(AutomationPanelStrings.noDelay), findsOneWidget);
+      expect(find.text(sampleStrings.noDelay), findsOneWidget);
     },
   );
 }
@@ -676,12 +670,12 @@ void _automationResponseSheet_should_applyALatencyWithTheMockAnswer() {
       final applied = <(MockApiFailure?, MockLatencyProfile?)>[];
 
       await _pumpResponseSheet(tester, applied);
-      await tester.tap(find.text(AutomationPanelStrings.latencySlow));
+      await tester.tap(find.text(sampleStrings.latencySlow));
       await tester.pump();
 
-      expect(find.text(AutomationPanelStrings.delayOf(1000, 3000)), findsOne);
+      expect(find.text(sampleStrings.delayOf(1000, 3000)), findsOne);
 
-      await tester.tap(find.text(AutomationPanelStrings.apply));
+      await tester.tap(find.text(sampleStrings.apply));
       await tester.pump();
 
       expect(applied, [(null, MockLatencyProfile.slow)]);
@@ -702,9 +696,9 @@ void _automationResponseSheet_should_clearBothOverridesOnUseMockResponse() {
         initialLatency: MockLatencyProfile.slow,
       );
 
-      expect(find.text(AutomationPanelStrings.delayOf(1000, 3000)), findsOne);
+      expect(find.text(sampleStrings.delayOf(1000, 3000)), findsOne);
 
-      await tester.tap(find.text(AutomationPanelStrings.useMockResponse));
+      await tester.tap(find.text(sampleStrings.useMockResponse));
       await tester.pump();
 
       expect(applied, [(null, null)]);
@@ -726,7 +720,7 @@ void _automationResponseSheet_should_dropTheErrorOnASecondTapOfItsCode() {
       );
       await tester.tap(find.text('429'));
       await tester.pump();
-      await tester.tap(find.text(AutomationPanelStrings.apply));
+      await tester.tap(find.text(sampleStrings.apply));
       await tester.pump();
 
       expect(applied, [(null, MockLatencyProfile.slow)]);
@@ -864,8 +858,8 @@ void _automationSectionsPage_should_narrowTheSectionsBySearch() {
       tester,
       AutomationSectionsPage(
         sections: [
-          AutomationSectionPanel(title: 'Auth', section: authSection),
-          AutomationSectionPanel(title: 'Items', section: itemsSection),
+          AutomationSectionPanel.fromSection(authSection),
+          AutomationSectionPanel.fromSection(itemsSection),
         ],
       ),
     );
@@ -905,7 +899,7 @@ void _automationJournalPage_should_narrowTheRequestsBySearch() {
     await tester.enterText(find.byType(TextField), 'nothing');
     await tester.pump();
 
-    expect(find.text(AutomationPanelStrings.noMatches), findsOneWidget);
+    expect(find.text(sampleStrings.noMatches), findsOneWidget);
   });
 }
 
@@ -932,8 +926,8 @@ void _automationJournalPage_should_tellAnAnswerGivenByAnOverride() {
       expect(find.text('500'), findsOneWidget);
       expect(
         find.text(
-          AutomationPanelStrings.answeredByOverride(
-            'error · ${AutomationPanelStrings.latencyOverrideOf('Slow')}',
+          sampleStrings.answeredByOverride(
+            'error · ${sampleStrings.latencyOverrideOf('Slow')}',
           ),
         ),
         findsOneWidget,
@@ -953,13 +947,13 @@ void _automationJournalPage_should_clearTheJournal() {
     });
 
     await tester.pump();
-    await tester.tap(find.text(AutomationPanelStrings.clearLog));
+    await tester.tap(find.text(sampleStrings.clearLog));
     await tester.pumpAndSettle();
-    await tester.tap(find.text(AutomationPanelStrings.clearLog).last);
+    await tester.tap(find.text(sampleStrings.clearLog).last);
     await tester.pumpAndSettle();
 
     expect(sample.mock.journal.records, isEmpty);
-    expect(find.text(AutomationPanelStrings.noRequests), findsOneWidget);
+    expect(find.text(sampleStrings.noRequests), findsOneWidget);
   });
 }
 
@@ -982,7 +976,7 @@ void _automationChangesPage_should_listAndRemoveTheChanges() {
     });
     await tester.pump();
 
-    expect(find.text(AutomationPanelStrings.responseLatency), findsOneWidget);
+    expect(find.text(sampleStrings.responseLatency), findsOneWidget);
     expect(find.text('Slow code'), findsOneWidget);
     expect(find.text('otp'), findsOneWidget);
 
@@ -1004,12 +998,12 @@ void _automationChangesPage_should_resetAll() {
       ),
     );
     await tester.pump();
-    await tester.tap(find.text(AutomationPanelStrings.resetAll));
+    await tester.tap(find.text(sampleStrings.resetAll));
     await tester.pumpAndSettle();
 
     expect(find.text('Reset 1 change?'), findsOneWidget);
 
-    await tester.tap(find.text(AutomationPanelStrings.reset));
+    await tester.tap(find.text(sampleStrings.reset));
     await _settle(tester, until: () => !sample.controller.isChanged);
 
     expect(sample.controller.isChanged, isFalse);
@@ -1028,13 +1022,13 @@ void _automationChangesPage_should_keepTheChangesOnCancel() {
       ),
     );
     await tester.pump();
-    await tester.tap(find.text(AutomationPanelStrings.resetAll));
+    await tester.tap(find.text(sampleStrings.resetAll));
     await tester.pumpAndSettle();
-    await tester.tap(find.text(AutomationPanelStrings.cancel));
+    await tester.tap(find.text(sampleStrings.cancel));
     await tester.pumpAndSettle();
 
     expect(sample.controller.isChanged, isTrue);
-    expect(find.text(AutomationPanelStrings.resetAll), findsOneWidget);
+    expect(find.text(sampleStrings.resetAll), findsOneWidget);
   });
 }
 
@@ -1052,11 +1046,8 @@ void _automationSectionsPage_should_describeTheProfiles() {
     expect(find.text('Signed in'), findsWidgets);
     expect(find.text('signedIn'), findsOneWidget);
     expect(find.text('The app starts with a signed-in user.'), findsOneWidget);
-    expect(find.text(AutomationPanelStrings.restartsTheApp), findsNWidgets(2));
-    expect(
-      find.text(AutomationPanelStrings.defaultProfileDescription),
-      findsOneWidget,
-    );
+    expect(find.text(sampleStrings.restartsTheApp), findsNWidgets(2));
+    expect(find.text(sampleStrings.defaultProfileDescription), findsOneWidget);
   });
 }
 
@@ -1068,17 +1059,14 @@ void _automationSectionsPage_should_narrowTheProfilesBySearch() {
     await tester.tap(find.text('Profile'));
     await tester.pumpAndSettle();
     await tester.enterText(
-      find.widgetWithText(TextField, AutomationPanelStrings.profileSearchHint),
+      find.widgetWithText(TextField, sampleStrings.profileSearchHint),
       'seven',
     );
     await tester.pumpAndSettle();
 
     expect(find.text('Profile seven'), findsOneWidget);
     expect(find.text('Profile one'), findsNothing);
-    expect(
-      find.text(AutomationPanelStrings.defaultProfileDescription),
-      findsNothing,
-    );
+    expect(find.text(sampleStrings.defaultProfileDescription), findsNothing);
   });
 }
 
@@ -1100,10 +1088,10 @@ void _automationPanel_should_openTheChangesFromTheStatusRow() {
         ),
       ),
     );
-    await tester.tap(find.text(AutomationPanelStrings.defaultMock));
+    await tester.tap(find.text(sampleStrings.defaultMock));
     await tester.pumpAndSettle();
 
-    expect(find.text(AutomationPanelStrings.nothingChanged), findsOneWidget);
+    expect(find.text(sampleStrings.nothingChanged), findsOneWidget);
   });
 }
 
@@ -1185,11 +1173,14 @@ void _automationMockModeTile_should_switchTheModeOnAPanelTile() {
     tester,
   ) async {
     final directory = Directory.systemTemp.createTempSync('mode_tile');
-    int restarts = 0;
+    final isRestartRequired = ValueNotifier(false);
+
+    addTearDown(isRestartRequired.dispose);
+
     final controller = AutomationModeController(
       store: AutomationStateStore(directory.path),
       mode: AutomationMode.server,
-      onRestartRequired: () => restarts += 1,
+      isRestartRequired: isRestartRequired,
     );
 
     addTearDown(() => directory.deleteSync(recursive: true));
@@ -1204,11 +1195,11 @@ void _automationMockModeTile_should_switchTheModeOnAPanelTile() {
     await tester.tap(find.byType(Switch));
     await tester.pumpAndSettle();
 
-    expect(find.text(AutomationPanelStrings.restartQuestion), findsOneWidget);
-    expect(restarts, 0);
+    expect(find.text(sampleStrings.restartQuestion), findsOneWidget);
+    expect(isRestartRequired.value, isFalse);
 
-    await tester.tap(find.text(AutomationPanelStrings.apply));
-    await _settle(tester, until: () => restarts > 0);
+    await tester.tap(find.text(sampleStrings.apply));
+    await _settle(tester, until: () => isRestartRequired.value);
 
     expect(controller.nextMode, AutomationMode.mock);
   });
@@ -1282,16 +1273,19 @@ const _profileWords = [
   'nine',
 ];
 
-final _manyProfiles = AutomationSectionPanel(
-  title: 'Many',
-  section: MockSection<Map<String, Object?>>(
+final _manyProfiles = AutomationSectionPanel.fromSection(
+  MockSection<Map<String, Object?>>(
     name: 'many',
+    title: const AutomationLocalizedText({'en': 'Many'}),
     fromJson: (json) => json,
     profiles: {
-      for (final word in _profileWords) word: (settings) => {'word': word},
+      for (final word in _profileWords)
+        word: MockProfile(
+          (settings) => {'word': word},
+          title: AutomationLocalizedText({'en': 'Profile $word'}),
+        ),
     },
   ),
-  profileTitles: {for (final word in _profileWords) word: 'Profile $word'},
 );
 
 void _automationSectionsPage_should_askBeforeAProfileThatRestarts() {
@@ -1305,22 +1299,22 @@ void _automationSectionsPage_should_askBeforeAProfileThatRestarts() {
       await tester.tap(find.text('Sign-up needed'));
       await tester.pumpAndSettle();
 
-      expect(find.text(AutomationPanelStrings.restartQuestion), findsOneWidget);
+      expect(find.text(sampleStrings.restartQuestion), findsOneWidget);
 
-      await tester.tap(find.text(AutomationPanelStrings.cancel));
+      await tester.tap(find.text(sampleStrings.cancel));
       await tester.pumpAndSettle();
 
       expect(_authSettings(sample), isNull);
-      expect(sample.events, isNot(contains('restart')));
+      expect(sample.isRestartRequired.value, isFalse);
       expect(find.text('Sign-up needed'), findsOneWidget);
 
       await tester.tap(find.text('Sign-up needed'));
       await tester.pumpAndSettle();
-      await tester.tap(find.text(AutomationPanelStrings.apply));
-      await _settle(tester, until: () => sample.events.contains('restart'));
+      await tester.tap(find.text(sampleStrings.apply));
+      await _settle(tester, until: () => sample.isRestartRequired.value);
 
       expect(_authSettings(sample), {'isSignedInOnLaunch': false});
-      expect(sample.events.where((event) => event == 'restart'), hasLength(1));
+      expect(sample.isRestartRequired.value, isTrue);
     },
   );
 }
@@ -1342,7 +1336,7 @@ void _automationPresetsSheet_should_askBeforeAPresetThatRestarts() {
       await _settle(tester);
 
       expect(find.text('Apply "Signed out"?'), findsOneWidget);
-      expect(find.text(AutomationPanelStrings.appRestarts), findsOneWidget);
+      expect(find.text(sampleStrings.appRestarts), findsOneWidget);
       expect(_authSettings(sample), isNull);
     },
   );
@@ -1369,16 +1363,16 @@ void _automationChangesPage_should_askBeforeARemovalThatRestarts() {
       await tester.pumpWidget(
         hostApp(child: panelHost(sample, const AutomationChangesPage())),
       );
-      await tester.tap(find.byTooltip(AutomationPanelStrings.removeOverride));
+      await tester.tap(find.byTooltip(sampleStrings.removeOverride));
       await tester.pumpAndSettle();
 
-      expect(find.text(AutomationPanelStrings.restartQuestion), findsOneWidget);
+      expect(find.text(sampleStrings.restartQuestion), findsOneWidget);
 
-      await tester.tap(find.text(AutomationPanelStrings.cancel));
+      await tester.tap(find.text(sampleStrings.cancel));
       await tester.pumpAndSettle();
 
       expect(_authSettings(sample), {'isSignedInOnLaunch': false});
-      expect(sample.events, isNot(contains('restart')));
+      expect(sample.isRestartRequired.value, isFalse);
     },
   );
 }

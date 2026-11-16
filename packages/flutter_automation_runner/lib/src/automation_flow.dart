@@ -144,18 +144,22 @@ final class AutomationFlow {
           .toList(growable: false),
       items: blocks.describe(items),
       scenarioJson: _readScenarioJson(flow['scenario'], entry['scenario']),
-      title: AutomationLocalizedText.tryRead(flow, _titleKey, 'Flow "$name"'),
-      subtitle: AutomationLocalizedText.tryRead(
+      title: AutomationLocalizedTextJson.tryRead(
+        flow,
+        _titleKey,
+        'Flow "$name"',
+      ),
+      subtitle: AutomationLocalizedTextJson.tryRead(
         flow,
         _subtitleKey,
         'Flow "$name"',
       ),
-      variantTitle: AutomationLocalizedText.tryRead(
+      variantTitle: AutomationLocalizedTextJson.tryRead(
         entry,
         _titleKey,
         variantSubject,
       ),
-      proves: AutomationLocalizedText.tryRead(
+      proves: AutomationLocalizedTextJson.tryRead(
         entry,
         _provesKey,
         variantSubject,
@@ -448,7 +452,7 @@ final class AutomationStep {
       timeout: _readDuration(json, 'timeoutMs', _defaultTimeout),
       arguments: _readArguments(json),
       probes: _readProbes(json, action, resolveFinder),
-      title: AutomationLocalizedText.tryRead(json, 'title', subject),
+      title: AutomationLocalizedTextJson.tryRead(json, 'title', subject),
       spec: target == null ? null : resolveFinder(target, subject),
       text: text is String ? text : null,
       command: command is String ? command : null,

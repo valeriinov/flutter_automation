@@ -35,6 +35,8 @@ class AutomationWalkStrip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final strings = AutomationPanelStrings.of(context);
+
     return ListenableBuilder(
       listenable: controller,
       builder: (context, _) {
@@ -45,12 +47,16 @@ class AutomationWalkStrip extends StatelessWidget {
         }
 
         return AutomationWalkPlaque(
-          flowTitle: AutomationCatalogueText.english(flow.title, flow.name),
-          collapsedStep: _describeStep(AutomationPanelStrings.stepShort),
-          expandedStep: _describeStep(AutomationPanelStrings.stepOf),
+          flowTitle: AutomationCatalogueText.read(
+            flow.title,
+            flow.name,
+            strings.languageCode,
+          ),
+          collapsedStep: _describeStep(strings, strings.stepShort),
+          expandedStep: _describeStep(strings, strings.stepOf),
           overrideCount: controller.overrideCount,
           isExpanded: controller.isWalkExpanded,
-          nextLabel: _resolveNextLabel(),
+          nextLabel: _resolveNextLabel(strings),
           isFinishing: _isFinishing(),
           onToggle: controller.toggleWalk,
           onExit: controller.exitWalk,
@@ -66,11 +72,14 @@ class AutomationWalkStrip extends StatelessWidget {
     return controller.isWalkActive && !controller.isAutorunPlaying;
   }
 
-  String _describeStep(String Function(int number, int count) describe) {
+  String _describeStep(
+    AutomationPanelStrings strings,
+    String Function(int number, int count) describe,
+  ) {
     final count = controller.actionCount;
 
     if (controller.isWalkFinished || count == 0) {
-      return AutomationPanelStrings.finished;
+      return strings.finished;
     }
 
     final number = (controller.doneActionCount + 1).clamp(1, count);
@@ -78,18 +87,16 @@ class AutomationWalkStrip extends StatelessWidget {
     return describe(number, count);
   }
 
-  String _resolveNextLabel() {
+  String _resolveNextLabel(AutomationPanelStrings strings) {
     if (controller.isWalkBusy) {
-      return AutomationPanelStrings.working;
+      return strings.working;
     }
 
     if (controller.walkFailure != null) {
-      return AutomationPanelStrings.tryAgain;
+      return strings.tryAgain;
     }
 
-    return _isFinishing()
-        ? AutomationPanelStrings.finish
-        : AutomationPanelStrings.nextStep;
+    return _isFinishing() ? strings.finish : strings.nextStep;
   }
 
   bool _isFinishing() {
@@ -116,6 +123,7 @@ class _WalkBody extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final strings = AutomationPanelStrings.of(context);
     final fork = controller.pendingFork;
     final failure = controller.walkFailure;
 
@@ -129,7 +137,7 @@ class _WalkBody extends StatelessWidget {
         else if (controller.hasActionLeft)
           _NextAction(controller: controller)
         else
-          const _Hint(text: AutomationPanelStrings.walkFinished),
+          _Hint(text: strings.walkFinished),
       ],
     );
   }
@@ -142,6 +150,7 @@ class _NextAction extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final strings = AutomationPanelStrings.of(context);
     final theme = AutomationPanelTheme.of(context);
     final next = controller.nextAction;
 
@@ -149,11 +158,11 @@ class _NextAction extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       spacing: AutomationPanelTheme.gapSmall,
       children: [
-        const AutomationPanelLabel(text: AutomationPanelStrings.nextAction),
+        AutomationPanelLabel(text: strings.nextAction),
         Text(
           next == null
-              ? AutomationPanelStrings.waitsLeft
-              : AutomationFlowPlayer.describe(next),
+              ? strings.waitsLeft
+              : AutomationFlowPlayer.describe(next, strings.languageCode),
           style: theme.textStyle(size: 15, weight: FontWeight.w700),
         ),
       ],
@@ -168,13 +177,14 @@ class _Branches extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final strings = AutomationPanelStrings.of(context);
     final selected = controller.selectedBranch;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       spacing: AutomationPanelTheme.gapSmall,
       children: [
-        const AutomationPanelLabel(text: AutomationPanelStrings.chooseBranch),
+        AutomationPanelLabel(text: strings.chooseBranch),
         for (final branch in controller.forkChoices)
           AutomationPanelRadioTile(
             title: branch.label,

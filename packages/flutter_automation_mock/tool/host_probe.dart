@@ -16,8 +16,14 @@ enum _ProbeTarget with AutomationIdComposer {
 
 final _catalog = MockSection<_CatalogSettings>(
   name: 'catalog',
+  title: AutomationLocalizedText({'en': 'Catalog'}),
   fromJson: _CatalogSettings.fromJson,
-  profiles: {'empty': (settings) => _CatalogSettings(isEmpty: true)},
+  profiles: {
+    'empty': MockProfile(
+      (settings) => _CatalogSettings(isEmpty: true),
+      title: AutomationLocalizedText({'en': 'Empty'}),
+    ),
+  },
   restartKeys: {'isEmpty'},
 );
 
@@ -41,13 +47,17 @@ void main() {
   ]);
   final isEmpty = scenario.settingsOf(_catalog).isEmpty;
   final catalogue = AutomationCatalogue.fromJson(const {'flows': []});
+  final title = _catalog.profiles['empty']?.title.resolve('uk');
   final isRestart = _catalog.changesRestartKey(const {}, scenario.toJson());
 
   if (target.id != 'probe.button.submit' ||
       isEmpty != true ||
+      title != 'Empty' ||
       !isRestart ||
       catalogue.flows.isNotEmpty) {
-    throw StateError('Unexpected probe result: ${target.id} $isEmpty');
+    throw StateError(
+      'Unexpected probe result: ${target.id} $isEmpty $title $isRestart',
+    );
   }
 
   stdout.writeln('host probe ok: ${scenario.toJson()}');

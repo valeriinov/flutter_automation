@@ -1,4 +1,5 @@
 import 'package:flutter_automation_mock/src/contract/mock_api_responder.dart';
+import 'package:flutter_automation_mock/src/scenario/automation_localized_text.dart';
 
 /// {@category Utils}
 ///
@@ -17,9 +18,14 @@ class MockApiEndpoint {
   /// Whether the app appends a trailing segment to [path].
   final bool hasPathId;
 
+  /// Title of the request in the QA panel, missing when the path says it. A
+  /// request without a title shows its path.
+  final AutomationLocalizedText? title;
+
   const MockApiEndpoint({
     required this.path,
     required this.respond,
+    this.title,
     this.hasPathId = false,
   });
 }

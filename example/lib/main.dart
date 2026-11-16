@@ -1,8 +1,10 @@
 import 'package:dio/dio.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_automation_driver/driver_extension.dart';
 import 'package:flutter_automation_mock/flutter_automation_mock.dart';
 import 'package:flutter_automation_mock_dio/flutter_automation_mock_dio.dart';
+import 'package:flutter_automation_panel/flutter_automation_panel.dart';
 import 'package:path_provider/path_provider.dart';
 
 import 'package:example/automation/screen_name_observer.dart';
@@ -34,13 +36,18 @@ Future<void> main() async {
 
   MockScenarioBackend? backend;
 
+  final bootstrap = await AutomationModeBootstrap.restore(
+    directory: '${(await getApplicationSupportDirectory()).path}/automation',
+    isSwitchable: kReleaseMode,
+  );
+
+  final isOnMock = isMockEnabled && bootstrap.isOnMock;
+
   final mock = await AutomationMock.init(
-    isEnabled: isMockEnabled,
+    isEnabled: isOnMock,
     scenarioDirectory: (await getTemporaryDirectory()).path,
-    stateStore: AutomationStateStore(
-      '${(await getApplicationSupportDirectory()).path}/automation',
-    ),
-    sections: isMockEnabled ? [catalogMockSection] : const [],
+    stateStore: bootstrap.store,
+    sections: isOnMock ? [catalogMockSection] : const [],
     onScenarioApplied: (scenario) => backend?.rebuild(),
     onScenarioUpdated: (scenario) => backend?.rebuild(),
   );
@@ -77,8 +84,13 @@ Future<void> main() async {
       catalogApi: CatalogApi(dio),
       screenNameObserver: screenNameObserver,
       locale: locale,
-      panelController: isMockEnabled
-          ? await buildExamplePanel(mock: mock, onRestartRequired: () {})
+      isRestartRequired: bootstrap.isRestartRequired,
+      modeController: isMockEnabled ? bootstrap.createModeController() : null,
+      panelController: isOnMock
+          ? await buildExamplePanel(
+              mock: mock,
+              isRestartRequired: bootstrap.isRestartRequired,
+            )
           : null,
     ),
   );

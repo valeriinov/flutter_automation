@@ -1,5 +1,61 @@
 # Changelog
 
+## 0.9.0
+
+- Breaking: `AutomationPanelStrings` is a class with a `const` constructor,
+  getters and methods, not a class of static constants. `AutomationPanelStrings.X`
+  becomes `strings.X` on an instance. A project extends the class to translate
+  the panel and passes it as `AutomationPanelDefinition.strings` (English by
+  default). `languageCode` names the language of the texts of sections,
+  profiles, requests and the catalogue; the panel reads them with
+  `AutomationLocalizedText.resolve`.
+- Breaking: `describeCount`, `describeOverrideCount` and
+  `AutomationLatencyNote.labels` are gone. The strings hold `changeCount`,
+  `requestCount`, `stepCount`, `variantCount`, `overrideCount`,
+  `latencyLabel` and `profileSheetTitle`.
+- Breaking: `AutomationSectionPanel` takes `AutomationLocalizedText` titles and
+  loses `profileTitles`, `profileDescriptions` and `requestTitles`. The new
+  `AutomationSectionPanel.fromSection(section, api:)` reads the texts from the
+  `MockSection`, its `MockProfile` values and the `MockApiEndpoint.title` values.
+- `AutomationPanelStrings.of(context)` gives the strings of the nearest panel,
+  English outside one. The `strings` parameter of `AutomationRestartOverlay`,
+  `AutomationMockModeTile`, `showAutomationMockModeSheet`,
+  `showAutomationRestartSheet`, `AutomationConfirmSheet`,
+  `showAutomationConfirmSheet` and `AutomationPanelSheet` is optional: the
+  strings of the nearest panel stand in.
+- Breaking: the default constructor of `AutomationSectionPanel` has no
+  `section:` parameter. A section with profiles uses
+  `AutomationSectionPanel.fromSection`. `profileTitle(name, languageCode)`
+  gives the title of a profile.
+- The strings hold `latencyLabel` and the failure reasons of the player:
+  `stepHasNoAction`, `stepHasUnknownAction`, `stepHasNoTarget`,
+  `stepDidNotAppear`, `stepDidNotGo`, `stepDidNotBecomeTappable`,
+  `stepCannotBeTapped`, `noFocusedTextField`, `walkStopped`,
+  `timeoutMilliseconds` and `timeoutSeconds`. `AutomationFlowPlayer` takes
+  `strings` and words its failures with them.
+- Breaking: the exported `AutomationRequestRow.describeOverride` needs
+  `strings`, and `AutomationFlowPlayer.describe` needs `languageCode`.
+- Breaking: `AutomationPanelDefinition.onRestartRequired` and
+  `AutomationModeController.onRestartRequired` are gone. Both take a required
+  `ValueNotifier<bool> isRestartRequired` instead. The panel sets it to true at
+  each start of a walk and at each change of a restart key, and `switchTo`
+  sets it after it saves the mode.
+- Breaking: `AutomationPanelDefinition.onShare` is
+  `FutureOr<void> Function(BuildContext context, File report)`. The context is
+  the one of the end-of-run layer.
+- New `AutomationRestartOverlay`: the screen `Close and open the app` over the
+  app while `isRestartRequired` is true, in both modes.
+- New `AutomationModeBootstrap.restore`: reads the saved mode before the
+  dependency injection and gives the state store, `isSwitchable`, `isOnMock`,
+  the restart flag and `createModeController()`. `createModeController()`
+  returns `null` when the build cannot switch the mode.
+- New `AutomationCatalogueAsset.load` and `AutomationPanelDefinition.standard`:
+  the catalogue loads from an asset in one call, and the panel gets the pages
+  Flows, Autorun, Sections and Log, each wrapped by `wrapPage`.
+- The controller of the panel asserts in a debug build that every key of
+  `restartKeys` is a key of the settings JSON of its section, and names the
+  section and the key.
+
 ## 0.8.7
 
 - A change that restarts the app asks first in a sheet,

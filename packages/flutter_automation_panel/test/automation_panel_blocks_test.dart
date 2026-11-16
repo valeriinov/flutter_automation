@@ -181,11 +181,11 @@ void _automationWalkPlaque_should_pinExitAndNextUnderALongBody() {
 
       final next = find.widgetWithText(
         AutomationPanelButton,
-        AutomationPanelStrings.nextStep,
+        sampleStrings.nextStep,
       );
       final exit = find.widgetWithText(
         AutomationPanelButton,
-        AutomationPanelStrings.exit,
+        sampleStrings.exit,
       );
 
       expect(tester.getBottomLeft(next).dy, lessThanOrEqualTo(360));
@@ -248,11 +248,11 @@ void _automationRunDoneSheet_should_pinItsButtonsAndShare() {
 
     await _pumpRunDone(tester, onShare: () => shares += 1);
 
-    final share = find.text(AutomationPanelStrings.shareLogs);
+    final share = find.text(sampleStrings.shareLogs);
 
     expect(share.hitTestable(), findsOneWidget);
-    expect(find.text(AutomationPanelStrings.runAgain).hitTestable(), findsOne);
-    expect(find.text(AutomationPanelStrings.exit).hitTestable(), findsOne);
+    expect(find.text(sampleStrings.runAgain).hitTestable(), findsOne);
+    expect(find.text(sampleStrings.exit).hitTestable(), findsOne);
     expect(find.text('/request/29').hitTestable(), findsNothing);
 
     await tester.tap(share);
@@ -267,8 +267,8 @@ void _automationRunDoneSheet_should_hideShareWithoutACallback() {
   ) async {
     await _pumpRunDone(tester);
 
-    expect(find.text(AutomationPanelStrings.shareLogs), findsNothing);
-    expect(find.text(AutomationPanelStrings.runAgain), findsOneWidget);
+    expect(find.text(sampleStrings.shareLogs), findsNothing);
+    expect(find.text(sampleStrings.runAgain), findsOneWidget);
   });
 }
 
@@ -283,11 +283,11 @@ Widget _plaque({
 }) {
   return AutomationWalkPlaque(
     flowTitle: _flowTitle,
-    collapsedStep: AutomationPanelStrings.stepShort(1, 4),
-    expandedStep: AutomationPanelStrings.stepOf(1, 4),
+    collapsedStep: sampleStrings.stepShort(1, 4),
+    expandedStep: sampleStrings.stepOf(1, 4),
     overrideCount: 0,
     isExpanded: isExpanded,
-    nextLabel: AutomationPanelStrings.nextStep,
+    nextLabel: sampleStrings.nextStep,
     onToggle: onToggle ?? () {},
     onExit: onExit ?? () {},
     onNext: onNext ?? () {},

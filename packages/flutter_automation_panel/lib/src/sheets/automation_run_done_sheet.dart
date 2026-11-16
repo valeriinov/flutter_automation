@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_automation_mock/mock_catalogue.dart';
 import 'package:flutter_automation_panel/src/blocks/automation_panel_button.dart';
-import 'package:flutter_automation_panel/src/blocks/automation_panel_count.dart';
 import 'package:flutter_automation_panel/src/blocks/automation_panel_label.dart';
 import 'package:flutter_automation_panel/src/blocks/automation_panel_sheet.dart';
 import 'package:flutter_automation_panel/src/blocks/automation_request_row.dart';
@@ -54,6 +53,8 @@ class AutomationRunDoneSheet extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final strings = AutomationPanelStrings.of(context);
+
     return AutomationPanelSheet(
       hasGrabber: false,
       header: _Header(
@@ -66,16 +67,10 @@ class AutomationRunDoneSheet extends StatelessWidget {
         spacing: AutomationPanelTheme.gapSmall,
         children: [
           if (onShare != null)
-            AutomationPanelButton(
-              label: AutomationPanelStrings.shareLogs,
-              onPressed: onShare,
-            ),
+            AutomationPanelButton(label: strings.shareLogs, onPressed: onShare),
+          AutomationPanelButton(label: strings.runAgain, onPressed: onRunAgain),
           AutomationPanelButton(
-            label: AutomationPanelStrings.runAgain,
-            onPressed: onRunAgain,
-          ),
-          AutomationPanelButton(
-            label: AutomationPanelStrings.exit,
+            label: strings.exit,
             kind: AutomationPanelButtonKind.primary,
             onPressed: onExit,
           ),
@@ -85,11 +80,9 @@ class AutomationRunDoneSheet extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         spacing: AutomationPanelTheme.gapSmall,
         children: [
-          const Padding(
+          Padding(
             padding: EdgeInsets.only(top: 4),
-            child: AutomationPanelLabel(
-              text: AutomationPanelStrings.runRequests,
-            ),
+            child: AutomationPanelLabel(text: strings.runRequests),
           ),
           for (final request in requests)
             AutomationRequestRow(
@@ -116,6 +109,7 @@ class _Header extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final strings = AutomationPanelStrings.of(context);
     final theme = AutomationPanelTheme.of(context);
 
     return Padding(
@@ -137,14 +131,14 @@ class _Header extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  AutomationPanelStrings.runFinished,
+                  strings.runFinished,
                   style: theme.textStyle(size: 18, weight: FontWeight.w700),
                 ),
                 Text(
                   [
                     outcome,
-                    describeCount(stepCount, AutomationPanelStrings.stepNoun),
-                    AutomationPanelStrings.seconds(duration.inSeconds),
+                    strings.stepCount(stepCount),
+                    strings.seconds(duration.inSeconds),
                   ].join(' · '),
                   style: theme.textStyle(size: 13, color: theme.textSecondary),
                 ),

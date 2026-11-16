@@ -1,19 +1,15 @@
-import 'package:collection/collection.dart';
-
+import 'package:flutter_automation_mock/mock_section.dart';
 import 'package:flutter_automation_runner/src/automation_runner_exception.dart';
+
+export 'package:flutter_automation_mock/mock_section.dart'
+    show AutomationLocalizedText;
 
 /// {@category Utils}
 ///
-/// Text a flow file carries for people rather than for the driver, written
-/// once per locale.
-final class AutomationLocalizedText {
-  final Map<String, String> _texts;
-
-  const AutomationLocalizedText(this._texts);
-
-  /// The locale codes that hold a version of the text.
-  Iterable<String> get locales => _texts.keys;
-
+/// Reads an [AutomationLocalizedText] out of flow JSON.
+///
+/// The [read] method throws when the asked locale is missing.
+extension AutomationLocalizedTextJson on AutomationLocalizedText {
   /// Reads the optional text under [key] of [json], `null` when it is missing.
   ///
   /// The [json] parameter is the object that holds the text. The [key]
@@ -45,22 +41,15 @@ final class AutomationLocalizedText {
   /// Throws an [AutomationRunnerException] when the text has no entry for
   /// [locale].
   String read(String locale) {
-    final text = _texts[locale];
+    final text = texts[locale];
 
     if (text == null) {
       throw AutomationRunnerException(
-        'The text has no "$locale" entry. It holds ${_texts.keys.toList()}.',
+        'The text has no "$locale" entry. It holds ${texts.keys.toList()}.',
       );
     }
 
     return text;
-  }
-
-  /// The text as a flow file writes it.
-  Map<String, String> toJson() {
-    final entries = _texts.entries.sortedBy((entry) => entry.key);
-
-    return {for (final MapEntry(:key, :value) in entries) key: value};
   }
 
   static bool _areFilled(Map<String, Object?> texts) {

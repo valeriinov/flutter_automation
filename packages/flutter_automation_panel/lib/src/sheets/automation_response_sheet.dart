@@ -119,10 +119,11 @@ class _AutomationResponseSheetState extends State<AutomationResponseSheet> {
 
   @override
   Widget build(BuildContext context) {
+    final strings = AutomationPanelStrings.of(context);
     final theme = AutomationPanelTheme.of(context);
 
     return AutomationPanelSheet(
-      title: AutomationPanelStrings.response,
+      title: strings.response,
       onClose: widget.onClose,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -133,7 +134,7 @@ class _AutomationResponseSheetState extends State<AutomationResponseSheet> {
             statusCode: widget.mockStatusCode,
             description: widget.mockDescription,
           ),
-          const AutomationPanelLabel(text: AutomationPanelStrings.errorCode),
+          AutomationPanelLabel(text: strings.errorCode),
           AutomationPanelChips<int>(
             options: [
               for (final code in _offeredStatusCodes)
@@ -141,13 +142,11 @@ class _AutomationResponseSheetState extends State<AutomationResponseSheet> {
             ],
             selected: _isNoNetwork ? null : _statusCode,
             selectedColor: theme.danger,
-            customLabel: AutomationPanelStrings.custom,
+            customLabel: strings.custom,
             onChanged: _toggleStatusCode,
             onCustomPressed: _askForStatusCode,
           ),
-          const AutomationPanelLabel(
-            text: AutomationPanelStrings.backendErrorCode,
-          ),
+          AutomationPanelLabel(text: strings.backendErrorCode),
           AutomationPanelChips<String>(
             options: [
               for (final code in _offeredErrorCodes)
@@ -156,31 +155,28 @@ class _AutomationResponseSheetState extends State<AutomationResponseSheet> {
             selected: _errorCode,
             selectedColor: theme.danger,
             isMono: true,
-            customLabel: AutomationPanelStrings.custom,
+            customLabel: strings.custom,
             onChanged: _toggleErrorCode,
             onCustomPressed: _askForErrorCode,
           ),
-          const AutomationPanelLabel(text: AutomationPanelStrings.message),
+          AutomationPanelLabel(text: strings.message),
           _MessageField(controller: _messageController),
           AutomationPanelRadioTile(
-            title: AutomationPanelStrings.noNetwork,
-            subtitle: AutomationPanelStrings.noNetworkNote,
+            title: strings.noNetwork,
+            subtitle: strings.noNetworkNote,
             isSelected: _isNoNetwork,
             activeColor: theme.danger,
             onPressed: _toggleNoNetwork,
           ),
-          const AutomationPanelLabel(
-            text: AutomationPanelStrings.requestLatency,
-          ),
+          AutomationPanelLabel(text: strings.requestLatency),
           AutomationPanelSegments<MockLatencyProfile?>(
             options: [
-              const AutomationPanelOption(
-                value: null,
-                label: AutomationPanelStrings.defaultName,
-              ),
-              for (final MapEntry(:key, :value)
-                  in AutomationLatencyNote.labels.entries)
-                AutomationPanelOption(value: key, label: value),
+              AutomationPanelOption(value: null, label: strings.defaultName),
+              for (final profile in MockLatencyProfile.values)
+                AutomationPanelOption(
+                  value: profile,
+                  label: strings.latencyLabel(profile),
+                ),
             ],
             selected: _latency,
             onChanged: _selectLatency,
@@ -192,12 +188,12 @@ class _AutomationResponseSheetState extends State<AutomationResponseSheet> {
           AutomationPanelButtonGroup(
             buttons: [
               AutomationPanelButton(
-                label: AutomationPanelStrings.apply,
+                label: strings.apply,
                 kind: AutomationPanelButtonKind.primary,
                 onPressed: _apply,
               ),
               AutomationPanelButton(
-                label: AutomationPanelStrings.useMockResponse,
+                label: strings.useMockResponse,
                 onPressed: () => widget.onApply(null, null),
               ),
             ],
@@ -256,10 +252,9 @@ class _AutomationResponseSheetState extends State<AutomationResponseSheet> {
   }
 
   Future<void> _askForStatusCode() async {
-    final text = await _askForText(
-      AutomationPanelStrings.statusCode,
-      TextInputType.number,
-    );
+    final strings = AutomationPanelStrings.of(context);
+
+    final text = await _askForText(strings.statusCode, TextInputType.number);
 
     final code = int.tryParse(text ?? '');
 
@@ -269,8 +264,10 @@ class _AutomationResponseSheetState extends State<AutomationResponseSheet> {
   }
 
   Future<void> _askForErrorCode() async {
+    final strings = AutomationPanelStrings.of(context);
+
     final text = await _askForText(
-      AutomationPanelStrings.backendErrorCode,
+      strings.backendErrorCode,
       TextInputType.text,
     );
 
@@ -338,6 +335,7 @@ class _MockResponse extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final strings = AutomationPanelStrings.of(context);
     final theme = AutomationPanelTheme.of(context);
     final code = statusCode;
 
@@ -353,7 +351,7 @@ class _MockResponse extends StatelessWidget {
           if (code != null) AutomationCodeBadge(code: code),
           Expanded(
             child: Text(
-              AutomationPanelStrings.mockResponseOf(description),
+              strings.mockResponseOf(description),
               style: theme.textStyle(size: 13, color: theme.textPath),
             ),
           ),
@@ -370,6 +368,7 @@ class _MessageField extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final strings = AutomationPanelStrings.of(context);
     final theme = AutomationPanelTheme.of(context);
 
     return SizedBox(
@@ -377,9 +376,7 @@ class _MessageField extends StatelessWidget {
       child: TextField(
         controller: controller,
         style: theme.textStyle(size: 15),
-        decoration: const InputDecoration(
-          hintText: AutomationPanelStrings.message,
-        ),
+        decoration: InputDecoration(hintText: strings.message),
       ),
     );
   }
@@ -400,6 +397,8 @@ class _TextPromptState extends State<_TextPrompt> {
 
   @override
   Widget build(BuildContext context) {
+    final strings = AutomationPanelStrings.of(context);
+
     return AlertDialog(
       title: Text(widget.title),
       content: TextField(
@@ -410,11 +409,11 @@ class _TextPromptState extends State<_TextPrompt> {
       actions: [
         TextButton(
           onPressed: () => Navigator.of(context).pop(),
-          child: const Text(AutomationPanelStrings.cancel),
+          child: Text(strings.cancel),
         ),
         TextButton(
           onPressed: () => Navigator.of(context).pop(_controller.text.trim()),
-          child: const Text(AutomationPanelStrings.ok),
+          child: Text(strings.ok),
         ),
       ],
     );

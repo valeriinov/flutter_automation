@@ -1,6 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_automation_panel/src/blocks/automation_latency_note.dart';
-import 'package:flutter_automation_panel/src/blocks/automation_panel_count.dart';
 import 'package:flutter_automation_panel/src/blocks/automation_panel_search_field.dart';
 import 'package:flutter_automation_panel/src/blocks/automation_request_row.dart';
 import 'package:flutter_automation_panel/src/panel/automation_journal_record.dart';
@@ -30,6 +28,7 @@ class _AutomationJournalPageState extends State<AutomationJournalPage> {
 
   @override
   Widget build(BuildContext context) {
+    final strings = AutomationPanelStrings.of(context);
     final controller = AutomationPanelScope.of(context);
     final theme = AutomationPanelTheme.of(context);
 
@@ -43,7 +42,7 @@ class _AutomationJournalPageState extends State<AutomationJournalPage> {
         if (records.isEmpty) {
           return Center(
             child: Text(
-              AutomationPanelStrings.noRequests,
+              strings.noRequests,
               style: theme.textStyle(size: 14, color: theme.textSecondary),
             ),
           );
@@ -80,7 +79,7 @@ class _AutomationJournalPageState extends State<AutomationJournalPage> {
                 method: AutomationJournalRecord.methodOf(record),
                 path: path,
                 mockStatusCode: AutomationJournalRecord.statusCodeOf(record),
-                mockDescription: AutomationPanelStrings.lastAnswer,
+                mockDescription: strings.lastAnswer,
               ),
             );
           },
@@ -90,32 +89,33 @@ class _AutomationJournalPageState extends State<AutomationJournalPage> {
   }
 
   Future<void> _confirmClear(BuildContext context) {
+    final strings = AutomationPanelStrings.of(context);
     final controller = AutomationPanelScope.of(context);
 
     return showAutomationConfirmSheet(
       context: context,
-      title: AutomationPanelStrings.clearLogQuestion,
-      message: AutomationPanelStrings.clearLogMessage,
-      confirmLabel: AutomationPanelStrings.clearLog,
+      title: strings.clearLogQuestion,
+      message: strings.clearLogMessage,
+      confirmLabel: strings.clearLog,
       onConfirmPressed: controller.mock.journal.clear,
     );
   }
 
   String? _describeOverride(Map<String, Object?> record) {
-    final latencyLabel = AutomationLatencyNote
-        .labels[AutomationJournalRecord.latencyOverrideOf(record)];
+    final strings = AutomationPanelStrings.of(context);
+    final latency = AutomationJournalRecord.latencyOverrideOf(record);
     final parts = [
       if (AutomationJournalRecord.hasFailureOverride(record))
-        AutomationPanelStrings.errorAnswer,
-      if (latencyLabel != null)
-        AutomationPanelStrings.latencyOverrideOf(latencyLabel),
+        strings.errorAnswer,
+      if (latency != null)
+        strings.latencyOverrideOf(strings.latencyLabel(latency)),
     ];
 
     if (parts.isEmpty) {
       return null;
     }
 
-    return AutomationPanelStrings.answeredByOverride(parts.join(' · '));
+    return strings.answeredByOverride(parts.join(' · '));
   }
 
   bool _matchesQuery(Map<String, Object?> record) {
@@ -142,6 +142,7 @@ class _Search extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final strings = AutomationPanelStrings.of(context);
     final theme = AutomationPanelTheme.of(context);
 
     return Column(
@@ -149,21 +150,21 @@ class _Search extends StatelessWidget {
       spacing: AutomationPanelTheme.gapSmall,
       children: [
         AutomationPanelSearchField(
-          hint: AutomationPanelStrings.journalSearchHint,
+          hint: strings.journalSearchHint,
           onChanged: onChanged,
         ),
         Row(
           children: [
             Expanded(
               child: Text(
-                describeCount(recordCount, AutomationPanelStrings.requestNoun),
+                strings.requestCount(recordCount),
                 style: theme.textStyle(size: 13, color: theme.textSecondary),
               ),
             ),
             TextButton.icon(
               onPressed: onClearPressed,
               icon: Icon(Icons.delete_outline, size: 18, color: theme.danger),
-              label: const Text(AutomationPanelStrings.clearLog),
+              label: Text(strings.clearLog),
               style: TextButton.styleFrom(
                 foregroundColor: theme.danger,
                 minimumSize: const Size(0, AutomationPanelTheme.touchTarget),
@@ -174,7 +175,7 @@ class _Search extends StatelessWidget {
         ),
         if (!hasMatches)
           Text(
-            AutomationPanelStrings.noMatches,
+            strings.noMatches,
             textAlign: TextAlign.center,
             style: theme.textStyle(size: 14, color: theme.textSecondary),
           ),

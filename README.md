@@ -225,6 +225,7 @@ own facts (commands, folders, defaults) in an `## Automation` section of its
 | `drive-device` | Pick and boot a device, launch the app with Flutter Driver, drive it tap by tap, read errors, take screenshots and video | — |
 | `mock-app` | Run the app on the in-memory mock, choose scenarios and profiles, tune a `MockSection`, add a mock api | — |
 | `add-automation-targets` | Declare target enums and mark widgets with `automationTarget()` so a flow addresses ids, not text | — |
+| `setup-qa-panel` | Add the QA panel to a project that has the mock: panel dependency, mode bootstrap, panel file, restart screen, mode tile in the debug menu, catalogue asset, QA build, and the `--check` of the QA catalogue | — |
 | `setup-automation` | Set a project up from `flutter create`: dependencies at the tag, `flutter_automation:` section, `## Automation` in `AGENTS.md`, driver in `main`, `run_flows.dart` and a first flow, optionally the mock | — |
 
 The workflows `measure-flow` and `optimize-flow` ship in the Claude Code plugin only.
@@ -275,7 +276,15 @@ npx skills add https://github.com/valeriinov/flutter_automation/tree/<tag> \
   --skill add-automation-targets
 ```
 
- Update: `npx skills update`. Remove:
+`setup-qa-panel` needs the other five skills, so name all six:
+
+```bash
+npx skills add https://github.com/valeriinov/flutter_automation/tree/<tag> \
+  --skill setup-qa-panel --skill setup-automation --skill mock-app \
+  --skill run-flow --skill drive-device --skill add-automation-targets
+```
+
+Update: `npx skills update`. Remove:
 `npx skills remove run-flow`.
 
 Use the same `<tag>` for the packages in `pubspec.yaml`. The `setup-automation`

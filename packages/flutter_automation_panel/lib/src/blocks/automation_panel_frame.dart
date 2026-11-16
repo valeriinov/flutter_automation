@@ -2,7 +2,6 @@ import 'dart:math';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter_automation_panel/src/blocks/automation_panel_count.dart';
 import 'package:flutter_automation_panel/src/blocks/automation_panel_status.dart';
 import 'package:flutter_automation_panel/src/theme/automation_panel_theme.dart';
 import 'package:flutter_automation_panel/src/theme/automation_panel_strings.dart';
@@ -131,6 +130,7 @@ class _Header extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final strings = AutomationPanelStrings.of(context);
     final theme = AutomationPanelTheme.of(context);
     final subtitle = this.subtitle;
     final isNested = onBack != null;
@@ -148,7 +148,7 @@ class _Header extends StatelessWidget {
           if (isNested)
             IconButton(
               onPressed: onBack,
-              tooltip: AutomationPanelStrings.back,
+              tooltip: strings.back,
               icon: const Icon(Icons.chevron_left, size: 28),
             )
           else
@@ -179,7 +179,7 @@ class _Header extends StatelessWidget {
           ),
           IconButton(
             onPressed: onClose,
-            tooltip: AutomationPanelStrings.closePanel,
+            tooltip: strings.closePanel,
             icon: const Icon(Icons.close),
           ),
         ],
@@ -193,6 +193,7 @@ class _Logo extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final strings = AutomationPanelStrings.of(context);
     final theme = AutomationPanelTheme.of(context);
 
     return Container(
@@ -201,7 +202,7 @@ class _Logo extends StatelessWidget {
       alignment: Alignment.center,
       decoration: BoxDecoration(shape: BoxShape.circle, color: theme.accent),
       child: Text(
-        AutomationPanelStrings.qaBadge,
+        strings.qaBadge,
         style: theme.textStyle(
           size: 12,
           weight: FontWeight.w700,
@@ -316,6 +317,7 @@ class _StatusState extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final strings = AutomationPanelStrings.of(context);
     final theme = AutomationPanelTheme.of(context);
     final onPressed = status.onPressed;
 
@@ -347,10 +349,7 @@ class _StatusState extends StatelessWidget {
                           text: ' · ',
                           children: [
                             TextSpan(
-                              text: describeCount(
-                                status.changeCount,
-                                AutomationPanelStrings.changeNoun,
-                              ),
+                              text: strings.changeCount(status.changeCount),
                               style: TextStyle(
                                 color: theme.danger,
                                 fontWeight: FontWeight.w600,

@@ -13,6 +13,12 @@ class ExampleApp extends StatelessWidget {
   final ScreenNameObserver screenNameObserver;
   final ValueListenable<Locale> locale;
 
+  /// The restart screen shows while this flag is true.
+  final ValueListenable<bool> isRestartRequired;
+
+  /// Switches the mode of the app. It is null in a build that cannot switch.
+  final AutomationModeController? modeController;
+
   /// The controller of the QA panel, missing when the app runs without the
   /// mock.
   final AutomationPanelController? panelController;
@@ -22,6 +28,8 @@ class ExampleApp extends StatelessWidget {
     required this.catalogApi,
     required this.screenNameObserver,
     required this.locale,
+    required this.isRestartRequired,
+    this.modeController,
     this.panelController,
   });
 
@@ -47,14 +55,15 @@ class ExampleApp extends StatelessWidget {
     final controller = panelController;
     final app = child ?? const SizedBox.shrink();
 
-    if (controller == null) {
-      return app;
-    }
-
-    return AutomationPanelLauncher(
-      controller: controller,
-      isVisible: true,
-      child: app,
+    return AutomationRestartOverlay(
+      isRestartRequired: isRestartRequired,
+      child: controller == null
+          ? app
+          : AutomationPanelLauncher(
+              controller: controller,
+              isVisible: true,
+              child: app,
+            ),
     );
   }
 
@@ -66,6 +75,18 @@ class ExampleApp extends StatelessWidget {
     return LoginScreen(
       onSignInPressed: () =>
           Navigator.of(context).pushNamed(CatalogScreen.routeName),
+      onMockModePressed: _resolveMockModeAction(context),
     );
+  }
+
+  VoidCallback? _resolveMockModeAction(BuildContext context) {
+    final controller = modeController;
+
+    if (controller == null) {
+      return null;
+    }
+
+    return () =>
+        showAutomationMockModeSheet(context: context, controller: controller);
   }
 }
