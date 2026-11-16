@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:collection/collection.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
@@ -9,6 +11,7 @@ import 'package:flutter_automation_panel/src/panel/automation_panel_definition.d
 import 'package:flutter_automation_panel/src/panel/automation_run_summary.dart';
 import 'package:flutter_automation_panel/src/player/automation_flow_player.dart';
 import 'package:flutter_automation_panel/src/player/automation_player_exception.dart';
+import 'package:flutter_automation_panel/src/theme/automation_panel_strings.dart';
 
 /// {@category StateManagement}
 ///
@@ -49,7 +52,7 @@ class AutomationPanelController extends ChangeNotifier
   /// Why the player stopped, missing when it did not.
   String? walkFailure;
 
-  /// What the last autorun did, missing until an autorun ends.
+  /// What the last run did, missing until a run ends.
   AutomationRunSummary? runSummary;
 
   /// Title of the outcome that the tester chose last, missing when none.
@@ -57,6 +60,7 @@ class AutomationPanelController extends ChangeNotifier
 
   Map<String, MockApiFailure> _variantFailures = const {};
   int _resolvedForkStep = -1;
+  String? _forkSelection;
   int _runToken = 0;
   bool _hasResumed = false;
   bool _isDisposed = false;
@@ -163,6 +167,10 @@ class AutomationPanelController extends ChangeNotifier
         .length;
   }
 
+  /// Whether the walk has an action left. The plaque shows Finish when it
+  /// has none.
+  bool get hasActionLeft => nextAction != null;
+
   /// How many actions the variant of the walk holds.
   int get actionCount {
     return walkSteps.where(AutomationFlowPlayer.isAction).length;
@@ -186,6 +194,10 @@ class AutomationPanelController extends ChangeNotifier
 
     return forkChoices.length < 2 ? null : fork;
   }
+
+  /// The branch that Next step takes at the fork: the branch the tester
+  /// selected, or the variant of the walk.
+  String? get selectedBranch => _forkSelection ?? walk?.variant;
 
   /// The branches the tester can take at the fork without a restart.
   List<AutomationCatalogueBranch> get forkChoices {
@@ -339,6 +351,7 @@ class AutomationPanelController extends ChangeNotifier
 
     _runToken += 1;
     _resolvedForkStep = -1;
+    _forkSelection = null;
     isWalkBusy = false;
     isWalkExpanded = false;
     walkFailure = null;
@@ -360,9 +373,35 @@ class AutomationPanelController extends ChangeNotifier
 
   /// Does the next action of the walk and the waits that follow it.
   ///
-  /// The walk stops before the fork, where the tester picks a branch, and when
-  /// the player cannot do a step. [walkFailure] then holds the reason.
-  Future<void> playNext() => _play(isUntilAction: true);
+  /// At the fork the walk first takes [selectedBranch]. The walk stops before
+  /// the fork and when the player cannot do a step. [walkFailure] then holds
+  /// the reason.
+  Future<void> playNext() async {
+    await _takeSelectedBranch();
+    await _play(isUntilAction: true);
+  }
+
+  /// Does the steps left of a manual walk and ends it with [runSummary].
+  Future<void> finishWalk() async {
+    if (!isWalkFinished) {
+      await _play(isUntilAction: false);
+    }
+
+    if (!isWalkFinished || isWalkBusy) {
+      return;
+    }
+
+    await _finishRun();
+
+    notifyListeners();
+  }
+
+  /// Selects [variant] as the branch that Next step takes at the fork.
+  void selectBranch(String variant) {
+    _forkSelection = variant;
+
+    notifyListeners();
+  }
 
   /// Does every step left of the walk. An autorun ends with [runSummary].
   Future<void> runWalk() => _play(isUntilAction: false);
@@ -380,6 +419,7 @@ class AutomationPanelController extends ChangeNotifier
     }
 
     _resolvedForkStep = fork.stepIndex;
+    _forkSelection = null;
 
     await applyOutcome(
       chosen.scenario,
@@ -392,6 +432,7 @@ class AutomationPanelController extends ChangeNotifier
   Future<void> exitWalk() async {
     _runToken += 1;
     _resolvedForkStep = -1;
+    _forkSelection = null;
     isWalkBusy = false;
     isWalkExpanded = false;
     walkFailure = null;
@@ -563,6 +604,16 @@ class AutomationPanelController extends ChangeNotifier
     return flow?.variants.firstWhereOrNull((variant) => variant.name == name);
   }
 
+  Future<void> _takeSelectedBranch() async {
+    final branch = selectedBranch;
+
+    if (pendingFork == null || branch == null) {
+      return;
+    }
+
+    await chooseBranch(branch);
+  }
+
   Future<void> _play({required bool isUntilAction}) async {
     if (walk == null || walkVariant == null || isWalkBusy) {
       return;
@@ -581,7 +632,7 @@ class AutomationPanelController extends ChangeNotifier
     } on AutomationPlayerException catch (error) {
       _recordFailure(token, error.reason);
     } on Object catch (error) {
-      _recordFailure(token, 'The step failed: $error');
+      _recordFailure(token, AutomationPanelStrings.stepFailed(error));
     } finally {
       if (token == _runToken) {
         isWalkBusy = false;
@@ -592,7 +643,9 @@ class AutomationPanelController extends ChangeNotifier
       return;
     }
 
-    await _finishAutorun();
+    if (walk?.mode == AutomationWalkMode.autorun) {
+      await _finishRun();
+    }
 
     notifyListeners();
   }
@@ -645,7 +698,7 @@ class AutomationPanelController extends ChangeNotifier
     }
   }
 
-  Future<void> _finishAutorun() async {
+  Future<void> _finishRun() async {
     final current = walk;
     final variant = walkVariant;
 
@@ -653,13 +706,14 @@ class AutomationPanelController extends ChangeNotifier
       return;
     }
 
-    if (current.mode != AutomationWalkMode.autorun || !isWalkFinished) {
+    if (!isWalkFinished) {
       return;
     }
 
-    runSummary = AutomationRunSummary(
+    final summary = AutomationRunSummary(
       flow: current.flow,
       variant: current.variant,
+      mode: current.mode,
       outcome: AutomationCatalogueText.english(variant.title, variant.name),
       stepCount: actionCount,
       duration: _runWatch?.elapsed ?? Duration.zero,
@@ -669,9 +723,11 @@ class AutomationPanelController extends ChangeNotifier
     );
     _runWatch = null;
 
+    runSummary = summary.withReport(await _trySaveReport(summary));
+
     await mock.saveWalk(null);
 
-    if (current.shouldSignalEnd) {
+    if (_shouldSignalEnd(current)) {
       await _signalEnd();
     }
   }
@@ -686,6 +742,31 @@ class AutomationPanelController extends ChangeNotifier
             statusCode: AutomationJournalRecord.statusCodeOf(record),
           ),
     ];
+  }
+
+  Future<File?> _trySaveReport(AutomationRunSummary summary) async {
+    final store = mock.stateStore;
+
+    if (store == null) {
+      return null;
+    }
+
+    try {
+      return await store.saveRun(_createRunId(), summary.toReportJson());
+    } on FileSystemException {
+      return null;
+    }
+  }
+
+  String _createRunId() {
+    final time = DateTime.now().toUtc().toIso8601String();
+
+    return '${time.replaceAll(RegExp('[-:]'), '').split('.').first}Z';
+  }
+
+  bool _shouldSignalEnd(AutomationWalkProgress progress) {
+    return progress.mode == AutomationWalkMode.autorun &&
+        progress.shouldSignalEnd;
   }
 
   Future<void> _signalEnd() async {

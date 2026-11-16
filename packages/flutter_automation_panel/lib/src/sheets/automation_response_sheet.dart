@@ -10,6 +10,7 @@ import 'package:flutter_automation_panel/src/blocks/automation_panel_label.dart'
 import 'package:flutter_automation_panel/src/blocks/automation_panel_sheet.dart';
 import 'package:flutter_automation_panel/src/panel/automation_panel_controller.dart';
 import 'package:flutter_automation_panel/src/theme/automation_panel_theme.dart';
+import 'package:flutter_automation_panel/src/theme/automation_panel_strings.dart';
 
 /// {@category Widgets}
 ///
@@ -104,7 +105,7 @@ class _AutomationResponseSheetState extends State<AutomationResponseSheet> {
     final theme = AutomationPanelTheme.of(context);
 
     return AutomationPanelSheet(
-      title: 'Response',
+      title: AutomationPanelStrings.response,
       onClose: widget.onClose,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -115,7 +116,7 @@ class _AutomationResponseSheetState extends State<AutomationResponseSheet> {
             statusCode: widget.mockStatusCode,
             description: widget.mockDescription,
           ),
-          const AutomationPanelLabel(text: 'Error code'),
+          const AutomationPanelLabel(text: AutomationPanelStrings.errorCode),
           AutomationPanelChips<int>(
             options: [
               for (final code in _offeredStatusCodes)
@@ -123,11 +124,13 @@ class _AutomationResponseSheetState extends State<AutomationResponseSheet> {
             ],
             selected: _isNoNetwork ? null : _statusCode,
             selectedColor: theme.danger,
-            customLabel: 'Custom',
+            customLabel: AutomationPanelStrings.custom,
             onChanged: _selectStatusCode,
             onCustomPressed: _askForStatusCode,
           ),
-          const AutomationPanelLabel(text: 'Backend error code'),
+          const AutomationPanelLabel(
+            text: AutomationPanelStrings.backendErrorCode,
+          ),
           AutomationPanelChips<String>(
             options: [
               for (final code in _offeredErrorCodes)
@@ -136,15 +139,15 @@ class _AutomationResponseSheetState extends State<AutomationResponseSheet> {
             selected: _errorCode,
             selectedColor: theme.danger,
             isMono: true,
-            customLabel: 'Custom',
+            customLabel: AutomationPanelStrings.custom,
             onChanged: _selectErrorCode,
             onCustomPressed: _askForErrorCode,
           ),
-          const AutomationPanelLabel(text: 'Message'),
+          const AutomationPanelLabel(text: AutomationPanelStrings.message),
           _MessageField(controller: _messageController),
           AutomationPanelRadioTile(
-            title: 'No network',
-            subtitle: 'The request never reaches the server',
+            title: AutomationPanelStrings.noNetwork,
+            subtitle: AutomationPanelStrings.noNetworkNote,
             isSelected: _isNoNetwork,
             activeColor: theme.danger,
             onPressed: _toggleNoNetwork,
@@ -152,12 +155,12 @@ class _AutomationResponseSheetState extends State<AutomationResponseSheet> {
           AutomationPanelButtonGroup(
             buttons: [
               AutomationPanelButton(
-                label: 'Apply',
+                label: AutomationPanelStrings.apply,
                 kind: AutomationPanelButtonKind.primary,
                 onPressed: _apply,
               ),
               AutomationPanelButton(
-                label: 'Use mock response',
+                label: AutomationPanelStrings.useMockResponse,
                 onPressed: () => widget.onApply(null),
               ),
             ],
@@ -192,7 +195,10 @@ class _AutomationResponseSheetState extends State<AutomationResponseSheet> {
   }
 
   Future<void> _askForStatusCode() async {
-    final text = await _askForText('Status code', TextInputType.number);
+    final text = await _askForText(
+      AutomationPanelStrings.statusCode,
+      TextInputType.number,
+    );
 
     final code = int.tryParse(text ?? '');
 
@@ -202,7 +208,10 @@ class _AutomationResponseSheetState extends State<AutomationResponseSheet> {
   }
 
   Future<void> _askForErrorCode() async {
-    final text = await _askForText('Backend error code', TextInputType.text);
+    final text = await _askForText(
+      AutomationPanelStrings.backendErrorCode,
+      TextInputType.text,
+    );
 
     if (text != null && text.isNotEmpty) {
       _selectErrorCode(text);
@@ -275,7 +284,7 @@ class _MockResponse extends StatelessWidget {
           if (code != null) AutomationCodeBadge(code: code),
           Expanded(
             child: Text(
-              'Mock response: $description',
+              AutomationPanelStrings.mockResponseOf(description),
               style: theme.textStyle(size: 13, color: theme.textPath),
             ),
           ),
@@ -299,7 +308,9 @@ class _MessageField extends StatelessWidget {
       child: TextField(
         controller: controller,
         style: theme.textStyle(size: 15),
-        decoration: const InputDecoration(hintText: 'Message'),
+        decoration: const InputDecoration(
+          hintText: AutomationPanelStrings.message,
+        ),
       ),
     );
   }
@@ -330,11 +341,11 @@ class _TextPromptState extends State<_TextPrompt> {
       actions: [
         TextButton(
           onPressed: () => Navigator.of(context).pop(),
-          child: const Text('Cancel'),
+          child: const Text(AutomationPanelStrings.cancel),
         ),
         TextButton(
           onPressed: () => Navigator.of(context).pop(_controller.text.trim()),
-          child: const Text('OK'),
+          child: const Text(AutomationPanelStrings.ok),
         ),
       ],
     );

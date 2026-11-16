@@ -287,7 +287,7 @@ void _automationWalkStrip_should_leadTheWalkActionByAction() {
   testWidgets('AutomationWalkStrip should lead the walk action by action', (
     tester,
   ) async {
-    await _pumpStrip(tester);
+    final sample = await _pumpStrip(tester);
 
     expect(find.textContaining('step 1 of 2'), findsOneWidget);
     expect(find.text('Type the code'), findsOneWidget);
@@ -297,18 +297,25 @@ void _automationWalkStrip_should_leadTheWalkActionByAction() {
       tester,
       until: () => _isShown(find.text('CHOOSE THE BRANCH')),
     );
+    await _settle(tester, until: () => !sample.controller.isWalkBusy);
 
     expect(find.text('CHOOSE THE BRANCH'), findsOneWidget);
-    expect(find.text('Next step'), findsNothing);
+    expect(find.text('Next step'), findsOneWidget);
 
     await tester.tap(find.text('Account exists'));
+    await tester.pump();
+    await tester.tap(find.text('Next step'));
     await _settle(
       tester,
-      until: () => _isShown(find.text('Create the account')),
+      until: () => _isShown(find.text(AutomationPanelStrings.finish)),
     );
 
-    expect(find.text('Create the account'), findsOneWidget);
-    expect(find.textContaining('step 2 of 2'), findsOneWidget);
+    expect(sample.mock.walk?.variant, 'accountExists');
+
+    await tester.tap(find.text(AutomationPanelStrings.finish));
+    await _settle(tester, until: () => sample.controller.runSummary != null);
+
+    expect(sample.controller.runSummary?.mode, AutomationWalkMode.manual);
   });
 }
 
@@ -390,7 +397,7 @@ void _automationPanelLauncher_should_blockTheFingerWhileAWalkRuns() {
     await tester.tap(find.text('App button'), warnIfMissed: false);
 
     expect(taps, 1);
-    expect(find.text('Exit'), findsOneWidget);
+    expect(find.byIcon(Icons.close), findsOneWidget);
 
     await tester.runAsync(sample.controller.exitWalk);
     await tester.pump();
@@ -671,7 +678,7 @@ void _automationWalkStrip_should_exitAfterADragFarDown() {
     );
     await tester.pumpWidget(_launcherOver(sample, const SizedBox()));
 
-    final title = find.textContaining('step 1 of 2');
+    final title = find.textContaining('1/2', findRichText: true);
     final before = tester.getTopLeft(title);
 
     await tester.drag(title, const Offset(0, 400));
@@ -679,7 +686,7 @@ void _automationWalkStrip_should_exitAfterADragFarDown() {
 
     expect(tester.getTopLeft(title).dy - before.dy, greaterThan(300));
 
-    await tester.tap(find.text('Exit'));
+    await tester.tap(find.byIcon(Icons.close));
     await _settle(tester, until: () => sample.mock.walk == null);
 
     expect(sample.mock.walk, isNull);
@@ -793,7 +800,7 @@ void _automationPanelLauncher_should_keepTheBackButtonOnTheFirstScreen() {
 
       expect(reports.last, isTrue);
 
-      await tester.tap(find.text('Exit'));
+      await tester.tap(find.byIcon(Icons.close));
       await _settle(tester, until: () => reports.last == false);
 
       expect(reports.last, isFalse);

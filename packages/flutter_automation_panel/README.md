@@ -63,18 +63,27 @@ lets the events of the player through. The plaque and the QA button stand above
 the gate inside an `AutomationInputPassThrough`, so the finger reaches them and
 a tap of the player goes through them. The launcher sets
 `controller.isLauncherVisible`: the gate and the back button block only while
-the launcher shows. The plaque names the next action, offers
-Next step or the branches of a fork, and has a stop icon named Exit that ends
-the walk and leaves the app on its screen. The tester drags the plaque down.
+the launcher shows. Collapsed, the plaque is one line: a cross that ends the
+walk and leaves the app on its screen, the flow and the step, and a round
+button that does the next step. Open, it names the next action or lists the
+branches of a fork above the pinned Exit and Next step buttons. The variant of
+the walk is the selected branch, so Next step goes on at once. After a failed
+step the main button reads Try again; when no action is left it reads Finish.
+The body scrolls, and the tester drags the plaque down by its head.
 
 The gate blocks pointers only. The soft keyboard of the tester still types into
 the app during a walk.
 
 An autorun (`AutomationAutorunPage`, the button Restart and run) shows the
 `AutomationTouchIndicator` circle and nothing else while it plays its steps. A
-failure brings the plaque back, and Try again runs the autorun again. A sheet with the requests,
-Share logs, Run again and Exit run closes it. `onShareLogs` of the definition
-backs Share logs.
+failure brings the plaque back, and Try again runs the autorun again.
+
+An autorun and the Finish of a manual walk end with the run sheet: the requests
+scroll above the pinned Share logs, Run again and Exit buttons; Exit is the
+main button. The controller
+saves the report of the run to `runs/<time>/report.json` of the state store.
+`onShare` of the definition receives that file and shares it; without it the
+sheet has no Share logs.
 
 The targets of the app reach the player only in a build with
 `ENABLE_AUTOMATION_MARKING=true`.

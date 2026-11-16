@@ -8,6 +8,7 @@ import 'package:flutter_automation_panel/src/pages/automation_flow_map_page.dart
 import 'package:flutter_automation_panel/src/panel/automation_panel_controller.dart';
 import 'package:flutter_automation_panel/src/panel/automation_panel_scope.dart';
 import 'package:flutter_automation_panel/src/theme/automation_panel_theme.dart';
+import 'package:flutter_automation_panel/src/theme/automation_panel_strings.dart';
 
 /// {@category Widgets}
 ///
@@ -99,7 +100,7 @@ class _AutomationFlowsPageState extends State<AutomationFlowsPage> {
     final others = flows.where((flow) => !known.contains(flow.group)).toList();
 
     if (others.isNotEmpty) {
-      groups.add(_Group('Flows', others));
+      groups.add(_Group(AutomationPanelStrings.flows, others));
     }
 
     return groups;
@@ -110,9 +111,9 @@ class _AutomationFlowsPageState extends State<AutomationFlowsPage> {
         .map((variant) => variant.steps.where((step) => !step.isService).length)
         .fold<int>(0, (most, count) => count > most ? count : most);
     final parts = [
-      describeCount(flow.variants.length, 'outcome'),
+      describeCount(flow.variants.length, AutomationPanelStrings.outcomeNoun),
       if (steps > 0) describeCount(steps, 'step'),
-      if (flow.fork != null) '1 fork',
+      if (flow.fork != null) AutomationPanelStrings.oneFork,
     ];
 
     return parts.join(' · ');
@@ -153,7 +154,7 @@ class _SearchField extends StatelessWidget {
         onChanged: onChanged,
         style: theme.textStyle(size: 15),
         decoration: InputDecoration(
-          hintText: 'Flow, outcome or request',
+          hintText: AutomationPanelStrings.flowSearchHint,
           hintStyle: theme.textStyle(size: 15, color: theme.textSecondary),
           prefixIcon: Icon(Icons.search, size: 20, color: theme.textSecondary),
         ),

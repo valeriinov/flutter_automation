@@ -13,6 +13,7 @@ import 'package:flutter_automation_panel/src/panel/automation_panel_controller.d
 import 'package:flutter_automation_panel/src/panel/automation_panel_scope.dart';
 import 'package:flutter_automation_panel/src/player/automation_flow_player.dart';
 import 'package:flutter_automation_panel/src/theme/automation_panel_theme.dart';
+import 'package:flutter_automation_panel/src/theme/automation_panel_strings.dart';
 
 /// {@category Widgets}
 ///
@@ -48,7 +49,7 @@ class _AutomationAutorunPageState extends State<AutomationAutorunPage> {
           child: ListView(
             padding: const EdgeInsets.all(AutomationPanelTheme.gapLarge),
             children: [
-              const AutomationPanelLabel(text: 'Flow'),
+              const AutomationPanelLabel(text: AutomationPanelStrings.flow),
               const SizedBox(height: AutomationPanelTheme.gapSmall),
               for (final candidate in flows)
                 Padding(
@@ -66,7 +67,9 @@ class _AutomationAutorunPageState extends State<AutomationAutorunPage> {
                 ),
               if (flow != null) ...[
                 const SizedBox(height: AutomationPanelTheme.gapMedium),
-                const AutomationPanelLabel(text: 'Outcome'),
+                const AutomationPanelLabel(
+                  text: AutomationPanelStrings.outcome,
+                ),
                 const SizedBox(height: AutomationPanelTheme.gapSmall),
                 for (final candidate in flow.variants)
                   Padding(
@@ -85,7 +88,9 @@ class _AutomationAutorunPageState extends State<AutomationAutorunPage> {
                   ),
               ],
               const SizedBox(height: AutomationPanelTheme.gapMedium),
-              const AutomationPanelLabel(text: 'Recording'),
+              const AutomationPanelLabel(
+                text: AutomationPanelStrings.recording,
+              ),
               const SizedBox(height: AutomationPanelTheme.gapSmall),
               _Recording(
                 shouldShowTouches: _shouldShowTouches,
@@ -184,14 +189,14 @@ class _Recording extends StatelessWidget {
         child: Column(
           children: [
             AutomationPanelSwitchTile(
-              title: 'Show touches',
-              subtitle: 'A circle where you tap',
+              title: AutomationPanelStrings.showTouches,
+              subtitle: AutomationPanelStrings.showTouchesNote,
               isOn: shouldShowTouches,
               onChanged: onTouchesChanged,
             ),
             AutomationPanelSwitchTile(
-              title: 'Signal at the end',
-              subtitle: 'Vibration and sound',
+              title: AutomationPanelStrings.signalAtEnd,
+              subtitle: AutomationPanelStrings.signalAtEndNote,
               isOn: shouldSignalEnd,
               onChanged: onSignalChanged,
             ),
@@ -224,12 +229,10 @@ class _Footer extends StatelessWidget {
           spacing: AutomationPanelTheme.gapSmall,
           children: [
             const AutomationRestartNote(
-              text:
-                  'The app restarts and runs the flow by itself. Start screen '
-                  'recording first.',
+              text: AutomationPanelStrings.autorunNote,
             ),
             AutomationPanelButton(
-              label: 'Restart and run',
+              label: AutomationPanelStrings.restartAndRun,
               kind: AutomationPanelButtonKind.primary,
               onPressed: onStart,
             ),

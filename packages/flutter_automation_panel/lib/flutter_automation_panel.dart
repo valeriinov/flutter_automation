@@ -48,4 +48,5 @@ export 'package:flutter_automation_panel/src/player/automation_touch_indicator.d
 export 'package:flutter_automation_panel/src/sheets/automation_presets_sheet.dart';
 export 'package:flutter_automation_panel/src/sheets/automation_response_sheet.dart';
 export 'package:flutter_automation_panel/src/sheets/automation_run_done_sheet.dart';
+export 'package:flutter_automation_panel/src/theme/automation_panel_strings.dart';
 export 'package:flutter_automation_panel/src/theme/automation_panel_theme.dart';

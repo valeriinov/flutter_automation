@@ -4,6 +4,7 @@ import 'package:flutter_automation_panel/src/blocks/automation_panel_button.dart
 import 'package:flutter_automation_panel/src/blocks/automation_panel_sheet.dart';
 import 'package:flutter_automation_panel/src/panel/automation_panel_controller.dart';
 import 'package:flutter_automation_panel/src/theme/automation_panel_theme.dart';
+import 'package:flutter_automation_panel/src/theme/automation_panel_strings.dart';
 
 /// {@category Widgets}
 ///
@@ -45,7 +46,7 @@ class _AutomationPresetsSheetState extends State<AutomationPresetsSheet> {
     final theme = AutomationPanelTheme.of(context);
 
     return AutomationPanelSheet(
-      title: 'Presets',
+      title: AutomationPanelStrings.presets,
       onClose: widget.onClose,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -56,17 +57,19 @@ class _AutomationPresetsSheetState extends State<AutomationPresetsSheet> {
             child: TextField(
               controller: _nameController,
               style: theme.textStyle(size: 15),
-              decoration: const InputDecoration(hintText: 'Preset name'),
+              decoration: const InputDecoration(
+                hintText: AutomationPanelStrings.presetName,
+              ),
               onChanged: (_) => setState(() => _isNameRejected = false),
             ),
           ),
           if (_isNameRejected)
             Text(
-              'Use a name without a slash.',
+              AutomationPanelStrings.presetNameRule,
               style: theme.textStyle(size: 13, color: theme.danger),
             ),
           AutomationPanelButton(
-            label: 'Save current state',
+            label: AutomationPanelStrings.saveCurrentState,
             kind: AutomationPanelButtonKind.primary,
             onPressed: _save,
           ),
@@ -166,7 +169,7 @@ class _PresetRow extends StatelessWidget {
           ),
           IconButton(
             onPressed: onDelete,
-            tooltip: 'Delete preset',
+            tooltip: AutomationPanelStrings.deletePreset,
             icon: Icon(Icons.delete_outline, color: theme.danger),
           ),
         ],

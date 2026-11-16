@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:io';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter_automation_mock/flutter_automation_mock.dart';
@@ -37,9 +38,10 @@ final class AutomationPanelDefinition {
   /// of a walk. The project shows its restart screen.
   final FutureOr<void> Function() onRestartRequired;
 
-  /// Called when the tester taps Share logs after an autorun. The sheet hides
+  /// Called with the `report.json` file of a run when the tester taps Share
+  /// logs at the end of a run. The project shares the file. The summary hides
   /// the button when it is missing.
-  final FutureOr<void> Function()? onShareLogs;
+  final FutureOr<void> Function(File report)? onShare;
 
   /// What the player reads a step with, and how fast it moves.
   final AutomationPlayerSettings playerSettings;
@@ -51,7 +53,7 @@ final class AutomationPanelDefinition {
     required this.onRestartRequired,
     this.backendErrorCodes = const [],
     this.theme = const AutomationPanelTheme.light(),
-    this.onShareLogs,
+    this.onShare,
     this.playerSettings = const AutomationPlayerSettings(),
   });
 }

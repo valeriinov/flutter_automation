@@ -1,19 +1,21 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_automation_mock/flutter_automation_mock.dart';
-import 'package:flutter_automation_mock/mock_catalogue.dart';
-import 'package:flutter_automation_panel/src/blocks/automation_panel_button.dart';
 import 'package:flutter_automation_panel/src/blocks/automation_panel_label.dart';
 import 'package:flutter_automation_panel/src/blocks/automation_panel_radio_tile.dart';
 import 'package:flutter_automation_panel/src/blocks/automation_walk_plaque.dart';
 import 'package:flutter_automation_panel/src/pages/automation_catalogue_text.dart';
 import 'package:flutter_automation_panel/src/panel/automation_panel_controller.dart';
 import 'package:flutter_automation_panel/src/player/automation_flow_player.dart';
+import 'package:flutter_automation_panel/src/theme/automation_panel_strings.dart';
 import 'package:flutter_automation_panel/src/theme/automation_panel_theme.dart';
 
 /// {@category Widgets}
 ///
 /// The plaque of a walk: it names the next action, does it on a tap of Next
-/// step and shows the branches at a fork.
+/// step and shows the branches at a fork. The selected branch is the variant
+/// of the walk until the tester selects another one, so Next step goes on at
+/// once. When no action is left, Next step reads Finish and opens the summary
+/// of the run.
 ///
 /// The strip shows nothing while no walk runs or while an autorun plays its
 /// steps.
@@ -43,11 +45,16 @@ class AutomationWalkStrip extends StatelessWidget {
         }
 
         return AutomationWalkPlaque(
-          title: _describeTitle(flow),
+          flowTitle: AutomationCatalogueText.english(flow.title, flow.name),
+          collapsedStep: _describeStep(AutomationPanelStrings.stepShort),
+          expandedStep: _describeStep(AutomationPanelStrings.stepOf),
           overrideCount: controller.overrideCount,
           isExpanded: controller.isWalkExpanded,
+          nextLabel: _resolveNextLabel(),
+          isFinishing: _isFinishing(),
           onToggle: controller.toggleWalk,
           onExit: controller.exitWalk,
+          onNext: controller.isWalkBusy ? null : _resolveNextAction(),
           onDragged: onDragged,
           child: _WalkBody(controller: controller),
         );
@@ -59,17 +66,46 @@ class AutomationWalkStrip extends StatelessWidget {
     return controller.isWalkActive && !controller.isAutorunPlaying;
   }
 
-  String _describeTitle(AutomationCatalogueFlow flow) {
-    final flowTitle = AutomationCatalogueText.english(flow.title, flow.name);
+  String _describeStep(String Function(int number, int count) describe) {
     final count = controller.actionCount;
 
     if (controller.isWalkFinished || count == 0) {
-      return '$flowTitle · finished';
+      return AutomationPanelStrings.finished;
     }
 
     final number = (controller.doneActionCount + 1).clamp(1, count);
 
-    return '$flowTitle · step $number of $count';
+    return describe(number, count);
+  }
+
+  String _resolveNextLabel() {
+    if (controller.isWalkBusy) {
+      return AutomationPanelStrings.working;
+    }
+
+    if (controller.walkFailure != null) {
+      return AutomationPanelStrings.tryAgain;
+    }
+
+    return _isFinishing()
+        ? AutomationPanelStrings.finish
+        : AutomationPanelStrings.nextStep;
+  }
+
+  bool _isFinishing() {
+    return !_isAutorun() && !controller.hasActionLeft;
+  }
+
+  VoidCallback _resolveNextAction() {
+    if (_isAutorun()) {
+      return controller.runWalk;
+    }
+
+    return _isFinishing() ? controller.finishWalk : controller.playNext;
+  }
+
+  bool _isAutorun() {
+    return controller.walk?.mode == AutomationWalkMode.autorun;
   }
 }
 
@@ -88,12 +124,12 @@ class _WalkBody extends StatelessWidget {
       spacing: AutomationPanelTheme.gapSmall,
       children: [
         if (failure != null) _Failure(reason: failure),
-        if (controller.isWalkFinished)
-          const _Hint(text: 'The flow is finished. Tap Exit to leave the walk.')
-        else if (fork != null)
+        if (fork != null)
           _Branches(controller: controller)
+        else if (controller.hasActionLeft)
+          _NextAction(controller: controller)
         else
-          _NextAction(controller: controller),
+          const _Hint(text: AutomationPanelStrings.walkFinished),
       ],
     );
   }
@@ -113,36 +149,15 @@ class _NextAction extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       spacing: AutomationPanelTheme.gapSmall,
       children: [
-        const AutomationPanelLabel(text: 'Next action'),
+        const AutomationPanelLabel(text: AutomationPanelStrings.nextAction),
         Text(
-          next == null ? 'The waits that are left' : _describe(next),
+          next == null
+              ? AutomationPanelStrings.waitsLeft
+              : AutomationFlowPlayer.describe(next),
           style: theme.textStyle(size: 15, weight: FontWeight.w700),
-        ),
-        AutomationPanelButton(
-          label: _resolveLabel(),
-          kind: AutomationPanelButtonKind.primary,
-          onPressed: controller.isWalkBusy ? null : _resolveAction(),
         ),
       ],
     );
-  }
-
-  VoidCallback _resolveAction() {
-    final isAutorun = controller.walk?.mode == AutomationWalkMode.autorun;
-
-    return isAutorun ? controller.runWalk : controller.playNext;
-  }
-
-  String _describe(AutomationCatalogueStep step) {
-    return AutomationFlowPlayer.describe(step);
-  }
-
-  String _resolveLabel() {
-    if (controller.isWalkBusy) {
-      return 'Working…';
-    }
-
-    return controller.walkFailure == null ? 'Next step' : 'Try again';
   }
 }
 
@@ -153,18 +168,18 @@ class _Branches extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final current = controller.walk?.variant;
+    final selected = controller.selectedBranch;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       spacing: AutomationPanelTheme.gapSmall,
       children: [
-        const AutomationPanelLabel(text: 'Choose the branch'),
+        const AutomationPanelLabel(text: AutomationPanelStrings.chooseBranch),
         for (final branch in controller.forkChoices)
           AutomationPanelRadioTile(
             title: branch.label,
-            isSelected: branch.variant == current,
-            onPressed: () => controller.chooseBranch(branch.variant),
+            isSelected: branch.variant == selected,
+            onPressed: () => controller.selectBranch(branch.variant),
           ),
       ],
     );

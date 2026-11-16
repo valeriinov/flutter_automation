@@ -5,6 +5,7 @@ import 'package:flutter_automation_panel/src/blocks/automation_panel_status.dart
 import 'package:flutter_automation_panel/src/panel/automation_panel_controller.dart';
 import 'package:flutter_automation_panel/src/panel/automation_panel_scope.dart';
 import 'package:flutter_automation_panel/src/sheets/automation_presets_sheet.dart';
+import 'package:flutter_automation_panel/src/theme/automation_panel_strings.dart';
 
 /// {@category Widgets}
 ///
@@ -55,17 +56,17 @@ class _AutomationPanelState extends State<AutomationPanel> {
     AutomationPanelController controller,
   ) {
     return AutomationPanelStatus(
-      text: controller.outcomeTitle ?? 'Default mock',
+      text: controller.outcomeTitle ?? AutomationPanelStrings.defaultMock,
       overrideCount: controller.overrideCount,
       isChanged: controller.isChanged,
       actions: [
         AutomationPanelStatusAction(
-          label: 'Presets',
+          label: AutomationPanelStrings.presets,
           onPressed: () => _openPresets(context, controller),
         ),
         if (controller.isChanged)
           AutomationPanelStatusAction(
-            label: 'Reset',
+            label: AutomationPanelStrings.reset,
             onPressed: controller.reset,
           ),
       ],

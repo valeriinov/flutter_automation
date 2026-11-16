@@ -1,14 +1,17 @@
+import 'dart:math';
+
 import 'package:flutter/material.dart';
-import 'package:flutter_automation_mock/flutter_automation_mock.dart';
 import 'package:flutter_automation_panel/src/panel/automation_panel.dart';
 import 'package:flutter_automation_panel/src/panel/automation_panel_controller.dart';
 import 'package:flutter_automation_panel/src/panel/automation_panel_scope.dart';
+import 'package:flutter_automation_panel/src/panel/automation_run_summary.dart';
 import 'package:flutter_automation_panel/src/panel/automation_walk_strip.dart';
 import 'package:flutter_automation_panel/src/player/automation_flow_player.dart';
 import 'package:flutter_automation_panel/src/player/automation_input_gate.dart';
 import 'package:flutter_automation_panel/src/player/automation_touch_indicator.dart';
 import 'package:flutter_automation_panel/src/sheets/automation_run_done_sheet.dart';
 import 'package:flutter_automation_panel/src/theme/automation_panel_theme.dart';
+import 'package:flutter_automation_panel/src/theme/automation_panel_strings.dart';
 
 /// {@category Widgets}
 ///
@@ -239,6 +242,7 @@ class _AutomationPanelLauncherState extends State<AutomationPanelLauncher> {
 class _WalkStripLayer extends StatefulWidget {
   static const _edgeGap = 12.0;
   static const _reservedBottom = 160.0;
+  static const _minHeight = 160.0;
 
   final AutomationPanelController controller;
 
@@ -253,21 +257,32 @@ class _WalkStripLayerState extends State<_WalkStripLayer> {
 
   @override
   Widget build(BuildContext context) {
-    final top = MediaQuery.paddingOf(context).top;
+    final padding = MediaQuery.paddingOf(context);
+    final top = padding.top + _WalkStripLayer._edgeGap + _dragOffset;
+    final maxHeight =
+        MediaQuery.sizeOf(context).height -
+        top -
+        padding.bottom -
+        _WalkStripLayer._edgeGap;
 
     return Positioned(
       left: _WalkStripLayer._edgeGap,
       right: _WalkStripLayer._edgeGap,
-      top: top + _WalkStripLayer._edgeGap + _dragOffset,
+      top: top,
       child: AutomationInputPassThrough(
         isPassing: () => widget.controller.player.isInjecting,
-        child: Theme(
-          data: widget.controller.definition.theme.toThemeData(),
-          child: Material(
-            type: MaterialType.transparency,
-            child: AutomationWalkStrip(
-              controller: widget.controller,
-              onDragged: _drag,
+        child: ConstrainedBox(
+          constraints: BoxConstraints(
+            maxHeight: max(_WalkStripLayer._minHeight, maxHeight),
+          ),
+          child: Theme(
+            data: widget.controller.definition.theme.toThemeData(),
+            child: Material(
+              type: MaterialType.transparency,
+              child: AutomationWalkStrip(
+                controller: widget.controller,
+                onDragged: _drag,
+              ),
             ),
           ),
         ),
@@ -324,7 +339,7 @@ class _QaButton extends StatelessWidget {
           ],
         ),
         child: Text(
-          'QA',
+          AutomationPanelStrings.qaBadge,
           style: theme.textStyle(
             size: 14,
             weight: FontWeight.w700,
@@ -392,25 +407,39 @@ class _RunDoneLayer extends StatelessWidget {
       data: theme.toThemeData(),
       child: Material(
         color: theme.scrim,
-        child: Align(
-          alignment: Alignment.bottomCenter,
-          child: AutomationRunDoneSheet(
-            outcome: summary.outcome,
-            stepCount: summary.stepCount,
-            duration: summary.duration,
-            requests: summary.requests,
-            onShare: controller.definition.onShareLogs,
-            onRunAgain: () => controller.startWalk(
-              summary.flow,
-              summary.variant,
-              mode: AutomationWalkMode.autorun,
-              shouldShowTouches: summary.shouldShowTouches,
-              shouldSignalEnd: summary.shouldSignalEnd,
+        child: SafeArea(
+          bottom: false,
+          child: Align(
+            alignment: Alignment.bottomCenter,
+            child: AutomationRunDoneSheet(
+              outcome: summary.outcome,
+              stepCount: summary.stepCount,
+              duration: summary.duration,
+              requests: summary.requests,
+              onShare: _resolveShare(summary),
+              onRunAgain: () => controller.startWalk(
+                summary.flow,
+                summary.variant,
+                mode: summary.mode,
+                shouldShowTouches: summary.shouldShowTouches,
+                shouldSignalEnd: summary.shouldSignalEnd,
+              ),
+              onExit: controller.exitWalk,
             ),
-            onExit: controller.exitWalk,
           ),
         ),
       ),
     );
+  }
+
+  VoidCallback? _resolveShare(AutomationRunSummary summary) {
+    final share = controller.definition.onShare;
+    final report = summary.report;
+
+    if (share == null || report == null) {
+      return null;
+    }
+
+    return () => share(report);
   }
 }

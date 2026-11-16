@@ -5,12 +5,15 @@ import 'package:flutter_automation_panel/src/blocks/automation_panel_count.dart'
 import 'package:flutter_automation_panel/src/blocks/automation_panel_label.dart';
 import 'package:flutter_automation_panel/src/blocks/automation_panel_sheet.dart';
 import 'package:flutter_automation_panel/src/blocks/automation_request_row.dart';
+import 'package:flutter_automation_panel/src/theme/automation_panel_strings.dart';
 import 'package:flutter_automation_panel/src/theme/automation_panel_theme.dart';
 
 /// {@category Widgets}
 ///
 /// The sheet that ends a run: what the run was, how long it took and the
 /// requests it sent. The tester shares the logs, runs again or leaves the run.
+/// The buttons stay at the bottom, and the requests scroll above them. Exit is
+/// the main button; Share logs and Run again are second actions.
 ///
 /// The sheet takes the data of a stored report, so a project shows it after a
 /// run that ended before the app restarted.
@@ -34,7 +37,7 @@ class AutomationRunDoneSheet extends StatelessWidget {
   /// Called when the tester taps Run again.
   final VoidCallback onRunAgain;
 
-  /// Called when the tester taps Exit run.
+  /// Called when the tester taps Exit.
   final VoidCallback onExit;
 
   const AutomationRunDoneSheet({
@@ -56,13 +59,35 @@ class AutomationRunDoneSheet extends StatelessWidget {
         stepCount: stepCount,
         duration: duration,
       ),
+      footer: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        spacing: AutomationPanelTheme.gapSmall,
+        children: [
+          if (onShare != null)
+            AutomationPanelButton(
+              label: AutomationPanelStrings.shareLogs,
+              onPressed: onShare,
+            ),
+          AutomationPanelButton(
+            label: AutomationPanelStrings.runAgain,
+            onPressed: onRunAgain,
+          ),
+          AutomationPanelButton(
+            label: AutomationPanelStrings.exit,
+            kind: AutomationPanelButtonKind.primary,
+            onPressed: onExit,
+          ),
+        ],
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         spacing: AutomationPanelTheme.gapSmall,
         children: [
           const Padding(
             padding: EdgeInsets.only(top: 4),
-            child: AutomationPanelLabel(text: 'Run requests'),
+            child: AutomationPanelLabel(
+              text: AutomationPanelStrings.runRequests,
+            ),
           ),
           for (final request in requests)
             AutomationRequestRow(
@@ -70,19 +95,6 @@ class AutomationRunDoneSheet extends StatelessWidget {
               path: request.path,
               statusCode: request.statusCode,
             ),
-          const SizedBox(height: 4),
-          if (onShare != null)
-            AutomationPanelButton(
-              label: 'Share logs',
-              kind: AutomationPanelButtonKind.primary,
-              onPressed: onShare,
-            ),
-          AutomationPanelButton(label: 'Run again', onPressed: onRunAgain),
-          AutomationPanelButton(
-            label: 'Exit run',
-            kind: AutomationPanelButtonKind.danger,
-            onPressed: onExit,
-          ),
         ],
       ),
     );
@@ -123,12 +135,15 @@ class _Header extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'Run finished',
+                  AutomationPanelStrings.runFinished,
                   style: theme.textStyle(size: 18, weight: FontWeight.w700),
                 ),
                 Text(
-                  '$outcome · ${describeCount(stepCount, 'step')} · '
-                  '${duration.inSeconds} s',
+                  [
+                    outcome,
+                    describeCount(stepCount, AutomationPanelStrings.stepNoun),
+                    AutomationPanelStrings.seconds(duration.inSeconds),
+                  ].join(' · '),
                   style: theme.textStyle(size: 13, color: theme.textSecondary),
                 ),
               ],

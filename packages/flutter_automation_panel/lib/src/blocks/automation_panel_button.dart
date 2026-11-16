@@ -17,8 +17,8 @@ enum AutomationPanelButtonKind {
 
 /// {@category Widgets}
 ///
-/// A button of the panel. It fills the width of its container and never clips
-/// its label.
+/// A button of the panel. It fills the width of its container, or takes the
+/// width of its label in a row, and never clips its label.
 class AutomationPanelButton extends StatelessWidget {
   /// Text of the button.
   final String label;
@@ -29,10 +29,18 @@ class AutomationPanelButton extends StatelessWidget {
   /// Called on a tap, `null` for a disabled button.
   final VoidCallback? onPressed;
 
+  /// Icon before the label, missing when the button has none.
+  final IconData? leadingIcon;
+
+  /// Icon after the label, missing when the button has none.
+  final IconData? trailingIcon;
+
   const AutomationPanelButton({
     required this.label,
     required this.onPressed,
     this.kind = AutomationPanelButtonKind.secondary,
+    this.leadingIcon,
+    this.trailingIcon,
     super.key,
   });
 
@@ -63,13 +71,17 @@ class AutomationPanelButton extends StatelessWidget {
         theme.textStyle(size: 15, weight: FontWeight.w600),
       ),
     );
-    final text = Text(label, maxLines: 1, softWrap: false);
+    final content = _Content(
+      label: label,
+      leadingIcon: leadingIcon,
+      trailingIcon: trailingIcon,
+    );
 
     if (isPrimary) {
-      return FilledButton(onPressed: onPressed, style: style, child: text);
+      return FilledButton(onPressed: onPressed, style: style, child: content);
     }
 
-    return OutlinedButton(onPressed: onPressed, style: style, child: text);
+    return OutlinedButton(onPressed: onPressed, style: style, child: content);
   }
 
   Color _resolveForeground(AutomationPanelTheme theme) {
@@ -88,5 +100,41 @@ class AutomationPanelButton extends StatelessWidget {
       ),
       AutomationPanelButtonKind.danger => BorderSide(color: theme.dangerLine),
     };
+  }
+}
+
+class _Content extends StatelessWidget {
+  static const _iconSize = 18.0;
+  static const _iconGap = 6.0;
+
+  final String label;
+  final IconData? leadingIcon;
+  final IconData? trailingIcon;
+
+  const _Content({
+    required this.label,
+    required this.leadingIcon,
+    required this.trailingIcon,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final leading = leadingIcon;
+    final trailing = trailingIcon;
+    final text = Text(label, maxLines: 1, softWrap: false);
+
+    if (leading == null && trailing == null) {
+      return text;
+    }
+
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      spacing: _iconGap,
+      children: [
+        if (leading != null) Icon(leading, size: _iconSize),
+        Flexible(child: text),
+        if (trailing != null) Icon(trailing, size: _iconSize),
+      ],
+    );
   }
 }

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_automation_mock/flutter_automation_mock.dart';
 import 'package:flutter_automation_panel/src/blocks/automation_code_badge.dart';
 import 'package:flutter_automation_panel/src/theme/automation_panel_theme.dart';
+import 'package:flutter_automation_panel/src/theme/automation_panel_strings.dart';
 
 /// {@category Widgets}
 ///
@@ -13,7 +14,6 @@ import 'package:flutter_automation_panel/src/theme/automation_panel_theme.dart';
 class AutomationRequestRow extends StatelessWidget {
   static const _crossWidth = 48.0;
   static const _overrideHeight = 52.0;
-  static const _connectionErrorLabel = 'No network';
 
   /// HTTP method of the request.
   final String method;
@@ -68,14 +68,16 @@ class AutomationRequestRow extends StatelessWidget {
   /// The words that name [failure] on an override row.
   static String describeOverride(MockApiFailure failure) {
     if (failure.isConnectionError) {
-      return 'Override: $_connectionErrorLabel';
+      return AutomationPanelStrings.overrideOf(
+        AutomationPanelStrings.noNetwork,
+      );
     }
 
     final detail = failure.errorCode ?? failure.message;
 
     return detail == null
-        ? 'Override: ${failure.statusCode}'
-        : 'Override: ${failure.statusCode} $detail';
+        ? AutomationPanelStrings.overrideOf('${failure.statusCode}')
+        : AutomationPanelStrings.overrideOf('${failure.statusCode} $detail');
   }
 }
 
@@ -191,7 +193,7 @@ class _OverrideRow extends StatelessWidget {
               ),
               child: IconButton(
                 onPressed: onClearOverride,
-                tooltip: 'Remove override',
+                tooltip: AutomationPanelStrings.removeOverride,
                 icon: Icon(Icons.close, size: 20, color: theme.danger),
               ),
             ),

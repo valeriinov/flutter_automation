@@ -12,6 +12,7 @@ import 'package:flutter_automation_panel/src/panel/automation_panel_controller.d
 import 'package:flutter_automation_panel/src/panel/automation_panel_scope.dart';
 import 'package:flutter_automation_panel/src/sheets/automation_response_sheet.dart';
 import 'package:flutter_automation_panel/src/theme/automation_panel_theme.dart';
+import 'package:flutter_automation_panel/src/theme/automation_panel_strings.dart';
 
 /// {@category Widgets}
 ///
@@ -98,7 +99,7 @@ class _AutomationFlowMapPageState extends State<AutomationFlowMapPage> {
           if (_hasOutcomeStep)
             AutomationFlowStep(
               number: 1,
-              title: 'Outcome',
+              title: AutomationPanelStrings.outcome,
               isFork: true,
               isLast: shown.isEmpty,
               children: [
@@ -143,8 +144,8 @@ class _AutomationFlowMapPageState extends State<AutomationFlowMapPage> {
   String _describe(AutomationCatalogueVariant? variant) {
     final entry = AutomationCatalogueText.english(variant?.entry, '');
     final parts = [
-      if (entry.isNotEmpty) 'Start: $entry',
-      if (widget.flow.fork != null) '1 fork',
+      if (entry.isNotEmpty) AutomationPanelStrings.startOf(entry),
+      if (widget.flow.fork != null) AutomationPanelStrings.oneFork,
     ];
 
     return parts.join(' · ');
@@ -292,7 +293,7 @@ class _ForkHint extends StatelessWidget {
     final theme = AutomationPanelTheme.of(context);
 
     return Text(
-      'The walk offers these branches at this step.',
+      AutomationPanelStrings.forkNote,
       style: theme.textStyle(size: 13, color: theme.textSecondary),
     );
   }
@@ -315,7 +316,7 @@ class _Footer extends StatelessWidget {
       children: [
         Text.rich(
           TextSpan(
-            text: 'Result: ',
+            text: AutomationPanelStrings.resultPrefix,
             children: [
               TextSpan(
                 text: title,
@@ -329,10 +330,10 @@ class _Footer extends StatelessWidget {
           style: theme.textStyle(size: 13, color: theme.textSecondary),
         ),
         const AutomationRestartNote(
-          text: 'The app restarts. Open it again to begin the walk.',
+          text: AutomationPanelStrings.walkRestartNote,
         ),
         AutomationPanelButton(
-          label: 'Restart and begin',
+          label: AutomationPanelStrings.restartAndBegin,
           kind: AutomationPanelButtonKind.primary,
           onPressed: onStart,
         ),

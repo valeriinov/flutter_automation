@@ -5,6 +5,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_automation_panel/src/blocks/automation_panel_count.dart';
 import 'package:flutter_automation_panel/src/blocks/automation_panel_status.dart';
 import 'package:flutter_automation_panel/src/theme/automation_panel_theme.dart';
+import 'package:flutter_automation_panel/src/theme/automation_panel_strings.dart';
 
 /// {@category Widgets}
 ///
@@ -147,7 +148,7 @@ class _Header extends StatelessWidget {
           if (isNested)
             IconButton(
               onPressed: onBack,
-              tooltip: 'Back',
+              tooltip: AutomationPanelStrings.back,
               icon: const Icon(Icons.chevron_left, size: 28),
             )
           else
@@ -178,7 +179,7 @@ class _Header extends StatelessWidget {
           ),
           IconButton(
             onPressed: onClose,
-            tooltip: 'Close panel',
+            tooltip: AutomationPanelStrings.closePanel,
             icon: const Icon(Icons.close),
           ),
         ],
@@ -200,7 +201,7 @@ class _Logo extends StatelessWidget {
       alignment: Alignment.center,
       decoration: BoxDecoration(shape: BoxShape.circle, color: theme.accent),
       child: Text(
-        'QA',
+        AutomationPanelStrings.qaBadge,
         style: theme.textStyle(
           size: 12,
           weight: FontWeight.w700,

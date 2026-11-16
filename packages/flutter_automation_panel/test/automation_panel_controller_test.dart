@@ -24,6 +24,8 @@ void main() {
     _startWalk_should_keepTheModeAcrossARestart();
     _resumeWalk_should_runAnAutorunFromTheFirstStep();
     _playNext_should_doOneActionAndStopAtTheFork();
+    _playNext_should_takeTheSelectedBranchAtTheFork();
+    _finishWalk_should_saveTheReportOfAManualWalk();
     _chooseBranch_should_applyTheScenarioAndLetTheWalkGoOn();
     _playNext_should_stopWithTheReasonOfAFailedStep();
     _forkChoices_should_leaveOutABranchThatNeedsARestart();
@@ -265,10 +267,45 @@ void _playNext_should_doOneActionAndStopAtTheFork() {
     expect(player.played, ['Phone screen', 'After code entry']);
     expect(sample.mock.walk?.stepIndex, 2);
     expect(sample.controller.pendingFork, isNotNull);
+    expect(sample.controller.selectedBranch, 'signUpNeeded');
+  });
+}
 
+void _playNext_should_takeTheSelectedBranchAtTheFork() {
+  test('playNext should take the selected branch at the fork', () async {
+    final player = RecordingPlayer();
+
+    final sample = await _createSample(player: player);
+
+    await sample.controller.startWalk('login', 'signUpNeeded');
+    await sample.controller.playNext();
+    sample.controller.selectBranch('accountExists');
     await sample.controller.playNext();
 
-    expect(player.played, hasLength(2));
+    expect(sample.mock.walk?.variant, 'accountExists');
+    expect(sample.controller.pendingFork, isNull);
+    expect(player.played.length, greaterThan(2));
+  });
+}
+
+void _finishWalk_should_saveTheReportOfAManualWalk() {
+  test('finishWalk should save the report of a manual walk', () async {
+    final sample = await _createSample(player: RecordingPlayer());
+
+    await sample.controller.startWalk('login', 'signUpNeeded');
+    await sample.controller.playNext();
+    sample.controller.selectBranch('accountExists');
+    await sample.controller.playNext();
+    await sample.controller.finishWalk();
+
+    final summary = sample.controller.runSummary;
+    final report = summary?.report;
+
+    expect(summary?.mode, AutomationWalkMode.manual);
+    expect(summary?.variant, 'accountExists');
+    expect(sample.mock.walk, isNull);
+    expect(report?.path, endsWith('report.json'));
+    expect(report?.readAsStringSync(), contains('"mode":"manual"'));
   });
 }
 

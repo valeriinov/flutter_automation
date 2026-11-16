@@ -1,3 +1,5 @@
+import 'package:flutter_automation_panel/src/theme/automation_panel_strings.dart';
+
 /// {@category Utils}
 ///
 /// The words that count [count] things, such as `1 step` or `3 steps`.
@@ -10,4 +12,5 @@ String describeCount(int count, String noun) {
 /// {@category Utils}
 ///
 /// The words that count the overrides of the panel, such as `2 overrides`.
-String describeOverrideCount(int count) => describeCount(count, 'override');
+String describeOverrideCount(int count) =>
+    describeCount(count, AutomationPanelStrings.overrideNoun);

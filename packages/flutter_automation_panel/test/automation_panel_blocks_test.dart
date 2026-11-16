@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_automation_mock/flutter_automation_mock.dart';
+import 'package:flutter_automation_mock/mock_catalogue.dart';
 import 'package:flutter_automation_panel/flutter_automation_panel.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -14,7 +15,11 @@ void main() {
     _automationPanelSheet_should_notMoveAShortSheet();
     _automationPanelSheet_should_holdAListTile();
     _automationWalkPlaque_should_reportADragDown();
-    _automationWalkPlaque_should_exitFromItsHeader();
+    _automationWalkPlaque_should_exitStepAndOpenFromItsLine();
+    _automationWalkPlaque_should_pinExitAndNextUnderALongBody();
+    _automationWalkPlaque_should_scrollItsBodyAndDragOnlyByTheHead();
+    _automationRunDoneSheet_should_pinItsButtonsAndShare();
+    _automationRunDoneSheet_should_hideShareWithoutACallback();
   });
 }
 
@@ -113,19 +118,11 @@ void _automationWalkPlaque_should_reportADragDown() {
       tester,
       Align(
         alignment: Alignment.topCenter,
-        child: AutomationWalkPlaque(
-          title: 'Sign-in · step 1 of 4',
-          overrideCount: 0,
-          isExpanded: false,
-          onToggle: () {},
-          onExit: () {},
-          onDragged: (delta) => moved += delta,
-          child: const SizedBox(),
-        ),
+        child: _plaque(isExpanded: false, onDragged: (delta) => moved += delta),
       ),
     );
 
-    final line = find.text('Sign-in · step 1 of 4');
+    final line = find.textContaining(_flowTitle, findRichText: true);
     final before = tester.getTopLeft(line);
 
     await tester.drag(line, const Offset(0, 120));
@@ -136,35 +133,200 @@ void _automationWalkPlaque_should_reportADragDown() {
   });
 }
 
-void _automationWalkPlaque_should_exitFromItsHeader() {
-  testWidgets('AutomationWalkPlaque should exit from its header', (
+void _automationWalkPlaque_should_exitStepAndOpenFromItsLine() {
+  testWidgets('AutomationWalkPlaque should exit step and open from its line', (
     tester,
   ) async {
     int exits = 0;
+    int nexts = 0;
     int toggles = 0;
 
     await _pump(
       tester,
       Align(
         alignment: Alignment.topCenter,
-        child: AutomationWalkPlaque(
-          title: 'Sign-in · step 1 of 4',
-          overrideCount: 0,
+        child: _plaque(
           isExpanded: false,
-          onToggle: () => toggles += 1,
           onExit: () => exits += 1,
-          child: const SizedBox(),
+          onNext: () => nexts += 1,
+          onToggle: () => toggles += 1,
         ),
       ),
     );
+    await tester.tap(find.byIcon(Icons.close));
+    await tester.tap(find.byIcon(Icons.chevron_right));
+    await tester.tap(find.textContaining(_flowTitle, findRichText: true));
 
-    expect(find.text('Exit'), findsOneWidget);
-
-    await tester.tap(find.text('Exit'));
-
-    expect(exits, 1);
-    expect(toggles, 0);
+    expect((exits, nexts, toggles), (1, 1, 1));
   });
+}
+
+void _automationWalkPlaque_should_pinExitAndNextUnderALongBody() {
+  testWidgets(
+    'AutomationWalkPlaque should pin exit and next under a long body',
+    (tester) async {
+      int nexts = 0;
+
+      await _pump(
+        tester,
+        Align(
+          alignment: Alignment.topCenter,
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxHeight: 360),
+            child: _plaque(isExpanded: true, onNext: () => nexts += 1),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      final next = find.widgetWithText(
+        AutomationPanelButton,
+        AutomationPanelStrings.nextStep,
+      );
+      final exit = find.widgetWithText(
+        AutomationPanelButton,
+        AutomationPanelStrings.exit,
+      );
+
+      expect(tester.getBottomLeft(next).dy, lessThanOrEqualTo(360));
+      expect(exit.hitTestable(), findsOneWidget);
+      expect(find.text('Branch 19').hitTestable(), findsNothing);
+
+      await tester.tap(next);
+
+      expect(nexts, 1);
+    },
+  );
+}
+
+void _automationWalkPlaque_should_scrollItsBodyAndDragOnlyByTheHead() {
+  testWidgets(
+    'AutomationWalkPlaque should scroll its body and drag only by the head',
+    (tester) async {
+      double moved = 0;
+
+      await _pump(
+        tester,
+        Align(
+          alignment: Alignment.topCenter,
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxHeight: 360),
+            child: _plaque(
+              isExpanded: true,
+              onDragged: (delta) => moved += delta,
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      final first = find.text('Branch 0');
+      final before = tester.getTopLeft(first);
+
+      await tester.drag(first, const Offset(0, -120));
+      await tester.pumpAndSettle();
+
+      expect(moved, 0);
+      expect(tester.getTopLeft(first).dy, lessThan(before.dy));
+
+      await tester.drag(
+        find.textContaining(_flowTitle, findRichText: true),
+        const Offset(0, 120),
+      );
+      await tester.pump();
+
+      expect(moved, greaterThan(80));
+    },
+  );
+}
+
+void _automationRunDoneSheet_should_pinItsButtonsAndShare() {
+  testWidgets('AutomationRunDoneSheet should pin its buttons and share', (
+    tester,
+  ) async {
+    int shares = 0;
+
+    await _pumpRunDone(tester, onShare: () => shares += 1);
+
+    final share = find.text(AutomationPanelStrings.shareLogs);
+
+    expect(share.hitTestable(), findsOneWidget);
+    expect(find.text(AutomationPanelStrings.runAgain).hitTestable(), findsOne);
+    expect(find.text(AutomationPanelStrings.exit).hitTestable(), findsOne);
+    expect(find.text('/request/29').hitTestable(), findsNothing);
+
+    await tester.tap(share);
+
+    expect(shares, 1);
+  });
+}
+
+void _automationRunDoneSheet_should_hideShareWithoutACallback() {
+  testWidgets('AutomationRunDoneSheet should hide share without a callback', (
+    tester,
+  ) async {
+    await _pumpRunDone(tester);
+
+    expect(find.text(AutomationPanelStrings.shareLogs), findsNothing);
+    expect(find.text(AutomationPanelStrings.runAgain), findsOneWidget);
+  });
+}
+
+const _flowTitle = 'Sign-in';
+
+Widget _plaque({
+  required bool isExpanded,
+  VoidCallback? onExit,
+  VoidCallback? onNext,
+  VoidCallback? onToggle,
+  ValueChanged<double>? onDragged,
+}) {
+  return AutomationWalkPlaque(
+    flowTitle: _flowTitle,
+    collapsedStep: AutomationPanelStrings.stepShort(1, 4),
+    expandedStep: AutomationPanelStrings.stepOf(1, 4),
+    overrideCount: 0,
+    isExpanded: isExpanded,
+    nextLabel: AutomationPanelStrings.nextStep,
+    onToggle: onToggle ?? () {},
+    onExit: onExit ?? () {},
+    onNext: onNext ?? () {},
+    onDragged: onDragged,
+    child: Column(
+      children: [
+        for (int index = 0; index < 20; index += 1)
+          SizedBox(height: 48, child: Text('Branch $index')),
+      ],
+    ),
+  );
+}
+
+Future<void> _pumpRunDone(WidgetTester tester, {VoidCallback? onShare}) {
+  return _pump(
+    tester,
+    Align(
+      alignment: Alignment.bottomCenter,
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(maxHeight: 480),
+        child: AutomationRunDoneSheet(
+          outcome: 'Signed in',
+          stepCount: 4,
+          duration: const Duration(seconds: 12),
+          requests: [
+            for (int index = 0; index < 30; index += 1)
+              AutomationCatalogueRequest(
+                method: 'GET',
+                path: '/request/$index',
+                statusCode: 200,
+              ),
+          ],
+          onShare: onShare,
+          onRunAgain: () {},
+          onExit: () {},
+        ),
+      ),
+    ),
+  );
 }
 
 Future<void> _openSheet(WidgetTester tester, {required int rowCount}) async {

@@ -2,6 +2,7 @@ import 'dart:math';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_automation_panel/src/theme/automation_panel_theme.dart';
+import 'package:flutter_automation_panel/src/theme/automation_panel_strings.dart';
 
 /// {@category Widgets}
 ///
@@ -12,6 +13,8 @@ import 'package:flutter_automation_panel/src/theme/automation_panel_theme.dart';
 /// does not stretch.
 ///
 /// A sheet that needs another head, such as the end of a run, passes [header].
+/// A sheet with actions that stay under the finger passes [footer]; the
+/// [child] scrolls above it.
 class AutomationPanelSheet extends StatelessWidget {
   /// Title of the sheet, missing when [header] stands in.
   final String? title;
@@ -25,11 +28,15 @@ class AutomationPanelSheet extends StatelessWidget {
   /// Content under the head.
   final Widget child;
 
+  /// Content pinned under [child], missing when the sheet has none.
+  final Widget? footer;
+
   const AutomationPanelSheet({
     required this.child,
     this.title,
     this.header,
     this.onClose,
+    this.footer,
     super.key,
   });
 
@@ -38,6 +45,7 @@ class AutomationPanelSheet extends StatelessWidget {
     final theme = AutomationPanelTheme.of(context);
     final title = this.title;
     final header = this.header;
+    final footer = this.footer;
     final systemBottom = MediaQuery.paddingOf(context).bottom;
 
     return Material(
@@ -83,7 +91,7 @@ class AutomationPanelSheet extends StatelessWidget {
                     offset: const Offset(10, 0),
                     child: IconButton(
                       onPressed: onClose,
-                      tooltip: 'Close',
+                      tooltip: AutomationPanelStrings.close,
                       icon: const Icon(Icons.close),
                     ),
                   ),
@@ -95,6 +103,7 @@ class AutomationPanelSheet extends StatelessWidget {
                 child: child,
               ),
             ),
+            ?footer,
           ],
         ),
       ),

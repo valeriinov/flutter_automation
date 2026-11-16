@@ -4,6 +4,7 @@ import 'package:flutter_automation_panel/src/panel/automation_journal_record.dar
 import 'package:flutter_automation_panel/src/panel/automation_panel_scope.dart';
 import 'package:flutter_automation_panel/src/sheets/automation_response_sheet.dart';
 import 'package:flutter_automation_panel/src/theme/automation_panel_theme.dart';
+import 'package:flutter_automation_panel/src/theme/automation_panel_strings.dart';
 
 /// {@category Widgets}
 ///
@@ -27,7 +28,7 @@ class AutomationJournalPage extends StatelessWidget {
         if (records.isEmpty) {
           return Center(
             child: Text(
-              'No requests yet',
+              AutomationPanelStrings.noRequests,
               style: theme.textStyle(size: 14, color: theme.textSecondary),
             ),
           );

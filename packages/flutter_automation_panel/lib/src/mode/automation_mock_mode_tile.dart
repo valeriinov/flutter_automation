@@ -2,6 +2,7 @@ import 'package:flutter/widgets.dart';
 import 'package:flutter_automation_mock/flutter_automation_mock.dart';
 import 'package:flutter_automation_panel/src/blocks/automation_panel_switch_tile.dart';
 import 'package:flutter_automation_panel/src/mode/automation_mode_controller.dart';
+import 'package:flutter_automation_panel/src/theme/automation_panel_strings.dart';
 
 /// {@category Widgets}
 ///
@@ -23,8 +24,8 @@ class AutomationMockModeTile extends StatelessWidget {
       listenable: controller,
       builder: (context, _) {
         return AutomationPanelSwitchTile(
-          title: 'Mock mode',
-          subtitle: 'The app restarts when you switch',
+          title: AutomationPanelStrings.mockMode,
+          subtitle: AutomationPanelStrings.mockModeNote,
           isOn: controller.nextMode == AutomationMode.mock,
           onChanged: (isOn) => controller.switchTo(
             isOn ? AutomationMode.mock : AutomationMode.server,

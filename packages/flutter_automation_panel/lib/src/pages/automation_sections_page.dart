@@ -15,6 +15,7 @@ import 'package:flutter_automation_panel/src/panel/automation_panel_controller.d
 import 'package:flutter_automation_panel/src/panel/automation_panel_scope.dart';
 import 'package:flutter_automation_panel/src/sheets/automation_response_sheet.dart';
 import 'package:flutter_automation_panel/src/theme/automation_panel_theme.dart';
+import 'package:flutter_automation_panel/src/theme/automation_panel_strings.dart';
 
 /// {@category Widgets}
 ///
@@ -25,9 +26,9 @@ import 'package:flutter_automation_panel/src/theme/automation_panel_theme.dart';
 /// when its settings equal that profile, and `Custom` otherwise.
 class AutomationSectionsPage extends StatelessWidget {
   static const _latencyLabels = {
-    MockLatencyProfile.fast: 'Fast',
-    MockLatencyProfile.realistic: 'Real',
-    MockLatencyProfile.slow: 'Slow',
+    MockLatencyProfile.fast: AutomationPanelStrings.latencyFast,
+    MockLatencyProfile.realistic: AutomationPanelStrings.latencyRealistic,
+    MockLatencyProfile.slow: AutomationPanelStrings.latencySlow,
   };
 
   /// The sections the page lists, in order.
@@ -42,7 +43,9 @@ class AutomationSectionsPage extends StatelessWidget {
     return ListView(
       padding: const EdgeInsets.all(AutomationPanelTheme.gapLarge),
       children: [
-        const AutomationPanelLabel(text: 'Response latency'),
+        const AutomationPanelLabel(
+          text: AutomationPanelStrings.responseLatency,
+        ),
         const SizedBox(height: AutomationPanelTheme.gapMedium),
         AutomationPanelSegments<MockLatencyProfile>(
           options: [
@@ -141,13 +144,13 @@ class _SectionCard extends StatelessWidget {
       children: [
         if (mockSection != null)
           AutomationPanelCardRow(
-            label: 'Profile',
+            label: AutomationPanelStrings.profile,
             value: _describeProfile(mockSection),
             onPressed: () => _openProfiles(context, mockSection),
           ),
         if (api != null)
           AutomationPanelCardRow(
-            label: 'Requests',
+            label: AutomationPanelStrings.requests,
             overrideValue: overrides == 0
                 ? null
                 : describeOverrideCount(overrides),
@@ -165,10 +168,12 @@ class _SectionCard extends StatelessWidget {
     final name = selection.profileName;
 
     if (selection.isDefault) {
-      return 'Default';
+      return AutomationPanelStrings.defaultName;
     }
 
-    return name == null ? 'Custom' : section.profileTitles[name] ?? name;
+    return name == null
+        ? AutomationPanelStrings.custom
+        : section.profileTitles[name] ?? name;
   }
 
   Future<void> _openProfiles(
@@ -229,9 +234,11 @@ class _ProfileSheet extends StatelessWidget {
           for (final name in [null, ...mockSection.profileNames])
             AutomationPanelRadioTile(
               title: name == null
-                  ? 'Default'
+                  ? AutomationPanelStrings.defaultName
                   : section.profileTitles[name] ?? name,
-              subtitle: _needsRestart(name) ? '⟳ Restarts the app' : null,
+              subtitle: _needsRestart(name)
+                  ? AutomationPanelStrings.restartsTheApp
+                  : null,
               isSelected: name == null
                   ? selection.isDefault
                   : name == selection.profileName,
@@ -275,7 +282,7 @@ class _RequestsPage extends StatelessWidget {
 
     return AutomationPanelFrame(
       title: title,
-      subtitle: 'Requests',
+      subtitle: AutomationPanelStrings.requests,
       onBack: () => Navigator.of(context).pop(),
       onClose: controller.closePanel,
       child: Material(
