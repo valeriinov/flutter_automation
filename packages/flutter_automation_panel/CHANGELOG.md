@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.8.2
+
+- A step of the flow map holds its circle at the vertical centre of its card,
+  with the rail above and below it.
+- `AutomationPanelSheet` takes `hasGrabber`. The run sheet shows no grabber,
+  because the tester cannot drag it.
+
 ## 0.8.1
 
 - New `AutomationPanelStrings`: every text of the panel, in English. The
