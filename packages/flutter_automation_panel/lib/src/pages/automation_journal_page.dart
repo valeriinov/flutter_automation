@@ -1,17 +1,23 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_automation_panel/src/blocks/automation_latency_note.dart';
+import 'package:flutter_automation_panel/src/blocks/automation_panel_count.dart';
 import 'package:flutter_automation_panel/src/blocks/automation_panel_search_field.dart';
 import 'package:flutter_automation_panel/src/blocks/automation_request_row.dart';
 import 'package:flutter_automation_panel/src/panel/automation_journal_record.dart';
 import 'package:flutter_automation_panel/src/panel/automation_panel_scope.dart';
+import 'package:flutter_automation_panel/src/sheets/automation_confirm_sheet.dart';
 import 'package:flutter_automation_panel/src/sheets/automation_response_sheet.dart';
 import 'package:flutter_automation_panel/src/theme/automation_panel_theme.dart';
 import 'package:flutter_automation_panel/src/theme/automation_panel_strings.dart';
 
 /// {@category Widgets}
 ///
-/// The Log tab: the requests the app sent to the mock, newest first. A search
-/// over the method, the path and the status code narrows the list. A tap opens
-/// the response sheet of the request.
+/// The Log tab: the requests the app sent to the mock, newest first, each with
+/// the status code it got. A row whose answer an override gave says so under
+/// its path. A search over the method, the path and the status code narrows
+/// the list. Clear log under the search empties the journal after the tester
+/// confirms. A tap opens the response sheet,
+/// where the tester changes the override of the request.
 class AutomationJournalPage extends StatefulWidget {
   const AutomationJournalPage({super.key});
 
@@ -53,8 +59,10 @@ class _AutomationJournalPageState extends State<AutomationJournalPage> {
           itemBuilder: (context, index) {
             if (index == 0) {
               return _Search(
+                recordCount: records.length,
                 hasMatches: matches.isNotEmpty,
                 onChanged: (value) => setState(() => _query = value),
+                onClearPressed: () => _confirmClear(context),
               );
             }
 
@@ -65,9 +73,7 @@ class _AutomationJournalPageState extends State<AutomationJournalPage> {
               method: AutomationJournalRecord.methodOf(record),
               path: path,
               statusCode: AutomationJournalRecord.statusCodeOf(record),
-              failure: controller.failureOf(path),
-              latency: controller.latencyOf(path),
-              onClearOverride: () => controller.clearOverride(path),
+              note: _describeOverride(record),
               onPressed: () => showAutomationResponseSheet(
                 context: context,
                 controller: controller,
@@ -83,6 +89,35 @@ class _AutomationJournalPageState extends State<AutomationJournalPage> {
     );
   }
 
+  Future<void> _confirmClear(BuildContext context) {
+    final controller = AutomationPanelScope.of(context);
+
+    return showAutomationConfirmSheet(
+      context: context,
+      title: AutomationPanelStrings.clearLogQuestion,
+      message: AutomationPanelStrings.clearLogMessage,
+      confirmLabel: AutomationPanelStrings.clearLog,
+      onConfirmPressed: controller.mock.journal.clear,
+    );
+  }
+
+  String? _describeOverride(Map<String, Object?> record) {
+    final latencyLabel = AutomationLatencyNote
+        .labels[AutomationJournalRecord.latencyOverrideOf(record)];
+    final parts = [
+      if (AutomationJournalRecord.hasFailureOverride(record))
+        AutomationPanelStrings.errorAnswer,
+      if (latencyLabel != null)
+        AutomationPanelStrings.latencyOverrideOf(latencyLabel),
+    ];
+
+    if (parts.isEmpty) {
+      return null;
+    }
+
+    return AutomationPanelStrings.answeredByOverride(parts.join(' · '));
+  }
+
   bool _matchesQuery(Map<String, Object?> record) {
     return matchesSearchQuery(_query, [
       AutomationJournalRecord.methodOf(record),
@@ -93,10 +128,17 @@ class _AutomationJournalPageState extends State<AutomationJournalPage> {
 }
 
 class _Search extends StatelessWidget {
+  final int recordCount;
   final bool hasMatches;
   final ValueChanged<String> onChanged;
+  final VoidCallback onClearPressed;
 
-  const _Search({required this.hasMatches, required this.onChanged});
+  const _Search({
+    required this.recordCount,
+    required this.hasMatches,
+    required this.onChanged,
+    required this.onClearPressed,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -104,11 +146,31 @@ class _Search extends StatelessWidget {
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
-      spacing: AutomationPanelTheme.gapMedium,
+      spacing: AutomationPanelTheme.gapSmall,
       children: [
         AutomationPanelSearchField(
           hint: AutomationPanelStrings.journalSearchHint,
           onChanged: onChanged,
+        ),
+        Row(
+          children: [
+            Expanded(
+              child: Text(
+                describeCount(recordCount, AutomationPanelStrings.requestNoun),
+                style: theme.textStyle(size: 13, color: theme.textSecondary),
+              ),
+            ),
+            TextButton.icon(
+              onPressed: onClearPressed,
+              icon: Icon(Icons.delete_outline, size: 18, color: theme.danger),
+              label: const Text(AutomationPanelStrings.clearLog),
+              style: TextButton.styleFrom(
+                foregroundColor: theme.danger,
+                minimumSize: const Size(0, AutomationPanelTheme.touchTarget),
+                textStyle: theme.textStyle(size: 14, weight: FontWeight.w600),
+              ),
+            ),
+          ],
         ),
         if (!hasMatches)
           Text(

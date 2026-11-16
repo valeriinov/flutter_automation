@@ -3,10 +3,14 @@ import 'package:flutter_automation_panel/src/theme/automation_panel_theme.dart';
 
 /// {@category Widgets}
 ///
-/// A card with a title and rows, such as a section of the mock.
+/// A card with a title, an optional line under it and rows, such as a section
+/// of the mock.
 class AutomationPanelCard extends StatelessWidget {
   /// Title of the card.
   final String title;
+
+  /// Line under the title, missing when the card needs none.
+  final String? subtitle;
 
   /// Rows of the card, usually [AutomationPanelCardRow]s.
   final List<Widget> children;
@@ -14,12 +18,14 @@ class AutomationPanelCard extends StatelessWidget {
   const AutomationPanelCard({
     required this.title,
     required this.children,
+    this.subtitle,
     super.key,
   });
 
   @override
   Widget build(BuildContext context) {
     final theme = AutomationPanelTheme.of(context);
+    final subtitle = this.subtitle;
 
     return Container(
       clipBehavior: Clip.antiAlias,
@@ -38,6 +44,14 @@ class AutomationPanelCard extends StatelessWidget {
               style: theme.textStyle(size: 15, weight: FontWeight.w600),
             ),
           ),
+          if (subtitle != null)
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 0, 16, 4),
+              child: Text(
+                subtitle,
+                style: theme.textStyle(size: 13, color: theme.textSecondary),
+              ),
+            ),
           ...children,
         ],
       ),
@@ -94,18 +108,16 @@ class AutomationPanelCardRow extends StatelessWidget {
           children: [
             Expanded(child: Text(label, style: theme.textStyle(size: 14))),
             if (value != null)
-              Flexible(
-                child: ConstrainedBox(
-                  constraints: const BoxConstraints(maxWidth: 190),
-                  child: Text(
-                    value,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: theme.textStyle(
-                      size: 14,
-                      weight: FontWeight.w500,
-                      color: theme.accent,
-                    ),
+              ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 190),
+                child: Text(
+                  value,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: theme.textStyle(
+                    size: 14,
+                    weight: FontWeight.w500,
+                    color: theme.accent,
                   ),
                 ),
               ),

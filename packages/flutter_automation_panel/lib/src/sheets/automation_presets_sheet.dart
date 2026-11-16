@@ -3,6 +3,7 @@ import 'package:flutter_automation_mock/flutter_automation_mock.dart';
 import 'package:flutter_automation_panel/src/blocks/automation_panel_button.dart';
 import 'package:flutter_automation_panel/src/blocks/automation_panel_sheet.dart';
 import 'package:flutter_automation_panel/src/panel/automation_panel_controller.dart';
+import 'package:flutter_automation_panel/src/sheets/automation_confirm_sheet.dart';
 import 'package:flutter_automation_panel/src/theme/automation_panel_theme.dart';
 import 'package:flutter_automation_panel/src/theme/automation_panel_strings.dart';
 
@@ -76,8 +77,8 @@ class _AutomationPresetsSheetState extends State<AutomationPresetsSheet> {
           for (final name in _names)
             _PresetRow(
               name: name,
-              onApply: () => _apply(name),
-              onDelete: () => _delete(name),
+              onApply: () => _confirmApply(name),
+              onDelete: () => _confirmDelete(name),
             ),
         ],
       ),
@@ -116,6 +117,20 @@ class _AutomationPresetsSheetState extends State<AutomationPresetsSheet> {
     await _reload();
   }
 
+  Future<void> _confirmApply(String name) async {
+    if (!widget.controller.isChanged) {
+      return _apply(name);
+    }
+
+    return showAutomationConfirmSheet(
+      context: context,
+      title: AutomationPanelStrings.applyPresetQuestion(name),
+      message: AutomationPanelStrings.applyPresetMessage,
+      confirmLabel: AutomationPanelStrings.apply,
+      onConfirmPressed: () => _apply(name),
+    );
+  }
+
   Future<void> _apply(String name) async {
     final scenario = await _store?.readPreset(name) ?? const {};
 
@@ -125,6 +140,16 @@ class _AutomationPresetsSheetState extends State<AutomationPresetsSheet> {
     );
 
     widget.onClose();
+  }
+
+  Future<void> _confirmDelete(String name) {
+    return showAutomationConfirmSheet(
+      context: context,
+      title: AutomationPanelStrings.deletePresetQuestion(name),
+      message: AutomationPanelStrings.deletePresetMessage,
+      confirmLabel: AutomationPanelStrings.delete,
+      onConfirmPressed: () => _delete(name),
+    );
   }
 
   Future<void> _delete(String name) async {

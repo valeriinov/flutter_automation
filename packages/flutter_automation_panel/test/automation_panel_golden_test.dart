@@ -14,16 +14,19 @@ void main() {
     _flowMap_should_matchTheGolden();
     _response_should_matchTheGolden();
     _sections_should_matchTheGolden();
+    _changes_should_matchTheGolden();
+    _profiles_should_matchTheGolden();
+    _confirm_should_matchTheGolden();
     _walk_should_matchTheGolden();
     _walkOpen_should_matchTheGolden();
     _runDone_should_matchTheGolden();
   });
 }
 
-Future<void> _expectGolden(String name) async {
+Future<void> _expectGolden(String name, {Finder? finder}) async {
   try {
     await expectLater(
-      find.byType(Scaffold),
+      finder ?? find.byType(Scaffold),
       matchesGoldenFile('goldens/$name.png'),
     );
   } finally {
@@ -143,6 +146,34 @@ void _sections_should_matchTheGolden() {
   });
 }
 
+void _changes_should_matchTheGolden() {
+  testWidgets('Changes should match the golden', tags: _goldenTag, (
+    tester,
+  ) async {
+    await _pumpScreen(
+      tester,
+      (_) => const AutomationChangesPage(),
+      arrange: (sample) async {
+        await _overrideRegister(sample);
+        await sample.controller.updateScenario(
+          MockScenario.fromJson({
+            ...sample.mock.scenario.toJson(),
+            'latency': 'slow',
+            'auth': {'isSignedInOnLaunch': false},
+          }),
+        );
+        await sample.controller.setLatency(
+          '/auth/otp',
+          MockLatencyProfile.slow,
+        );
+
+        sample.controller.outcomeTitle = 'Sign-up needed';
+      },
+    );
+    await _expectGolden('changes');
+  });
+}
+
 Widget _walkOverApp(SamplePanel sample) {
   return Stack(
     children: [
@@ -164,6 +195,43 @@ Future<void> _arrangeWalk(SamplePanel sample) async {
   await sample.controller.startWalk('login', 'signUpNeeded');
   await SamplePanel.moveWalk(sample, 1);
   await sample.controller.setFailure(signUpPath, const MockApiFailure());
+}
+
+void _profiles_should_matchTheGolden() {
+  testWidgets('Profiles should match the golden', tags: _goldenTag, (
+    tester,
+  ) async {
+    await _pumpScreen(tester, (_) => const AutomationPanel(initialTab: 1));
+    await tester.tap(find.text(AutomationPanelStrings.profile).first);
+    await tester.pumpAndSettle();
+    await _expectGolden('profiles', finder: find.byType(MaterialApp));
+  });
+}
+
+void _confirm_should_matchTheGolden() {
+  testWidgets('Confirm should match the golden', tags: _goldenTag, (
+    tester,
+  ) async {
+    await _pumpScreen(
+      tester,
+      (_) => Stack(
+        children: [
+          const ColoredBox(color: Color(0xFFFFFFFF), child: SizedBox.expand()),
+          ColoredBox(color: sampleTheme.scrim, child: const SizedBox.expand()),
+          Align(
+            alignment: Alignment.bottomCenter,
+            child: AutomationConfirmSheet(
+              title: AutomationPanelStrings.resetChangesQuestion('3 changes'),
+              message: AutomationPanelStrings.resetMessage,
+              confirmLabel: AutomationPanelStrings.reset,
+              onConfirmPressed: () {},
+            ),
+          ),
+        ],
+      ),
+    );
+    await _expectGolden('confirm');
+  });
 }
 
 void _walk_should_matchTheGolden() {

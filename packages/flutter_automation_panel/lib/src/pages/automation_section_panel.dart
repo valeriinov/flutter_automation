@@ -10,6 +10,9 @@ final class AutomationSectionPanel {
   /// Title of the section card.
   final String title;
 
+  /// What part of the app the section feeds, missing when the title says it.
+  final String? description;
+
   /// The section whose profiles the card offers, missing for a section with
   /// none.
   final MockSection<Object?>? section;
@@ -25,11 +28,17 @@ final class AutomationSectionPanel {
   /// its name.
   final Map<String, String> profileTitles;
 
+  /// What each profile changes in the app, by profile name. A profile without
+  /// a description shows none.
+  final Map<String, String> profileDescriptions;
+
   const AutomationSectionPanel({
     required this.title,
+    this.description,
     this.section,
     this.api,
     this.requestTitles = const {},
     this.profileTitles = const {},
+    this.profileDescriptions = const {},
   });
 }

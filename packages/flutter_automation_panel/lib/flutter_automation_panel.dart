@@ -27,6 +27,7 @@ export 'package:flutter_automation_panel/src/mode/automation_mock_mode_sheet.dar
 export 'package:flutter_automation_panel/src/mode/automation_mock_mode_tile.dart';
 export 'package:flutter_automation_panel/src/mode/automation_mode_controller.dart';
 export 'package:flutter_automation_panel/src/pages/automation_autorun_page.dart';
+export 'package:flutter_automation_panel/src/pages/automation_changes_page.dart';
 export 'package:flutter_automation_panel/src/pages/automation_flow_map_page.dart';
 export 'package:flutter_automation_panel/src/pages/automation_flows_page.dart';
 export 'package:flutter_automation_panel/src/pages/automation_journal_page.dart';
@@ -47,6 +48,7 @@ export 'package:flutter_automation_panel/src/player/automation_player_exception.
 export 'package:flutter_automation_panel/src/player/automation_player_finder.dart';
 export 'package:flutter_automation_panel/src/player/automation_player_settings.dart';
 export 'package:flutter_automation_panel/src/player/automation_touch_indicator.dart';
+export 'package:flutter_automation_panel/src/sheets/automation_confirm_sheet.dart';
 export 'package:flutter_automation_panel/src/sheets/automation_presets_sheet.dart';
 export 'package:flutter_automation_panel/src/sheets/automation_response_sheet.dart';
 export 'package:flutter_automation_panel/src/sheets/automation_run_done_sheet.dart';

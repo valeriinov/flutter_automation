@@ -44,6 +44,14 @@ void main() {
     _automationSectionsPage_should_narrowTheSectionsBySearch();
     _automationJournalPage_should_narrowTheRequestsBySearch();
     _matchesSearchQuery_should_ignoreCaseAndMatchAnEmptyQuery();
+    _automationJournalPage_should_tellAnAnswerGivenByAnOverride();
+    _automationJournalPage_should_clearTheJournal();
+    _automationChangesPage_should_listAndRemoveTheChanges();
+    _automationChangesPage_should_resetAll();
+    _automationChangesPage_should_keepTheChangesOnCancel();
+    _automationSectionsPage_should_describeTheProfiles();
+    _automationSectionsPage_should_narrowTheProfilesBySearch();
+    _automationPanel_should_openTheChangesFromTheStatusRow();
     _automationWalkStrip_should_exitAfterADragFarDown();
     _automationWalkStrip_should_bringTheControlsBackAfterAnAutorunFailure();
     _automationMockModeTile_should_switchTheModeOnAPanelTile();
@@ -143,7 +151,10 @@ void _automationSectionsPage_should_markProfilesThatNeedARestart() {
       await tester.tap(find.text('Profile').first);
       await tester.pumpAndSettle();
 
-      expect(find.text('⟳ Restarts the app'), findsNWidgets(2));
+      expect(
+        find.textContaining(AutomationPanelStrings.restartsTheApp),
+        findsNWidgets(2),
+      );
     },
   );
 }
@@ -614,7 +625,13 @@ void _automationPanel_should_nameAChangedMockWithNoOutcomeCustom() {
       await _settle(tester);
 
       expect(find.text(AutomationPanelStrings.defaultMock), findsNothing);
-      expect(find.text(AutomationPanelStrings.customMock), findsOneWidget);
+      expect(
+        find.text(
+          '${AutomationPanelStrings.customMock} · 1 change',
+          findRichText: true,
+        ),
+        findsOneWidget,
+      );
     },
   );
 }
@@ -886,6 +903,204 @@ void _automationJournalPage_should_narrowTheRequestsBySearch() {
   });
 }
 
+void _automationJournalPage_should_tellAnAnswerGivenByAnOverride() {
+  testWidgets(
+    'AutomationJournalPage should tell an answer given by an override',
+    (tester) async {
+      final sample = await _pumpPage(tester, const AutomationJournalPage());
+
+      final record = sample.mock.journal.addRequest({
+        'method': 'GET',
+        'path': '/profile/me',
+      });
+
+      sample.mock.journal.attachResponse(
+        record,
+        statusCode: 500,
+        body: const {},
+        override: const {'failure': true, 'latency': 'slow'},
+      );
+
+      await tester.pump();
+
+      expect(find.text('500'), findsOneWidget);
+      expect(
+        find.text(
+          AutomationPanelStrings.answeredByOverride(
+            'error · ${AutomationPanelStrings.latencyOverrideOf('Slow')}',
+          ),
+        ),
+        findsOneWidget,
+      );
+    },
+  );
+}
+
+void _automationJournalPage_should_clearTheJournal() {
+  testWidgets('AutomationJournalPage should clear the journal', (tester) async {
+    final sample = await _pumpPage(tester, const AutomationJournalPage());
+
+    sample.mock.journal.add(MockRequestRecordKind.request, {
+      'method': 'GET',
+      'path': '/profile/me',
+      'status': 200,
+    });
+
+    await tester.pump();
+    await tester.tap(find.text(AutomationPanelStrings.clearLog));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text(AutomationPanelStrings.clearLog).last);
+    await tester.pumpAndSettle();
+
+    expect(sample.mock.journal.records, isEmpty);
+    expect(find.text(AutomationPanelStrings.noRequests), findsOneWidget);
+  });
+}
+
+void _automationChangesPage_should_listAndRemoveTheChanges() {
+  testWidgets('AutomationChangesPage should list and remove the changes', (
+    tester,
+  ) async {
+    final sample = await _pumpPage(tester, const AutomationChangesPage());
+
+    final controller = sample.controller;
+
+    await tester.runAsync(() async {
+      await controller.updateScenario(
+        MockScenario([
+          MockOverride.latency(MockLatencyProfile.slow),
+          authSection.profile('slowCode'),
+        ]),
+      );
+      await controller.setLatency('/auth/otp', MockLatencyProfile.fast);
+    });
+    await tester.pump();
+
+    expect(find.text(AutomationPanelStrings.responseLatency), findsOneWidget);
+    expect(find.text('Slow code'), findsOneWidget);
+    expect(find.text('otp'), findsOneWidget);
+
+    await tester.runAsync(() => controller.clearOverride('/auth/otp'));
+    await tester.pump();
+
+    expect(find.text('otp'), findsNothing);
+    expect(find.text('Slow code'), findsOneWidget);
+  });
+}
+
+void _automationChangesPage_should_resetAll() {
+  testWidgets('AutomationChangesPage should reset all', (tester) async {
+    final sample = await _pumpPage(tester, const AutomationChangesPage());
+
+    await tester.runAsync(
+      () => sample.controller.updateScenario(
+        MockScenario([MockOverride.latency(MockLatencyProfile.slow)]),
+      ),
+    );
+    await tester.pump();
+    await tester.tap(find.text(AutomationPanelStrings.resetAll));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Reset 1 change?'), findsOneWidget);
+
+    await tester.tap(find.text(AutomationPanelStrings.reset));
+    await _settle(tester, until: () => !sample.controller.isChanged);
+
+    expect(sample.controller.isChanged, isFalse);
+  });
+}
+
+void _automationChangesPage_should_keepTheChangesOnCancel() {
+  testWidgets('AutomationChangesPage should keep the changes on cancel', (
+    tester,
+  ) async {
+    final sample = await _pumpPage(tester, const AutomationChangesPage());
+
+    await tester.runAsync(
+      () => sample.controller.updateScenario(
+        MockScenario([MockOverride.latency(MockLatencyProfile.slow)]),
+      ),
+    );
+    await tester.pump();
+    await tester.tap(find.text(AutomationPanelStrings.resetAll));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text(AutomationPanelStrings.cancel));
+    await tester.pumpAndSettle();
+
+    expect(sample.controller.isChanged, isTrue);
+    expect(find.text(AutomationPanelStrings.resetAll), findsOneWidget);
+  });
+}
+
+void _automationSectionsPage_should_describeTheProfiles() {
+  testWidgets('AutomationSectionsPage should describe the profiles', (
+    tester,
+  ) async {
+    await _pumpSections(tester);
+
+    expect(find.text('The sign-in screens and the session.'), findsOneWidget);
+
+    await tester.tap(find.text('Profile').first);
+    await tester.pumpAndSettle();
+
+    expect(find.text('Signed in'), findsWidgets);
+    expect(find.text('signedIn'), findsOneWidget);
+    expect(find.text('The app starts with a signed-in user.'), findsOneWidget);
+    expect(find.text(AutomationPanelStrings.restartsTheApp), findsNWidgets(2));
+    expect(
+      find.text(AutomationPanelStrings.defaultProfileDescription),
+      findsOneWidget,
+    );
+  });
+}
+
+void _automationSectionsPage_should_narrowTheProfilesBySearch() {
+  testWidgets('AutomationSectionsPage should narrow the profiles by search', (
+    tester,
+  ) async {
+    await _pumpPage(tester, AutomationSectionsPage(sections: [_manyProfiles]));
+    await tester.tap(find.text('Profile'));
+    await tester.pumpAndSettle();
+    await tester.enterText(
+      find.widgetWithText(TextField, AutomationPanelStrings.profileSearchHint),
+      'seven',
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('Profile seven'), findsOneWidget);
+    expect(find.text('Profile one'), findsNothing);
+    expect(
+      find.text(AutomationPanelStrings.defaultProfileDescription),
+      findsNothing,
+    );
+  });
+}
+
+void _automationPanel_should_openTheChangesFromTheStatusRow() {
+  testWidgets('AutomationPanel should open the changes from the status row', (
+    tester,
+  ) async {
+    final sample = await _pumpPage(tester, const SizedBox());
+
+    await tester.pumpWidget(
+      hostApp(
+        child: panelHost(
+          sample,
+          Navigator(
+            onGenerateRoute: (_) => MaterialPageRoute<void>(
+              builder: (_) => const AutomationPanel(),
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.tap(find.text(AutomationPanelStrings.defaultMock));
+    await tester.pumpAndSettle();
+
+    expect(find.text(AutomationPanelStrings.nothingChanged), findsOneWidget);
+  });
+}
+
 void _matchesSearchQuery_should_ignoreCaseAndMatchAnEmptyQuery() {
   test('matchesSearchQuery should ignore case and match an empty query', () {
     const words = ['Sign-in', '/auth/otp'];
@@ -1042,3 +1257,27 @@ void _automationPanelLauncher_should_keepTheBackButtonOnTheFirstScreen() {
     variant: TargetPlatformVariant.only(TargetPlatform.android),
   );
 }
+
+const _profileWords = [
+  'one',
+  'two',
+  'three',
+  'four',
+  'five',
+  'six',
+  'seven',
+  'eight',
+  'nine',
+];
+
+final _manyProfiles = AutomationSectionPanel(
+  title: 'Many',
+  section: MockSection<Map<String, Object?>>(
+    name: 'many',
+    fromJson: (json) => json,
+    profiles: {
+      for (final word in _profileWords) word: (settings) => {'word': word},
+    },
+  ),
+  profileTitles: {for (final word in _profileWords) word: 'Profile $word'},
+);

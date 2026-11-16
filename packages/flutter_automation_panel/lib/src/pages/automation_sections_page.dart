@@ -1,4 +1,3 @@
-import 'package:collection/collection.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_automation_mock/flutter_automation_mock.dart';
 import 'package:flutter_automation_panel/src/blocks/automation_latency_note.dart';
@@ -14,6 +13,7 @@ import 'package:flutter_automation_panel/src/blocks/automation_panel_sheet.dart'
 import 'package:flutter_automation_panel/src/pages/automation_section_panel.dart';
 import 'package:flutter_automation_panel/src/pages/mock_endpoint_panel.dart';
 import 'package:flutter_automation_panel/src/panel/automation_panel_controller.dart';
+import 'package:flutter_automation_panel/src/panel/automation_profile_selection.dart';
 import 'package:flutter_automation_panel/src/panel/automation_panel_scope.dart';
 import 'package:flutter_automation_panel/src/sheets/automation_response_sheet.dart';
 import 'package:flutter_automation_panel/src/theme/automation_panel_theme.dart';
@@ -80,6 +80,7 @@ class _AutomationSectionsPageState extends State<AutomationSectionsPage> {
 
     return matchesSearchQuery(_query, [
       section.title,
+      ?section.description,
       ?section.section?.name,
       for (final endpoint in endpoints) endpoint.path,
       for (final endpoint in endpoints) ?section.requestTitles[endpoint.path],
@@ -96,55 +97,6 @@ class _AutomationSectionsPageState extends State<AutomationSectionsPage> {
 
     controller.updateScenario(MockScenario.fromJson(json));
   }
-}
-
-/// What a section holds now, against its profiles.
-final class _ProfileSelection {
-  static const _equality = DeepCollectionEquality();
-
-  /// Whether the section holds no setting.
-  final bool isDefault;
-
-  /// The profile whose settings the section holds, missing otherwise.
-  final String? profileName;
-
-  const _ProfileSelection({required this.isDefault, this.profileName});
-
-  factory _ProfileSelection.read(
-    AutomationPanelController controller,
-    MockSection<Object?> mockSection,
-  ) {
-    final current = controller.mock.scenario.toJson()[mockSection.name];
-
-    if (current == null || (current is Map && current.isEmpty)) {
-      return const _ProfileSelection(isDefault: true);
-    }
-
-    final name = mockSection.profileNames.firstWhereOrNull((name) {
-      final applied = MockScenario([mockSection.profile(name)]).toJson();
-
-      return _equality.equals(applied[mockSection.name], current);
-    });
-
-    return _ProfileSelection(isDefault: false, profileName: name);
-  }
-
-  bool get isCustom => !isDefault && profileName == null;
-}
-
-/// The scenario of [controller] with the section [mockSection] set to the
-/// profile [profileName], or to its defaults when [profileName] is `null`.
-MockScenario _scenarioWithProfile(
-  AutomationPanelController controller,
-  MockSection<Object?> mockSection,
-  String? profileName,
-) {
-  final json = controller.mock.scenario.toJson()..remove(mockSection.name);
-
-  return MockScenario([
-    ...MockScenario.fromJson(json).overrides,
-    if (profileName != null) mockSection.profile(profileName),
-  ]);
 }
 
 class _SectionCard extends StatelessWidget {
@@ -164,6 +116,7 @@ class _SectionCard extends StatelessWidget {
 
     return AutomationPanelCard(
       title: section.title,
+      subtitle: section.description,
       children: [
         if (mockSection != null)
           AutomationPanelCardRow(
@@ -192,16 +145,10 @@ class _SectionCard extends StatelessWidget {
   }
 
   String _describeProfile(MockSection<Object?> mockSection) {
-    final selection = _ProfileSelection.read(controller, mockSection);
-    final name = selection.profileName;
-
-    if (selection.isDefault) {
-      return AutomationPanelStrings.defaultName;
-    }
-
-    return name == null
-        ? AutomationPanelStrings.custom
-        : section.profileTitles[name] ?? name;
+    return AutomationProfileSelection.read(
+      controller,
+      mockSection,
+    ).describe(section);
   }
 
   Future<void> _openProfiles(
@@ -236,7 +183,9 @@ class _SectionCard extends StatelessWidget {
   }
 }
 
-class _ProfileSheet extends StatelessWidget {
+class _ProfileSheet extends StatefulWidget {
+  static const maxProfilesWithoutSearch = 8;
+
   final AutomationSectionPanel section;
   final MockSection<Object?> mockSection;
   final AutomationPanelController controller;
@@ -248,9 +197,22 @@ class _ProfileSheet extends StatelessWidget {
   });
 
   @override
+  State<_ProfileSheet> createState() => _ProfileSheetState();
+}
+
+class _ProfileSheetState extends State<_ProfileSheet> {
+  String _query = '';
+
+  @override
   Widget build(BuildContext context) {
     final theme = AutomationPanelTheme.of(context);
-    final selection = _ProfileSelection.read(controller, mockSection);
+    final section = widget.section;
+    final description = section.description;
+    final profileNames = widget.mockSection.profileNames;
+    final selection = AutomationProfileSelection.read(
+      widget.controller,
+      widget.mockSection,
+    );
 
     return AutomationPanelSheet(
       title: '${section.title} profile',
@@ -259,14 +221,22 @@ class _ProfileSheet extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         spacing: AutomationPanelTheme.gapSmall,
         children: [
-          for (final name in [null, ...mockSection.profileNames])
+          if (description != null)
+            Text(
+              description,
+              style: theme.textStyle(size: 14, color: theme.textSecondary),
+            ),
+          if (profileNames.length > _ProfileSheet.maxProfilesWithoutSearch)
+            AutomationPanelSearchField(
+              hint: AutomationPanelStrings.profileSearchHint,
+              onChanged: (value) => setState(() => _query = value),
+            ),
+          for (final name in [null, ...profileNames].where(_matchesQuery))
             AutomationPanelRadioTile(
-              title: name == null
-                  ? AutomationPanelStrings.defaultName
-                  : section.profileTitles[name] ?? name,
-              subtitle: _needsRestart(name)
-                  ? AutomationPanelStrings.restartsTheApp
-                  : null,
+              title: _resolveTitle(name),
+              subtitle: _describeProfile(name),
+              code: _resolveCode(name),
+              needsRestart: _needsRestart(name),
               isSelected: name == null
                   ? selection.isDefault
                   : name == selection.profileName,
@@ -278,15 +248,55 @@ class _ProfileSheet extends StatelessWidget {
     );
   }
 
-  bool _needsRestart(String? profileName) {
-    final next = _scenarioWithProfile(controller, mockSection, profileName);
+  bool _matchesQuery(String? profileName) {
+    if (profileName == null) {
+      return _query.trim().isEmpty;
+    }
 
-    return controller.requiresRestart(next.toJson());
+    return matchesSearchQuery(_query, [
+      profileName,
+      ?widget.section.profileTitles[profileName],
+      ?widget.section.profileDescriptions[profileName],
+    ]);
+  }
+
+  String _resolveTitle(String? profileName) {
+    if (profileName == null) {
+      return AutomationPanelStrings.defaultName;
+    }
+
+    return widget.section.profileTitles[profileName] ?? profileName;
+  }
+
+  String? _resolveCode(String? profileName) {
+    final hasTitle = widget.section.profileTitles.containsKey(profileName);
+
+    return hasTitle ? profileName : null;
+  }
+
+  String? _describeProfile(String? profileName) {
+    return profileName == null
+        ? AutomationPanelStrings.defaultProfileDescription
+        : widget.section.profileDescriptions[profileName];
+  }
+
+  bool _needsRestart(String? profileName) {
+    final next = AutomationProfileSelection.scenarioWith(
+      widget.controller,
+      widget.mockSection,
+      profileName,
+    );
+
+    return widget.controller.requiresRestart(next.toJson());
   }
 
   void _select(BuildContext context, String? profileName) {
-    controller.updateScenario(
-      _scenarioWithProfile(controller, mockSection, profileName),
+    widget.controller.updateScenario(
+      AutomationProfileSelection.scenarioWith(
+        widget.controller,
+        widget.mockSection,
+        profileName,
+      ),
     );
     Navigator.of(context).pop();
   }

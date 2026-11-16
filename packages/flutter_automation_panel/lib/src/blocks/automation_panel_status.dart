@@ -20,14 +20,15 @@ final class AutomationPanelStatusAction {
 /// {@category Utils}
 ///
 /// What the status row of a panel tab says: the state of the mock, how many
-/// overrides it holds and the buttons beside it.
+/// changes it holds and the buttons beside it.
 @immutable
 final class AutomationPanelStatus {
   /// What the mock is set to, such as the name of the chosen outcome.
   final String text;
 
-  /// How many requests answer with an override.
-  final int overrideCount;
+  /// How many changes the mock holds: the latency, profiles, request
+  /// overrides and other settings.
+  final int changeCount;
 
   /// Whether the mock differs from its defaults. The dot of the row is grey
   /// when it does not.
@@ -36,10 +37,15 @@ final class AutomationPanelStatus {
   /// Buttons at the end of the row.
   final List<AutomationPanelStatusAction> actions;
 
+  /// Called when the tester taps the state of the row, missing when the state
+  /// opens nothing.
+  final VoidCallback? onPressed;
+
   const AutomationPanelStatus({
     required this.text,
-    this.overrideCount = 0,
+    this.changeCount = 0,
     this.isChanged = true,
     this.actions = const [],
+    this.onPressed,
   });
 }

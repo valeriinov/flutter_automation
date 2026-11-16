@@ -2,8 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_automation_panel/src/blocks/automation_panel_frame.dart';
 import 'package:flutter_automation_panel/src/blocks/automation_panel_sheet.dart';
 import 'package:flutter_automation_panel/src/blocks/automation_panel_status.dart';
+import 'package:flutter_automation_panel/src/pages/automation_changes_page.dart';
+import 'package:flutter_automation_panel/src/panel/automation_panel_changes.dart';
 import 'package:flutter_automation_panel/src/panel/automation_panel_controller.dart';
 import 'package:flutter_automation_panel/src/panel/automation_panel_scope.dart';
+import 'package:flutter_automation_panel/src/sheets/automation_confirm_sheet.dart';
 import 'package:flutter_automation_panel/src/sheets/automation_presets_sheet.dart';
 import 'package:flutter_automation_panel/src/theme/automation_panel_strings.dart';
 
@@ -57,8 +60,9 @@ class _AutomationPanelState extends State<AutomationPanel> {
   ) {
     return AutomationPanelStatus(
       text: controller.outcomeTitle ?? _resolveStateTitle(controller),
-      overrideCount: controller.overrideCount,
+      changeCount: AutomationPanelChanges.read(controller).count,
       isChanged: controller.isChanged,
+      onPressed: () => _openChanges(context),
       actions: [
         AutomationPanelStatusAction(
           label: AutomationPanelStrings.presets,
@@ -67,7 +71,10 @@ class _AutomationPanelState extends State<AutomationPanel> {
         if (controller.isChanged)
           AutomationPanelStatusAction(
             label: AutomationPanelStrings.reset,
-            onPressed: controller.reset,
+            onPressed: () => showAutomationResetSheet(
+              context: context,
+              controller: controller,
+            ),
           ),
       ],
     );
@@ -77,6 +84,12 @@ class _AutomationPanelState extends State<AutomationPanel> {
     return controller.isChanged
         ? AutomationPanelStrings.customMock
         : AutomationPanelStrings.defaultMock;
+  }
+
+  Future<void> _openChanges(BuildContext context) {
+    return Navigator.of(context).push(
+      MaterialPageRoute<void>(builder: (_) => const AutomationChangesPage()),
+    );
   }
 
   Future<void> _openPresets(

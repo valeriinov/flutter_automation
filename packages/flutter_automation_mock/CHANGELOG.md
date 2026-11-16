@@ -1,5 +1,12 @@
 # Changelog
 
+## Unreleased
+
+- The journal marks an answer that an override of the tester gave: the record
+  carries `override`, such as `{"failure": true, "latency": "slow"}`. A record
+  of an answer with no override stays as it was, so recordings and the QA
+  catalogue do not change. `MockJournal.attachResponse` takes `override`.
+
 ## 0.8.5
 
 - New scenario key `latencies`: path to the name of a latency profile. That

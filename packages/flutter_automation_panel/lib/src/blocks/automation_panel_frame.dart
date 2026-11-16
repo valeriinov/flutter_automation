@@ -283,49 +283,16 @@ class _StatusRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = AutomationPanelTheme.of(context);
-    final style = theme.textStyle(size: 13);
 
     return Container(
       color: theme.surface,
       constraints: const BoxConstraints(
         minHeight: AutomationPanelTheme.touchTarget,
       ),
-      padding: const EdgeInsets.only(left: 16, right: 8),
+      padding: const EdgeInsets.only(right: 8),
       child: Row(
-        spacing: AutomationPanelTheme.gapSmall,
         children: [
-          DecoratedBox(
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              color: status.isChanged ? theme.accent : theme.textMuted,
-            ),
-            child: const SizedBox.square(dimension: 8),
-          ),
-          Expanded(
-            child: Text.rich(
-              TextSpan(
-                text: status.text,
-                children: [
-                  if (status.overrideCount > 0)
-                    TextSpan(
-                      text: ' · ',
-                      children: [
-                        TextSpan(
-                          text: describeOverrideCount(status.overrideCount),
-                          style: TextStyle(
-                            color: theme.danger,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                      ],
-                    ),
-                ],
-              ),
-              style: style,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-            ),
-          ),
+          Expanded(child: _StatusState(status: status)),
           for (final action in status.actions)
             TextButton(
               onPressed: action.onPressed,
@@ -337,6 +304,72 @@ class _StatusRow extends StatelessWidget {
               child: Text(action.label),
             ),
         ],
+      ),
+    );
+  }
+}
+
+class _StatusState extends StatelessWidget {
+  final AutomationPanelStatus status;
+
+  const _StatusState({required this.status});
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = AutomationPanelTheme.of(context);
+    final onPressed = status.onPressed;
+
+    return InkWell(
+      onTap: onPressed,
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(
+          minHeight: AutomationPanelTheme.touchTarget,
+        ),
+        child: Padding(
+          padding: const EdgeInsets.only(left: 16, right: 4),
+          child: Row(
+            spacing: AutomationPanelTheme.gapSmall,
+            children: [
+              DecoratedBox(
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: status.isChanged ? theme.accent : theme.textMuted,
+                ),
+                child: const SizedBox.square(dimension: 8),
+              ),
+              Flexible(
+                child: Text.rich(
+                  TextSpan(
+                    text: status.text,
+                    children: [
+                      if (status.changeCount > 0)
+                        TextSpan(
+                          text: ' · ',
+                          children: [
+                            TextSpan(
+                              text: describeCount(
+                                status.changeCount,
+                                AutomationPanelStrings.changeNoun,
+                              ),
+                              style: TextStyle(
+                                color: theme.danger,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ],
+                        ),
+                    ],
+                  ),
+                  style: theme.textStyle(size: 13),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+              if (onPressed != null)
+                Icon(Icons.chevron_right, size: 18, color: theme.textSecondary),
+            ],
+          ),
+        ),
       ),
     );
   }

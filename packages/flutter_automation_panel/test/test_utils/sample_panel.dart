@@ -275,6 +275,7 @@ final class SamplePanel {
       theme: sampleTheme,
       backendErrorCodes: const ['tooManyRequests', 'invalidPhone'],
       readEndpointResolver: () => _sampleEndpointResolver,
+      sections: _sampleSections,
       onRestartRequired: onRestartRequired ?? () => events.add('restart'),
       pages: [
         AutomationPanelPage(
@@ -283,25 +284,7 @@ final class SamplePanel {
         ),
         AutomationPanelPage(
           label: 'Sections',
-          builder: (_) => AutomationSectionsPage(
-            sections: [
-              AutomationSectionPanel(
-                title: 'Auth',
-                section: authSection,
-                api: _SampleApi(),
-                profileTitles: const {
-                  'signedIn': 'Signed in',
-                  'signedOut': 'Sign-up needed',
-                  'slowCode': 'Slow code',
-                },
-              ),
-              AutomationSectionPanel(
-                title: 'Items',
-                section: itemsSection,
-                profileTitles: const {'threeItems': 'Three items'},
-              ),
-            ],
-          ),
+          builder: (_) => AutomationSectionsPage(sections: _sampleSections),
         ),
         AutomationPanelPage(
           label: 'Log',
@@ -330,6 +313,28 @@ final class SamplePanel {
     }
   }
 }
+
+final _sampleSections = [
+  AutomationSectionPanel(
+    title: 'Auth',
+    description: 'The sign-in screens and the session.',
+    section: authSection,
+    api: _SampleApi(),
+    profileTitles: const {
+      'signedIn': 'Signed in',
+      'signedOut': 'Sign-up needed',
+      'slowCode': 'Slow code',
+    },
+    profileDescriptions: const {
+      'signedIn': 'The app starts with a signed-in user.',
+    },
+  ),
+  AutomationSectionPanel(
+    title: 'Items',
+    section: itemsSection,
+    profileTitles: const {'threeItems': 'Three items'},
+  ),
+];
 
 final _sampleEndpointResolver = MockApiEndpointResolver([
   _SampleApi(),

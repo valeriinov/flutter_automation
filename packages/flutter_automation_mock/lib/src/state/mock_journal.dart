@@ -31,6 +31,7 @@ class MockJournal extends ChangeNotifier {
   static const _kindKey = 'kind';
   static const _statusKey = 'status';
   static const _responseKey = 'response';
+  static const _overrideKey = 'override';
 
   final ListQueue<Map<String, Object?>> _records = ListQueue();
   final Set<Map<String, Object?>> _requestsAwaitingResponse = Set.identity();
@@ -104,15 +105,25 @@ class MockJournal extends ChangeNotifier {
 
   /// Writes onto a request [record] the [statusCode] of its answer and the
   /// [body] of the answer. It writes the body only when the body carries a key.
+  ///
+  /// The [override] parameter names what an override of the tester changed in
+  /// this answer, such as `{"failure": true, "latency": "slow"}`. It is written
+  /// under `override` only when it carries a key, so the record of an answer
+  /// with no override stays as it was.
   void attachResponse(
     Map<String, Object?> record, {
     required int statusCode,
     required Map<String, Object?> body,
+    Map<String, Object?> override = const {},
   }) {
     record[_statusKey] = statusCode;
 
     if (body.isNotEmpty) {
       record[_responseKey] = _toJsonObject(body);
+    }
+
+    if (override.isNotEmpty) {
+      record[_overrideKey] = _toJsonObject(override);
     }
 
     _requestsAwaitingResponse.remove(record);

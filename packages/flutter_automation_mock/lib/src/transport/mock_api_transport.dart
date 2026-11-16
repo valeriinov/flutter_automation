@@ -37,6 +37,8 @@ class MockApiTransport {
   static const _acceptLanguageKey = 'acceptLanguage';
   static const _connectionErrorReason = 'Failed host lookup';
   static const _connectionErrorStatusCode = 0;
+  static const _overrideFailureKey = 'failure';
+  static const _overrideLatencyKey = 'latency';
 
   final MockBackend _backend;
   final MockJournal _journal;
@@ -69,16 +71,19 @@ class MockApiTransport {
     }
 
     final record = _journal.addRequest(_toRecordFields(request));
+    final latency = _tryResolveLatency(endpoint, request);
 
-    await _backend.latency.waitOut(_tryResolveLatency(endpoint, request));
+    await _backend.latency.waitOut(latency);
 
     final failure = _tryResolveFailure(endpoint, request);
+    final override = _describeOverride(failure, latency);
 
     if (failure != null && failure.isConnectionError) {
       _journal.attachResponse(
         record,
         statusCode: _connectionErrorStatusCode,
         body: const {},
+        override: override,
       );
 
       throw const MockConnectionException(_connectionErrorReason);
@@ -90,6 +95,7 @@ class MockApiTransport {
       record,
       statusCode: response.statusCode,
       body: _toRecordBody(response),
+      override: override,
     );
 
     return response;
@@ -133,6 +139,16 @@ class MockApiTransport {
     final failures = _backend.failures;
 
     return failures[request.path] ?? failures[endpoint.path];
+  }
+
+  Map<String, Object?> _describeOverride(
+    MockApiFailure? failure,
+    MockLatencyProfile? latency,
+  ) {
+    return {
+      if (failure != null) _overrideFailureKey: true,
+      _overrideLatencyKey: ?latency?.name,
+    };
   }
 
   Future<MockApiResponse> _resolveResponse(

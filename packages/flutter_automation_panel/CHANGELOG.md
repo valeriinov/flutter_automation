@@ -1,5 +1,32 @@
 # Changelog
 
+## Unreleased
+
+- New Changes page: a tap on the status row opens it. It lists the outcome,
+  the latency of every request, the profile of each section that differs from
+  its defaults, the overrides of single requests and any other scenario key.
+  A cross removes one change, and Reset all removes every change.
+- The Log tab is the history of the requests: each row shows the status code
+  it got, and a row whose answer an override gave says so under its path,
+  such as `Answered by an override: error · Slow latency`. The rule of a path
+  stays in the Response sheet and on the Changes page. Clear log, under the
+  search beside the count of requests, empties the log.
+- The status row counts every change the Changes page lists, such as
+  `Custom mock · 3 changes`. `AutomationPanelStatus.changeCount` replaces
+  `overrideCount`.
+- Reset, Reset all, Clear log, a preset applied over changes and the delete
+  of a preset ask first in an `AutomationConfirmSheet`, with Cancel first and
+  the confirm button second.
+- A section card shows the `description` of its section. The profile sheet
+  shows the title of each profile, its line from `profileDescriptions`, its
+  code in a chip and the `Restarts the app` badge when it needs a restart,
+  and has a search over more than eight profiles. The value of a card row stands at its right edge.
+- New `AutomationPanelDefinition.sections`, `AutomationPanelStatus.onPressed`,
+  `AutomationRequestRow.note`, `AutomationChangesPage`,
+  `AutomationConfirmSheet`, `showAutomationConfirmSheet`,
+  `showAutomationResetSheet`, `AutomationPanelCard.subtitle` and
+  `AutomationPanelRadioTile.code` and `AutomationPanelRadioTile.needsRestart`.
+
 ## 0.8.5
 
 - The Response sheet sets the latency of one request: Default (the latency of

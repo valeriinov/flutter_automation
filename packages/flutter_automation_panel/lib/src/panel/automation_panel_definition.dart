@@ -4,6 +4,7 @@ import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_automation_mock/flutter_automation_mock.dart';
 import 'package:flutter_automation_mock/mock_catalogue.dart';
+import 'package:flutter_automation_panel/src/pages/automation_section_panel.dart';
 import 'package:flutter_automation_panel/src/panel/automation_panel_page.dart';
 import 'package:flutter_automation_panel/src/player/automation_player_settings.dart';
 import 'package:flutter_automation_panel/src/theme/automation_panel_theme.dart';
@@ -46,6 +47,10 @@ final class AutomationPanelDefinition {
   /// What the player reads a step with, and how fast it moves.
   final AutomationPlayerSettings playerSettings;
 
+  /// The sections of the mock, as the Sections page lists them. The Changes
+  /// page names the profile of each one that differs from its defaults.
+  final List<AutomationSectionPanel> sections;
+
   /// Reads the endpoints of the mock backend, so an override of an endpoint
   /// with a path id shows on each request under it, as the mock applies it.
   /// Without it the panel matches an override on the exact path only.
@@ -61,5 +66,6 @@ final class AutomationPanelDefinition {
     this.onShare,
     this.playerSettings = const AutomationPlayerSettings(),
     this.readEndpointResolver,
+    this.sections = const [],
   });
 }

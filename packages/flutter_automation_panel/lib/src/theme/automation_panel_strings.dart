@@ -65,7 +65,7 @@ abstract final class AutomationPanelStrings {
   static const noDelay = 'Answers at once, with no delay';
 
   /// Note of a profile that needs a restart.
-  static const restartsTheApp = '⟳ Restarts the app';
+  static const restartsTheApp = 'Restarts the app';
 
   /// Name of a request that never reaches the server.
   static const noNetwork = 'No network';
@@ -108,6 +108,62 @@ abstract final class AutomationPanelStrings {
 
   /// Tooltip of the button that deletes a preset.
   static const deletePreset = 'Delete preset';
+
+  /// Title of the page that lists the changes of the mock.
+  static const changes = 'Changes';
+
+  /// Text of the Changes page when the mock holds its defaults.
+  static const nothingChanged = 'Default mock. Nothing changed.';
+
+  /// Button that removes every change of the mock.
+  static const resetAll = 'Reset all';
+
+  /// Label of the profiles on the Changes page.
+  static const profiles = 'Profiles';
+
+  /// Label of the scenario keys no section names, on the Changes page.
+  static const otherSettings = 'Other settings';
+
+  /// Hint of the search over the profiles of a section.
+  static const profileSearchHint = 'Profile name or what it changes';
+
+  /// What the Default profile of a section means.
+  static const defaultProfileDescription =
+      'The section answers with the seed data of the mock.';
+
+  /// Button that empties the journal.
+  static const clearLog = 'Clear log';
+
+  /// Title of the sheet that asks to empty the journal.
+  static const clearLogQuestion = 'Clear the log?';
+
+  /// What emptying the journal removes and what it keeps.
+  static const clearLogMessage =
+      'The log loses every request it holds. The mock settings stay.';
+
+  /// Title of the sheet that asks to reset a mock with no change to list.
+  static const resetQuestion = 'Reset the mock?';
+
+  /// What a reset of the mock removes.
+  static const resetMessage =
+      'The outcome, the latency, the profiles and the request overrides go '
+      'back to the defaults.';
+
+  /// What applying a preset removes.
+  static const applyPresetMessage =
+      'The preset replaces every current setting of the mock.';
+
+  /// Button that deletes a preset in its confirmation sheet.
+  static const delete = 'Delete';
+
+  /// What deleting a preset means.
+  static const deletePresetMessage = 'You cannot get the preset back.';
+
+  /// Note of a confirmation sheet whose action restarts the app.
+  static const appRestarts = 'The app restarts.';
+
+  /// The error part of the note of a journal row answered by an override.
+  static const errorAnswer = 'error';
 
   /// Text of an empty journal.
   static const noRequests = 'No requests yet';
@@ -236,6 +292,12 @@ abstract final class AutomationPanelStrings {
   /// Noun that counts overrides.
   static const overrideNoun = 'override';
 
+  /// Noun that counts the requests of the journal.
+  static const requestNoun = 'request';
+
+  /// Noun that counts the changes of the mock.
+  static const changeNoun = 'change';
+
   /// The start screen of a variant on the flow map.
   static String startOf(String entry) => 'Start: $entry';
 
@@ -261,11 +323,26 @@ abstract final class AutomationPanelStrings {
   /// The latency line of a request that follows every request.
   static String asEveryRequest(String delay) => 'As every request. $delay';
 
+  /// The note of a journal row whose answer an override gave.
+  static String answeredByOverride(String detail) {
+    return 'Answered by an override: $detail';
+  }
+
   /// The latency part of an override row.
   static String latencyOverrideOf(String profile) => '$profile latency';
 
   /// How long a run took.
   static String seconds(int seconds) => '$seconds s';
+
+  /// Title of the sheet that asks to apply the preset [name].
+  static String applyPresetQuestion(String name) => 'Apply "$name"?';
+
+  /// Title of the sheet that asks to delete the preset [name].
+  static String deletePresetQuestion(String name) => 'Delete "$name"?';
+
+  /// Title of the sheet that asks to reset the mock, with [changes] that
+  /// counts its changes.
+  static String resetChangesQuestion(String changes) => 'Reset $changes?';
 
   /// Why a step failed with an error the player did not expect.
   static String stepFailed(Object error) => 'The step failed: $error';

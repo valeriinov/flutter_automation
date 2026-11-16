@@ -32,6 +32,10 @@ class AutomationRequestRow extends StatelessWidget {
   /// follows every request.
   final MockLatencyProfile? latency;
 
+  /// A line under the path of a row with no override, such as what answered
+  /// the request.
+  final String? note;
+
   /// Called when the tester taps the row.
   final VoidCallback? onPressed;
 
@@ -44,6 +48,7 @@ class AutomationRequestRow extends StatelessWidget {
     this.statusCode,
     this.failure,
     this.latency,
+    this.note,
     this.onPressed,
     this.onClearOverride,
     super.key,
@@ -56,6 +61,7 @@ class AutomationRequestRow extends StatelessWidget {
         method: method,
         path: path,
         statusCode: statusCode,
+        note: note,
         onPressed: onPressed,
       );
     }
@@ -105,12 +111,14 @@ class _PlainRow extends StatelessWidget {
   final String method;
   final String path;
   final int? statusCode;
+  final String? note;
   final VoidCallback? onPressed;
 
   const _PlainRow({
     required this.method,
     required this.path,
     required this.statusCode,
+    required this.note,
     required this.onPressed,
   });
 
@@ -136,12 +144,52 @@ class _PlainRow extends StatelessWidget {
                 if (statusCode case final code?)
                   AutomationCodeBadge(code: code),
                 Expanded(
-                  child: _PathText(method: method, path: path),
+                  child: _PathWithNote(method: method, path: path, note: note),
                 ),
               ],
             ),
           ),
         ),
+      ),
+    );
+  }
+}
+
+class _PathWithNote extends StatelessWidget {
+  final String method;
+  final String path;
+  final String? note;
+
+  const _PathWithNote({
+    required this.method,
+    required this.path,
+    required this.note,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = AutomationPanelTheme.of(context);
+    final note = this.note;
+
+    if (note == null) {
+      return _PathText(method: method, path: path);
+    }
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 6),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _PathText(method: method, path: path),
+          Text(
+            note,
+            style: theme.textStyle(
+              size: 12,
+              weight: FontWeight.w600,
+              color: theme.danger,
+            ),
+          ),
+        ],
       ),
     );
   }

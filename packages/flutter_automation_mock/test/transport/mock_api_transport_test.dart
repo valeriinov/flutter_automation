@@ -57,6 +57,7 @@ void main() {
     _mockApiTransport_should_recordAConnectionFailureAsAnswered();
     _mockApiTransport_should_throwForAPathNoEndpointOwns();
     _mockApiTransport_should_waitOutTheLatencyOfASinglePath();
+    _mockApiTransport_should_markAnOverriddenAnswerInTheJournal();
   });
 }
 
@@ -181,6 +182,29 @@ void _mockApiTransport_should_waitOutTheLatencyOfASinglePath() {
       expect(isSlowAnswered, isFalse);
       async.elapse(MockLatencyProfile.slow.maxDelay);
       expect(isSlowAnswered, isTrue);
+    });
+  });
+}
+
+void _mockApiTransport_should_markAnOverriddenAnswerInTheJournal() {
+  test('MockApiTransport should mark an overridden answer in the journal', () {
+    fakeAsync((async) {
+      _slowPathTransport.answer(
+        const MockApiRequest(path: _ownedPath, body: {}),
+      );
+      _transport.answer(const MockApiRequest(path: _failingPath, body: {}));
+      _transport.answer(const MockApiRequest(path: _ownedPath, body: {}));
+      async.elapse(MockLatencyProfile.slow.maxDelay);
+
+      final overrides = [
+        for (final record in _journal.records) record['override'],
+      ];
+
+      expect(overrides, [
+        {'latency': 'slow'},
+        {'failure': true},
+        null,
+      ]);
     });
   });
 }
