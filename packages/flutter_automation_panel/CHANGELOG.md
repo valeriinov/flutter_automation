@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.8.7
+
+- A change that restarts the app asks first in a sheet,
+  `Apply and restart the app?`, with Cancel first and Apply second: a profile
+  that needs a restart, a cross on the Changes page that restarts the app, a
+  preset that restarts the app and the Mock mode switch. Cancel keeps the
+  scenario and the mode.
+- New `AutomationPanelController.needsRestartFor`, `showAutomationRestartSheet`
+  and `applyAutomationScenario`.
+
 ## 0.8.6
 
 - New Changes page: a tap on the status row opens it. It lists the outcome,

@@ -118,26 +118,33 @@ class _AutomationPresetsSheetState extends State<AutomationPresetsSheet> {
   }
 
   Future<void> _confirmApply(String name) async {
-    if (!widget.controller.isChanged) {
-      return _apply(name);
+    final preset = await _store?.readPreset(name) ?? const {};
+    final scenario = MockScenario.fromJson(preset);
+    final isChanged = widget.controller.isChanged;
+    final restarts = widget.controller.needsRestartFor(scenario);
+
+    if (!isChanged && !restarts) {
+      return _apply(name, scenario);
+    }
+
+    if (!mounted) {
+      return;
     }
 
     return showAutomationConfirmSheet(
       context: context,
       title: AutomationPanelStrings.applyPresetQuestion(name),
-      message: AutomationPanelStrings.applyPresetMessage,
+      message: [
+        if (isChanged) AutomationPanelStrings.applyPresetMessage,
+        if (restarts) AutomationPanelStrings.appRestarts,
+      ].join(' '),
       confirmLabel: AutomationPanelStrings.apply,
-      onConfirmPressed: () => _apply(name),
+      onConfirmPressed: () => _apply(name, scenario),
     );
   }
 
-  Future<void> _apply(String name) async {
-    final scenario = await _store?.readPreset(name) ?? const {};
-
-    await widget.controller.updateScenario(
-      MockScenario.fromJson(scenario),
-      title: name,
-    );
+  Future<void> _apply(String name, MockScenario scenario) async {
+    await widget.controller.updateScenario(scenario, title: name);
 
     widget.onClose();
   }

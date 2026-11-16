@@ -80,9 +80,9 @@ class _AutomationPanelLauncherState extends State<AutomationPanelLauncher> {
     super.initState();
 
     widget.controller.isLauncherVisible = widget.isVisible;
+
     widget.controller.addListener(_maybeReportBack);
     _maybeReportBack();
-
     WidgetsBinding.instance.addPostFrameCallback((_) {
       widget.controller.resumeWalk();
     });
@@ -94,11 +94,13 @@ class _AutomationPanelLauncherState extends State<AutomationPanelLauncher> {
 
     if (oldWidget.controller != widget.controller) {
       oldWidget.controller.isLauncherVisible = false;
+
       oldWidget.controller.removeListener(_maybeReportBack);
       widget.controller.addListener(_maybeReportBack);
     }
 
     widget.controller.isLauncherVisible = widget.isVisible;
+
     _maybeReportBack();
   }
 
@@ -215,6 +217,7 @@ class _AutomationPanelLauncherState extends State<AutomationPanelLauncher> {
     }
 
     _holdsBack = holdsBack;
+
     WidgetsBinding.instance.addPostFrameCallback((_) => _reportBack());
   }
 
@@ -233,8 +236,8 @@ class _AutomationPanelLauncherState extends State<AutomationPanelLauncher> {
   @override
   void dispose() {
     widget.controller.isLauncherVisible = false;
-    widget.controller.removeListener(_maybeReportBack);
 
+    widget.controller.removeListener(_maybeReportBack);
     super.dispose();
   }
 }

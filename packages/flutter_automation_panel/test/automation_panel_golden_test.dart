@@ -17,6 +17,7 @@ void main() {
     _changes_should_matchTheGolden();
     _profiles_should_matchTheGolden();
     _confirm_should_matchTheGolden();
+    _restart_should_matchTheGolden();
     _walk_should_matchTheGolden();
     _walkOpen_should_matchTheGolden();
     _runDone_should_matchTheGolden();
@@ -214,23 +215,35 @@ void _confirm_should_matchTheGolden() {
   ) async {
     await _pumpScreen(
       tester,
-      (_) => Stack(
-        children: [
-          const ColoredBox(color: Color(0xFFFFFFFF), child: SizedBox.expand()),
-          ColoredBox(color: sampleTheme.scrim, child: const SizedBox.expand()),
-          Align(
-            alignment: Alignment.bottomCenter,
-            child: AutomationConfirmSheet(
-              title: AutomationPanelStrings.resetChangesQuestion('3 changes'),
-              message: AutomationPanelStrings.resetMessage,
-              confirmLabel: AutomationPanelStrings.reset,
-              onConfirmPressed: () {},
-            ),
-          ),
-        ],
+      (_) => _confirmOverApp(
+        AutomationConfirmSheet(
+          title: AutomationPanelStrings.resetChangesQuestion('3 changes'),
+          message: AutomationPanelStrings.resetMessage,
+          confirmLabel: AutomationPanelStrings.reset,
+          onConfirmPressed: () {},
+        ),
       ),
     );
     await _expectGolden('confirm');
+  });
+}
+
+void _restart_should_matchTheGolden() {
+  testWidgets('Restart should match the golden', tags: _goldenTag, (
+    tester,
+  ) async {
+    await _pumpScreen(
+      tester,
+      (_) => _confirmOverApp(
+        AutomationConfirmSheet(
+          title: AutomationPanelStrings.restartQuestion,
+          message: AutomationPanelStrings.restartMessage,
+          confirmLabel: AutomationPanelStrings.apply,
+          onConfirmPressed: () {},
+        ),
+      ),
+    );
+    await _expectGolden('restart');
   });
 }
 
@@ -306,4 +319,14 @@ void _runDone_should_matchTheGolden() {
     );
     await _expectGolden('run_done');
   });
+}
+
+Widget _confirmOverApp(AutomationConfirmSheet sheet) {
+  return Stack(
+    children: [
+      const ColoredBox(color: Color(0xFFFFFFFF), child: SizedBox.expand()),
+      ColoredBox(color: sampleTheme.scrim, child: const SizedBox.expand()),
+      Align(alignment: Alignment.bottomCenter, child: sheet),
+    ],
+  );
 }

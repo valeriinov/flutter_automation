@@ -381,6 +381,12 @@ class AutomationPanelController extends ChangeNotifier
     return mock.requiresRestart(MockScenario.fromJson(scenario));
   }
 
+  /// Whether [updateScenario] with [next] asks the project for a restart.
+  bool needsRestartFor(MockScenario next) {
+    return _changesRestartKey(mock.scenario, next) &&
+        mock.requiresRestart(next);
+  }
+
   /// Saves a walk of [variant] of [flow] with the scenario of the variant and
   /// calls `onRestartRequired` of the definition once, whatever the scenario
   /// held before. The walk begins after the restart.
@@ -780,8 +786,8 @@ class AutomationPanelController extends ChangeNotifier
       shouldShowTouches: current.shouldShowTouches,
       shouldSignalEnd: current.shouldSignalEnd,
     );
-    _runWatch = null;
 
+    _runWatch = null;
     runSummary = summary.withReport(await _trySaveReport(summary));
 
     await mock.saveWalk(null);

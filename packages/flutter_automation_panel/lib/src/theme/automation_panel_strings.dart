@@ -162,6 +162,13 @@ abstract final class AutomationPanelStrings {
   /// Note of a confirmation sheet whose action restarts the app.
   static const appRestarts = 'The app restarts.';
 
+  /// Title of the sheet that asks to apply a change that restarts the app.
+  static const restartQuestion = 'Apply and restart the app?';
+
+  /// What applying a change that restarts the app means.
+  static const restartMessage =
+      'The change applies only after a restart of the app.';
+
   /// The error part of the note of a journal row answered by an override.
   static const errorAnswer = 'error';
 

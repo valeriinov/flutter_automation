@@ -93,7 +93,7 @@ class _ChangeList extends StatelessWidget {
             value:
                 AutomationLatencyNote.labels[controller.mock.latency.profile] ??
                 '',
-            onRemove: () => _removeKey(MockScenario.latencyKey),
+            onRemove: () => _removeKey(context, MockScenario.latencyKey),
           ),
           const SizedBox(height: AutomationPanelTheme.gapMedium),
         ],
@@ -104,7 +104,7 @@ class _ChangeList extends StatelessWidget {
             _ChangeRow(
               title: section.title,
               value: _describeProfile(section),
-              onRemove: () => _removeProfile(section),
+              onRemove: () => _removeProfile(context, section),
             ),
             const SizedBox(height: AutomationPanelTheme.gapSmall),
           ],
@@ -140,7 +140,7 @@ class _ChangeList extends StatelessWidget {
             _ChangeRow(
               title: key,
               value: AutomationPanelStrings.custom,
-              onRemove: () => _removeKey(key),
+              onRemove: () => _removeKey(context, key),
             ),
             const SizedBox(height: AutomationPanelTheme.gapSmall),
           ],
@@ -162,22 +162,32 @@ class _ChangeList extends StatelessWidget {
     ).describe(section);
   }
 
-  void _removeProfile(AutomationSectionPanel section) {
+  void _removeProfile(BuildContext context, AutomationSectionPanel section) {
     final mockSection = section.section;
 
     if (mockSection == null) {
       return;
     }
 
-    controller.updateScenario(
-      AutomationProfileSelection.scenarioWith(controller, mockSection, null),
+    applyAutomationScenario(
+      context: context,
+      controller: controller,
+      scenario: AutomationProfileSelection.scenarioWith(
+        controller,
+        mockSection,
+        null,
+      ),
     );
   }
 
-  void _removeKey(String key) {
+  void _removeKey(BuildContext context, String key) {
     final json = controller.mock.scenario.toJson()..remove(key);
 
-    controller.updateScenario(MockScenario.fromJson(json));
+    applyAutomationScenario(
+      context: context,
+      controller: controller,
+      scenario: MockScenario.fromJson(json),
+    );
   }
 }
 

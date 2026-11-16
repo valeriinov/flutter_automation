@@ -13,11 +13,12 @@ import 'package:flutter_automation_panel/src/blocks/automation_panel_sheet.dart'
 import 'package:flutter_automation_panel/src/pages/automation_section_panel.dart';
 import 'package:flutter_automation_panel/src/pages/mock_endpoint_panel.dart';
 import 'package:flutter_automation_panel/src/panel/automation_panel_controller.dart';
-import 'package:flutter_automation_panel/src/panel/automation_profile_selection.dart';
 import 'package:flutter_automation_panel/src/panel/automation_panel_scope.dart';
+import 'package:flutter_automation_panel/src/panel/automation_profile_selection.dart';
+import 'package:flutter_automation_panel/src/sheets/automation_confirm_sheet.dart';
 import 'package:flutter_automation_panel/src/sheets/automation_response_sheet.dart';
-import 'package:flutter_automation_panel/src/theme/automation_panel_theme.dart';
 import 'package:flutter_automation_panel/src/theme/automation_panel_strings.dart';
+import 'package:flutter_automation_panel/src/theme/automation_panel_theme.dart';
 
 /// {@category Widgets}
 ///
@@ -291,14 +292,16 @@ class _ProfileSheetState extends State<_ProfileSheet> {
   }
 
   void _select(BuildContext context, String? profileName) {
-    widget.controller.updateScenario(
-      AutomationProfileSelection.scenarioWith(
+    applyAutomationScenario(
+      context: context,
+      controller: widget.controller,
+      scenario: AutomationProfileSelection.scenarioWith(
         widget.controller,
         widget.mockSection,
         profileName,
       ),
+      onApplied: Navigator.of(context).pop,
     );
-    Navigator.of(context).pop();
   }
 }
 

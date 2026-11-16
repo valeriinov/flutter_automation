@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_automation_mock/flutter_automation_mock.dart';
 import 'package:flutter_automation_panel/src/blocks/automation_panel_button.dart';
 import 'package:flutter_automation_panel/src/blocks/automation_panel_button_group.dart';
 import 'package:flutter_automation_panel/src/blocks/automation_panel_count.dart';
@@ -11,7 +12,8 @@ import 'package:flutter_automation_panel/src/theme/automation_panel_theme.dart';
 /// {@category Widgets}
 ///
 /// The sheet that asks the tester to confirm an action that removes settings
-/// or records, such as a reset of the mock or a clear of the log.
+/// or records, such as a reset of the mock or a clear of the log, or an action
+/// that restarts the app.
 ///
 /// Cancel stands first and the confirm button second, as the platforms place
 /// a confirm action. The confirm button closes the sheet and calls
@@ -126,6 +128,49 @@ Future<void> showAutomationResetSheet({
   );
 }
 
+/// {@category Widgets}
+///
+/// Shows the sheet that asks the tester to apply a change that only a restart
+/// of the app applies.
+///
+/// The [onConfirmPressed] parameter applies the change.
+Future<void> showAutomationRestartSheet({
+  required BuildContext context,
+  required VoidCallback onConfirmPressed,
+}) {
+  return showAutomationConfirmSheet(
+    context: context,
+    title: AutomationPanelStrings.restartQuestion,
+    message: AutomationPanelStrings.restartMessage,
+    confirmLabel: AutomationPanelStrings.apply,
+    onConfirmPressed: onConfirmPressed,
+  );
+}
+
+/// {@category Widgets}
+///
+/// Replaces the scenario of [controller] with [scenario]. When the new
+/// scenario restarts the app, a [showAutomationRestartSheet] asks the tester
+/// first, and Cancel keeps the scenario.
+///
+/// The [onApplied] parameter is called before the scenario changes, such as
+/// to close the sheet the tester chose from.
+Future<void> applyAutomationScenario({
+  required BuildContext context,
+  required AutomationPanelController controller,
+  required MockScenario scenario,
+  VoidCallback? onApplied,
+}) async {
+  if (!controller.needsRestartFor(scenario)) {
+    return _apply(controller, scenario, onApplied);
+  }
+
+  return showAutomationRestartSheet(
+    context: context,
+    onConfirmPressed: () => _apply(controller, scenario, onApplied),
+  );
+}
+
 Future<void> _reset(
   AutomationPanelController controller,
   VoidCallback? onReset,
@@ -133,4 +178,14 @@ Future<void> _reset(
   await controller.reset();
 
   onReset?.call();
+}
+
+Future<void> _apply(
+  AutomationPanelController controller,
+  MockScenario scenario,
+  VoidCallback? onApplied,
+) async {
+  onApplied?.call();
+
+  await controller.updateScenario(scenario);
 }

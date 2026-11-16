@@ -376,7 +376,9 @@ void _playNext_should_takeTheSelectedBranchAtTheFork() {
 
     await sample.controller.startWalk('login', 'signUpNeeded');
     await sample.controller.playNext();
+
     sample.controller.selectBranch('accountExists');
+
     await sample.controller.playNext();
 
     expect(sample.mock.walk?.variant, 'accountExists');
@@ -391,7 +393,9 @@ void _finishWalk_should_saveTheReportOfAManualWalk() {
 
     await sample.controller.startWalk('login', 'signUpNeeded');
     await sample.controller.playNext();
+
     sample.controller.selectBranch('accountExists');
+
     await sample.controller.playNext();
     await sample.controller.finishWalk();
 

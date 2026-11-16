@@ -55,6 +55,9 @@ void main() {
     _automationWalkStrip_should_exitAfterADragFarDown();
     _automationWalkStrip_should_bringTheControlsBackAfterAnAutorunFailure();
     _automationMockModeTile_should_switchTheModeOnAPanelTile();
+    _automationSectionsPage_should_askBeforeAProfileThatRestarts();
+    _automationPresetsSheet_should_askBeforeAPresetThatRestarts();
+    _automationChangesPage_should_askBeforeARemovalThatRestarts();
   });
 }
 
@@ -578,12 +581,15 @@ void _automationSectionsPage_should_replaceTheProfileOfASection() {
       await tester.tap(find.text('Profile').first);
       await tester.pumpAndSettle();
       await tester.tap(find.text('Sign-up needed'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text(AutomationPanelStrings.apply));
       await _settle(tester);
       await tester.tap(find.text('Profile').first);
       await tester.pumpAndSettle();
       await tester.tap(find.text('Slow code'));
       await _settle(tester);
 
+      expect(find.text(AutomationPanelStrings.restartQuestion), findsNothing);
       expect(_authSettings(sample), {'codeDelay': 3});
     },
   );
@@ -1196,6 +1202,12 @@ void _automationMockModeTile_should_switchTheModeOnAPanelTile() {
     expect(find.byType(AutomationPanelSwitchTile), findsOneWidget);
 
     await tester.tap(find.byType(Switch));
+    await tester.pumpAndSettle();
+
+    expect(find.text(AutomationPanelStrings.restartQuestion), findsOneWidget);
+    expect(restarts, 0);
+
+    await tester.tap(find.text(AutomationPanelStrings.apply));
     await _settle(tester, until: () => restarts > 0);
 
     expect(controller.nextMode, AutomationMode.mock);
@@ -1281,3 +1293,92 @@ final _manyProfiles = AutomationSectionPanel(
   ),
   profileTitles: {for (final word in _profileWords) word: 'Profile $word'},
 );
+
+void _automationSectionsPage_should_askBeforeAProfileThatRestarts() {
+  testWidgets(
+    'AutomationSectionsPage should ask before a profile that restarts',
+    (tester) async {
+      final sample = await _pumpSections(tester);
+
+      await tester.tap(find.text('Profile').first);
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Sign-up needed'));
+      await tester.pumpAndSettle();
+
+      expect(find.text(AutomationPanelStrings.restartQuestion), findsOneWidget);
+
+      await tester.tap(find.text(AutomationPanelStrings.cancel));
+      await tester.pumpAndSettle();
+
+      expect(_authSettings(sample), isNull);
+      expect(sample.events, isNot(contains('restart')));
+      expect(find.text('Sign-up needed'), findsOneWidget);
+
+      await tester.tap(find.text('Sign-up needed'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text(AutomationPanelStrings.apply));
+      await _settle(tester, until: () => sample.events.contains('restart'));
+
+      expect(_authSettings(sample), {'isSignedInOnLaunch': false});
+      expect(sample.events.where((event) => event == 'restart'), hasLength(1));
+    },
+  );
+}
+
+void _automationPresetsSheet_should_askBeforeAPresetThatRestarts() {
+  testWidgets(
+    'AutomationPresetsSheet should ask before a preset that restarts',
+    (tester) async {
+      final sample = await _pumpSections(tester);
+
+      await tester.runAsync(
+        () async => sample.mock.stateStore?.savePreset('Signed out', {
+          'auth': {'isSignedInOnLaunch': false},
+        }),
+      );
+      await tester.tap(find.text('Presets'));
+      await _settle(tester);
+      await tester.tap(find.text('Signed out'));
+      await _settle(tester);
+
+      expect(find.text('Apply "Signed out"?'), findsOneWidget);
+      expect(find.text(AutomationPanelStrings.appRestarts), findsOneWidget);
+      expect(_authSettings(sample), isNull);
+    },
+  );
+}
+
+void _automationChangesPage_should_askBeforeARemovalThatRestarts() {
+  testWidgets(
+    'AutomationChangesPage should ask before a removal that restarts',
+    (tester) async {
+      final sample = await tester.runAsync(() async {
+        final first = await SamplePanel.create(
+          scenario: MockScenario([authSection.profile('signedOut')]),
+        );
+
+        return SamplePanel.create(restartOf: first);
+      });
+
+      if (sample == null) {
+        fail('runAsync returned no sample panel');
+      }
+
+      addTearDown(sample.dispose);
+
+      await tester.pumpWidget(
+        hostApp(child: panelHost(sample, const AutomationChangesPage())),
+      );
+      await tester.tap(find.byTooltip(AutomationPanelStrings.removeOverride));
+      await tester.pumpAndSettle();
+
+      expect(find.text(AutomationPanelStrings.restartQuestion), findsOneWidget);
+
+      await tester.tap(find.text(AutomationPanelStrings.cancel));
+      await tester.pumpAndSettle();
+
+      expect(_authSettings(sample), {'isSignedInOnLaunch': false});
+      expect(sample.events, isNot(contains('restart')));
+    },
+  );
+}

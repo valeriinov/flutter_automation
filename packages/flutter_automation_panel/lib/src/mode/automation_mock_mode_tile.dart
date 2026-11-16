@@ -2,6 +2,7 @@ import 'package:flutter/widgets.dart';
 import 'package:flutter_automation_mock/flutter_automation_mock.dart';
 import 'package:flutter_automation_panel/src/blocks/automation_panel_switch_tile.dart';
 import 'package:flutter_automation_panel/src/mode/automation_mode_controller.dart';
+import 'package:flutter_automation_panel/src/sheets/automation_confirm_sheet.dart';
 import 'package:flutter_automation_panel/src/theme/automation_panel_strings.dart';
 
 /// {@category Widgets}
@@ -10,8 +11,8 @@ import 'package:flutter_automation_panel/src/theme/automation_panel_strings.dart
 /// between the server and the mock.
 ///
 /// The row is an [AutomationPanelSwitchTile], so it takes the theme of the
-/// panel that holds it, such as an `AutomationPanelSheet`. A switch asks the
-/// project to restart the app.
+/// panel that holds it, such as an `AutomationPanelSheet`. A switch first asks
+/// the tester to confirm, then asks the project to restart the app.
 class AutomationMockModeTile extends StatelessWidget {
   /// The controller that saves the mode.
   final AutomationModeController controller;
@@ -27,8 +28,11 @@ class AutomationMockModeTile extends StatelessWidget {
           title: AutomationPanelStrings.mockMode,
           subtitle: AutomationPanelStrings.mockModeNote,
           isOn: controller.nextMode == AutomationMode.mock,
-          onChanged: (isOn) => controller.switchTo(
-            isOn ? AutomationMode.mock : AutomationMode.server,
+          onChanged: (isOn) => showAutomationRestartSheet(
+            context: context,
+            onConfirmPressed: () => controller.switchTo(
+              isOn ? AutomationMode.mock : AutomationMode.server,
+            ),
           ),
         );
       },
