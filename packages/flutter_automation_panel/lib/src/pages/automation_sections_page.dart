@@ -7,6 +7,7 @@ import 'package:flutter_automation_panel/src/blocks/automation_panel_frame.dart'
 import 'package:flutter_automation_panel/src/blocks/automation_panel_label.dart';
 import 'package:flutter_automation_panel/src/blocks/automation_panel_option.dart';
 import 'package:flutter_automation_panel/src/blocks/automation_panel_radio_tile.dart';
+import 'package:flutter_automation_panel/src/blocks/automation_panel_search_field.dart';
 import 'package:flutter_automation_panel/src/blocks/automation_panel_segments.dart';
 import 'package:flutter_automation_panel/src/blocks/automation_panel_sheet.dart';
 import 'package:flutter_automation_panel/src/pages/automation_section_panel.dart';
@@ -20,11 +21,12 @@ import 'package:flutter_automation_panel/src/theme/automation_panel_strings.dart
 /// {@category Widgets}
 ///
 /// The Sections tab: the latency of the mock and one card per section with its
-/// profile and its requests.
+/// profile and its requests. A search over section titles and request paths
+/// narrows the cards.
 ///
 /// A section shows `Default` when it holds no setting, the title of a profile
 /// when its settings equal that profile, and `Custom` otherwise.
-class AutomationSectionsPage extends StatelessWidget {
+class AutomationSectionsPage extends StatefulWidget {
   static const _latencyLabels = {
     MockLatencyProfile.fast: AutomationPanelStrings.latencyFast,
     MockLatencyProfile.realistic: AutomationPanelStrings.latencyRealistic,
@@ -37,30 +39,54 @@ class AutomationSectionsPage extends StatelessWidget {
   const AutomationSectionsPage({required this.sections, super.key});
 
   @override
+  State<AutomationSectionsPage> createState() => _AutomationSectionsPageState();
+}
+
+class _AutomationSectionsPageState extends State<AutomationSectionsPage> {
+  String _query = '';
+
+  @override
   Widget build(BuildContext context) {
     final controller = AutomationPanelScope.of(context);
 
     return ListView(
       padding: const EdgeInsets.all(AutomationPanelTheme.gapLarge),
       children: [
+        AutomationPanelSearchField(
+          hint: AutomationPanelStrings.sectionSearchHint,
+          onChanged: (value) => setState(() => _query = value),
+        ),
+        const SizedBox(height: AutomationPanelTheme.gapMedium),
         const AutomationPanelLabel(
           text: AutomationPanelStrings.responseLatency,
         ),
         const SizedBox(height: AutomationPanelTheme.gapMedium),
         AutomationPanelSegments<MockLatencyProfile>(
           options: [
-            for (final MapEntry(:key, :value) in _latencyLabels.entries)
+            for (final MapEntry(:key, :value)
+                in AutomationSectionsPage._latencyLabels.entries)
               AutomationPanelOption(value: key, label: value),
           ],
           selected: controller.mock.latency.profile,
           onChanged: (profile) => _selectLatency(controller, profile),
         ),
-        for (final section in sections) ...[
+        for (final section in widget.sections.where(_matchesQuery)) ...[
           const SizedBox(height: AutomationPanelTheme.gapMedium),
           _SectionCard(section: section, controller: controller),
         ],
       ],
     );
+  }
+
+  bool _matchesQuery(AutomationSectionPanel section) {
+    final endpoints = section.api?.endpoints ?? const <MockApiEndpoint>[];
+
+    return matchesSearchQuery(_query, [
+      section.title,
+      ?section.section?.name,
+      for (final endpoint in endpoints) endpoint.path,
+      for (final endpoint in endpoints) ?section.requestTitles[endpoint.path],
+    ]);
   }
 
   void _selectLatency(

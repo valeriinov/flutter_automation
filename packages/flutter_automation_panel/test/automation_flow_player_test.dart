@@ -203,9 +203,9 @@ void _automationFlowPlayer_should_enterTextIntoTheFocusedField() {
     final player = await _pumpSample(tester);
 
     await _play(tester, player, _step('tap', finder: _byKey(_fieldKey)));
-    await _play(tester, player, _step('enterText', text: 'Kyiv'));
+    await _play(tester, player, _step('enterText', text: 'Hello'));
 
-    expect(find.text('Kyiv'), findsOneWidget);
+    expect(find.text('Hello'), findsOneWidget);
   });
 }
 

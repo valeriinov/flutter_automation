@@ -3,6 +3,7 @@ import 'package:flutter_automation_mock/mock_catalogue.dart';
 import 'package:flutter_automation_panel/src/blocks/automation_flow_tile.dart';
 import 'package:flutter_automation_panel/src/blocks/automation_panel_count.dart';
 import 'package:flutter_automation_panel/src/blocks/automation_panel_label.dart';
+import 'package:flutter_automation_panel/src/blocks/automation_panel_search_field.dart';
 import 'package:flutter_automation_panel/src/pages/automation_catalogue_text.dart';
 import 'package:flutter_automation_panel/src/pages/automation_flow_map_page.dart';
 import 'package:flutter_automation_panel/src/panel/automation_panel_controller.dart';
@@ -33,7 +34,10 @@ class _AutomationFlowsPageState extends State<AutomationFlowsPage> {
     return ListView(
       padding: const EdgeInsets.all(AutomationPanelTheme.gapLarge),
       children: [
-        _SearchField(onChanged: (value) => setState(() => _query = value)),
+        AutomationPanelSearchField(
+          hint: AutomationPanelStrings.flowSearchHint,
+          onChanged: (value) => setState(() => _query = value),
+        ),
         for (final group in _groupsOf(catalogue, flows)) ...[
           const SizedBox(height: AutomationPanelTheme.gapMedium),
           Padding(
@@ -59,22 +63,14 @@ class _AutomationFlowsPageState extends State<AutomationFlowsPage> {
   }
 
   bool _matchesQuery(AutomationCatalogueFlow flow) {
-    final query = _query.trim().toLowerCase();
-
-    if (query.isEmpty) {
-      return true;
-    }
-
-    final words = [
+    return matchesSearchQuery(_query, [
       AutomationCatalogueText.english(flow.title, flow.name),
       for (final variant in flow.variants)
         AutomationCatalogueText.english(variant.title, variant.name),
       for (final variant in flow.variants)
         for (final step in variant.steps)
           for (final request in step.requests) request.path,
-    ];
-
-    return words.any((word) => word.toLowerCase().contains(query));
+    ]);
   }
 
   List<_Group> _groupsOf(
@@ -112,7 +108,7 @@ class _AutomationFlowsPageState extends State<AutomationFlowsPage> {
         .fold<int>(0, (most, count) => count > most ? count : most);
     final parts = [
       describeCount(flow.variants.length, AutomationPanelStrings.outcomeNoun),
-      if (steps > 0) describeCount(steps, 'step'),
+      if (steps > 0) describeCount(steps, AutomationPanelStrings.stepNoun),
       if (flow.fork != null) AutomationPanelStrings.oneFork,
     ];
 
@@ -137,28 +133,4 @@ class _Group {
   final List<AutomationCatalogueFlow> flows;
 
   const _Group(this.title, this.flows);
-}
-
-class _SearchField extends StatelessWidget {
-  final ValueChanged<String> onChanged;
-
-  const _SearchField({required this.onChanged});
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = AutomationPanelTheme.of(context);
-
-    return SizedBox(
-      height: AutomationPanelTheme.buttonHeight,
-      child: TextField(
-        onChanged: onChanged,
-        style: theme.textStyle(size: 15),
-        decoration: InputDecoration(
-          hintText: AutomationPanelStrings.flowSearchHint,
-          hintStyle: theme.textStyle(size: 15, color: theme.textSecondary),
-          prefixIcon: Icon(Icons.search, size: 20, color: theme.textSecondary),
-        ),
-      ),
-    );
-  }
 }

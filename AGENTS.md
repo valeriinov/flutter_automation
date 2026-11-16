@@ -19,7 +19,7 @@ A change to one of these items updates the guide in the same commit:
 
 How to update the guide:
 
-1. Find each section that tells about the changed item, on all four tabs.
+1. Find each section that tells about the changed item, on all five tabs.
 2. Change the English text and the Ukrainian text together. Each `data-l="en"`
    element has a `data-l="uk"` element next to it.
 3. Remove the text about a removed item. The guide gives only the current state.

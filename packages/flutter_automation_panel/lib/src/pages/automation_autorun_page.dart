@@ -6,6 +6,7 @@ import 'package:flutter_automation_panel/src/blocks/automation_panel_button.dart
 import 'package:flutter_automation_panel/src/blocks/automation_panel_count.dart';
 import 'package:flutter_automation_panel/src/blocks/automation_panel_label.dart';
 import 'package:flutter_automation_panel/src/blocks/automation_panel_radio_tile.dart';
+import 'package:flutter_automation_panel/src/blocks/automation_panel_search_field.dart';
 import 'package:flutter_automation_panel/src/blocks/automation_panel_switch_tile.dart';
 import 'package:flutter_automation_panel/src/blocks/automation_restart_note.dart';
 import 'package:flutter_automation_panel/src/pages/automation_catalogue_text.dart';
@@ -18,7 +19,8 @@ import 'package:flutter_automation_panel/src/theme/automation_panel_strings.dart
 /// {@category Widgets}
 ///
 /// The Autorun tab: the tester picks a flow and an outcome, sets what the run
-/// shows and starts an autorun.
+/// shows and starts an autorun. A search over flows and outcomes narrows the
+/// flows; the selected flow is one of those the search leaves.
 ///
 /// The start saves the scenario and the walk, asks the project to restart the
 /// app and starts nothing. The autorun begins when the tester opens the app
@@ -33,13 +35,16 @@ class AutomationAutorunPage extends StatefulWidget {
 class _AutomationAutorunPageState extends State<AutomationAutorunPage> {
   String? _flowName;
   String? _variantName;
+  String _query = '';
   bool _shouldShowTouches = true;
   bool _shouldSignalEnd = true;
 
   @override
   Widget build(BuildContext context) {
     final controller = AutomationPanelScope.of(context);
-    final flows = controller.definition.catalogue.flows;
+    final flows = controller.definition.catalogue.flows
+        .where(_matchesQuery)
+        .toList();
     final flow = _selectFlow(flows);
     final variant = _selectVariant(flow);
 
@@ -49,6 +54,11 @@ class _AutomationAutorunPageState extends State<AutomationAutorunPage> {
           child: ListView(
             padding: const EdgeInsets.all(AutomationPanelTheme.gapLarge),
             children: [
+              AutomationPanelSearchField(
+                hint: AutomationPanelStrings.autorunSearchHint,
+                onChanged: (value) => setState(() => _query = value),
+              ),
+              const SizedBox(height: AutomationPanelTheme.gapMedium),
               const AutomationPanelLabel(text: AutomationPanelStrings.flow),
               const SizedBox(height: AutomationPanelTheme.gapSmall),
               for (final candidate in flows)
@@ -114,6 +124,14 @@ class _AutomationAutorunPageState extends State<AutomationAutorunPage> {
     );
   }
 
+  bool _matchesQuery(AutomationCatalogueFlow flow) {
+    return matchesSearchQuery(_query, [
+      AutomationCatalogueText.english(flow.title, flow.name),
+      for (final variant in flow.variants)
+        AutomationCatalogueText.english(variant.title, variant.name),
+    ]);
+  }
+
   AutomationCatalogueFlow? _selectFlow(List<AutomationCatalogueFlow> flows) {
     return flows.firstWhereOrNull((flow) => flow.name == _flowName) ??
         flows.firstOrNull;
@@ -130,7 +148,7 @@ class _AutomationAutorunPageState extends State<AutomationAutorunPage> {
   String _describe(AutomationCatalogueVariant variant) {
     final steps = variant.steps.where(AutomationFlowPlayer.isAction).length;
 
-    return describeCount(steps, 'step');
+    return describeCount(steps, AutomationPanelStrings.stepNoun);
   }
 
   void _selectFlowByName(String name) {

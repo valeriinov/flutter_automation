@@ -6,15 +6,15 @@
 <title>flutter_automation guide</title>
 <style>
 :root {
-  --brand: #0A6FE0; --brand-strong: #0858B5; --brand-soft: #E3EEFD; --brand-line: #C4DAF8; --brand-bg2: #F5F9FF;
-  --ground: #F4F5F9; --surface: #FFFFFF; --line: #E3E6EE;
-  --ink: #151823; --muted: #5B6173; --code-bg: #E8EAF1;
-  --ok-soft: #E3F5EA; --ok-ink: #11803A; --warn-soft: #FBEEE4; --warn-ink: #B5652F;
-  --app: #6B4FC8; --app-soft: #EEE9FB;
-  --shadow: 0 1px 3px rgba(21,24,35,.08), 0 10px 28px -18px rgba(21,24,35,.3);
-  --font-display: "Unbounded", "Manrope", system-ui, sans-serif;
-  --font-body: "Manrope", system-ui, -apple-system, "Segoe UI", sans-serif;
-  --font-mono: "JetBrains Mono", ui-monospace, "SF Mono", Menlo, monospace;
+  --brand: #0F766E; --brand-strong: #0F766E; --brand-soft: #E3F4F1; --brand-line: #BFE3DD; --brand-bg2: #F1FAF8;
+  --ground: #F7F6F3; --surface: #FFFFFF; --line: #E7E4DE; --track: #EDEBE6;
+  --ink: #1C1A17; --muted: #6B665E; --code-bg: #EDEBE6;
+  --ok-soft: #E8F5EC; --ok-ink: #2F8F4E; --warn-soft: #FEF3E2; --warn-ink: #8A4A0B;
+  --app: #45413B; --app-soft: #EDEBE6; --app-line: #D9D5CD; --app-bg: #FAF9F7;
+  --shadow: 0 1px 3px rgba(28,26,23,.06), 0 10px 28px -18px rgba(28,26,23,.25);
+  --font-display: system-ui, -apple-system, Roboto, "Segoe UI", sans-serif;
+  --font-body: system-ui, -apple-system, Roboto, "Segoe UI", sans-serif;
+  --font-mono: Menlo, ui-monospace, "SF Mono", monospace;
   color-scheme: light;
 }
 html[lang="en"] [data-l="uk"], html[lang="uk"] [data-l="en"] { display: none !important; }
@@ -25,19 +25,19 @@ body { background: var(--ground); color: var(--ink); font: 15px/1.55 var(--font-
 header { padding-top: 28px; display: grid; gap: 14px; }
 .brand-row { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; }
 .brand-row > div:not(.lang) { flex: 1 1 240px; min-width: 0; }
-.logo { width: 38px; height: 38px; flex: none; border-radius: 11px; background: var(--brand); color: #fff; display: grid; place-items: center; font-size: 18px; }
+.logo { width: 38px; height: 38px; flex: none; border-radius: 50%; background: var(--brand); color: #fff; display: grid; place-items: center; font: 700 14px/1 var(--font-body); }
 .eyebrow { font: 700 11px/1.2 var(--font-body); letter-spacing: .08em; text-transform: uppercase; color: var(--brand); margin: 0 0 4px; }
 h1 { font: 700 22px/1.25 var(--font-display); margin: 0; letter-spacing: -.01em; overflow-wrap: anywhere; }
 h2 { font: 700 18px/1.3 var(--font-body); margin: 0; }
 h3 { font: 700 15px/1.3 var(--font-body); margin: 0; }
 p { margin: 0; }
 .sub { color: var(--muted); font-size: 14px; max-width: 64ch; }
-.lang { display: flex; gap: 2px; padding: 3px; background: #E9ECF4; border-radius: 10px; flex: none; align-self: start; }
+.lang { display: flex; gap: 2px; padding: 3px; background: var(--track); border-radius: 10px; flex: none; align-self: start; }
 .lang button { font: 700 12px/1 var(--font-body); border: 0; background: transparent; color: var(--muted); padding: 7px 10px; border-radius: 8px; cursor: pointer; }
-.lang button[aria-pressed="true"] { background: var(--surface); color: var(--ink); box-shadow: 0 1px 2px rgba(21,24,35,.12); }
-.tabs { display: flex; flex-wrap: wrap; gap: 4px; padding: 4px; background: #E9ECF4; border-radius: 12px; justify-self: start; max-width: 100%; }
+.lang button[aria-pressed="true"] { background: var(--surface); color: var(--ink); box-shadow: 0 1px 2px rgba(28,26,23,.12); }
+.tabs { display: flex; flex-wrap: wrap; gap: 4px; padding: 4px; background: var(--track); border-radius: 12px; justify-self: start; max-width: 100%; }
 .tabs button { font: 700 14px/1 var(--font-body); border: 0; background: transparent; color: var(--muted); padding: 9px 14px; border-radius: 9px; cursor: pointer; }
-.tabs button[aria-selected="true"] { background: var(--surface); color: var(--ink); box-shadow: 0 1px 2px rgba(21,24,35,.12); }
+.tabs button[aria-selected="true"] { background: var(--surface); color: var(--ink); box-shadow: 0 1px 2px rgba(28,26,23,.12); }
 .panel { display: grid; gap: 22px; grid-template-columns: minmax(0, 1fr); }
 .panel[hidden] { display: none; }
 section { display: grid; gap: 10px; grid-template-columns: minmax(0, 1fr); }
@@ -89,11 +89,11 @@ tr:first-child td { border-top: 0; }
 .flow b { font-size: 14px; }
 .flow span { font-size: 12.5px; color: var(--muted); }
 .flow .n { font: 700 12px/1 var(--font-mono); color: var(--brand); }
-.flow .app { border-color: #D8CDF5; background: #FBF9FF; }
+.flow .app { border-color: var(--app-line); background: var(--app-bg); }
 .flow .app .n { color: var(--app); }
 .arch { display: grid; grid-template-columns: minmax(0, 1fr) 92px minmax(0, 1fr); gap: 8px; align-items: stretch; }
 .side { border-radius: 16px; padding: 12px; display: grid; gap: 8px; align-content: start; border: 1px dashed var(--brand-line); background: var(--brand-bg2); }
-.side.app { border-color: #D8CDF5; background: #FBF9FF; }
+.side.app { border-color: var(--app-line); background: var(--app-bg); }
 .side .h { font: 700 12px/1.2 var(--font-body); letter-spacing: .06em; text-transform: uppercase; color: var(--brand); }
 .side.app .h { color: var(--app); }
 .node { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 8px 10px; font-size: 13px; display: grid; gap: 2px; }
@@ -117,15 +117,12 @@ tr:first-child td { border-top: 0; }
 }
 @media (max-width: 560px), (pointer: coarse) { button.copy { min-height: 40px; } }
 </style>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Unbounded:wght@700&family=Manrope:wght@400;500;700&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
 </head>
 <body>
 <div class="wrap">
   <header>
     <div class="brand-row">
-      <span class="logo" aria-hidden="true">▶</span>
+      <span class="logo" aria-hidden="true">QA</span>
       <div>
         <p class="eyebrow"><span data-l="en">Flutter packages · Guide</span><span data-l="uk">Пакети Flutter · Посібник</span></p>
         <h1>flutter_automation</h1>
@@ -141,6 +138,7 @@ tr:first-child td { border-top: 0; }
     </p>
     <div class="tabs" role="tablist">
       <button role="tab" id="tab-overview" aria-controls="overview" aria-selected="true"><span data-l="en">Overview</span><span data-l="uk">Огляд</span></button>
+      <button role="tab" id="tab-qa" aria-controls="qa" aria-selected="false" tabindex="-1"><span data-l="en">For QA</span><span data-l="uk">Для QA</span></button>
       <button role="tab" id="tab-install" aria-controls="install" aria-selected="false" tabindex="-1"><span data-l="en">Install</span><span data-l="uk">Встановлення</span></button>
       <button role="tab" id="tab-dev" aria-controls="dev" aria-selected="false" tabindex="-1"><span data-l="en">For developers</span><span data-l="uk">Для розробників</span></button>
       <button role="tab" id="tab-skills" aria-controls="skills" aria-selected="false" tabindex="-1"><span data-l="en">Agent skills</span><span data-l="uk">Скіли агента</span></button>
@@ -243,6 +241,196 @@ tr:first-child td { border-top: 0; }
       </ol>
       <p class="callout ok"><b><span data-l="en">For the store build:</span><span data-l="uk">Для збірки в магазин:</span></b> <span data-l="en">nothing changes. The automation code works only in a debug or profile build that turns it on.</span><span data-l="uk">нічого не змінюється. Код автоматизації працює лише в debug- або profile-збірці, яка його вмикає.</span></p>
     </section>
+  </div>
+
+  <!-- ============================== QA ============================== -->
+  <div class="panel" id="qa" role="tabpanel" aria-labelledby="tab-qa" hidden>
+    <section>
+      <div class="stage-head"><h2><span data-l="en">What the QA panel gives you</span><span data-l="uk">Що дає QA-панель</span></h2></div>
+      <p class="sub"><span data-l="en">The QA panel is a screen inside a test build of the app. It talks to a fake server, the mock, and not to the real backend. With it you put the app into any state in a few taps, walk a user journey step by step or let the app walk it by itself, and send a report of the run to the developers.</span><span data-l="uk">QA-панель — це екран усередині тестової збірки застосунку. Вона працює з фейковим сервером, моком, а не зі справжнім бекендом. З нею ви за кілька натискань ставите застосунок у будь-який стан, проходите шлях користувача крок за кроком або даєте застосунку пройти його самому і надсилаєте розробникам звіт прогону.</span></p>
+      <div class="box">
+        <ul>
+          <li><span data-l="en"><b>The mock</b> answers every request of the app the way the real server does. You decide what it answers: a normal answer, an error, or no network.</span><span data-l="uk"><b>Мок</b> відповідає на кожен запит застосунку так, як справжній сервер. Ви вирішуєте, що він відповідає: звичайну відповідь, помилку або відсутність мережі.</span></li>
+          <li><span data-l="en"><b>A flow</b> is one user journey, for example "sign in". <b>An outcome</b> is one ending of a flow, for example "sign-in with a wrong code".</span><span data-l="uk"><b>Флоу</b> — це один шлях користувача, наприклад «вхід». <b>Результат</b> (outcome) — один із фіналів флоу, наприклад «вхід з неправильним кодом».</span></li>
+          <li><span data-l="en"><b>A walk</b> is a run of a flow that you lead: the app does one step per tap of Next step. <b>An autorun</b> is a run that the app does from start to end by itself.</span><span data-l="uk"><b>Прохід</b> (walk) — прогін флоу, яким керуєте ви: застосунок робить один крок за натискання Next step. <b>Автопрогін</b> (autorun) — прогін, який застосунок робить від початку до кінця сам.</span></li>
+          <li><span data-l="en"><b>An override</b> is an answer you set for one request, for example "error 500 on <code>/auth/login</code>". It stays until you remove it or tap Reset.</span><span data-l="uk"><b>Підміна</b> (override) — відповідь, яку ви задали одному запиту, наприклад «помилка 500 на <code>/auth/login</code>». Вона діє, доки ви її не приберете або не натиснете Reset.</span></li>
+          <li><span data-l="en">The panel text is English only. This page names each button as the panel shows it.</span><span data-l="uk">Текст панелі лише англійською. Ця сторінка називає кожну кнопку так, як її показує панель.</span></li>
+        </ul>
+      </div>
+    </section>
+
+    <section>
+      <div class="stage-head"><h2><span data-l="en">Turn on the mock</span><span data-l="uk">Увімкнути мок</span></h2></div>
+      <ol class="steps">
+        <li class="step"><div class="body">
+          <span class="t"><span data-l="en">Install the test build</span><span data-l="uk">Встановити тестову збірку</span></span>
+          <p class="small"><span data-l="en">The developers give you a test build. A store build has no QA panel.</span><span data-l="uk">Тестову збірку дають розробники. У збірці з магазину QA-панелі немає.</span></p>
+        </div></li>
+        <li class="step"><div class="body">
+          <span class="t"><span data-l="en">Open the debug menu of the app</span><span data-l="uk">Відкрити меню налагодження застосунку</span></span>
+          <p class="small"><span data-l="en">Each project opens it in its own way. Ask the developers of your project how.</span><span data-l="uk">Кожен проєкт відкриває його по-своєму. Спитайте в розробників свого проєкту, як саме.</span></p>
+        </div></li>
+        <li class="step"><div class="body">
+          <span class="t"><span data-l="en">Turn on Mock mode</span><span data-l="uk">Увімкнути Mock mode</span></span>
+          <p class="small"><span data-l="en">The app restarts. On some devices it closes: open it again. The app now talks only to the mock.</span><span data-l="uk">Застосунок перезапускається. На деяких пристроях він закривається: відкрийте його знову. Тепер застосунок працює лише з моком.</span></p>
+        </div></li>
+        <li class="step"><div class="body">
+          <span class="t"><span data-l="en">Find the QA button</span><span data-l="uk">Знайти кнопку QA</span></span>
+          <p class="small"><span data-l="en">A round QA button stands over the app. Drag it to any place where it does not cover what you test. A tap on it opens the panel.</span><span data-l="uk">Над застосунком з'являється кругла кнопка QA. Перетягніть її туди, де вона не закриває те, що ви тестуєте. Натискання на неї відкриває панель.</span></p>
+        </div></li>
+      </ol>
+      <p class="callout warn"><b><span data-l="en">Mock mode stays on.</span><span data-l="uk">Mock mode лишається увімкненим.</span></b> <span data-l="en">The app keeps the mode after a restart. To test against the real server, turn Mock mode off in the same debug menu.</span><span data-l="uk">Застосунок зберігає режим після перезапуску. Щоб тестувати на справжньому сервері, вимкніть Mock mode у тому ж меню налагодження.</span></p>
+    </section>
+
+    <section>
+      <div class="stage-head"><h2><span data-l="en">The panel at a glance</span><span data-l="uk">Панель з першого погляду</span></h2></div>
+      <p class="sub"><span data-l="en">The head of the panel shows the state of the mock. Under it are the tabs. The project picks them; the usual four are below. Each tab has a search field at the top.</span><span data-l="uk">Шапка панелі показує стан моку. Під нею вкладки. Їх обирає проєкт; звичайні чотири описані нижче. Кожна вкладка має поле пошуку вгорі.</span></p>
+      <div class="box">
+        <table>
+          <tr><td><span data-l="en">Status row</span><span data-l="uk">Рядок стану</span></td><td><span data-l="en"><code>Default mock</code> while you changed nothing. Otherwise the name of the outcome or preset you took and the count of overrides in red, for example <code>1 override</code>.</span><span data-l="uk"><code>Default mock</code>, поки ви нічого не змінювали. Інакше назва обраного результату або пресета і кількість підмін червоним, наприклад <code>1 override</code>.</span></td></tr>
+          <tr><td><span data-l="en">Presets</span><span data-l="uk">Presets</span></td><td><span data-l="en">Saves the current state of the mock under a name and brings it back later.</span><span data-l="uk">Зберігає поточний стан моку під назвою і повертає його пізніше.</span></td></tr>
+          <tr><td><span data-l="en">Reset</span><span data-l="uk">Reset</span></td><td><span data-l="en">Removes every override and every setting. The mock answers as at the first start.</span><span data-l="uk">Прибирає всі підміни і всі налаштування. Мок відповідає як на першому старті.</span></td></tr>
+          <tr><td><span data-l="en">Flows</span><span data-l="uk">Flows</span></td><td><span data-l="en">The flows of the app, in groups. A tap on a flow opens its map, and from the map you start a walk. The search looks through the flow, outcome and request titles.</span><span data-l="uk">Флоу застосунку, за групами. Натискання на флоу відкриває його мапу, а з мапи ви починаєте прохід. Пошук шукає за назвами флоу, результатів і запитів.</span></td></tr>
+          <tr><td><span data-l="en">Autorun</span><span data-l="uk">Autorun</span></td><td><span data-l="en">Picks a flow and an outcome for an autorun. The search looks through the flow and outcome titles.</span><span data-l="uk">Вибір флоу і результату для автопрогону. Пошук шукає за назвами флоу і результатів.</span></td></tr>
+          <tr><td><span data-l="en">Sections</span><span data-l="uk">Sections</span></td><td><span data-l="en">The parts of the mock, such as sign-in or profile. Here you set the latency, the profile of a section and the answer of each request. The search looks through the section titles and the requests.</span><span data-l="uk">Частини моку, наприклад вхід чи профіль. Тут ви задаєте затримку, профіль розділу і відповідь кожного запиту. Пошук шукає за назвами розділів і запитами.</span></td></tr>
+          <tr><td><span data-l="en">Log</span><span data-l="uk">Log</span></td><td><span data-l="en">Every request the app sent, the newest on top, with its status code. The search looks through the method, the path and the status code.</span><span data-l="uk">Кожен запит, який надіслав застосунок, найновіший угорі, з кодом відповіді. Пошук шукає за методом, шляхом і кодом відповіді.</span></td></tr>
+        </table>
+      </div>
+    </section>
+
+    <section>
+      <div class="stage-head"><span class="k">A</span><h2><span data-l="en">Walk a flow step by step</span><span data-l="uk">Пройти флоу крок за кроком</span></h2></div>
+      <p class="sub"><span data-l="en">Use a walk to look at each screen of a journey, to try a branch by hand or to repeat a bug.</span><span data-l="uk">Прохід підходить, щоб роздивитися кожен екран шляху, спробувати гілку вручну або повторити баг.</span></p>
+      <ol class="steps">
+        <li class="step"><div class="body">
+          <span class="t"><span data-l="en">Open the flow</span><span data-l="uk">Відкрити флоу</span></span>
+          <p class="small"><span data-l="en">On the Flows tab, type a part of the name in the search field and tap the flow.</span><span data-l="uk">На вкладці Flows введіть частину назви в поле пошуку і натисніть на флоу.</span></p>
+        </div></li>
+        <li class="step"><div class="body">
+          <span class="t"><span data-l="en">Read the flow map</span><span data-l="uk">Прочитати мапу флоу</span></span>
+          <p class="small"><span data-l="en">The map shows the start screen (<code>Start:</code>), each step with the requests it sends, the fork where the flow splits into branches and the ending (<code>Result:</code>).</span><span data-l="uk">Мапа показує стартовий екран (<code>Start:</code>), кожен крок із запитами, які він надсилає, розвилку, де флоу ділиться на гілки, і фінал (<code>Result:</code>).</span></p>
+        </div></li>
+        <li class="step"><div class="body">
+          <span class="t"><span data-l="en">Change an answer, if you need to</span><span data-l="uk">Змінити відповідь, якщо потрібно</span></span>
+          <p class="small"><span data-l="en">Tap a request on the map to give it an error or no network. When a branch of the fork needs another start state, the map lets you pick that branch here, before the start.</span><span data-l="uk">Натисніть на запит на мапі, щоб дати йому помилку або відсутність мережі. Коли гілці розвилки потрібен інший стартовий стан, мапа дає обрати цю гілку тут, до старту.</span></p>
+        </div></li>
+        <li class="step"><div class="body">
+          <span class="t"><span data-l="en">Tap Restart and begin</span><span data-l="uk">Натиснути Restart and begin</span></span>
+          <p class="small"><span data-l="en">The app restarts. Open it again if it closed. The walk begins on the start screen of the flow.</span><span data-l="uk">Застосунок перезапускається. Відкрийте його знову, якщо він закрився. Прохід починається зі стартового екрана флоу.</span></p>
+        </div></li>
+        <li class="step"><div class="body">
+          <span class="t"><span data-l="en">Tap Next step</span><span data-l="uk">Натискати Next step</span></span>
+          <p class="small"><span data-l="en">A plaque stands over the app. Collapsed, it shows the flow, the step such as <code>3/10</code> and a round button that does the next step. Tap the plaque to open it: it then shows the next action in words and a Next step button. Drag the plaque by its head to move it.</span><span data-l="uk">Над застосунком з'являється плашка. Згорнута, вона показує флоу, крок, наприклад <code>3/10</code>, і круглу кнопку, яка робить наступний крок. Натисніть на плашку, щоб розгорнути: тоді вона показує наступну дію словами і кнопку Next step. Перетягуйте плашку за шапку.</span></p>
+        </div></li>
+        <li class="step"><div class="body">
+          <span class="t"><span data-l="en">Choose a branch at the fork</span><span data-l="uk">Обрати гілку на розвилці</span></span>
+          <p class="small"><span data-l="en">At the fork the plaque shows <code>Choose the branch</code>. Tap a branch, then Next step. The walk goes on in that branch.</span><span data-l="uk">На розвилці плашка показує <code>Choose the branch</code>. Натисніть на гілку, потім Next step. Прохід іде далі цією гілкою.</span></p>
+        </div></li>
+        <li class="step"><div class="body">
+          <span class="t"><span data-l="en">Tap Finish</span><span data-l="uk">Натиснути Finish</span></span>
+          <p class="small"><span data-l="en">When no action is left, the button reads Finish. It does the waits that are left and opens the run summary.</span><span data-l="uk">Коли дій не лишилося, кнопка показує Finish. Вона виконує очікування, що лишилися, і відкриває підсумок прогону.</span></p>
+        </div></li>
+      </ol>
+      <p class="callout"><b><span data-l="en">While a walk runs, the app takes no taps.</span><span data-l="uk">Поки йде прохід, застосунок не приймає натискань.</span></b> <span data-l="en">Only the plaque and the QA button take your finger, and the system back button does nothing. The keyboard still types. To take the app back, tap the cross on the collapsed plaque or Exit on the open one: the app stays on its screen.</span><span data-l="uk">Пальця слухаються лише плашка і кнопка QA, а системна кнопка «назад» нічого не робить. Клавіатура й далі вводить текст. Щоб повернути собі застосунок, натисніть хрестик на згорнутій плашці або Exit на розгорнутій: застосунок лишається на своєму екрані.</span></p>
+      <p class="callout warn"><b><span data-l="en">A step failed?</span><span data-l="uk">Крок не вдався?</span></b> <span data-l="en">The plaque shows the reason in red and the button reads Try again. Tap it to do the step again, or tap Exit and report the reason.</span><span data-l="uk">Плашка показує причину червоним, а кнопка — Try again. Натисніть її, щоб повторити крок, або натисніть Exit і повідомте причину.</span></p>
+    </section>
+
+    <section>
+      <div class="stage-head"><span class="k">B</span><h2><span data-l="en">Let the app walk a flow by itself</span><span data-l="uk">Дати застосунку пройти флоу самому</span></h2></div>
+      <ol class="steps">
+        <li class="step"><div class="body">
+          <span class="t"><span data-l="en">Pick the flow and the outcome</span><span data-l="uk">Обрати флоу і результат</span></span>
+          <p class="small"><span data-l="en">On the Autorun tab, tap a flow, then one of its outcomes. The search narrows the list.</span><span data-l="uk">На вкладці Autorun натисніть на флоу, потім на один із його результатів. Пошук звужує список.</span></p>
+        </div></li>
+        <li class="step"><div class="body">
+          <span class="t"><span data-l="en">Set the recording options</span><span data-l="uk">Налаштувати опції запису</span></span>
+          <p class="small"><span data-l="en"><code>Show touches</code> draws a circle where the app taps. <code>Signal at the end</code> vibrates and plays a sound when the run ends.</span><span data-l="uk"><code>Show touches</code> малює коло там, де застосунок натискає. <code>Signal at the end</code> вібрує і грає звук, коли прогін закінчується.</span></p>
+        </div></li>
+        <li class="step"><div class="body">
+          <span class="t"><span data-l="en">Start the screen recording</span><span data-l="uk">Увімкнути запис екрана</span></span>
+          <p class="small"><span data-l="en">Use the screen recorder of the phone. A recording shows the developers what the app did.</span><span data-l="uk">Скористайтеся записом екрана телефона. Запис показує розробникам, що робив застосунок.</span></p>
+        </div></li>
+        <li class="step"><div class="body">
+          <span class="t"><span data-l="en">Tap Restart and run</span><span data-l="uk">Натиснути Restart and run</span></span>
+          <p class="small"><span data-l="en">The app restarts. Open it again if it closed. The app then does every step by itself. Do not touch the screen until the summary opens.</span><span data-l="uk">Застосунок перезапускається. Відкрийте його знову, якщо він закрився. Далі застосунок сам робить кожен крок. Не торкайтеся екрана, доки не відкриється підсумок.</span></p>
+        </div></li>
+      </ol>
+    </section>
+
+    <section>
+      <div class="stage-head"><span class="k">C</span><h2><span data-l="en">Make the server answer with an error</span><span data-l="uk">Змусити сервер відповісти помилкою</span></h2></div>
+      <p class="sub"><span data-l="en">Use it to check error screens, toasts and retries. An override stays until you remove it, also after a restart.</span><span data-l="uk">Так перевіряють екрани помилок, тости і повтори. Підміна діє, доки ви її не приберете, також після перезапуску.</span></p>
+      <ol class="steps">
+        <li class="step"><div class="body">
+          <span class="t"><span data-l="en">Find the request</span><span data-l="uk">Знайти запит</span></span>
+          <p class="small"><span data-l="en">On the Log tab, tap the request the app sent, or on the Sections tab, open Requests of a section. The search finds a request by a part of its path.</span><span data-l="uk">На вкладці Log натисніть на запит, який надіслав застосунок, або на вкладці Sections відкрийте Requests розділу. Пошук знаходить запит за частиною шляху.</span></p>
+        </div></li>
+        <li class="step"><div class="body">
+          <span class="t"><span data-l="en">Choose the answer</span><span data-l="uk">Обрати відповідь</span></span>
+          <p class="small"><span data-l="en">The Response sheet opens. Pick an <code>Error code</code>, if you need a <code>Backend error code</code> and a <code>Message</code>. Or pick <code>No network</code>: the request then never reaches the server.</span><span data-l="uk">Відкривається аркуш Response. Оберіть <code>Error code</code>, за потреби <code>Backend error code</code> і <code>Message</code>. Або оберіть <code>No network</code>: тоді запит не доходить до сервера.</span></p>
+        </div></li>
+        <li class="step"><div class="body">
+          <span class="t"><span data-l="en">Tap Apply</span><span data-l="uk">Натиснути Apply</span></span>
+          <p class="small"><span data-l="en">The request row shows the override in red, and the status row counts it. Repeat the action in the app to see the error.</span><span data-l="uk">Рядок запиту показує підміну червоним, а рядок стану її рахує. Повторіть дію в застосунку, щоб побачити помилку.</span></p>
+        </div></li>
+        <li class="step"><div class="body">
+          <span class="t"><span data-l="en">Remove the override</span><span data-l="uk">Прибрати підміну</span></span>
+          <p class="small"><span data-l="en">Tap the cross on the request row, or <code>Use mock response</code> in the sheet. Reset removes every override at once.</span><span data-l="uk">Натисніть хрестик у рядку запиту або <code>Use mock response</code> в аркуші. Reset прибирає всі підміни одразу.</span></p>
+        </div></li>
+      </ol>
+    </section>
+
+    <section>
+      <div class="stage-head"><span class="k">D</span><h2><span data-l="en">Set the state of the server</span><span data-l="uk">Задати стан сервера</span></h2></div>
+      <div class="box">
+        <table>
+          <tr><td><span data-l="en">Profile of a section</span><span data-l="uk">Профіль розділу</span></td><td><span data-l="en">On the Sections tab, tap Profile in a section and pick a ready state, for example a user who must finish the sign-up. A section shows <code>Default</code> with no setting and <code>Custom</code> when its settings match no profile. A profile marked <code>⟳ Restarts the app</code> takes effect after a restart: the panel asks for it.</span><span data-l="uk">На вкладці Sections натисніть Profile у розділі й оберіть готовий стан, наприклад користувача, який має завершити реєстрацію. Розділ показує <code>Default</code> без налаштувань і <code>Custom</code>, коли його налаштування не збігаються з жодним профілем. Профіль із позначкою <code>⟳ Restarts the app</code> діє після перезапуску: панель про нього попросить.</span></td></tr>
+          <tr><td><span data-l="en">Response latency</span><span data-l="uk">Response latency</span></td><td><span data-l="en"><code>Fast</code> answers at once, <code>Real</code> waits as a real server does, <code>Slow</code> waits long. Use Slow to check loaders and double taps.</span><span data-l="uk"><code>Fast</code> відповідає одразу, <code>Real</code> чекає як справжній сервер, <code>Slow</code> чекає довго. Slow підходить, щоб перевірити лоадери і подвійні натискання.</span></td></tr>
+          <tr><td><span data-l="en">Presets</span><span data-l="uk">Presets</span></td><td><span data-l="en">Tap Presets, type a name without a slash and tap <code>Save current state</code>. A tap on a saved preset brings back its profiles and overrides. The bin icon deletes it. Presets stay on this phone.</span><span data-l="uk">Натисніть Presets, введіть назву без скісної риски і натисніть <code>Save current state</code>. Натискання на збережений пресет повертає його профілі й підміни. Іконка кошика його видаляє. Пресети зберігаються на цьому телефоні.</span></td></tr>
+        </table>
+      </div>
+    </section>
+
+    <section>
+      <div class="stage-head"><h2><span data-l="en">The run summary and the report</span><span data-l="uk">Підсумок прогону і звіт</span></h2></div>
+      <p class="sub"><span data-l="en">A walk after Finish and an autorun at its end open the <code>Run finished</code> sheet.</span><span data-l="uk">Прохід після Finish і автопрогін наприкінці відкривають аркуш <code>Run finished</code>.</span></p>
+      <div class="box">
+        <table>
+          <tr><td><span data-l="en">Head</span><span data-l="uk">Шапка</span></td><td><span data-l="en">The outcome, how many steps the run did and how many seconds it took.</span><span data-l="uk">Результат, скільки кроків зробив прогін і скільки секунд він тривав.</span></td></tr>
+          <tr><td><span data-l="en">Run requests</span><span data-l="uk">Run requests</span></td><td><span data-l="en">Each request of the run with its status code.</span><span data-l="uk">Кожен запит прогону з кодом відповіді.</span></td></tr>
+          <tr><td><span data-l="en">Share logs</span><span data-l="uk">Share logs</span></td><td><span data-l="en">Opens the share sheet of the phone with <code>report.json</code>: the steps, the requests and the answers of the run. The button shows only when the project turned sharing on.</span><span data-l="uk">Відкриває системне меню «Поділитися» з <code>report.json</code>: кроки, запити і відповіді прогону. Кнопка є лише тоді, коли проєкт увімкнув надсилання.</span></td></tr>
+          <tr><td><span data-l="en">Run again</span><span data-l="uk">Run again</span></td><td><span data-l="en">Restarts the app and starts the same flow and outcome again.</span><span data-l="uk">Перезапускає застосунок і запускає той самий флоу і результат знову.</span></td></tr>
+          <tr><td><span data-l="en">Exit</span><span data-l="uk">Exit</span></td><td><span data-l="en">Closes the summary. The app stays on its screen and takes your taps again.</span><span data-l="uk">Закриває підсумок. Застосунок лишається на своєму екрані і знову приймає ваші натискання.</span></td></tr>
+        </table>
+      </div>
+    </section>
+
+    <section>
+      <div class="stage-head"><h2><span data-l="en">A good bug report</span><span data-l="uk">Добрий баг-репорт</span></h2></div>
+      <div class="box">
+        <ul>
+          <li><span data-l="en">The flow and the outcome, as the panel names them, and the step where the app went wrong.</span><span data-l="uk">Флоу і результат, як їх називає панель, і крок, на якому застосунок повівся не так.</span></li>
+          <li><span data-l="en"><code>report.json</code> from Share logs.</span><span data-l="uk"><code>report.json</code> з Share logs.</span></li>
+          <li><span data-l="en">The screen recording, with Show touches on for an autorun.</span><span data-l="uk">Запис екрана, для автопрогону з увімкненим Show touches.</span></li>
+          <li><span data-l="en">The state of the mock: the status row, the overrides and the name of the preset, if you took one.</span><span data-l="uk">Стан моку: рядок стану, підміни і назву пресета, якщо ви його брали.</span></li>
+          <li><span data-l="en">The text of the reason, when a step failed in a walk.</span><span data-l="uk">Текст причини, коли крок не вдався під час проходу.</span></li>
+        </ul>
+      </div>
+    </section>
+
+    <section>
+      <div class="stage-head"><h2><span data-l="en">Questions</span><span data-l="uk">Питання</span></h2></div>
+      <div class="box">
+        <table>
+          <tr><td><span data-l="en">The app ignores my taps.</span><span data-l="uk">Застосунок не реагує на натискання.</span></td><td><span data-l="en">A walk runs. Tap the cross on the plaque or Exit.</span><span data-l="uk">Іде прохід. Натисніть хрестик на плашці або Exit.</span></td></tr>
+          <tr><td><span data-l="en">The search finds nothing.</span><span data-l="uk">Пошук нічого не знаходить.</span></td><td><span data-l="en">The search looks only through the texts the tab names in its hint. Clear the field to see the whole list.</span><span data-l="uk">Пошук шукає лише за текстами, які вкладка називає в підказці поля. Очистіть поле, щоб побачити весь список.</span></td></tr>
+          <tr><td><span data-l="en">The app shows an error I did not set.</span><span data-l="uk">Застосунок показує помилку, якої я не задавав.</span></td><td><span data-l="en">Look at the status row: an old override or preset may still stand. Tap Reset.</span><span data-l="uk">Подивіться на рядок стану: могла лишитися стара підміна або пресет. Натисніть Reset.</span></td></tr>
+          <tr><td><span data-l="en">A change did nothing.</span><span data-l="uk">Зміна нічого не дала.</span></td><td><span data-l="en">The app reads some settings only at start. Such a setting carries <code>⟳ Restarts the app</code>. Restart the app, or repeat the action that sends the request.</span><span data-l="uk">Деякі налаштування застосунок читає лише на старті. Таке налаштування має позначку <code>⟳ Restarts the app</code>. Перезапустіть застосунок або повторіть дію, яка надсилає запит.</span></td></tr>
+          <tr><td><span data-l="en">Is the mock the same as the real server?</span><span data-l="uk">Мок такий самий, як справжній сервер?</span></td><td><span data-l="en">It must be. When the mock and the server answer differently, report it as a bug of the mock.</span><span data-l="uk">Має бути. Коли мок і сервер відповідають по-різному, повідомте про це як про баг моку.</span></td></tr>
+        </table>
+      </div>
+    </section>
+
   </div>
 
   <!-- ============================== INSTALL ============================== -->
@@ -770,11 +958,11 @@ MaterialApp(
       <div class="box">
         <table>
           <tr><td><code>AutomationModeController</code></td><td><span data-l="en">The mode, server or mock, without a screen. <code>switchTo</code> writes it to <code>state.json</code> and calls <code>onRestartRequired</code>. <code>AutomationMockModeTile</code> and <code>showAutomationMockModeSheet</code> are ready UI for it, drawn with the blocks and the theme of the panel. The project owns the debug menu and the gesture that opens it.</span><span data-l="uk">Режим, сервер або мок, без екрана. <code>switchTo</code> записує його в <code>state.json</code> і викликає <code>onRestartRequired</code>. <code>AutomationMockModeTile</code> і <code>showAutomationMockModeSheet</code> дають готовий інтерфейс з блоків і теми панелі. Меню налагодження і жест, що його відкриває, робить проєкт.</span></td></tr>
-          <tr><td><code>AutomationPanelDefinition</code></td><td><span data-l="en">The mock, the catalogue, the pages, <code>playerSettings</code> and the callbacks <code>onRestartRequired</code> and <code>onShareLogs</code>. A start of a walk calls <code>onRestartRequired</code> once, whatever the scenario held before. <code>playerSettings</code> holds the locale reader and the pace of the player. The date formats and the date key templates come from the catalogue. <code>onShareLogs</code> is optional: without it the end sheet of an autorun hides Share logs.</span><span data-l="uk">Мок, каталог, сторінки, <code>playerSettings</code> і колбеки <code>onRestartRequired</code> та <code>onShareLogs</code>. Старт проходу викликає <code>onRestartRequired</code> один раз, що б не містив сценарій раніше. <code>playerSettings</code> містить читання локалі і темп програвача. Формати дат і шаблони ключів дат беруться з каталогу. <code>onShareLogs</code> необов'язковий: без нього підсумковий аркуш автопрогону ховає Share logs.</span></td></tr>
-          <tr><td><code>AutomationPanelLauncher</code></td><td><span data-l="en">The QA button that the tester drags, the panel it opens and the plaque of a manual walk. The project decides with <code>isVisible</code> when they show. <code>wrapButton</code> wraps the button so the project can mark it for automation, and <code>startPosition</code> sets where it stands before the drag. While a walk runs, an <code>AutomationInputGate</code> covers the app, its dialogs and its sheets, so only the player touches the screen. The plaque and the QA button stay under the finger, and the system back button does nothing. The plaque shows the next action, a Next step button, the branches at a fork and a stop icon named Exit. The tester drags the plaque down. An autorun shows the touch circle only while it plays its steps; a failure brings the plaque back with Try again. The gate blocks pointers only: the soft keyboard still types into the app.</span><span data-l="uk">Кнопка QA, яку тестувальник перетягує, панель, яку вона відкриває, і плашка ручного проходу. Проєкт через <code>isVisible</code> вирішує, коли їх показувати. <code>wrapButton</code> загортає кнопку, щоб позначити її для автоматизації, а <code>startPosition</code> задає її початкове місце. Поки йде прохід, <code>AutomationInputGate</code> закриває застосунок, його діалоги і аркуші, тож екрана торкається лише програвач. Плашка і кнопка QA лишаються під пальцем, а системна кнопка назад нічого не робить. Плашка показує наступну дію, кнопку Next step, гілки на розвилці і круглу іконку стоп з підписом Exit. Тестувальник тягне плашку вниз. Автопрогін показує лише круг дотику, поки виконує кроки; збій повертає плашку з Try again. Шлюз блокує лише вказівники: екранна клавіатура й далі вводить текст у застосунок.</span></td></tr>
+          <tr><td><code>AutomationPanelDefinition</code></td><td><span data-l="en">The mock, the catalogue, the pages, <code>playerSettings</code> and the callbacks <code>onRestartRequired</code> and <code>onShare</code>. A start of a walk calls <code>onRestartRequired</code> once, whatever the scenario held before. <code>playerSettings</code> holds the locale reader and the pace of the player. The date formats and the date key templates come from the catalogue. <code>onShare</code> is optional: without it the run summary hides Share logs.</span><span data-l="uk">Мок, каталог, сторінки, <code>playerSettings</code> і колбеки <code>onRestartRequired</code> та <code>onShare</code>. Старт проходу викликає <code>onRestartRequired</code> один раз, що б не містив сценарій раніше. <code>playerSettings</code> містить читання локалі і темп програвача. Формати дат і шаблони ключів дат беруться з каталогу. <code>onShare</code> необов'язковий: без нього підсумок прогону ховає Share logs.</span></td></tr>
+          <tr><td><code>AutomationPanelLauncher</code></td><td><span data-l="en">The QA button that the tester drags, the panel it opens and the plaque of a manual walk. The project decides with <code>isVisible</code> when they show. <code>wrapButton</code> wraps the button so the project can mark it for automation, and <code>startPosition</code> sets where it stands before the drag. While a walk runs, an <code>AutomationInputGate</code> covers the app, its dialogs and its sheets, so only the player touches the screen. The plaque and the QA button stay under the finger, and the system back button does nothing. Collapsed, the plaque shows a cross (Exit), the flow, the step and a round Next step button. Open, it shows the next action, the branches at a fork and pinned Exit and Next step buttons; Next step reads Finish when no action is left and opens the run summary. The tester drags the plaque by its head. An autorun shows the touch circle only while it plays its steps; a failure brings the plaque back with Try again. The gate blocks pointers only: the soft keyboard still types into the app.</span><span data-l="uk">Кнопка QA, яку тестувальник перетягує, панель, яку вона відкриває, і плашка ручного проходу. Проєкт через <code>isVisible</code> вирішує, коли їх показувати. <code>wrapButton</code> загортає кнопку, щоб позначити її для автоматизації, а <code>startPosition</code> задає її початкове місце. Поки йде прохід, <code>AutomationInputGate</code> закриває застосунок, його діалоги і аркуші, тож екрана торкається лише програвач. Плашка і кнопка QA лишаються під пальцем, а системна кнопка назад нічого не робить. Згорнута плашка показує хрестик (Exit), флоу, крок і круглу кнопку Next step. Розгорнута показує наступну дію, гілки на розвилці і закріплені кнопки Exit і Next step; коли дій не лишилося, Next step стає Finish і відкриває підсумок прогону. Тестувальник тягне плашку за шапку. Автопрогін показує лише круг дотику, поки виконує кроки; збій повертає плашку з Try again. Шлюз блокує лише вказівники: екранна клавіатура й далі вводить текст у застосунок.</span></td></tr>
           <tr><td><code>AutomationFlowPlayer</code>, <code>AutomationInputGate</code>, <code>AutomationInputPassThrough</code>, <code>AutomationTouchIndicator</code></td><td><span data-l="en">The player does the steps of a catalogue variant inside the app with the public API of Flutter, with no driver: <code>tap</code>, <code>enterText</code>, <code>scroll</code>, <code>scrollIntoView</code>, <code>waitFor</code>, <code>waitForAbsent</code> and <code>waitForTappable</code>. It reads the <code>finder</code> JSON of a step itself: <code>valueKey</code>, <code>text</code>, <code>tooltip</code>, <code>localeKey</code>, <code>localeKeyTooltip</code>, <code>type</code>, <code>pageBack</code>, <code>dateText</code>, a declared date kind, <code>descendant</code> and <code>ancestor</code>. It skips the service steps and stops with a reason when a target does not appear. The panel package needs neither <code>flutter_driver</code> nor the runner. A target id and a locale key reach it only in a build with <code>ENABLE_AUTOMATION_MARKING</code>. <code>AutomationInputPassThrough</code> lets a tap of the player through a control that stands above the gate.</span><span data-l="uk">Програвач виконує кроки варіанта каталогу всередині застосунку публічним API Flutter, без драйвера: <code>tap</code>, <code>enterText</code>, <code>scroll</code>, <code>scrollIntoView</code>, <code>waitFor</code>, <code>waitForAbsent</code> і <code>waitForTappable</code>. Він сам читає JSON <code>finder</code> кроку: <code>valueKey</code>, <code>text</code>, <code>tooltip</code>, <code>localeKey</code>, <code>localeKeyTooltip</code>, <code>type</code>, <code>pageBack</code>, <code>dateText</code>, оголошений вид дати, <code>descendant</code> і <code>ancestor</code>. Він пропускає службові кроки і зупиняється з причиною, коли ціль не з'явилася. Пакету панелі не потрібні ні <code>flutter_driver</code>, ні раннер. Id цілі і ключ локалі потрапляють у збірку лише з <code>ENABLE_AUTOMATION_MARKING</code>. <code>AutomationInputPassThrough</code> пропускає дотик програвача крізь елемент, що стоїть над шлюзом.</span></td></tr>
-          <tr><td><code>AutomationAutorunPage</code></td><td><span data-l="en">The Autorun tab: a flow, an outcome, the options Show touches and Signal at the end, and the button Restart and run. The autorun starts when the tester opens the app again. At the end a sheet shows the requests with Share logs, Run again and Exit run.</span><span data-l="uk">Вкладка Autorun: флоу, результат, опції Show touches і Signal at the end та кнопка Restart and run. Автопрогін стартує, коли тестувальник знову відкриває застосунок. У кінці аркуш показує запити з Share logs, Run again і Exit run.</span></td></tr>
-          <tr><td><code>AutomationPanelFrame</code>, <code>AutomationRequestRow</code>, <code>AutomationFlowStep</code>, <code>AutomationWalkPlaque</code>, <code>AutomationRestartNote</code>, <code>showAutomationPanelSheet</code></td><td><span data-l="en">The blocks. The panel has its own theme, <code>AutomationPanelTheme</code>, and its interface is in English only.</span><span data-l="uk">Блоки. Панель має власну тему, <code>AutomationPanelTheme</code>, а її інтерфейс лише англійською.</span></td></tr>
+          <tr><td><code>AutomationAutorunPage</code></td><td><span data-l="en">The Autorun tab: a flow, an outcome, the options Show touches and Signal at the end, and the button Restart and run. The autorun starts when the tester opens the app again. At the end the run summary shows the requests with Share logs, Run again and Exit.</span><span data-l="uk">Вкладка Autorun: флоу, результат, опції Show touches і Signal at the end та кнопка Restart and run. Автопрогін стартує, коли тестувальник знову відкриває застосунок. У кінці підсумок прогону показує запити з Share logs, Run again і Exit.</span></td></tr>
+          <tr><td><code>AutomationPanelFrame</code>, <code>AutomationPanelSearchField</code>, <code>AutomationRequestRow</code>, <code>AutomationFlowStep</code>, <code>AutomationWalkPlaque</code>, <code>AutomationRestartNote</code>, <code>showAutomationPanelSheet</code></td><td><span data-l="en">The blocks. <code>AutomationPanelSearchField</code> with <code>matchesSearchQuery</code> is the search at the top of each tab. The panel has its own theme, <code>AutomationPanelTheme</code>, and its interface is in English only.</span><span data-l="uk">Блоки. <code>AutomationPanelSearchField</code> з <code>matchesSearchQuery</code> — пошук угорі кожної вкладки. Панель має власну тему, <code>AutomationPanelTheme</code>, а її інтерфейс лише англійською.</span></td></tr>
           <tr><td><code>MockSection.restartKeys</code></td><td><span data-l="en">The settings the app reads once at launch or seeds into storage. The panel marks a profile that changes one with a restart sign and asks the project for a restart.</span><span data-l="uk">Налаштування, які застосунок читає один раз на старті або засіває у сховище. Панель позначає профіль, що змінює одне з них, знаком перезапуску і просить проєкт про перезапуск.</span></td></tr>
           <tr><td><code>AutomationStateStore</code></td><td><span data-l="en">The files of a tester in one folder: <code>state.json</code> (mode, scenario, overrides, walk), <code>presets/&lt;name&gt;.json</code>, <code>runs/&lt;id&gt;/report.json</code> (the last 20). Only the packages write them.</span><span data-l="uk">Файли тестувальника в одній папці: <code>state.json</code> (режим, сценарій, підміни, прохід), <code>presets/&lt;name&gt;.json</code>, <code>runs/&lt;id&gt;/report.json</code> (останні 20). Пишуть їх лише пакети.</span></td></tr>
           <tr><td><code>AutomationCatalogue</code></td><td><span data-l="en">The flows of the panel as JSON. <code>--qa-catalogue</code> builds it from the flows and the recordings. A flow is in the catalogue only when its <code>AutomationFlowDefinition</code> sets <code>isInQaCatalogue: true</code>. Nothing else decides it. A step carries its <code>action</code>, <code>finder</code>, <code>text</code>, <code>title</code>, <code>timeoutMs</code> and, for a scroll, <code>dx</code>, <code>dy</code>, <code>durationMs</code> and <code>frequency</code> (a scroll without a drag holds the finger for <code>durationMs</code>), so the player can do it. The catalogue also carries the <code>dateFormats</code> and the <code>dateValueKeys</code> of <code>pubspec.yaml</code>, so the player writes a date finder as the runner does. The fork stands at the earlier of the first step where the steps of two variants differ and the first request whose answers differ. A branch carries the title of its variant. A branch has <code>isChosenBeforeStart</code> when its scenario differs from another branch in a restart key, so the tester picks it on the flow map before the restart.</span><span data-l="uk">Флоу панелі як JSON. Його будує <code>--qa-catalogue</code> із флоу і записів прогонів. Флоу потрапляє в каталог лише тоді, коли його <code>AutomationFlowDefinition</code> має <code>isInQaCatalogue: true</code>. Інше це не визначає. Крок несе свої <code>action</code>, <code>finder</code>, <code>text</code>, <code>title</code>, <code>timeoutMs</code> і, для скролу, <code>dx</code>, <code>dy</code>, <code>durationMs</code> та <code>frequency</code> (скрол без зсуву тримає палець <code>durationMs</code>), щоб програвач міг його виконати. Каталог також несе <code>dateFormats</code> і <code>dateValueKeys</code> з <code>pubspec.yaml</code>, тож програвач пише фіндер дати як раннер. Розвилка стоїть у ранішому з двох місць: перший крок, де кроки двох варіантів різняться, і перший запит, відповіді якого різняться. Гілка несе назву свого варіанта. Гілка має <code>isChosenBeforeStart</code>, коли її сценарій відрізняється від іншої гілки ключем перезапуску, тому тестувальник обирає її на мапі флоу до перезапуску.</span></td></tr>

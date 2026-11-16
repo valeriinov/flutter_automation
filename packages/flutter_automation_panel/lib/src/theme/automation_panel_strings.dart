@@ -108,6 +108,21 @@ abstract final class AutomationPanelStrings {
   /// Hint of the flow search field.
   static const flowSearchHint = 'Flow, outcome or request';
 
+  /// Hint of the autorun search field.
+  static const autorunSearchHint = 'Flow or outcome';
+
+  /// Hint of the section search field.
+  static const sectionSearchHint = 'Section or request';
+
+  /// Hint of the journal search field.
+  static const journalSearchHint = 'Method, path or status code';
+
+  /// Text of a search that finds nothing.
+  static const noMatches = 'Nothing matches the search';
+
+  /// What the response sheet of a journal row names the mock answer.
+  static const lastAnswer = 'last answer';
+
   /// Part of a flow description when the flow has a fork.
   static const oneFork = '1 fork';
 

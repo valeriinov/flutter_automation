@@ -35,6 +35,10 @@ void main() {
     _automationSectionsPage_should_nameAnUnknownSettingCustom();
     _automationPanelLauncher_should_sendTheBackButtonToThePanel();
     _automationPresetsSheet_should_rejectABadName();
+    _automationAutorunPage_should_narrowTheFlowsBySearch();
+    _automationSectionsPage_should_narrowTheSectionsBySearch();
+    _automationJournalPage_should_narrowTheRequestsBySearch();
+    _matchesSearchQuery_should_ignoreCaseAndMatchAnEmptyQuery();
     _automationWalkStrip_should_exitAfterADragFarDown();
     _automationWalkStrip_should_bringTheControlsBackAfterAnAutorunFailure();
     _automationMockModeTile_should_switchTheModeOnAPanelTile();
@@ -655,11 +659,101 @@ void _automationPresetsSheet_should_rejectABadName() {
     await _pumpSections(tester);
     await tester.tap(find.text('Presets'));
     await tester.pumpAndSettle();
-    await tester.enterText(find.byType(TextField), '..');
+    await tester.enterText(
+      find.descendant(
+        of: find.byType(AutomationPresetsSheet),
+        matching: find.byType(TextField),
+      ),
+      '..',
+    );
     await tester.tap(find.text('Save current state'));
     await _settle(tester);
 
     expect(find.text('Use a name without a slash.'), findsOneWidget);
+  });
+}
+
+void _automationAutorunPage_should_narrowTheFlowsBySearch() {
+  testWidgets('AutomationAutorunPage should narrow the flows by search', (
+    tester,
+  ) async {
+    await _pumpPage(tester, const AutomationAutorunPage());
+    await tester.enterText(find.byType(TextField), 'item');
+    await tester.pump();
+
+    expect(find.text('Sign-in and sign-up'), findsNothing);
+    expect(find.text('Create an item'), findsOneWidget);
+    expect(
+      tester
+          .widget<AutomationPanelRadioTile>(
+            find.widgetWithText(AutomationPanelRadioTile, 'Create an item'),
+          )
+          .isSelected,
+      isTrue,
+    );
+  });
+}
+
+void _automationSectionsPage_should_narrowTheSectionsBySearch() {
+  testWidgets('AutomationSectionsPage should narrow the sections by search', (
+    tester,
+  ) async {
+    await _pumpPage(
+      tester,
+      AutomationSectionsPage(
+        sections: [
+          AutomationSectionPanel(title: 'Auth', section: authSection),
+          AutomationSectionPanel(title: 'Items', section: itemsSection),
+        ],
+      ),
+    );
+    await tester.enterText(find.byType(TextField), 'ite');
+    await tester.pump();
+
+    expect(find.text('Auth'), findsNothing);
+    expect(find.text('Items'), findsOneWidget);
+  });
+}
+
+void _automationJournalPage_should_narrowTheRequestsBySearch() {
+  testWidgets('AutomationJournalPage should narrow the requests by search', (
+    tester,
+  ) async {
+    final sample = await _pumpPage(tester, const AutomationJournalPage());
+
+    sample.mock.journal
+      ..add(MockRequestRecordKind.request, {
+        'method': 'GET',
+        'path': '/profile/me',
+        'status': 200,
+      })
+      ..add(MockRequestRecordKind.request, {
+        'method': 'POST',
+        'path': '/auth/otp',
+        'status': 500,
+      });
+    await tester.pump();
+    await tester.enterText(find.byType(TextField), '500');
+    await tester.pump();
+
+    expect(find.text('me'), findsNothing);
+    expect(find.text('otp'), findsOneWidget);
+
+    await tester.enterText(find.byType(TextField), 'nothing');
+    await tester.pump();
+
+    expect(find.text(AutomationPanelStrings.noMatches), findsOneWidget);
+  });
+}
+
+void _matchesSearchQuery_should_ignoreCaseAndMatchAnEmptyQuery() {
+  test('matchesSearchQuery should ignore case and match an empty query', () {
+    const words = ['Sign-in', '/auth/otp'];
+
+    expect(matchesSearchQuery('  ', words), isTrue);
+    expect(matchesSearchQuery(' SIGN ', words), isTrue);
+    expect(matchesSearchQuery('OTP', words), isTrue);
+    expect(matchesSearchQuery('items', words), isFalse);
   });
 }
 

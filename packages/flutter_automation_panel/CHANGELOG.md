@@ -1,5 +1,14 @@
 # Changelog
 
+## Unreleased
+
+- The Autorun, Sections and Log tabs show a search field, like the Flows tab.
+  Autorun looks through the flow and outcome titles, Sections through the
+  section titles, section names, request paths and request titles, Log through
+  the method, the path and the status code.
+- New `AutomationPanelSearchField` and `matchesSearchQuery`: the search field
+  of a tab and the match of a query against the texts of one item.
+
 ## 0.8.2
 
 - A step of the flow map holds its circle at the vertical centre of its card,

@@ -14,6 +14,7 @@ export 'package:flutter_automation_panel/src/blocks/automation_panel_frame.dart'
 export 'package:flutter_automation_panel/src/blocks/automation_panel_label.dart';
 export 'package:flutter_automation_panel/src/blocks/automation_panel_option.dart';
 export 'package:flutter_automation_panel/src/blocks/automation_panel_radio_tile.dart';
+export 'package:flutter_automation_panel/src/blocks/automation_panel_search_field.dart';
 export 'package:flutter_automation_panel/src/blocks/automation_panel_segments.dart';
 export 'package:flutter_automation_panel/src/blocks/automation_panel_sheet.dart';
 export 'package:flutter_automation_panel/src/blocks/automation_panel_status.dart';
