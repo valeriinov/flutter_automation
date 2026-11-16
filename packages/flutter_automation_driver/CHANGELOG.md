@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.8.6
+
+- Version bump with `flutter_automation_mock` and `flutter_automation_panel` 0.8.6.
+
 ## 0.8.5
 
 - Version bump with `flutter_automation_mock` and `flutter_automation_panel` 0.8.5.

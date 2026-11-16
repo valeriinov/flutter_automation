@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 0.8.6
 
 - The journal marks an answer that an override of the tester gave: the record
   carries `override`, such as `{"failure": true, "latency": "slow"}`. A record

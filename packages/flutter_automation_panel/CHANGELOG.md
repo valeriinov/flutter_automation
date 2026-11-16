@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 0.8.6
 
 - New Changes page: a tap on the status row opens it. It lists the outcome,
   the latency of every request, the profile of each section that differs from
