@@ -3,8 +3,15 @@ import 'package:flutter_test/flutter_test.dart';
 
 final _section = MockSection<_CatalogSettings>(
   name: 'catalog',
+  title: AutomationLocalizedText({'en': 'Catalog'}),
   fromJson: _CatalogSettings.fromJson,
-  profiles: {'empty': (settings) => settings.copyWith(itemCount: 0)},
+  profiles: {
+    'empty': MockProfile(
+      (settings) => settings.copyWith(itemCount: 0),
+      title: AutomationLocalizedText({'en': 'Empty'}),
+      description: AutomationLocalizedText({'en': 'No items'}),
+    ),
+  },
 );
 
 void main() {
@@ -12,6 +19,8 @@ void main() {
     _mockSection_should_buildDefaultsFromAnEmptyObject();
     _mockSection_should_listProfileNamesThroughAnObjectSection();
     _mockSection_should_overrideTheSectionByProfileName();
+    _mockSection_should_keepTheTextsOfAProfile();
+    _mockSection_should_applyAProfileThroughAnObjectSection();
     _mockSection_should_throwForAnUnknownProfile();
     _mockSection_should_overrideTheSectionByAFunction();
     _mockSection_should_readItsSectionOutOfTheScenarioJson();
@@ -19,6 +28,7 @@ void main() {
     _mockSection_should_flagAChangeOfARestartKey();
     _mockSection_should_ignoreAChangeOfAKeyThatNeedsNoRestart();
     _mockSection_should_treatAnAbsentKeyAndItsDefaultAsEqual();
+    _mockSection_should_listAKeyThatOnlyAProfileWrites();
   });
 }
 
@@ -44,6 +54,45 @@ void _mockSection_should_overrideTheSectionByProfileName() {
     expect(MockScenario([override]).toJson(), {
       'catalog': {'itemCount': 0},
     });
+  });
+}
+
+void _mockSection_should_keepTheTextsOfAProfile() {
+  test('MockSection should keep the texts of a profile', () {
+    final profile = _section.profiles['empty'];
+
+    expect(_section.title.resolve('en'), 'Catalog');
+    expect(profile?.title.resolve('en'), 'Empty');
+    expect(profile?.description?.resolve('en'), 'No items');
+  });
+}
+
+void _mockSection_should_applyAProfileThroughAnObjectSection() {
+  test('MockSection should apply a profile through an object section', () {
+    final MockSection<Object?> section = _section;
+    final profile = section.profiles['empty'];
+    final settings = profile?.update(section.defaults);
+
+    expect((settings as _CatalogSettings?)?.itemCount, 0);
+  });
+}
+
+void _mockSection_should_listAKeyThatOnlyAProfileWrites() {
+  test('MockSection should list a key that only a profile writes', () {
+    final section = MockSection<Map<String, Object?>>(
+      name: 'flags',
+      title: AutomationLocalizedText({'en': 'Flags'}),
+      fromJson: (json) => json,
+      profiles: {
+        'blocked': MockProfile(
+          (settings) => {...settings, 'isBlocked': true},
+          title: AutomationLocalizedText({'en': 'Blocked'}),
+        ),
+      },
+    );
+
+    expect(section.settingsKeys, {'isBlocked'});
+    expect(_section.settingsKeys, {'itemCount'});
   });
 }
 
@@ -119,6 +168,7 @@ void _mockSection_should_treatAnAbsentKeyAndItsDefaultAsEqual() {
 
 final _restartSection = MockSection<_CatalogSettings>(
   name: 'catalog',
+  title: AutomationLocalizedText({'en': 'Catalog'}),
   fromJson: _CatalogSettings.fromJson,
   restartKeys: {'itemCount'},
 );

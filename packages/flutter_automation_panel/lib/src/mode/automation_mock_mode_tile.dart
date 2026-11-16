@@ -12,24 +12,35 @@ import 'package:flutter_automation_panel/src/theme/automation_panel_strings.dart
 ///
 /// The row is an [AutomationPanelSwitchTile], so it takes the theme of the
 /// panel that holds it, such as an `AutomationPanelSheet`. A switch first asks
-/// the tester to confirm, then asks the project to restart the app.
+/// the tester to confirm. The controller then sets `isRestartRequired` to true.
 class AutomationMockModeTile extends StatelessWidget {
   /// The controller that saves the mode.
   final AutomationModeController controller;
 
-  const AutomationMockModeTile({required this.controller, super.key});
+  /// The texts of the row and of its confirmation sheet, the strings of the
+  /// nearest panel when missing.
+  final AutomationPanelStrings? strings;
+
+  const AutomationMockModeTile({
+    required this.controller,
+    this.strings,
+    super.key,
+  });
 
   @override
   Widget build(BuildContext context) {
+    final strings = this.strings ?? AutomationPanelStrings.of(context);
+
     return ListenableBuilder(
       listenable: controller,
       builder: (context, _) {
         return AutomationPanelSwitchTile(
-          title: AutomationPanelStrings.mockMode,
-          subtitle: AutomationPanelStrings.mockModeNote,
+          title: strings.mockMode,
+          subtitle: strings.mockModeNote,
           isOn: controller.nextMode == AutomationMode.mock,
           onChanged: (isOn) => showAutomationRestartSheet(
             context: context,
+            strings: strings,
             onConfirmPressed: () => controller.switchTo(
               isOn ? AutomationMode.mock : AutomationMode.server,
             ),

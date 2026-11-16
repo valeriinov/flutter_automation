@@ -10,23 +10,47 @@ import 'package:flutter_test/flutter_test.dart';
 const signUpPath = '/auth/sign-up';
 const verifyPath = '/auth/otp';
 const sampleTheme = AutomationPanelTheme.light(fontFamily: 'Roboto');
+const sampleStrings = AutomationPanelStrings();
 
 final authSection = MockSection<Map<String, Object?>>(
   name: 'auth',
+  title: const AutomationLocalizedText({'en': 'Auth', 'uk': 'Авторизація'}),
+  description: const AutomationLocalizedText({
+    'en': 'The sign-in screens and the session.',
+  }),
   fromJson: (json) => json,
   profiles: {
-    'signedIn': (settings) => {...settings, 'isSignedInOnLaunch': true},
-    'signedOut': (settings) => {...settings, 'isSignedInOnLaunch': false},
-    'slowCode': (settings) => {...settings, 'codeDelay': 3},
+    'signedIn': MockProfile(
+      (settings) => {...settings, 'isSignedInOnLaunch': true},
+      title: const AutomationLocalizedText({
+        'en': 'Signed in',
+        'uk': 'Увійшов',
+      }),
+      description: const AutomationLocalizedText({
+        'en': 'The app starts with a signed-in user.',
+      }),
+    ),
+    'signedOut': MockProfile(
+      (settings) => {...settings, 'isSignedInOnLaunch': false},
+      title: const AutomationLocalizedText({'en': 'Sign-up needed'}),
+    ),
+    'slowCode': MockProfile(
+      (settings) => {...settings, 'codeDelay': 3},
+      title: const AutomationLocalizedText({'en': 'Slow code'}),
+    ),
   },
   restartKeys: {'isSignedInOnLaunch'},
 );
 
 final itemsSection = MockSection<Map<String, Object?>>(
   name: 'items',
+  title: const AutomationLocalizedText({'en': 'Items'}),
   fromJson: (json) => json,
   profiles: {
-    'threeItems': (settings) => {'count': 3},
+    'threeItems': MockProfile(
+      (settings) => {'count': 3},
+      title: const AutomationLocalizedText({'en': 'Three items'}),
+    ),
   },
 );
 
@@ -227,13 +251,13 @@ final class SamplePanel {
   final Directory directory;
   final AutomationMock mock;
   final AutomationPanelController controller;
-  final List<String> events;
+  final ValueNotifier<bool> isRestartRequired;
 
   const SamplePanel({
     required this.directory,
     required this.mock,
     required this.controller,
-    required this.events,
+    required this.isRestartRequired,
   });
 
   /// Moves the walk of [sample] to the step [stepIndex].
@@ -249,14 +273,15 @@ final class SamplePanel {
   /// as a cold start of the app does.
   static Future<SamplePanel> create({
     MockScenario scenario = const MockScenario([]),
-    FutureOr<void> Function()? onRestartRequired,
     SamplePanel? restartOf,
     AutomationFlowPlayer? player,
     AutomationCatalogue? catalogue,
+    FutureOr<void> Function(BuildContext context, File report)? onShare,
+    AutomationPanelStrings strings = sampleStrings,
   }) async {
     final directory =
         restartOf?.directory ?? Directory.systemTemp.createTempSync('sample');
-    final events = <String>[];
+    final isRestartRequired = ValueNotifier(false);
 
     final mock = await AutomationMock.init(
       isEnabled: true,
@@ -273,10 +298,12 @@ final class SamplePanel {
       mock: mock,
       catalogue: catalogue ?? sampleCatalogue,
       theme: sampleTheme,
+      strings: strings,
       backendErrorCodes: const ['tooManyRequests', 'invalidPhone'],
       readEndpointResolver: () => _sampleEndpointResolver,
       sections: _sampleSections,
-      onRestartRequired: onRestartRequired ?? () => events.add('restart'),
+      isRestartRequired: isRestartRequired,
+      onShare: onShare,
       pages: [
         AutomationPanelPage(
           label: 'Flows',
@@ -301,12 +328,13 @@ final class SamplePanel {
       directory: directory,
       mock: mock,
       controller: AutomationPanelController(definition, player: player),
-      events: events,
+      isRestartRequired: isRestartRequired,
     );
   }
 
   void dispose() {
     controller.dispose();
+    isRestartRequired.dispose();
 
     if (directory.existsSync()) {
       directory.deleteSync(recursive: true);
@@ -315,25 +343,8 @@ final class SamplePanel {
 }
 
 final _sampleSections = [
-  AutomationSectionPanel(
-    title: 'Auth',
-    description: 'The sign-in screens and the session.',
-    section: authSection,
-    api: _SampleApi(),
-    profileTitles: const {
-      'signedIn': 'Signed in',
-      'signedOut': 'Sign-up needed',
-      'slowCode': 'Slow code',
-    },
-    profileDescriptions: const {
-      'signedIn': 'The app starts with a signed-in user.',
-    },
-  ),
-  AutomationSectionPanel(
-    title: 'Items',
-    section: itemsSection,
-    profileTitles: const {'threeItems': 'Three items'},
-  ),
+  AutomationSectionPanel.fromSection(authSection, api: _SampleApi()),
+  AutomationSectionPanel.fromSection(itemsSection),
 ];
 
 final _sampleEndpointResolver = MockApiEndpointResolver([
@@ -371,15 +382,19 @@ class _SampleApi implements MockApi {
 /// Creates a [SamplePanel] on real IO and removes it when the test ends.
 Future<SamplePanel> createSamplePanel(
   WidgetTester tester, {
-  FutureOr<void> Function()? onRestartRequired,
   AutomationFlowPlayer? player,
   AutomationCatalogue? catalogue,
+  FutureOr<void> Function(BuildContext context, File report)? onShare,
+  AutomationPanelStrings strings = sampleStrings,
+  MockScenario scenario = const MockScenario([]),
 }) async {
   final sample = await tester.runAsync(
     () => SamplePanel.create(
-      onRestartRequired: onRestartRequired,
       player: player,
       catalogue: catalogue,
+      onShare: onShare,
+      strings: strings,
+      scenario: scenario,
     ),
   );
 

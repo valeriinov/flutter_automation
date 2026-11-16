@@ -3,8 +3,9 @@ import 'package:flutter_automation_panel/src/panel/automation_panel_controller.d
 
 /// {@category StateManagement}
 ///
-/// Gives the pages of the panel the [AutomationPanelController] and rebuilds
-/// them when it changes.
+/// Gives the widgets of the panel the [AutomationPanelController] and rebuilds
+/// them when it changes. The widgets are the pages, the walk strip and the
+/// end-of-run layer.
 class AutomationPanelScope
     extends InheritedNotifier<AutomationPanelController> {
   const AutomationPanelScope({

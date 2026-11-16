@@ -211,8 +211,8 @@ code. Skip a part that exists: a second run adds nothing to `main`.
 
 1. **Settings and section**, in `catalog_mock_section.dart`. The file imports only
    `mock_section.dart`, so a flow on the host compiles it. A `MockSection` is one
-   section of the scenario. A profile is a function over the settings, so the settings class writes the key
-   `itemCount` once:
+   section of the scenario. A profile is a `MockProfile`: a function over the settings with
+   its title, so the settings class writes the key `itemCount` once:
    ```dart
    import 'package:flutter_automation_mock/mock_section.dart';
 
@@ -246,9 +246,13 @@ code. Skip a part that exists: a second run adds nothing to `main`.
    /// The catalog section of the mock.
    final catalogMockSection = MockSection<CatalogMockSettings>(
      name: 'catalog',
+     title: AutomationLocalizedText({'en': 'Catalog'}),
      fromJson: CatalogMockSettings.fromJson,
      profiles: {
-       'emptyShelf': (settings) => settings.copyWith(itemCount: 0),
+       'emptyShelf': MockProfile(
+         (settings) => settings.copyWith(itemCount: 0),
+         title: AutomationLocalizedText({'en': 'Empty shelf'}),
+       ),
      },
    );
    ```
@@ -343,7 +347,11 @@ code. Skip a part that exists: a second run adds nothing to `main`.
 
      @override
      List<MockApiEndpoint> get endpoints => [
-       MockApiEndpoint(path: '/catalog/items', respond: _respondItems),
+       MockApiEndpoint(
+         path: '/catalog/items',
+         title: AutomationLocalizedText({'en': 'Catalog items'}),
+         respond: _respondItems,
+       ),
      ];
 
      MockApiResponse _respondItems(MockApiRequest request) {
@@ -378,15 +386,9 @@ code. Skip a part that exists: a second run adds nothing to `main`.
    ),
    ```
 
-7. Optional: add the QA panel. Add `flutter_automation_panel` to the
-   dependencies. Pass `stateStore: AutomationStateStore(directory)` and
-   `onScenarioUpdated` to `AutomationMock.init`. Build the panel with
-   `AutomationPanelDefinition` and put `AutomationPanelLauncher` in the
-   `builder` of the app. Generate its catalogue with
-   `fvm dart run tool/run_flows.dart --qa-catalogue assets/qa_catalogue.json
-   --recordings <dir>`
-   and list the file as an asset. The `example/` app of the package repository
-   shows the whole wiring.
+7. Optional: add the QA panel. Run the `setup-qa-panel` skill (in Claude Code with
+   the plugin: `flutter-automation:setup-qa-panel`). It needs the mock of this
+   step.
 
 Run `fvm dart format .` and `fvm dart analyze`.
 
@@ -406,6 +408,10 @@ paragraph and the bold labels. Leave a field alone when it already holds a value
 - **Targets folder**: `lib/automation/targets`
 - **Mock configuration file**: the file of step 7 that declares the `MockSection`
   (`lib/automation/mock/catalog_mock_section.dart`), or `none`
+- **QA build**: `none`; the `setup-qa-panel` skill fills it
+- **QA catalogue**: `none`; the `setup-qa-panel` skill fills it
+- **QA panel file**: `none`; the `setup-qa-panel` skill fills it
+- **Debug menu**: `none`; the `setup-qa-panel` skill fills it
 - **Default flow**: `home`
 - **After an edit**: `fvm dart format . && fvm dart analyze`
 - **Post-edit steps**: `none`

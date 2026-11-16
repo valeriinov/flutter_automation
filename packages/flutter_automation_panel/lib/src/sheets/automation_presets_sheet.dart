@@ -44,10 +44,11 @@ class _AutomationPresetsSheetState extends State<AutomationPresetsSheet> {
 
   @override
   Widget build(BuildContext context) {
+    final strings = AutomationPanelStrings.of(context);
     final theme = AutomationPanelTheme.of(context);
 
     return AutomationPanelSheet(
-      title: AutomationPanelStrings.presets,
+      title: strings.presets,
       onClose: widget.onClose,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -58,19 +59,17 @@ class _AutomationPresetsSheetState extends State<AutomationPresetsSheet> {
             child: TextField(
               controller: _nameController,
               style: theme.textStyle(size: 15),
-              decoration: const InputDecoration(
-                hintText: AutomationPanelStrings.presetName,
-              ),
+              decoration: InputDecoration(hintText: strings.presetName),
               onChanged: (_) => setState(() => _isNameRejected = false),
             ),
           ),
           if (_isNameRejected)
             Text(
-              AutomationPanelStrings.presetNameRule,
+              strings.presetNameRule,
               style: theme.textStyle(size: 13, color: theme.danger),
             ),
           AutomationPanelButton(
-            label: AutomationPanelStrings.saveCurrentState,
+            label: strings.saveCurrentState,
             kind: AutomationPanelButtonKind.primary,
             onPressed: _save,
           ),
@@ -131,14 +130,16 @@ class _AutomationPresetsSheetState extends State<AutomationPresetsSheet> {
       return;
     }
 
+    final strings = AutomationPanelStrings.of(context);
+
     return showAutomationConfirmSheet(
       context: context,
-      title: AutomationPanelStrings.applyPresetQuestion(name),
+      title: strings.applyPresetQuestion(name),
       message: [
-        if (isChanged) AutomationPanelStrings.applyPresetMessage,
-        if (restarts) AutomationPanelStrings.appRestarts,
+        if (isChanged) strings.applyPresetMessage,
+        if (restarts) strings.appRestarts,
       ].join(' '),
-      confirmLabel: AutomationPanelStrings.apply,
+      confirmLabel: strings.apply,
       onConfirmPressed: () => _apply(name, scenario),
     );
   }
@@ -150,11 +151,13 @@ class _AutomationPresetsSheetState extends State<AutomationPresetsSheet> {
   }
 
   Future<void> _confirmDelete(String name) {
+    final strings = AutomationPanelStrings.of(context);
+
     return showAutomationConfirmSheet(
       context: context,
-      title: AutomationPanelStrings.deletePresetQuestion(name),
-      message: AutomationPanelStrings.deletePresetMessage,
-      confirmLabel: AutomationPanelStrings.delete,
+      title: strings.deletePresetQuestion(name),
+      message: strings.deletePresetMessage,
+      confirmLabel: strings.delete,
       onConfirmPressed: () => _delete(name),
     );
   }
@@ -178,6 +181,7 @@ class _PresetRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final strings = AutomationPanelStrings.of(context);
     final theme = AutomationPanelTheme.of(context);
 
     return Container(
@@ -201,7 +205,7 @@ class _PresetRow extends StatelessWidget {
           ),
           IconButton(
             onPressed: onDelete,
-            tooltip: AutomationPanelStrings.deletePreset,
+            tooltip: strings.deletePreset,
             icon: Icon(Icons.delete_outline, color: theme.danger),
           ),
         ],

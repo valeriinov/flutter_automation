@@ -35,6 +35,9 @@ class AutomationPanelSheet extends StatelessWidget {
   /// Whether the sheet shows the grabber.
   final bool hasGrabber;
 
+  /// The texts of the sheet, the strings of the nearest panel when missing.
+  final AutomationPanelStrings? strings;
+
   const AutomationPanelSheet({
     required this.child,
     this.title,
@@ -42,11 +45,13 @@ class AutomationPanelSheet extends StatelessWidget {
     this.onClose,
     this.footer,
     this.hasGrabber = true,
+    this.strings,
     super.key,
   });
 
   @override
   Widget build(BuildContext context) {
+    final strings = this.strings ?? AutomationPanelStrings.of(context);
     final theme = AutomationPanelTheme.of(context);
     final title = this.title;
     final header = this.header;
@@ -97,7 +102,7 @@ class AutomationPanelSheet extends StatelessWidget {
                     offset: const Offset(10, 0),
                     child: IconButton(
                       onPressed: onClose,
-                      tooltip: AutomationPanelStrings.close,
+                      tooltip: strings.close,
                       icon: const Icon(Icons.close),
                     ),
                   ),

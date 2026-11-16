@@ -80,7 +80,11 @@ final class AutomationBlockLibrary {
       return AutomationStepItem(
         action: action,
         label: AutomationStepLabel.resolve(body, action),
-        title: AutomationLocalizedText.tryRead(body, _titleKey, 'An item step'),
+        title: AutomationLocalizedTextJson.tryRead(
+          body,
+          _titleKey,
+          'An item step',
+        ),
       );
     }
 
@@ -208,7 +212,11 @@ final class AutomationBlock {
       name: name,
       params: params is Map<String, Object?> ? params : const {},
       steps: steps,
-      title: AutomationLocalizedText.tryRead(json, _titleKey, 'Block "$name"'),
+      title: AutomationLocalizedTextJson.tryRead(
+        json,
+        _titleKey,
+        'Block "$name"',
+      ),
     );
   }
 }

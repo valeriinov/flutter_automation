@@ -162,6 +162,7 @@ class _RestartBadge extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final strings = AutomationPanelStrings.of(context);
     final theme = AutomationPanelTheme.of(context);
 
     return DecoratedBox(
@@ -177,7 +178,7 @@ class _RestartBadge extends StatelessWidget {
           children: [
             Icon(Icons.refresh, size: 12, color: theme.restart),
             Text(
-              AutomationPanelStrings.restartsTheApp,
+              strings.restartsTheApp,
               style: theme.textStyle(
                 size: 11,
                 weight: FontWeight.w600,

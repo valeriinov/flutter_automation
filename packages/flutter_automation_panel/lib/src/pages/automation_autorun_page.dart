@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_automation_mock/flutter_automation_mock.dart';
 import 'package:flutter_automation_mock/mock_catalogue.dart';
 import 'package:flutter_automation_panel/src/blocks/automation_panel_button.dart';
-import 'package:flutter_automation_panel/src/blocks/automation_panel_count.dart';
 import 'package:flutter_automation_panel/src/blocks/automation_panel_label.dart';
 import 'package:flutter_automation_panel/src/blocks/automation_panel_radio_tile.dart';
 import 'package:flutter_automation_panel/src/blocks/automation_panel_search_field.dart';
@@ -41,6 +40,7 @@ class _AutomationAutorunPageState extends State<AutomationAutorunPage> {
 
   @override
   Widget build(BuildContext context) {
+    final strings = AutomationPanelStrings.of(context);
     final controller = AutomationPanelScope.of(context);
     final flows = controller.definition.catalogue.flows
         .where(_matchesQuery)
@@ -55,11 +55,11 @@ class _AutomationAutorunPageState extends State<AutomationAutorunPage> {
             padding: const EdgeInsets.all(AutomationPanelTheme.gapLarge),
             children: [
               AutomationPanelSearchField(
-                hint: AutomationPanelStrings.autorunSearchHint,
+                hint: strings.autorunSearchHint,
                 onChanged: (value) => setState(() => _query = value),
               ),
               const SizedBox(height: AutomationPanelTheme.gapMedium),
-              const AutomationPanelLabel(text: AutomationPanelStrings.flow),
+              AutomationPanelLabel(text: strings.flow),
               const SizedBox(height: AutomationPanelTheme.gapSmall),
               for (final candidate in flows)
                 Padding(
@@ -67,9 +67,10 @@ class _AutomationAutorunPageState extends State<AutomationAutorunPage> {
                     bottom: AutomationPanelTheme.gapSmall,
                   ),
                   child: AutomationPanelRadioTile(
-                    title: AutomationCatalogueText.english(
+                    title: AutomationCatalogueText.read(
                       candidate.title,
                       candidate.name,
+                      strings.languageCode,
                     ),
                     isSelected: candidate.name == flow?.name,
                     onPressed: () => _selectFlowByName(candidate.name),
@@ -77,9 +78,7 @@ class _AutomationAutorunPageState extends State<AutomationAutorunPage> {
                 ),
               if (flow != null) ...[
                 const SizedBox(height: AutomationPanelTheme.gapMedium),
-                const AutomationPanelLabel(
-                  text: AutomationPanelStrings.outcome,
-                ),
+                AutomationPanelLabel(text: strings.outcome),
                 const SizedBox(height: AutomationPanelTheme.gapSmall),
                 for (final candidate in flow.variants)
                   Padding(
@@ -87,9 +86,10 @@ class _AutomationAutorunPageState extends State<AutomationAutorunPage> {
                       bottom: AutomationPanelTheme.gapSmall,
                     ),
                     child: AutomationPanelRadioTile(
-                      title: AutomationCatalogueText.english(
+                      title: AutomationCatalogueText.read(
                         candidate.title,
                         candidate.name,
+                        strings.languageCode,
                       ),
                       subtitle: _describe(candidate),
                       isSelected: candidate.name == variant?.name,
@@ -98,9 +98,7 @@ class _AutomationAutorunPageState extends State<AutomationAutorunPage> {
                   ),
               ],
               const SizedBox(height: AutomationPanelTheme.gapMedium),
-              const AutomationPanelLabel(
-                text: AutomationPanelStrings.recording,
-              ),
+              AutomationPanelLabel(text: strings.recording),
               const SizedBox(height: AutomationPanelTheme.gapSmall),
               _Recording(
                 shouldShowTouches: _shouldShowTouches,
@@ -125,10 +123,16 @@ class _AutomationAutorunPageState extends State<AutomationAutorunPage> {
   }
 
   bool _matchesQuery(AutomationCatalogueFlow flow) {
+    final strings = AutomationPanelStrings.of(context);
+
     return matchesSearchQuery(_query, [
-      AutomationCatalogueText.english(flow.title, flow.name),
+      AutomationCatalogueText.read(flow.title, flow.name, strings.languageCode),
       for (final variant in flow.variants)
-        AutomationCatalogueText.english(variant.title, variant.name),
+        AutomationCatalogueText.read(
+          variant.title,
+          variant.name,
+          strings.languageCode,
+        ),
     ]);
   }
 
@@ -146,9 +150,10 @@ class _AutomationAutorunPageState extends State<AutomationAutorunPage> {
   }
 
   String _describe(AutomationCatalogueVariant variant) {
+    final strings = AutomationPanelStrings.of(context);
     final steps = variant.steps.where(AutomationFlowPlayer.isAction).length;
 
-    return describeCount(steps, AutomationPanelStrings.stepNoun);
+    return strings.stepCount(steps);
   }
 
   void _selectFlowByName(String name) {
@@ -192,6 +197,7 @@ class _Recording extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final strings = AutomationPanelStrings.of(context);
     final theme = AutomationPanelTheme.of(context);
 
     return DecoratedBox(
@@ -207,14 +213,14 @@ class _Recording extends StatelessWidget {
         child: Column(
           children: [
             AutomationPanelSwitchTile(
-              title: AutomationPanelStrings.showTouches,
-              subtitle: AutomationPanelStrings.showTouchesNote,
+              title: strings.showTouches,
+              subtitle: strings.showTouchesNote,
               isOn: shouldShowTouches,
               onChanged: onTouchesChanged,
             ),
             AutomationPanelSwitchTile(
-              title: AutomationPanelStrings.signalAtEnd,
-              subtitle: AutomationPanelStrings.signalAtEndNote,
+              title: strings.signalAtEnd,
+              subtitle: strings.signalAtEndNote,
               isOn: shouldSignalEnd,
               onChanged: onSignalChanged,
             ),
@@ -232,6 +238,7 @@ class _Footer extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final strings = AutomationPanelStrings.of(context);
     final theme = AutomationPanelTheme.of(context);
 
     return DecoratedBox(
@@ -246,11 +253,9 @@ class _Footer extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           spacing: AutomationPanelTheme.gapSmall,
           children: [
-            const AutomationRestartNote(
-              text: AutomationPanelStrings.autorunNote,
-            ),
+            AutomationRestartNote(text: strings.autorunNote),
             AutomationPanelButton(
-              label: AutomationPanelStrings.restartAndRun,
+              label: strings.restartAndRun,
               kind: AutomationPanelButtonKind.primary,
               onPressed: onStart,
             ),

@@ -1,5 +1,21 @@
 # Changelog
 
+## 0.9.0
+
+- Breaking: `AutomationLocalizedText` lives in `flutter_automation_mock`, and
+  `automation_flow_definition.dart` exports it, so flow files keep their
+  imports. The strict `read(locale)` and the static `tryRead` move to the
+  extension `AutomationLocalizedTextJson`; the type itself holds `texts`,
+  `locales`, `resolve(languageCode)` and `toJson()`.
+- `--check` after `--qa-catalogue <file>` writes nothing and tests that the file
+  and the recordings are up to date. It prints one line of JSON with `ok` and
+  the `problems`, and exits with code 1 when there is a problem. A problem is a
+  catalogue file that differs from the flows and recordings, a variant without a
+  recording, a recording of a failed run, step labels that differ from the
+  flow, or a recording that no flow or variant holds.
+- New `AutomationCatalogueBuilder.isInQaCatalogueKey`: the key of the flow JSON
+  that puts a flow in the catalogue.
+
 ## 0.8.7
 
 - Version bump with `flutter_automation_panel` 0.8.7.

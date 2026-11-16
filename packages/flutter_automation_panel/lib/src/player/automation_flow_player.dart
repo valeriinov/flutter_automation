@@ -10,6 +10,7 @@ import 'package:flutter_automation_panel/src/pages/automation_catalogue_text.dar
 import 'package:flutter_automation_panel/src/player/automation_player_exception.dart';
 import 'package:flutter_automation_panel/src/player/automation_player_finder.dart';
 import 'package:flutter_automation_panel/src/player/automation_player_settings.dart';
+import 'package:flutter_automation_panel/src/theme/automation_panel_strings.dart';
 
 /// {@category Services}
 ///
@@ -46,6 +47,9 @@ class AutomationFlowPlayer {
   /// a date finder with.
   final AutomationCatalogue catalogue;
 
+  /// The texts of the failure reasons and the language of the step names.
+  final AutomationPanelStrings strings;
+
   /// Where the touch circle shows, `null` while it is hidden.
   final ValueNotifier<Offset?> touch = ValueNotifier(null);
 
@@ -56,6 +60,7 @@ class AutomationFlowPlayer {
   AutomationFlowPlayer({
     this.settings = const AutomationPlayerSettings(),
     this.catalogue = const AutomationCatalogue(),
+    this.strings = const AutomationPanelStrings(),
   });
 
   /// Whether the player sends a pointer event or tests where one lands right
@@ -72,9 +77,10 @@ class AutomationFlowPlayer {
     };
   }
 
-  /// The words that name [step] for the tester: its title, else its label.
-  static String describe(AutomationCatalogueStep step) {
-    return AutomationCatalogueText.english(step.title, step.label);
+  /// The words that name [step] for the tester: its title in [languageCode],
+  /// else its label.
+  static String describe(AutomationCatalogueStep step, String languageCode) {
+    return AutomationCatalogueText.read(step.title, step.label, languageCode);
   }
 
   /// Plays [step]. A step that serves the run does nothing.
@@ -112,12 +118,10 @@ class AutomationFlowPlayer {
       case _waitForTappableAction:
         await _waitForTappable(step, _requireFinder(step, finder));
       case null:
-        throw AutomationPlayerException(
-          '"${describe(step)}" carries no action. Build the catalogue again.',
-        );
+        throw AutomationPlayerException(strings.stepHasNoAction(_nameOf(step)));
       case final String action:
         throw AutomationPlayerException(
-          '"${describe(step)}" is a "$action" step. The player cannot play it.',
+          strings.stepHasUnknownAction(_nameOf(step), action),
         );
     }
 
@@ -159,9 +163,7 @@ class AutomationFlowPlayer {
     AutomationPlayerFinder? finder,
   ) {
     if (finder == null) {
-      throw AutomationPlayerException(
-        '"${describe(step)}" names no element to act on.',
-      );
+      throw AutomationPlayerException(strings.stepHasNoTarget(_nameOf(step)));
     }
 
     return finder;
@@ -179,14 +181,22 @@ class AutomationFlowPlayer {
     AutomationCatalogueStep step, {
     required AutomationPlayerFinder finder,
   }) {
-    return _waitUntil(step, () => finder.findFirst() != null, 'did not appear');
+    return _waitUntil(
+      step,
+      () => finder.findFirst() != null,
+      strings.stepDidNotAppear,
+    );
   }
 
   Future<void> _waitForAbsent(
     AutomationCatalogueStep step,
     AutomationPlayerFinder finder,
   ) {
-    return _waitUntil(step, () => finder.findFirst() == null, 'did not go');
+    return _waitUntil(
+      step,
+      () => finder.findFirst() == null,
+      strings.stepDidNotGo,
+    );
   }
 
   Future<void> _waitForTappable(
@@ -196,14 +206,14 @@ class AutomationFlowPlayer {
     return _waitUntil(
       step,
       () => _findTappableCenter(finder) != null,
-      'did not become tappable',
+      strings.stepDidNotBecomeTappable,
     );
   }
 
   Future<void> _waitUntil(
     AutomationCatalogueStep step,
     bool Function() isMet,
-    String failure,
+    String Function(String step, String timeout) describeFailure,
   ) async {
     final timeout = _timeoutOf(step);
     final watch = clock.stopwatch()..start();
@@ -213,7 +223,7 @@ class AutomationFlowPlayer {
 
       if (watch.elapsed >= timeout) {
         throw AutomationPlayerException(
-          '"${describe(step)}" $failure in ${_describeTimeout(timeout)}.',
+          describeFailure(_nameOf(step), _describeTimeout(timeout)),
         );
       }
 
@@ -223,10 +233,10 @@ class AutomationFlowPlayer {
 
   String _describeTimeout(Duration timeout) {
     if (timeout < const Duration(seconds: 1)) {
-      return '${timeout.inMilliseconds} ms';
+      return strings.timeoutMilliseconds(timeout.inMilliseconds);
     }
 
-    return '${timeout.inSeconds} s';
+    return strings.timeoutSeconds(timeout.inSeconds);
   }
 
   Future<void> _tap(
@@ -280,7 +290,9 @@ class AutomationFlowPlayer {
     final target = _findTappable(finder);
 
     if (target == null) {
-      throw AutomationPlayerException('"${describe(step)}" cannot be tapped.');
+      throw AutomationPlayerException(
+        strings.stepCannotBeTapped(_nameOf(step)),
+      );
     }
 
     return target;
@@ -365,7 +377,7 @@ class AutomationFlowPlayer {
     await _waitUntil(
       step,
       () => _findForScroll(finder) != null,
-      'did not appear',
+      strings.stepDidNotAppear,
     );
 
     final element = _findForScroll(finder);
@@ -386,9 +398,7 @@ class AutomationFlowPlayer {
     final state = _findFocusedEditableText();
 
     if (state == null) {
-      throw const AutomationPlayerException(
-        'No text field has the focus. Tap the field before the text.',
-      );
+      throw AutomationPlayerException(strings.noFocusedTextField);
     }
 
     state.userUpdateTextEditingValue(
@@ -499,7 +509,7 @@ class AutomationFlowPlayer {
     if (_isStopped()) {
       touch.value = null;
 
-      throw const AutomationPlayerException('The walk stopped.');
+      throw AutomationPlayerException(strings.walkStopped);
     }
   }
 
@@ -515,5 +525,9 @@ class AutomationFlowPlayer {
     }
 
     return Future<void>.delayed(duration);
+  }
+
+  String _nameOf(AutomationCatalogueStep step) {
+    return describe(step, strings.languageCode);
   }
 }

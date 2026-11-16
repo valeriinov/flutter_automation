@@ -26,7 +26,9 @@ import 'package:flutter_automation_runner/src/recording/automation_recording.dar
 /// the start when its scenario differs in a restart key of a section from the
 /// scenario of another branch. An empty scenario counts as a scenario.
 final class AutomationCatalogueBuilder {
-  static const _isInQaCatalogueKey = 'isInQaCatalogue';
+  /// Key of the flow JSON that puts the flow in the catalogue.
+  static const isInQaCatalogueKey = 'isInQaCatalogue';
+
   static const _equality = DeepCollectionEquality();
 
   final Map<String, Object?> _flows;
@@ -64,7 +66,7 @@ final class AutomationCatalogueBuilder {
     for (final MapEntry(:key, :value) in _flows.entries) {
       final json = CatalogueJson.asObject(value);
 
-      if (json[_isInQaCatalogueKey] == true) {
+      if (json[isInQaCatalogueKey] == true) {
         flows.add(_buildFlow(key, json));
         _collectGroup(groups, json);
       }

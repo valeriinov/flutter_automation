@@ -1,0 +1,121 @@
+{
+  "flow": "catalog",
+  "variant": "items",
+  "ok": true,
+  "totalMs": 596,
+  "steps": [
+    {
+      "label": "waitFor example.screen.loginScreen",
+      "action": "waitFor",
+      "block": "signIn",
+      "step": {
+        "action": "waitFor",
+        "label": "waitFor example.screen.loginScreen",
+        "timeoutMs": 10000,
+        "finder": {
+          "by": "valueKey",
+          "value": "example.screen.loginScreen"
+        }
+      },
+      "ms": 8,
+      "ok": true,
+      "requests": []
+    },
+    {
+      "label": "tap example.button.loginButton",
+      "action": "tap",
+      "block": "signIn",
+      "step": {
+        "action": "tap",
+        "label": "tap example.button.loginButton",
+        "timeoutMs": 10000,
+        "finder": {
+          "by": "valueKey",
+          "value": "example.button.loginButton"
+        }
+      },
+      "ms": 46,
+      "ok": true,
+      "requests": []
+    },
+    {
+      "label": "waitFor example.screen.catalogScreen",
+      "action": "waitFor",
+      "block": "signIn",
+      "step": {
+        "action": "waitFor",
+        "label": "waitFor example.screen.catalogScreen",
+        "timeoutMs": 10000,
+        "finder": {
+          "by": "valueKey",
+          "value": "example.screen.catalogScreen"
+        }
+      },
+      "ms": 531,
+      "ok": true,
+      "requests": [
+        {
+          "method": "GET",
+          "path": "/catalog/items",
+          "statusCode": 200,
+          "response": {
+            "items": [
+              {
+                "id": 1,
+                "title": "Item 1"
+              },
+              {
+                "id": 2,
+                "title": "Item 2"
+              },
+              {
+                "id": 3,
+                "title": "Item 3"
+              },
+              {
+                "id": 4,
+                "title": "Item 4"
+              },
+              {
+                "id": 5,
+                "title": "Item 5"
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "label": "waitFor example.panel.catalogList",
+      "action": "waitFor",
+      "step": {
+        "action": "waitFor",
+        "label": "waitFor example.panel.catalogList",
+        "timeoutMs": 10000,
+        "finder": {
+          "by": "valueKey",
+          "value": "example.panel.catalogList"
+        }
+      },
+      "ms": 0,
+      "ok": true,
+      "requests": []
+    },
+    {
+      "label": "waitFor example.tile.catalogItem.5",
+      "action": "waitFor",
+      "step": {
+        "action": "waitFor",
+        "label": "waitFor example.tile.catalogItem.5",
+        "timeoutMs": 10000,
+        "finder": {
+          "by": "valueKey",
+          "value": "example.tile.catalogItem.5"
+        }
+      },
+      "ms": 1,
+      "ok": true,
+      "requests": []
+    }
+  ]
+}

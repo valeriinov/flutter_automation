@@ -144,6 +144,14 @@ variant becomes the entry of its catalogue variant. A recorded step keeps its
 text, the title, the timeout and the distance of a scroll. The catalogue step
 carries them, so the player of `flutter_automation_panel` can do it.
 
+`--check` after `--qa-catalogue <file>` writes nothing. It tests that the file
+is the catalogue the flows and the recordings give, and that each variant of a
+flow in the catalogue has a recording of a passed run with the step labels of
+the variant. A recording of a flow outside the catalogue is not a problem; a
+recording that no flow or variant holds is. The command prints one line of
+JSON, `{"qaCatalogue", "ok", "problems": [...]}`, and exits with code 1 when
+`problems` is not empty.
+
 The fork of a flow stands at the earlier of two places: the first step at which
 the steps of two variants differ in their action, finder or text, and the first
 request, matched by method, path and its n-th call in the variant, whose code or

@@ -8,10 +8,12 @@ import 'package:flutter_test/flutter_test.dart';
 
 final _catalog = MockSection<Map<String, Object?>>(
   name: 'catalog',
+  title: AutomationLocalizedText({'en': 'Catalog'}),
   fromJson: _readJson,
 );
 final _launch = MockSection<Map<String, Object?>>(
   name: 'launch',
+  title: AutomationLocalizedText({'en': 'Launch'}),
   fromJson: _readJson,
   restartKeys: {'isSignedIn'},
 );

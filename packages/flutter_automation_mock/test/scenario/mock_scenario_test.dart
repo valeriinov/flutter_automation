@@ -3,13 +3,25 @@ import 'package:flutter_test/flutter_test.dart';
 
 final _catalog = MockSection<_CatalogSettings>(
   name: 'catalog',
+  title: AutomationLocalizedText({'en': 'Catalog'}),
   fromJson: _CatalogSettings.fromJson,
-  profiles: {'empty': (settings) => settings.copyWith(itemCount: 0)},
+  profiles: {
+    'empty': MockProfile(
+      (settings) => settings.copyWith(itemCount: 0),
+      title: AutomationLocalizedText({'en': 'Empty'}),
+    ),
+  },
 );
 final _profile = MockSection<_ProfileSettings>(
   name: 'profile',
+  title: AutomationLocalizedText({'en': 'Profile'}),
   fromJson: _ProfileSettings.fromJson,
-  profiles: {'signedOut': (settings) => settings.copyWith(isSignedIn: false)},
+  profiles: {
+    'signedOut': MockProfile(
+      (settings) => settings.copyWith(isSignedIn: false),
+      title: AutomationLocalizedText({'en': 'Signed out'}),
+    ),
+  },
 );
 
 void main() {

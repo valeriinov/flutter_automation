@@ -70,14 +70,16 @@ class _AutomationFlowMapPageState extends State<AutomationFlowMapPage> {
 
   @override
   Widget build(BuildContext context) {
+    final strings = AutomationPanelStrings.of(context);
     final controller = AutomationPanelScope.of(context);
     final variant = _selectedVariant;
     final shown = _shownSteps(variant);
 
     return AutomationPanelFrame(
-      title: AutomationCatalogueText.english(
+      title: AutomationCatalogueText.read(
         widget.flow.title,
         widget.flow.name,
+        strings.languageCode,
       ),
       subtitle: _describe(variant),
       onBack: () => Navigator.of(context).pop(),
@@ -99,7 +101,7 @@ class _AutomationFlowMapPageState extends State<AutomationFlowMapPage> {
           if (_hasOutcomeStep)
             AutomationFlowStep(
               number: 1,
-              title: AutomationPanelStrings.outcome,
+              title: strings.outcome,
               isFork: true,
               isLast: shown.isEmpty,
               children: [
@@ -142,10 +144,15 @@ class _AutomationFlowMapPageState extends State<AutomationFlowMapPage> {
   }
 
   String _describe(AutomationCatalogueVariant? variant) {
-    final entry = AutomationCatalogueText.english(variant?.entry, '');
+    final strings = AutomationPanelStrings.of(context);
+    final entry = AutomationCatalogueText.read(
+      variant?.entry,
+      '',
+      strings.languageCode,
+    );
     final parts = [
-      if (entry.isNotEmpty) AutomationPanelStrings.startOf(entry),
-      if (widget.flow.fork != null) AutomationPanelStrings.oneFork,
+      if (entry.isNotEmpty) strings.startOf(entry),
+      if (widget.flow.fork != null) strings.oneFork,
     ];
 
     return parts.join(' · ');
@@ -178,8 +185,17 @@ class _OutcomeTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final title = AutomationCatalogueText.english(variant.title, variant.name);
-    final proves = AutomationCatalogueText.english(variant.proves, '');
+    final strings = AutomationPanelStrings.of(context);
+    final title = AutomationCatalogueText.read(
+      variant.title,
+      variant.name,
+      strings.languageCode,
+    );
+    final proves = AutomationCatalogueText.read(
+      variant.proves,
+      '',
+      strings.languageCode,
+    );
     final label = this.label;
 
     return AutomationPanelRadioTile(
@@ -291,10 +307,11 @@ class _ForkHint extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final strings = AutomationPanelStrings.of(context);
     final theme = AutomationPanelTheme.of(context);
 
     return Text(
-      AutomationPanelStrings.forkNote,
+      strings.forkNote,
       style: theme.textStyle(size: 13, color: theme.textSecondary),
     );
   }
@@ -308,8 +325,13 @@ class _Footer extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final strings = AutomationPanelStrings.of(context);
     final theme = AutomationPanelTheme.of(context);
-    final title = AutomationCatalogueText.english(variant.title, variant.name);
+    final title = AutomationCatalogueText.read(
+      variant.title,
+      variant.name,
+      strings.languageCode,
+    );
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -317,7 +339,7 @@ class _Footer extends StatelessWidget {
       children: [
         Text.rich(
           TextSpan(
-            text: AutomationPanelStrings.resultPrefix,
+            text: strings.resultPrefix,
             children: [
               TextSpan(
                 text: title,
@@ -330,11 +352,9 @@ class _Footer extends StatelessWidget {
           ),
           style: theme.textStyle(size: 13, color: theme.textSecondary),
         ),
-        const AutomationRestartNote(
-          text: AutomationPanelStrings.walkRestartNote,
-        ),
+        AutomationRestartNote(text: strings.walkRestartNote),
         AutomationPanelButton(
-          label: AutomationPanelStrings.restartAndBegin,
+          label: strings.restartAndBegin,
           kind: AutomationPanelButtonKind.primary,
           onPressed: onStart,
         ),

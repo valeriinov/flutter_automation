@@ -1,5 +1,8 @@
 import 'dart:async';
+import 'dart:convert';
+import 'dart:io';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter_automation_mock/flutter_automation_mock.dart';
 import 'package:flutter_automation_panel/flutter_automation_panel.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -16,7 +19,7 @@ void main() {
     _applyOutcome_should_mergeOutcomeFailuresWithTesterOverrides();
     _applyOutcome_should_saveTheWalkBeforeTheRestartAsk();
     _applyOutcome_should_reportThatARestartIsNeeded();
-    _setFailure_should_notAskForARestartAgain();
+    _setFailure_should_notAskForARestart();
     _failureOf_should_matchTheParentPathOfAPathId();
     _setFailure_should_clearTheOverrideOfTheParentPath();
     _applyOutcome_should_keepTheOutcomeFailuresAcrossARestart();
@@ -25,7 +28,7 @@ void main() {
     _failureOf_should_leaveAnExactEndpointUnderAPathIdAlone();
     _overrideCount_should_countAPathWithAFailureAndALatencyOnce();
     _clearOverride_should_clearTheFailureAndTheLatency();
-    _startWalk_should_saveTheWalkAndAskForOneRestart();
+    _startWalk_should_saveTheWalkAndAskForARestart();
     _startWalk_should_keepTheModeAcrossARestart();
     _resumeWalk_should_runAnAutorunFromTheFirstStep();
     _playNext_should_doOneActionAndStopAtTheFork();
@@ -43,16 +46,16 @@ void main() {
     _runWalk_should_finishAnAutorunOfAVariantWithNoSteps();
     _runWalk_should_tryAgainAfterAFailure();
     _isAutorunPlaying_should_holdOnlyWhileTheAutorunPlays();
+    _automationPanelController_should_failOnARestartKeyNoSettingsJsonHolds();
+    _automationPanelController_should_acceptARestartKeyOnlyAProfileWrites();
   });
 }
 
 Future<SamplePanel> _createSample({
-  FutureOr<void> Function()? onRestartRequired,
   SamplePanel? restartOf,
   AutomationFlowPlayer? player,
 }) async {
   final sample = await SamplePanel.create(
-    onRestartRequired: onRestartRequired,
     restartOf: restartOf,
     player: player,
     catalogue: sampleCatalogueWithSession,
@@ -112,27 +115,31 @@ void _applyOutcome_should_mergeOutcomeFailuresWithTesterOverrides() {
 
 void _applyOutcome_should_saveTheWalkBeforeTheRestartAsk() {
   test('applyOutcome should save the walk before the restart ask', () async {
-    final sample = await _createSample(
-      onRestartRequired: () => Completer<void>().future,
-    );
+    Map<String, Object?>? savedWhenAsked;
 
-    unawaited(
-      sample.controller.applyOutcome(
-        _launchKeyScenario,
-        walk: const AutomationWalkProgress(
-          flow: 'login',
-          variant: 'signUpNeeded',
-        ),
+    final sample = await _createSample();
+
+    sample.isRestartRequired.addListener(() {
+      savedWhenAsked =
+          jsonDecode(
+                File('${sample.directory.path}/state.json').readAsStringSync(),
+              )
+              as Map<String, Object?>;
+    });
+
+    await sample.controller.applyOutcome(
+      _launchKeyScenario,
+      walk: const AutomationWalkProgress(
+        flow: 'login',
+        variant: 'signUpNeeded',
       ),
     );
 
-    await Future<void>.delayed(const Duration(milliseconds: 100));
+    final walk = savedWhenAsked?['walk'] as Map<String, Object?>?;
 
-    final state = await sample.mock.stateStore?.read();
-
-    expect(sample.mock.walk?.flow, 'login');
-    expect(state?.walk?.variant, 'signUpNeeded');
-    expect(state?.scenario, _launchKeyScenario);
+    expect(walk?['flow'], 'login');
+    expect(walk?['variant'], 'signUpNeeded');
+    expect(savedWhenAsked?['scenario'], _launchKeyScenario);
   });
 }
 
@@ -149,14 +156,17 @@ void _applyOutcome_should_reportThatARestartIsNeeded() {
   });
 }
 
-void _setFailure_should_notAskForARestartAgain() {
-  test('setFailure should not ask for a restart again', () async {
+void _setFailure_should_notAskForARestart() {
+  test('setFailure should not ask for a restart', () async {
     final sample = await _createSample();
 
     await sample.controller.applyOutcome(_launchKeyScenario);
+
+    sample.isRestartRequired.value = false;
+
     await sample.controller.setFailure('/b', const MockApiFailure());
 
-    expect(sample.events.where((event) => event == 'restart'), hasLength(1));
+    expect(sample.isRestartRequired.value, isFalse);
   });
 }
 
@@ -290,8 +300,8 @@ void _applyOutcome_should_keepTheOutcomeFailuresAcrossARestart() {
   });
 }
 
-void _startWalk_should_saveTheWalkAndAskForOneRestart() {
-  test('startWalk should save the walk and ask for one restart', () async {
+void _startWalk_should_saveTheWalkAndAskForARestart() {
+  test('startWalk should save the walk and ask for a restart', () async {
     final plain = await _createSample();
 
     await plain.controller.startWalk('login', 'signUpNeeded');
@@ -300,8 +310,8 @@ void _startWalk_should_saveTheWalkAndAskForOneRestart() {
 
     await launchKey.controller.startWalk('session', 'signedOut');
 
-    expect(plain.events, ['restart']);
-    expect(launchKey.events, ['restart']);
+    expect(plain.isRestartRequired.value, isTrue);
+    expect(launchKey.isRestartRequired.value, isTrue);
     expect(plain.mock.walk?.variant, 'signUpNeeded');
     expect(plain.mock.walk?.stepIndex, 0);
   });
@@ -514,9 +524,12 @@ void _startWalk_should_askForARestartWhenTheScenarioHoldsTheKey() {
     final sample = await _createSample();
 
     await sample.controller.applyOutcome(_launchKeyScenario);
+
+    sample.isRestartRequired.value = false;
+
     await sample.controller.startWalk('session', 'signedOut');
 
-    expect(sample.events, ['restart', 'restart']);
+    expect(sample.isRestartRequired.value, isTrue);
     expect(sample.mock.walk?.variant, 'signedOut');
   });
 }
@@ -621,4 +634,75 @@ void _isAutorunPlaying_should_holdOnlyWhileTheAutorunPlays() {
 
     expect(sample.controller.isAutorunPlaying, isFalse);
   });
+}
+
+Future<AutomationPanelController> _createControllerOf(
+  MockSection<Map<String, Object?>> section,
+) async {
+  final directory = Directory.systemTemp.createTempSync('restart_keys');
+
+  addTearDown(() => directory.deleteSync(recursive: true));
+
+  final mock = await AutomationMock.init(
+    isEnabled: true,
+    scenarioDirectory: directory.path,
+    stateStore: AutomationStateStore(directory.path),
+    sections: [section],
+  );
+
+  final isRestartRequired = ValueNotifier(false);
+
+  addTearDown(isRestartRequired.dispose);
+
+  final controller = AutomationPanelController(
+    AutomationPanelDefinition.standard(
+      mock: mock,
+      catalogue: sampleCatalogue,
+      isRestartRequired: isRestartRequired,
+    ),
+  );
+
+  addTearDown(controller.dispose);
+
+  return controller;
+}
+
+void _automationPanelController_should_failOnARestartKeyNoSettingsJsonHolds() {
+  test(
+    'AutomationPanelController should fail on an unknown restart key',
+    () async {
+      final section = MockSection<Map<String, Object?>>(
+        name: 'auth',
+        title: const AutomationLocalizedText({'en': 'Auth'}),
+        fromJson: (json) => json,
+        profiles: {
+          'slowCode': MockProfile(
+            (settings) => {...settings, 'codeDelay': 3},
+            title: const AutomationLocalizedText({'en': 'Slow code'}),
+          ),
+        },
+        restartKeys: {'isSignedInOnLaunch'},
+      );
+
+      await expectLater(
+        () => _createControllerOf(section),
+        throwsA(
+          isA<AssertionError>().having(
+            (error) => error.message.toString(),
+            'message',
+            allOf(contains('auth'), contains('isSignedInOnLaunch')),
+          ),
+        ),
+      );
+    },
+  );
+}
+
+void _automationPanelController_should_acceptARestartKeyOnlyAProfileWrites() {
+  test(
+    'AutomationPanelController should accept a profile-only restart key',
+    () async {
+      await expectLater(_createControllerOf(authSection), completes);
+    },
+  );
 }

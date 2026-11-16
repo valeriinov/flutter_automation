@@ -14,6 +14,8 @@ export 'src/transport/mock_latency_profile.dart';
 export 'src/transport/mock_connection_exception.dart';
 export 'src/transport/mock_scenario_backend.dart';
 export 'src/transport/mock_backend.dart';
+export 'src/scenario/automation_localized_text.dart';
+export 'src/scenario/mock_profile.dart';
 export 'src/scenario/mock_section.dart';
 export 'src/scenario/mock_override.dart';
 export 'src/scenario/mock_scenario.dart';

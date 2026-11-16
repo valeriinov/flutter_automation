@@ -1,0 +1,84 @@
+{
+  "flow": "catalog",
+  "variant": "empty",
+  "ok": true,
+  "totalMs": 599,
+  "steps": [
+    {
+      "label": "waitFor example.screen.loginScreen",
+      "action": "waitFor",
+      "block": "signIn",
+      "step": {
+        "action": "waitFor",
+        "label": "waitFor example.screen.loginScreen",
+        "timeoutMs": 10000,
+        "finder": {
+          "by": "valueKey",
+          "value": "example.screen.loginScreen"
+        }
+      },
+      "ms": 9,
+      "ok": true,
+      "requests": []
+    },
+    {
+      "label": "tap example.button.loginButton",
+      "action": "tap",
+      "block": "signIn",
+      "step": {
+        "action": "tap",
+        "label": "tap example.button.loginButton",
+        "timeoutMs": 10000,
+        "finder": {
+          "by": "valueKey",
+          "value": "example.button.loginButton"
+        }
+      },
+      "ms": 47,
+      "ok": true,
+      "requests": []
+    },
+    {
+      "label": "waitFor example.screen.catalogScreen",
+      "action": "waitFor",
+      "block": "signIn",
+      "step": {
+        "action": "waitFor",
+        "label": "waitFor example.screen.catalogScreen",
+        "timeoutMs": 10000,
+        "finder": {
+          "by": "valueKey",
+          "value": "example.screen.catalogScreen"
+        }
+      },
+      "ms": 533,
+      "ok": true,
+      "requests": [
+        {
+          "method": "GET",
+          "path": "/catalog/items",
+          "statusCode": 200,
+          "response": {
+            "items": []
+          }
+        }
+      ]
+    },
+    {
+      "label": "waitFor example.label.catalogEmpty",
+      "action": "waitFor",
+      "step": {
+        "action": "waitFor",
+        "label": "waitFor example.label.catalogEmpty",
+        "timeoutMs": 10000,
+        "finder": {
+          "by": "valueKey",
+          "value": "example.label.catalogEmpty"
+        }
+      },
+      "ms": 1,
+      "ok": true,
+      "requests": []
+    }
+  ]
+}

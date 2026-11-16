@@ -1,5 +1,3 @@
-import 'dart:async';
-
 import 'package:flutter/foundation.dart';
 import 'package:flutter_automation_mock/flutter_automation_mock.dart';
 
@@ -8,14 +6,15 @@ import 'package:flutter_automation_mock/flutter_automation_mock.dart';
 /// The mode of the app, server or mock, without a screen.
 ///
 /// A switch of the mode needs a restart: the app builds its objects once.
-/// [switchTo] writes the mode to the state file and calls [onRestartRequired].
-/// The project shows its own restart screen there.
+/// [switchTo] writes the mode to the state file and sets [isRestartRequired] to
+/// true. An `AutomationRestartOverlay` shows the restart screen.
 class AutomationModeController extends ChangeNotifier {
   /// The store whose `state.json` holds the mode.
   final AutomationStateStore store;
 
-  /// Called after the mode is saved and the app must restart.
-  final FutureOr<void> Function() onRestartRequired;
+  /// The controller sets it to true after it saves the mode: the app must
+  /// restart.
+  final ValueNotifier<bool> isRestartRequired;
 
   /// The mode the app runs in now. A switch changes it after a restart, so
   /// this value stays until then.
@@ -27,11 +26,11 @@ class AutomationModeController extends ChangeNotifier {
   ///
   /// The [store] parameter is the state store of the project.
   /// The [mode] parameter is the mode the app runs in now.
-  /// The [onRestartRequired] parameter asks the project to restart the app.
+  /// The [isRestartRequired] parameter is the flag that asks for a restart.
   AutomationModeController({
     required this.store,
     required this.mode,
-    required this.onRestartRequired,
+    required this.isRestartRequired,
   });
 
   /// The mode the next launch starts in.
@@ -47,6 +46,6 @@ class AutomationModeController extends ChangeNotifier {
 
     notifyListeners();
 
-    await onRestartRequired();
+    isRestartRequired.value = true;
   }
 }

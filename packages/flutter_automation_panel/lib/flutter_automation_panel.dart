@@ -10,7 +10,6 @@ export 'package:flutter_automation_panel/src/blocks/automation_panel_button.dart
 export 'package:flutter_automation_panel/src/blocks/automation_panel_button_group.dart';
 export 'package:flutter_automation_panel/src/blocks/automation_panel_card.dart';
 export 'package:flutter_automation_panel/src/blocks/automation_panel_chips.dart';
-export 'package:flutter_automation_panel/src/blocks/automation_panel_count.dart';
 export 'package:flutter_automation_panel/src/blocks/automation_panel_frame.dart';
 export 'package:flutter_automation_panel/src/blocks/automation_panel_label.dart';
 export 'package:flutter_automation_panel/src/blocks/automation_panel_option.dart';
@@ -25,7 +24,9 @@ export 'package:flutter_automation_panel/src/blocks/automation_restart_note.dart
 export 'package:flutter_automation_panel/src/blocks/automation_walk_plaque.dart';
 export 'package:flutter_automation_panel/src/mode/automation_mock_mode_sheet.dart';
 export 'package:flutter_automation_panel/src/mode/automation_mock_mode_tile.dart';
+export 'package:flutter_automation_panel/src/mode/automation_mode_bootstrap.dart';
 export 'package:flutter_automation_panel/src/mode/automation_mode_controller.dart';
+export 'package:flutter_automation_panel/src/mode/automation_restart_overlay.dart';
 export 'package:flutter_automation_panel/src/pages/automation_autorun_page.dart';
 export 'package:flutter_automation_panel/src/pages/automation_changes_page.dart';
 export 'package:flutter_automation_panel/src/pages/automation_flow_map_page.dart';
@@ -34,6 +35,7 @@ export 'package:flutter_automation_panel/src/pages/automation_journal_page.dart'
 export 'package:flutter_automation_panel/src/pages/automation_section_panel.dart';
 export 'package:flutter_automation_panel/src/pages/automation_sections_page.dart';
 export 'package:flutter_automation_panel/src/pages/mock_endpoint_panel.dart';
+export 'package:flutter_automation_panel/src/panel/automation_catalogue_asset.dart';
 export 'package:flutter_automation_panel/src/panel/automation_panel.dart';
 export 'package:flutter_automation_panel/src/panel/automation_panel_controller.dart';
 export 'package:flutter_automation_panel/src/panel/automation_panel_definition.dart';

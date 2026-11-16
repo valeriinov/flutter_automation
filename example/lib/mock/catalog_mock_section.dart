@@ -35,9 +35,16 @@ final class CatalogMockSettings {
 /// names its profiles by Dart symbol.
 final catalogMockSection = MockSection<CatalogMockSettings>(
   name: 'catalogSection',
+  title: AutomationLocalizedText({'en': 'Catalog'}),
   fromJson: CatalogMockSettings.fromJson,
   profiles: {
-    'emptyShelf': (settings) => settings.copyWith(itemCount: 0),
-    'fullShelf': (settings) => settings.copyWith(itemCount: 5),
+    'emptyShelf': MockProfile(
+      (settings) => settings.copyWith(itemCount: 0),
+      title: AutomationLocalizedText({'en': 'Empty shelf'}),
+    ),
+    'fullShelf': MockProfile(
+      (settings) => settings.copyWith(itemCount: 5),
+      title: AutomationLocalizedText({'en': 'Full shelf'}),
+    ),
   },
 );

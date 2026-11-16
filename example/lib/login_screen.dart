@@ -9,12 +9,29 @@ class LoginScreen extends StatelessWidget {
 
   final VoidCallback onSignInPressed;
 
-  const LoginScreen({super.key, required this.onSignInPressed});
+  /// Opens the mock mode switch. It is null in a build that cannot switch.
+  final VoidCallback? onMockModePressed;
+
+  const LoginScreen({
+    super.key,
+    required this.onSignInPressed,
+    this.onMockModePressed,
+  });
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Welcome')),
+      appBar: AppBar(
+        title: const Text('Welcome'),
+        actions: [
+          if (onMockModePressed != null)
+            IconButton(
+              tooltip: 'Mock mode',
+              onPressed: onMockModePressed,
+              icon: const Icon(Icons.settings),
+            ),
+        ],
+      ),
       body: Center(
         child: FilledButton(
           onPressed: onSignInPressed,

@@ -2,7 +2,6 @@ import 'dart:ui';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_automation_panel/src/blocks/automation_panel_button.dart';
-import 'package:flutter_automation_panel/src/blocks/automation_panel_count.dart';
 import 'package:flutter_automation_panel/src/theme/automation_panel_strings.dart';
 import 'package:flutter_automation_panel/src/theme/automation_panel_theme.dart';
 
@@ -294,6 +293,7 @@ class _Title extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final strings = AutomationPanelStrings.of(context);
     final theme = AutomationPanelTheme.of(context);
 
     return Row(
@@ -317,7 +317,7 @@ class _Title extends StatelessWidget {
                 TextSpan(text: ' · $step'),
                 if (overrideCount > 0)
                   TextSpan(
-                    text: ' · ${describeOverrideCount(overrideCount)}',
+                    text: ' · ${strings.overrideCount(overrideCount)}',
                     style: TextStyle(
                       color: theme.danger,
                       fontWeight: FontWeight.w600,
@@ -352,6 +352,7 @@ class _Body extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final strings = AutomationPanelStrings.of(context);
     final theme = AutomationPanelTheme.of(context);
 
     return Column(
@@ -380,7 +381,7 @@ class _Body extends StatelessWidget {
               spacing: AutomationPanelTheme.gapSmall,
               children: [
                 AutomationPanelButton(
-                  label: AutomationPanelStrings.exit,
+                  label: strings.exit,
                   leadingIcon: Icons.close,
                   onPressed: onExit,
                 ),

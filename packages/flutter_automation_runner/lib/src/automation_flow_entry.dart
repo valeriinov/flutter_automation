@@ -44,7 +44,7 @@ final class AutomationFlowEntry {
       );
     }
 
-    final title = AutomationLocalizedText.tryRead(
+    final title = AutomationLocalizedTextJson.tryRead(
       json,
       _titleKey,
       '$subject entry',

@@ -1,5 +1,20 @@
 # Changelog
 
+## 0.9.0
+
+- Breaking: `MockSection` takes a required `title` and an optional
+  `description` (`AutomationLocalizedText`), and `profiles` is
+  `Map<String, MockProfile<S>>`. `MockProfile(update, title:, description:)`
+  carries the function over the settings and the texts of the profile.
+  `MockProfile.update(settings)` runs it. A `profile('name')` gives the same
+  override as before.
+- New `MockSection.settingsKeys`: the top-level keys that the defaults and the
+  profiles write.
+- New `MockApiEndpoint.title`: the title of the request in the QA panel.
+- `AutomationLocalizedText` moves here from `flutter_automation_runner`, with
+  `texts` and `resolve(languageCode)`: the `languageCode` text, else `en`,
+  else the first text. `mock_section.dart` exports it and stays free of Flutter.
+
 ## 0.8.7
 
 - Version bump with `flutter_automation_panel` 0.8.7.

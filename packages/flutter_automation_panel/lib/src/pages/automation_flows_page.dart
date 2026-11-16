@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_automation_mock/mock_catalogue.dart';
 import 'package:flutter_automation_panel/src/blocks/automation_flow_tile.dart';
-import 'package:flutter_automation_panel/src/blocks/automation_panel_count.dart';
 import 'package:flutter_automation_panel/src/blocks/automation_panel_label.dart';
 import 'package:flutter_automation_panel/src/blocks/automation_panel_search_field.dart';
 import 'package:flutter_automation_panel/src/pages/automation_catalogue_text.dart';
@@ -27,6 +26,7 @@ class _AutomationFlowsPageState extends State<AutomationFlowsPage> {
 
   @override
   Widget build(BuildContext context) {
+    final strings = AutomationPanelStrings.of(context);
     final controller = AutomationPanelScope.of(context);
     final catalogue = controller.definition.catalogue;
     final flows = catalogue.flows.where(_matchesQuery).toList();
@@ -35,10 +35,10 @@ class _AutomationFlowsPageState extends State<AutomationFlowsPage> {
       padding: const EdgeInsets.all(AutomationPanelTheme.gapLarge),
       children: [
         AutomationPanelSearchField(
-          hint: AutomationPanelStrings.flowSearchHint,
+          hint: strings.flowSearchHint,
           onChanged: (value) => setState(() => _query = value),
         ),
-        for (final group in _groupsOf(catalogue, flows)) ...[
+        for (final group in _groupsOf(strings, catalogue, flows)) ...[
           const SizedBox(height: AutomationPanelTheme.gapMedium),
           Padding(
             padding: const EdgeInsets.only(
@@ -52,7 +52,11 @@ class _AutomationFlowsPageState extends State<AutomationFlowsPage> {
                 bottom: AutomationPanelTheme.gapSmall,
               ),
               child: AutomationFlowTile(
-                title: AutomationCatalogueText.english(flow.title, flow.name),
+                title: AutomationCatalogueText.read(
+                  flow.title,
+                  flow.name,
+                  strings.languageCode,
+                ),
                 subtitle: _describe(flow),
                 onPressed: () => _open(context, controller, flow),
               ),
@@ -63,10 +67,16 @@ class _AutomationFlowsPageState extends State<AutomationFlowsPage> {
   }
 
   bool _matchesQuery(AutomationCatalogueFlow flow) {
+    final strings = AutomationPanelStrings.of(context);
+
     return matchesSearchQuery(_query, [
-      AutomationCatalogueText.english(flow.title, flow.name),
+      AutomationCatalogueText.read(flow.title, flow.name, strings.languageCode),
       for (final variant in flow.variants)
-        AutomationCatalogueText.english(variant.title, variant.name),
+        AutomationCatalogueText.read(
+          variant.title,
+          variant.name,
+          strings.languageCode,
+        ),
       for (final variant in flow.variants)
         for (final step in variant.steps)
           for (final request in step.requests) request.path,
@@ -74,6 +84,7 @@ class _AutomationFlowsPageState extends State<AutomationFlowsPage> {
   }
 
   List<_Group> _groupsOf(
+    AutomationPanelStrings strings,
     AutomationCatalogue catalogue,
     List<AutomationCatalogueFlow> flows,
   ) {
@@ -85,7 +96,11 @@ class _AutomationFlowsPageState extends State<AutomationFlowsPage> {
       if (inGroup.isNotEmpty) {
         groups.add(
           _Group(
-            AutomationCatalogueText.english(group.title, group.name),
+            AutomationCatalogueText.read(
+              group.title,
+              group.name,
+              strings.languageCode,
+            ),
             inGroup,
           ),
         );
@@ -96,20 +111,21 @@ class _AutomationFlowsPageState extends State<AutomationFlowsPage> {
     final others = flows.where((flow) => !known.contains(flow.group)).toList();
 
     if (others.isNotEmpty) {
-      groups.add(_Group(AutomationPanelStrings.flows, others));
+      groups.add(_Group(strings.flows, others));
     }
 
     return groups;
   }
 
   String _describe(AutomationCatalogueFlow flow) {
+    final strings = AutomationPanelStrings.of(context);
     final steps = flow.variants
         .map((variant) => variant.steps.where((step) => !step.isService).length)
         .fold<int>(0, (most, count) => count > most ? count : most);
     final parts = [
-      describeCount(flow.variants.length, AutomationPanelStrings.outcomeNoun),
-      if (steps > 0) describeCount(steps, AutomationPanelStrings.stepNoun),
-      if (flow.fork != null) AutomationPanelStrings.oneFork,
+      strings.variantCount(flow.variants.length),
+      if (steps > 0) strings.stepCount(steps),
+      if (flow.fork != null) strings.oneFork,
     ];
 
     return parts.join(' · ');

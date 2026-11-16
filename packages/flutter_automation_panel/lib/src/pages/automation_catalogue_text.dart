@@ -1,9 +1,20 @@
-/// Reads the English text of a catalogue entry. The panel shows English only.
-abstract final class AutomationCatalogueText {
-  static const _locale = 'en';
+import 'package:flutter_automation_mock/mock_section.dart';
 
-  /// The English text of [text], [fallback] when it has none.
-  static String english(Map<String, String>? text, String fallback) {
-    return text?[_locale] ?? fallback;
+/// Reads the text of a catalogue entry in the language of the panel.
+abstract final class AutomationCatalogueText {
+  /// The text of [text] in [languageCode], [fallback] when it has none.
+  ///
+  /// A language the text lacks falls back by the rule of
+  /// [AutomationLocalizedText.resolve].
+  static String read(
+    Map<String, String>? text,
+    String fallback,
+    String languageCode,
+  ) {
+    if (text == null || text.isEmpty) {
+      return fallback;
+    }
+
+    return AutomationLocalizedText(text).resolve(languageCode);
   }
 }

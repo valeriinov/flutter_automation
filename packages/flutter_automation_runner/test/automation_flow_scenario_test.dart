@@ -13,10 +13,17 @@ const _items = [WaitFor(ByText('Hello'))];
 
 final _shelf = MockSection<_ShelfSettings>(
   name: 'shelf',
+  title: AutomationLocalizedText({'en': 'Shelf'}),
   fromJson: _ShelfSettings.fromJson,
   profiles: {
-    'empty': (settings) => settings.copyWith(itemCount: 0),
-    'standard': (settings) => settings.copyWith(itemCount: 3),
+    'empty': MockProfile(
+      (settings) => settings.copyWith(itemCount: 0),
+      title: AutomationLocalizedText({'en': 'Empty'}),
+    ),
+    'standard': MockProfile(
+      (settings) => settings.copyWith(itemCount: 3),
+      title: AutomationLocalizedText({'en': 'Standard'}),
+    ),
   },
 );
 

@@ -11,7 +11,6 @@ import 'package:flutter_automation_panel/src/panel/automation_panel_definition.d
 import 'package:flutter_automation_panel/src/panel/automation_run_summary.dart';
 import 'package:flutter_automation_panel/src/player/automation_flow_player.dart';
 import 'package:flutter_automation_panel/src/player/automation_player_exception.dart';
-import 'package:flutter_automation_panel/src/theme/automation_panel_strings.dart';
 
 /// {@category StateManagement}
 ///
@@ -69,13 +68,18 @@ class AutomationPanelController extends ChangeNotifier
   /// Creates the controller of [definition].
   ///
   /// The [player] parameter plays the steps. It defaults to a player over the
-  /// `playerSettings` and the `catalogue` of [definition].
+  /// `playerSettings`, the `catalogue` and the `strings` of [definition].
   AutomationPanelController(this.definition, {AutomationFlowPlayer? player})
-    : player =
+    : assert(
+        _describeUnknownRestartKey(definition.mock.sections) == null,
+        _describeUnknownRestartKey(definition.mock.sections),
+      ),
+      player =
           player ??
           AutomationFlowPlayer(
             settings: definition.playerSettings,
             catalogue: definition.catalogue,
+            strings: definition.strings,
           ) {
     _variantFailures = _readFailures({
       MockScenario.failuresKey: mock.outcomeFailures,
@@ -289,8 +293,7 @@ class AutomationPanelController extends ChangeNotifier
       await mock.saveOutcomeFailures(_failuresMap(_variantFailures));
     }
 
-    await _askForRestart(before, mock.scenario);
-
+    _askForRestart(before, mock.scenario);
     notifyListeners();
   }
 
@@ -344,7 +347,7 @@ class AutomationPanelController extends ChangeNotifier
   }) async {
     final saved = await _saveOutcome(scenario, title: title, walk: walk);
 
-    await _askForRestart(saved.before, saved.next);
+    _askForRestart(saved.before, saved.next);
 
     return mock.requiresRestart(saved.next);
   }
@@ -361,8 +364,8 @@ class AutomationPanelController extends ChangeNotifier
     }
 
     await mock.updateScenario(scenario);
-    await _askForRestart(before, scenario);
 
+    _askForRestart(before, scenario);
     notifyListeners();
   }
 
@@ -388,7 +391,7 @@ class AutomationPanelController extends ChangeNotifier
   }
 
   /// Saves a walk of [variant] of [flow] with the scenario of the variant and
-  /// calls `onRestartRequired` of the definition once, whatever the scenario
+  /// sets `isRestartRequired` of the definition, whatever the scenario
   /// held before. The walk begins after the restart.
   ///
   /// The [flow] parameter is the name of the flow. The [variant] parameter is
@@ -414,7 +417,11 @@ class AutomationPanelController extends ChangeNotifier
 
     await _saveOutcome(
       chosen?.scenario ?? const {},
-      title: AutomationCatalogueText.english(chosen?.title, variant),
+      title: AutomationCatalogueText.read(
+        chosen?.title,
+        variant,
+        definition.strings.languageCode,
+      ),
       walk: AutomationWalkProgress(
         flow: flow,
         variant: variant,
@@ -423,7 +430,8 @@ class AutomationPanelController extends ChangeNotifier
         shouldSignalEnd: shouldSignalEnd,
       ),
     );
-    await definition.onRestartRequired();
+
+    definition.isRestartRequired.value = true;
   }
 
   /// Does the next action of the walk and the waits that follow it.
@@ -478,7 +486,11 @@ class AutomationPanelController extends ChangeNotifier
 
     await applyOutcome(
       chosen.scenario,
-      title: AutomationCatalogueText.english(chosen.title, variant),
+      title: AutomationCatalogueText.read(
+        chosen.title,
+        variant,
+        definition.strings.languageCode,
+      ),
       walk: current.onVariant(variant),
     );
   }
@@ -643,13 +655,31 @@ class AutomationPanelController extends ChangeNotifier
     return {MockScenario.latenciesKey: latencies};
   }
 
-  Future<void> _askForRestart(MockScenario before, MockScenario next) async {
+  static String? _describeUnknownRestartKey(
+    List<MockSection<Object?>> sections,
+  ) {
+    for (final section in sections) {
+      final knownKeys = section.settingsKeys;
+      final unknownKey = section.restartKeys.firstWhereOrNull(
+        (key) => !knownKeys.contains(key),
+      );
+
+      if (unknownKey != null) {
+        return 'Mock section "${section.name}" lists the restart key '
+            '"$unknownKey", which no settings JSON of the section holds.';
+      }
+    }
+
+    return null;
+  }
+
+  void _askForRestart(MockScenario before, MockScenario next) {
     if (!_changesRestartKey(before, next)) {
       return;
     }
 
     if (mock.requiresRestart(next)) {
-      await definition.onRestartRequired();
+      definition.isRestartRequired.value = true;
     }
   }
 
@@ -697,7 +727,7 @@ class AutomationPanelController extends ChangeNotifier
     } on AutomationPlayerException catch (error) {
       _recordFailure(token, error.reason);
     } on Object catch (error) {
-      _recordFailure(token, AutomationPanelStrings.stepFailed(error));
+      _recordFailure(token, definition.strings.stepFailed(error));
     } finally {
       if (token == _runToken) {
         isWalkBusy = false;
@@ -779,7 +809,11 @@ class AutomationPanelController extends ChangeNotifier
       flow: current.flow,
       variant: current.variant,
       mode: current.mode,
-      outcome: AutomationCatalogueText.english(variant.title, variant.name),
+      outcome: AutomationCatalogueText.read(
+        variant.title,
+        variant.name,
+        definition.strings.languageCode,
+      ),
       stepCount: actionCount,
       duration: _runWatch?.elapsed ?? Duration.zero,
       requests: _readRunRequests(),

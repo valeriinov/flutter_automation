@@ -22,6 +22,21 @@ repository root.
 - **Mock configuration file**: the file that declares the `MockSection` values, or
   `none` when the project has no mock.
   Example: `lib/automation/mock/catalog_mock_section.dart`.
+- **QA build**: the command that builds the app for testers: the flavor, the
+  entry point, `--dart-define=ENABLE_AUTOMATION_MARKING=true` and the define that
+  turns the mock on. Write `none` when the project has no QA panel. Example:
+  `fvm flutter build apk --flavor qa -t lib/main_qa.dart
+  --dart-define=ENABLE_AUTOMATION_MARKING=true --dart-define=ENABLE_MOCK=true`.
+- **QA catalogue**: the command that rebuilds the catalogue asset, with the asset
+  path and the recordings folder. The skills add `--check` to it. Write `none`
+  when the project has no QA panel. Example:
+  `fvm dart run tool/run_flows.dart --qa-catalogue assets/qa_catalogue.json
+  --recordings tool/recordings`.
+- **QA panel file**: the file that builds the panel with
+  `AutomationPanelDefinition.standard`, or `none`. Example: `lib/automation/qa_panel.dart`.
+- **Debug menu**: the file of the debug menu that holds the mock mode tile, and
+  the gesture that opens the menu, or `none`. Example:
+  `lib/debug/debug_menu.dart`, long press on the version label.
 - **Default flow**: the flow a skill walks when the user names none. Example:
   `login`.
 - **After an edit**: the commands that format and analyze after a Dart edit, in

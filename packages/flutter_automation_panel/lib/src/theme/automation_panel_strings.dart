@@ -1,356 +1,463 @@
+import 'package:flutter/widgets.dart';
+import 'package:flutter_automation_mock/flutter_automation_mock.dart';
+import 'package:flutter_automation_panel/src/panel/automation_panel_scope.dart';
+
 /// {@category Theme}
 ///
-/// Every text the panel shows. The panel is English only, and its widgets take
-/// their texts only from here.
-abstract final class AutomationPanelStrings {
+/// Every text the panel shows, in English.
+///
+/// A project that needs another language extends this class, overrides the
+/// getters and the methods, and gives the subclass to
+/// `AutomationPanelDefinition.strings`. The texts of the sections, the
+/// profiles and the catalogue come from the project in the language of
+/// [languageCode].
+class AutomationPanelStrings {
+  const AutomationPanelStrings();
+
+  /// The strings of the nearest panel, the English strings outside one.
+  ///
+  /// The call does not subscribe [context] to the panel.
+  static AutomationPanelStrings of(BuildContext context) {
+    final scope = context.getInheritedWidgetOfExactType<AutomationPanelScope>();
+
+    return scope?.notifier?.definition.strings ??
+        const AutomationPanelStrings();
+  }
+
+  /// Language code of the texts. The panel reads the texts of sections,
+  /// profiles and flows under this key.
+  String get languageCode => 'en';
+
   /// Badge of the QA button and of the panel head.
-  static const qaBadge = 'QA';
+  String get qaBadge => 'QA';
 
   /// Tooltip of the button that goes back one page.
-  static const back = 'Back';
+  String get back => 'Back';
 
   /// Tooltip of the cross of a sheet.
-  static const close = 'Close';
+  String get close => 'Close';
 
   /// Tooltip of the cross of the panel.
-  static const closePanel = 'Close panel';
+  String get closePanel => 'Close panel';
 
   /// Button that closes a text dialog with no change.
-  static const cancel = 'Cancel';
+  String get cancel => 'Cancel';
 
   /// Button that accepts the text of a dialog.
-  static const ok = 'OK';
+  String get ok => 'OK';
 
   /// Name of the state the mock starts with.
-  static const defaultName = 'Default';
+  String get defaultName => 'Default';
 
   /// Name of a value the tester typed.
-  static const custom = 'Custom';
+  String get custom => 'Custom';
 
   /// Status row of the panel when the tester chose no outcome.
-  static const defaultMock = 'Default mock';
+  String get defaultMock => 'Default mock';
 
   /// Status row of the panel when the tester changed the mock with no outcome
   /// or preset.
-  static const customMock = 'Custom mock';
+  String get customMock => 'Custom mock';
 
   /// Button that opens the presets.
-  static const presets = 'Presets';
+  String get presets => 'Presets';
 
   /// Button that clears every override.
-  static const reset = 'Reset';
+  String get reset => 'Reset';
 
   /// Label of the requests of a section.
-  static const requests = 'Requests';
+  String get requests => 'Requests';
 
   /// Label of the profile of a section.
-  static const profile = 'Profile';
+  String get profile => 'Profile';
 
   /// Label of the latency of the mock.
-  static const responseLatency = 'Response latency';
+  String get responseLatency => 'Response latency';
 
   /// Latency profile with no delay.
-  static const latencyFast = 'Fast';
+  String get latencyFast => 'Fast';
 
   /// Latency profile with the delays of a real server.
-  static const latencyRealistic = 'Real';
+  String get latencyRealistic => 'Real';
 
   /// Latency profile with long delays.
-  static const latencySlow = 'Slow';
+  String get latencySlow => 'Slow';
 
   /// Label of the latency choice of one request.
-  static const requestLatency = 'Latency of this request';
+  String get requestLatency => 'Latency of this request';
 
   /// Note of the latency profile with no delay.
-  static const noDelay = 'Answers at once, with no delay';
+  String get noDelay => 'Answers at once, with no delay';
 
   /// Note of a profile that needs a restart.
-  static const restartsTheApp = 'Restarts the app';
+  String get restartsTheApp => 'Restarts the app';
 
   /// Name of a request that never reaches the server.
-  static const noNetwork = 'No network';
+  String get noNetwork => 'No network';
 
   /// Tooltip of the button that removes an override.
-  static const removeOverride = 'Remove override';
+  String get removeOverride => 'Remove override';
 
   /// Title of the response sheet.
-  static const response = 'Response';
+  String get response => 'Response';
 
   /// Label of the status codes.
-  static const errorCode = 'Error code';
+  String get errorCode => 'Error code';
 
   /// Label of the backend error codes.
-  static const backendErrorCode = 'Backend error code';
+  String get backendErrorCode => 'Backend error code';
 
   /// Label and hint of the error message.
-  static const message = 'Message';
+  String get message => 'Message';
 
   /// Note of the no network option.
-  static const noNetworkNote = 'The request never reaches the server';
+  String get noNetworkNote => 'The request never reaches the server';
 
   /// Button that applies the override.
-  static const apply = 'Apply';
+  String get apply => 'Apply';
 
   /// Button that clears the override of the request.
-  static const useMockResponse = 'Use mock response';
+  String get useMockResponse => 'Use mock response';
 
   /// Title of the dialog that asks for a status code.
-  static const statusCode = 'Status code';
+  String get statusCode => 'Status code';
 
   /// Hint of the preset name field.
-  static const presetName = 'Preset name';
+  String get presetName => 'Preset name';
 
   /// Error of a preset name with a slash.
-  static const presetNameRule = 'Use a name without a slash.';
+  String get presetNameRule => 'Use a name without a slash.';
 
   /// Button that saves the current state as a preset.
-  static const saveCurrentState = 'Save current state';
+  String get saveCurrentState => 'Save current state';
 
   /// Tooltip of the button that deletes a preset.
-  static const deletePreset = 'Delete preset';
+  String get deletePreset => 'Delete preset';
 
   /// Title of the page that lists the changes of the mock.
-  static const changes = 'Changes';
+  String get changes => 'Changes';
 
   /// Text of the Changes page when the mock holds its defaults.
-  static const nothingChanged = 'Default mock. Nothing changed.';
+  String get nothingChanged => 'Default mock. Nothing changed.';
 
   /// Button that removes every change of the mock.
-  static const resetAll = 'Reset all';
+  String get resetAll => 'Reset all';
 
   /// Label of the profiles on the Changes page.
-  static const profiles = 'Profiles';
+  String get profiles => 'Profiles';
 
   /// Label of the scenario keys no section names, on the Changes page.
-  static const otherSettings = 'Other settings';
+  String get otherSettings => 'Other settings';
 
   /// Hint of the search over the profiles of a section.
-  static const profileSearchHint = 'Profile name or what it changes';
+  String get profileSearchHint => 'Profile name or what it changes';
 
   /// What the Default profile of a section means.
-  static const defaultProfileDescription =
+  String get defaultProfileDescription =>
       'The section answers with the seed data of the mock.';
 
   /// Button that empties the journal.
-  static const clearLog = 'Clear log';
+  String get clearLog => 'Clear log';
 
   /// Title of the sheet that asks to empty the journal.
-  static const clearLogQuestion = 'Clear the log?';
+  String get clearLogQuestion => 'Clear the log?';
 
   /// What emptying the journal removes and what it keeps.
-  static const clearLogMessage =
+  String get clearLogMessage =>
       'The log loses every request it holds. The mock settings stay.';
 
   /// Title of the sheet that asks to reset a mock with no change to list.
-  static const resetQuestion = 'Reset the mock?';
+  String get resetQuestion => 'Reset the mock?';
 
   /// What a reset of the mock removes.
-  static const resetMessage =
+  String get resetMessage =>
       'The outcome, the latency, the profiles and the request overrides go '
       'back to the defaults.';
 
   /// What applying a preset removes.
-  static const applyPresetMessage =
+  String get applyPresetMessage =>
       'The preset replaces every current setting of the mock.';
 
   /// Button that deletes a preset in its confirmation sheet.
-  static const delete = 'Delete';
+  String get delete => 'Delete';
 
   /// What deleting a preset means.
-  static const deletePresetMessage = 'You cannot get the preset back.';
+  String get deletePresetMessage => 'You cannot get the preset back.';
 
   /// Note of a confirmation sheet whose action restarts the app.
-  static const appRestarts = 'The app restarts.';
+  String get appRestarts => 'The app restarts.';
 
   /// Title of the sheet that asks to apply a change that restarts the app.
-  static const restartQuestion = 'Apply and restart the app?';
+  String get restartQuestion => 'Apply and restart the app?';
 
   /// What applying a change that restarts the app means.
-  static const restartMessage =
+  String get restartMessage =>
       'The change applies only after a restart of the app.';
 
   /// The error part of the note of a journal row answered by an override.
-  static const errorAnswer = 'error';
+  String get errorAnswer => 'error';
 
   /// Text of an empty journal.
-  static const noRequests = 'No requests yet';
+  String get noRequests => 'No requests yet';
 
   /// Title of the flows group with no group of its own.
-  static const flows = 'Flows';
+  String get flows => 'Flows';
+
+  /// Label of the tab that lists the flows.
+  String get flowsTab => 'Flows';
+
+  /// Label of the tab that lists the autoruns.
+  String get autorunTab => 'Autorun';
+
+  /// Label of the tab that lists the sections of the mock.
+  String get sectionsTab => 'Sections';
+
+  /// Label of the tab that lists the requests of the app.
+  String get logTab => 'Log';
+
+  /// Title of the screen that asks the tester to restart the app.
+  String get restartScreenTitle => 'Close and open the app';
+
+  /// Text of the screen that asks the tester to restart the app.
+  String get restartScreenNote =>
+      'The change applies when the app starts again.';
 
   /// Hint of the flow search field.
-  static const flowSearchHint = 'Flow, outcome or request';
+  String get flowSearchHint => 'Flow, outcome or request';
 
   /// Hint of the autorun search field.
-  static const autorunSearchHint = 'Flow or outcome';
+  String get autorunSearchHint => 'Flow or outcome';
 
   /// Hint of the section search field.
-  static const sectionSearchHint = 'Section or request';
+  String get sectionSearchHint => 'Section or request';
 
   /// Hint of the journal search field.
-  static const journalSearchHint = 'Method, path or status code';
+  String get journalSearchHint => 'Method, path or status code';
 
   /// Text of a search that finds nothing.
-  static const noMatches = 'Nothing matches the search';
+  String get noMatches => 'Nothing matches the search';
 
   /// What the response sheet of a journal row names the mock answer.
-  static const lastAnswer = 'last answer';
+  String get lastAnswer => 'last answer';
 
   /// Part of a flow description when the flow has a fork.
-  static const oneFork = '1 fork';
+  String get oneFork => '1 fork';
 
   /// Title of the mock mode switch.
-  static const mockMode = 'Mock mode';
+  String get mockMode => 'Mock mode';
 
   /// Note of the mock mode switch.
-  static const mockModeNote = 'The app restarts when you switch';
+  String get mockModeNote => 'The app restarts when you switch';
 
   /// Label of the flow choice.
-  static const flow = 'Flow';
+  String get flow => 'Flow';
 
   /// Label of the outcome choice.
-  static const outcome = 'Outcome';
+  String get outcome => 'Outcome';
 
   /// Label of the recording options.
-  static const recording = 'Recording';
+  String get recording => 'Recording';
 
   /// Title of the touch circles switch.
-  static const showTouches = 'Show touches';
+  String get showTouches => 'Show touches';
 
   /// Note of the touch circles switch.
-  static const showTouchesNote = 'A circle where you tap';
+  String get showTouchesNote => 'A circle where you tap';
 
   /// Title of the end signal switch.
-  static const signalAtEnd = 'Signal at the end';
+  String get signalAtEnd => 'Signal at the end';
 
   /// Note of the end signal switch.
-  static const signalAtEndNote = 'Vibration and sound';
+  String get signalAtEndNote => 'Vibration and sound';
 
   /// Note above the autorun button.
-  static const autorunNote =
+  String get autorunNote =>
       'The app restarts and runs the flow by itself. Start screen recording '
       'first.';
 
   /// Button that starts an autorun.
-  static const restartAndRun = 'Restart and run';
+  String get restartAndRun => 'Restart and run';
 
   /// Note of the branches of a fork on the flow map.
-  static const forkNote = 'The walk offers these branches at this step.';
+  String get forkNote => 'The walk offers these branches at this step.';
 
   /// Prefix of the outcome on the flow map.
-  static const resultPrefix = 'Result: ';
+  String get resultPrefix => 'Result: ';
 
   /// Note above the button that starts a walk.
-  static const walkRestartNote =
+  String get walkRestartNote =>
       'The app restarts. Open it again to begin the walk.';
 
   /// Button that starts a walk.
-  static const restartAndBegin = 'Restart and begin';
+  String get restartAndBegin => 'Restart and begin';
 
   /// Button that ends a walk or a run.
-  static const exit = 'Exit';
+  String get exit => 'Exit';
 
   /// Button that does the next step of a walk.
-  static const nextStep = 'Next step';
+  String get nextStep => 'Next step';
 
   /// Button that does the failed step again.
-  static const tryAgain = 'Try again';
+  String get tryAgain => 'Try again';
 
   /// Button that ends a walk and opens its summary.
-  static const finish = 'Finish';
+  String get finish => 'Finish';
 
   /// Button text while the player does a step.
-  static const working = 'Working…';
+  String get working => 'Working…';
 
   /// Label of the next action of a walk.
-  static const nextAction = 'Next action';
+  String get nextAction => 'Next action';
 
   /// Text of a walk with only waits left.
-  static const waitsLeft = 'The waits that are left';
+  String get waitsLeft => 'The waits that are left';
 
   /// Label of the branches of a fork.
-  static const chooseBranch = 'Choose the branch';
+  String get chooseBranch => 'Choose the branch';
 
   /// Text of a finished walk.
-  static const walkFinished =
-      'The flow is finished. Tap Finish to see the run.';
+  String get walkFinished => 'The flow is finished. Tap Finish to see the run.';
 
   /// Label of the requests of a run.
-  static const runRequests = 'Run requests';
+  String get runRequests => 'Run requests';
 
   /// Button that shares the report of a run.
-  static const shareLogs = 'Share logs';
+  String get shareLogs => 'Share logs';
 
   /// Button that starts the run again.
-  static const runAgain = 'Run again';
+  String get runAgain => 'Run again';
 
   /// Title of the run summary.
-  static const runFinished = 'Run finished';
+  String get runFinished => 'Run finished';
 
   /// The step part of a finished walk.
-  static const finished = 'finished';
-
-  /// Noun that counts steps.
-  static const stepNoun = 'step';
-
-  /// Noun that counts outcomes.
-  static const outcomeNoun = 'outcome';
-
-  /// Noun that counts overrides.
-  static const overrideNoun = 'override';
-
-  /// Noun that counts the requests of the journal.
-  static const requestNoun = 'request';
-
-  /// Noun that counts the changes of the mock.
-  static const changeNoun = 'change';
+  String get finished => 'finished';
 
   /// The start screen of a variant on the flow map.
-  static String startOf(String entry) => 'Start: $entry';
+  String startOf(String entry) => 'Start: $entry';
 
   /// The words of an override row.
-  static String overrideOf(String detail) => 'Override: $detail';
+  String overrideOf(String detail) => 'Override: $detail';
 
   /// The answer the mock gives to a request.
-  static String mockResponseOf(String description) {
+  String mockResponseOf(String description) {
     return 'Mock response: $description';
   }
 
   /// The head of the expanded walk plaque.
-  static String stepOf(int number, int count) => 'step $number of $count';
+  String stepOf(int number, int count) => 'step $number of $count';
 
   /// The step of the collapsed walk plaque.
-  static String stepShort(int number, int count) => '$number/$count';
+  String stepShort(int number, int count) => '$number/$count';
 
   /// The delay range of a latency profile, in milliseconds.
-  static String delayOf(int minMs, int maxMs) {
+  String delayOf(int minMs, int maxMs) {
     return 'Answers in $minMs–$maxMs ms';
   }
 
   /// The latency line of a request that follows every request.
-  static String asEveryRequest(String delay) => 'As every request. $delay';
+  String asEveryRequest(String delay) => 'As every request. $delay';
 
   /// The note of a journal row whose answer an override gave.
-  static String answeredByOverride(String detail) {
+  String answeredByOverride(String detail) {
     return 'Answered by an override: $detail';
   }
 
   /// The latency part of an override row.
-  static String latencyOverrideOf(String profile) => '$profile latency';
+  String latencyOverrideOf(String profile) => '$profile latency';
 
   /// How long a run took.
-  static String seconds(int seconds) => '$seconds s';
+  String seconds(int seconds) => '$seconds s';
 
   /// Title of the sheet that asks to apply the preset [name].
-  static String applyPresetQuestion(String name) => 'Apply "$name"?';
+  String applyPresetQuestion(String name) => 'Apply "$name"?';
 
   /// Title of the sheet that asks to delete the preset [name].
-  static String deletePresetQuestion(String name) => 'Delete "$name"?';
+  String deletePresetQuestion(String name) => 'Delete "$name"?';
 
   /// Title of the sheet that asks to reset the mock, with [changes] that
   /// counts its changes.
-  static String resetChangesQuestion(String changes) => 'Reset $changes?';
+  String resetChangesQuestion(String changes) => 'Reset $changes?';
 
   /// Why a step failed with an error the player did not expect.
-  static String stepFailed(Object error) => 'The step failed: $error';
+  String stepFailed(Object error) => 'The step failed: $error';
+
+  /// Why the player cannot play the step named [step]: it carries no action.
+  String stepHasNoAction(String step) {
+    return '"$step" carries no action. Build the catalogue again.';
+  }
+
+  /// Why the player cannot play the step named [step]: its [action] is
+  /// unknown to the player.
+  String stepHasUnknownAction(String step, String action) {
+    return '"$step" is a "$action" step. The player cannot play it.';
+  }
+
+  /// Why the player cannot play the step named [step]: it names no element.
+  String stepHasNoTarget(String step) => '"$step" names no element to act on.';
+
+  /// Why a wait failed: the target of [step] did not appear within
+  /// [timeout].
+  String stepDidNotAppear(String step, String timeout) {
+    return '"$step" did not appear in $timeout.';
+  }
+
+  /// Why a wait failed: the target of [step] did not go within [timeout].
+  String stepDidNotGo(String step, String timeout) {
+    return '"$step" did not go in $timeout.';
+  }
+
+  /// Why a wait failed: the target of [step] did not become tappable within
+  /// [timeout].
+  String stepDidNotBecomeTappable(String step, String timeout) {
+    return '"$step" did not become tappable in $timeout.';
+  }
+
+  /// Why a tap failed: the player cannot tap the target of [step].
+  String stepCannotBeTapped(String step) => '"$step" cannot be tapped.';
+
+  /// Why a text step failed: no text field has the focus.
+  String get noFocusedTextField {
+    return 'No text field has the focus. Tap the field before the text.';
+  }
+
+  /// Why a walk ended: the tester stopped it.
+  String get walkStopped => 'The walk stopped.';
+
+  /// The words for a timeout of [milliseconds], such as `500 ms`.
+  String timeoutMilliseconds(int milliseconds) => '$milliseconds ms';
+
+  /// The words for a timeout of [seconds], such as `5 s`.
+  String timeoutSeconds(int seconds) => '$seconds s';
+
+  /// Name of the latency [profile].
+  String latencyLabel(MockLatencyProfile profile) {
+    return switch (profile) {
+      MockLatencyProfile.fast => latencyFast,
+      MockLatencyProfile.realistic => latencyRealistic,
+      MockLatencyProfile.slow => latencySlow,
+    };
+  }
+
+  /// Title of the sheet that picks a profile of the section [sectionTitle].
+  String profileSheetTitle(String sectionTitle) => '$sectionTitle profile';
+
+  /// The words that count the steps, such as `1 step` or `3 steps`.
+  String stepCount(int count) => _countOf(count, 'step');
+
+  /// The words that count the outcomes of a flow.
+  String variantCount(int count) => _countOf(count, 'outcome');
+
+  /// The words that count the overrides of the panel.
+  String overrideCount(int count) => _countOf(count, 'override');
+
+  /// The words that count the requests of the journal.
+  String requestCount(int count) => _countOf(count, 'request');
+
+  /// The words that count the changes of the mock.
+  String changeCount(int count) => _countOf(count, 'change');
+
+  String _countOf(int count, String noun) {
+    return '$count ${count == 1 ? noun : '${noun}s'}';
+  }
 }

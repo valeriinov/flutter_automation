@@ -147,6 +147,7 @@ class _AutomationPanelLauncherState extends State<AutomationPanelLauncher> {
                   player: controller.player,
                   position: _position ?? _resolveStartPosition(size, padding),
                   theme: theme,
+                  strings: controller.definition.strings,
                   wrapButton: widget.wrapButton,
                   onPressed: controller.openPanel,
                   onDragged: (delta) => _drag(delta, size, padding),
@@ -282,9 +283,12 @@ class _WalkStripLayerState extends State<_WalkStripLayer> {
             data: widget.controller.definition.theme.toThemeData(),
             child: Material(
               type: MaterialType.transparency,
-              child: AutomationWalkStrip(
+              child: AutomationPanelScope(
                 controller: widget.controller,
-                onDragged: _drag,
+                child: AutomationWalkStrip(
+                  controller: widget.controller,
+                  onDragged: _drag,
+                ),
               ),
             ),
           ),
@@ -307,6 +311,7 @@ class _QaButton extends StatelessWidget {
   final AutomationFlowPlayer player;
   final Offset position;
   final AutomationPanelTheme theme;
+  final AutomationPanelStrings strings;
   final Widget Function(Widget button)? wrapButton;
   final VoidCallback onPressed;
   final ValueChanged<Offset> onDragged;
@@ -315,6 +320,7 @@ class _QaButton extends StatelessWidget {
     required this.player,
     required this.position,
     required this.theme,
+    required this.strings,
     required this.wrapButton,
     required this.onPressed,
     required this.onDragged,
@@ -342,7 +348,7 @@ class _QaButton extends StatelessWidget {
           ],
         ),
         child: Text(
-          AutomationPanelStrings.qaBadge,
+          strings.qaBadge,
           style: theme.textStyle(
             size: 14,
             weight: FontWeight.w700,
@@ -414,20 +420,23 @@ class _RunDoneLayer extends StatelessWidget {
           bottom: false,
           child: Align(
             alignment: Alignment.bottomCenter,
-            child: AutomationRunDoneSheet(
-              outcome: summary.outcome,
-              stepCount: summary.stepCount,
-              duration: summary.duration,
-              requests: summary.requests,
-              onShare: _resolveShare(summary),
-              onRunAgain: () => controller.startWalk(
-                summary.flow,
-                summary.variant,
-                mode: summary.mode,
-                shouldShowTouches: summary.shouldShowTouches,
-                shouldSignalEnd: summary.shouldSignalEnd,
+            child: AutomationPanelScope(
+              controller: controller,
+              child: AutomationRunDoneSheet(
+                outcome: summary.outcome,
+                stepCount: summary.stepCount,
+                duration: summary.duration,
+                requests: summary.requests,
+                onShare: _resolveShare(context, summary),
+                onRunAgain: () => controller.startWalk(
+                  summary.flow,
+                  summary.variant,
+                  mode: summary.mode,
+                  shouldShowTouches: summary.shouldShowTouches,
+                  shouldSignalEnd: summary.shouldSignalEnd,
+                ),
+                onExit: controller.exitWalk,
               ),
-              onExit: controller.exitWalk,
             ),
           ),
         ),
@@ -435,7 +444,10 @@ class _RunDoneLayer extends StatelessWidget {
     );
   }
 
-  VoidCallback? _resolveShare(AutomationRunSummary summary) {
+  VoidCallback? _resolveShare(
+    BuildContext context,
+    AutomationRunSummary summary,
+  ) {
     final share = controller.definition.onShare;
     final report = summary.report;
 
@@ -443,6 +455,6 @@ class _RunDoneLayer extends StatelessWidget {
       return null;
     }
 
-    return () => share(report);
+    return () => share(context, report);
   }
 }

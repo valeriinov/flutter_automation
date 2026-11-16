@@ -47,15 +47,24 @@ final class CatalogSettings {
 
 final catalogSection = MockSection<CatalogSettings>(
   name: 'catalog',
+  title: AutomationLocalizedText({'en': 'Catalog'}),
   fromJson: CatalogSettings.fromJson,
   profiles: {
-    'empty': (settings) => settings.copyWith(itemCount: 0),
+    'empty': MockProfile(
+      (settings) => settings.copyWith(itemCount: 0),
+      title: AutomationLocalizedText({'en': 'Empty shelf'}),
+      description: AutomationLocalizedText({'en': 'The catalog has no items.'}),
+    ),
   },
 );
 ```
 
-A profile is a function over the settings. The key of a setting is written once,
-in the settings class. `catalogSection.profile('empty')` gives a `MockOverride`.
+A profile is a `MockProfile`: a function over the settings, run by
+`MockProfile.update(settings)`, and the texts that the QA panel shows for it. The `title` of a section and of a profile is required. The
+`description` is optional. An `AutomationLocalizedText` holds one text per
+language code, such as `{'en': '...', 'uk': '...'}`. The panel reads the
+`languageCode` of its strings and falls back to `en`, then to the first text. The key of a setting is
+written once, in the settings class. `catalogSection.profile('empty')` gives a `MockOverride`.
 `catalogSection.override((settings) => ...)` gives one for a function the flow
 holds. `MockOverride.latency(MockLatencyProfile.slow)`, `.latencySeed(7)`,
 `.failures({...})` and `.latencies({...})` set the latency profile, its seed,
@@ -161,7 +170,11 @@ final class CatalogMockApi implements MockApi {
 
   @override
   List<MockApiEndpoint> get endpoints => [
-    MockApiEndpoint(path: '/catalog/items', respond: _respondItems),
+    MockApiEndpoint(
+      path: '/catalog/items',
+      title: AutomationLocalizedText({'en': 'Catalog items'}),
+      respond: _respondItems,
+    ),
   ];
 
   MockApiResponse _respondItems(MockApiRequest request) {

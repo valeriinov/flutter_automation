@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_automation_mock/flutter_automation_mock.dart';
 import 'package:flutter_automation_panel/src/blocks/automation_code_badge.dart';
-import 'package:flutter_automation_panel/src/blocks/automation_latency_note.dart';
 import 'package:flutter_automation_panel/src/theme/automation_panel_theme.dart';
 import 'package:flutter_automation_panel/src/theme/automation_panel_strings.dart';
 
@@ -56,6 +55,8 @@ class AutomationRequestRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final strings = AutomationPanelStrings.of(context);
+
     if (failure == null && latency == null) {
       return _PlainRow(
         method: method,
@@ -69,7 +70,11 @@ class AutomationRequestRow extends StatelessWidget {
     return _OverrideRow(
       method: method,
       path: path,
-      description: describeOverride(failure: failure, latency: latency),
+      description: describeOverride(
+        strings: strings,
+        failure: failure,
+        latency: latency,
+      ),
       onPressed: onPressed,
       onClearOverride: onClearOverride,
     );
@@ -79,24 +84,27 @@ class AutomationRequestRow extends StatelessWidget {
   ///
   /// The [failure] parameter is the failure of the request.
   /// The [latency] parameter is the latency profile of the request alone.
+  /// The [strings] parameter holds the words.
   static String describeOverride({
+    required AutomationPanelStrings strings,
     MockApiFailure? failure,
     MockLatencyProfile? latency,
   }) {
-    final latencyLabel = AutomationLatencyNote.labels[latency];
-
-    return AutomationPanelStrings.overrideOf(
+    return strings.overrideOf(
       [
-        if (failure != null) _describeFailure(failure),
-        if (latencyLabel != null)
-          AutomationPanelStrings.latencyOverrideOf(latencyLabel),
+        if (failure != null) _describeFailure(strings, failure),
+        if (latency != null)
+          strings.latencyOverrideOf(strings.latencyLabel(latency)),
       ].join(' · '),
     );
   }
 
-  static String _describeFailure(MockApiFailure failure) {
+  static String _describeFailure(
+    AutomationPanelStrings strings,
+    MockApiFailure failure,
+  ) {
     if (failure.isConnectionError) {
-      return AutomationPanelStrings.noNetwork;
+      return strings.noNetwork;
     }
 
     final detail = failure.errorCode ?? failure.message;
@@ -212,6 +220,7 @@ class _OverrideRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final strings = AutomationPanelStrings.of(context);
     final theme = AutomationPanelTheme.of(context);
     final radius = BorderRadius.circular(AutomationPanelTheme.buttonRadius);
 
@@ -261,7 +270,7 @@ class _OverrideRow extends StatelessWidget {
               ),
               child: IconButton(
                 onPressed: onClearOverride,
-                tooltip: AutomationPanelStrings.removeOverride,
+                tooltip: strings.removeOverride,
                 icon: Icon(Icons.close, size: 20, color: theme.danger),
               ),
             ),
