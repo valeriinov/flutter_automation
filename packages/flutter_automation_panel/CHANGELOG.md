@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 0.8.3
 
 - The Autorun, Sections and Log tabs show a search field, like the Flows tab.
   Autorun looks through the flow and outcome titles, Sections through the
