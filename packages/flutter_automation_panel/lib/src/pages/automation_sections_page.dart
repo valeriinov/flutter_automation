@@ -70,6 +70,8 @@ class _AutomationSectionsPageState extends State<AutomationSectionsPage> {
           selected: controller.mock.latency.profile,
           onChanged: (profile) => _selectLatency(controller, profile),
         ),
+        const SizedBox(height: AutomationPanelTheme.gapSmall),
+        _LatencyNote(profile: controller.mock.latency.profile),
         for (final section in widget.sections.where(_matchesQuery)) ...[
           const SizedBox(height: AutomationPanelTheme.gapMedium),
           _SectionCard(section: section, controller: controller),
@@ -148,6 +150,35 @@ MockScenario _scenarioWithProfile(
     ...MockScenario.fromJson(json).overrides,
     if (profileName != null) mockSection.profile(profileName),
   ]);
+}
+
+class _LatencyNote extends StatelessWidget {
+  final MockLatencyProfile profile;
+
+  const _LatencyNote({required this.profile});
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = AutomationPanelTheme.of(context);
+
+    return Text(
+      _describe(),
+      style: theme.textStyle(size: 13, color: theme.textSecondary),
+    );
+  }
+
+  String _describe() {
+    final maxDelay = profile.maxDelay;
+
+    if (maxDelay == Duration.zero) {
+      return AutomationPanelStrings.noDelay;
+    }
+
+    return AutomationPanelStrings.delayOf(
+      profile.minDelay.inMilliseconds,
+      maxDelay.inMilliseconds,
+    );
+  }
 }
 
 class _SectionCard extends StatelessWidget {

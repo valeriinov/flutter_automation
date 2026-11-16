@@ -30,6 +30,10 @@ abstract final class AutomationPanelStrings {
   /// Status row of the panel when the tester chose no outcome.
   static const defaultMock = 'Default mock';
 
+  /// Status row of the panel when the tester changed the mock with no outcome
+  /// or preset.
+  static const customMock = 'Custom mock';
+
   /// Button that opens the presets.
   static const presets = 'Presets';
 
@@ -53,6 +57,9 @@ abstract final class AutomationPanelStrings {
 
   /// Latency profile with long delays.
   static const latencySlow = 'Slow';
+
+  /// Note of the latency profile with no delay.
+  static const noDelay = 'Answers at once, with no delay';
 
   /// Note of a profile that needs a restart.
   static const restartsTheApp = '⟳ Restarts the app';
@@ -242,6 +249,11 @@ abstract final class AutomationPanelStrings {
 
   /// The step of the collapsed walk plaque.
   static String stepShort(int number, int count) => '$number/$count';
+
+  /// The delay range of a latency profile, in milliseconds.
+  static String delayOf(int minMs, int maxMs) {
+    return 'Answers in $minMs–$maxMs ms';
+  }
 
   /// How long a run took.
   static String seconds(int seconds) => '$seconds s';

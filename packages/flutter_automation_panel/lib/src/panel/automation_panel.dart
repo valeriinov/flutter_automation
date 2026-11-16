@@ -56,7 +56,7 @@ class _AutomationPanelState extends State<AutomationPanel> {
     AutomationPanelController controller,
   ) {
     return AutomationPanelStatus(
-      text: controller.outcomeTitle ?? AutomationPanelStrings.defaultMock,
+      text: controller.outcomeTitle ?? _resolveStateTitle(controller),
       overrideCount: controller.overrideCount,
       isChanged: controller.isChanged,
       actions: [
@@ -71,6 +71,12 @@ class _AutomationPanelState extends State<AutomationPanel> {
           ),
       ],
     );
+  }
+
+  String _resolveStateTitle(AutomationPanelController controller) {
+    return controller.isChanged
+        ? AutomationPanelStrings.customMock
+        : AutomationPanelStrings.defaultMock;
   }
 
   Future<void> _openPresets(

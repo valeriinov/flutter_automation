@@ -1,5 +1,13 @@
 # Changelog
 
+## Unreleased
+
+- A line under Response latency tells the delay of the chosen profile in
+  milliseconds, such as `Answers in 150–400 ms`.
+- The status row reads `Custom mock` when the tester changed the mock
+  with no outcome or preset, such as a profile or the latency on the
+  Sections tab. It reads `Default mock` only while nothing is changed.
+
 ## 0.8.3
 
 - The Autorun, Sections and Log tabs show a search field, like the Flows tab.

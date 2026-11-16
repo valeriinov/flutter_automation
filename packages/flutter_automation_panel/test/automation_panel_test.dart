@@ -33,6 +33,8 @@ void main() {
     _automationSectionsPage_should_replaceTheProfileOfASection();
     _automationSectionsPage_should_offerTheDefaultProfile();
     _automationSectionsPage_should_nameAnUnknownSettingCustom();
+    _automationPanel_should_nameAChangedMockWithNoOutcomeCustom();
+    _automationSectionsPage_should_describeTheDelayOfTheLatency();
     _automationPanelLauncher_should_sendTheBackButtonToThePanel();
     _automationPresetsSheet_should_rejectABadName();
     _automationAutorunPage_should_narrowTheFlowsBySearch();
@@ -597,6 +599,50 @@ void _automationSectionsPage_should_offerTheDefaultProfile() {
   });
 }
 
+void _automationPanel_should_nameAChangedMockWithNoOutcomeCustom() {
+  testWidgets(
+    'AutomationPanel should name a changed mock with no outcome custom',
+    (tester) async {
+      await _pumpSections(tester);
+
+      expect(find.text(AutomationPanelStrings.defaultMock), findsOneWidget);
+
+      await tester.tap(find.text(AutomationPanelStrings.latencySlow));
+      await _settle(tester);
+
+      expect(find.text(AutomationPanelStrings.defaultMock), findsNothing);
+      expect(find.text(AutomationPanelStrings.customMock), findsOneWidget);
+    },
+  );
+}
+
+void _automationSectionsPage_should_describeTheDelayOfTheLatency() {
+  testWidgets(
+    'AutomationSectionsPage should describe the delay of the latency',
+    (tester) async {
+      await _pumpSections(tester);
+
+      expect(
+        find.text(AutomationPanelStrings.delayOf(150, 400)),
+        findsOneWidget,
+      );
+
+      await tester.tap(find.text(AutomationPanelStrings.latencySlow));
+      await _settle(tester);
+
+      expect(
+        find.text(AutomationPanelStrings.delayOf(1000, 3000)),
+        findsOneWidget,
+      );
+
+      await tester.tap(find.text(AutomationPanelStrings.latencyFast));
+      await _settle(tester);
+
+      expect(find.text(AutomationPanelStrings.noDelay), findsOneWidget);
+    },
+  );
+}
+
 void _automationSectionsPage_should_nameAnUnknownSettingCustom() {
   testWidgets('AutomationSectionsPage should name an unknown setting Custom', (
     tester,
@@ -732,6 +778,7 @@ void _automationJournalPage_should_narrowTheRequestsBySearch() {
         'path': '/auth/otp',
         'status': 500,
       });
+
     await tester.pump();
     await tester.enterText(find.byType(TextField), '500');
     await tester.pump();
