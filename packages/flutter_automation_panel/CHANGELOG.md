@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 0.8.4
 
 - A line under Response latency tells the delay of the chosen profile in
   milliseconds, such as `Answers in 150–400 ms`.
