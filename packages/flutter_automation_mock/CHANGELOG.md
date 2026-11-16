@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.8.7
+
+- Version bump with `flutter_automation_panel` 0.8.7.
+
 ## 0.8.6
 
 - The journal marks an answer that an override of the tester gave: the record
