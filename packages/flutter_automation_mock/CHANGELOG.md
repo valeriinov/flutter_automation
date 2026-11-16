@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 0.8.5
 
 - New scenario key `latencies`: path to the name of a latency profile. That
   path answers after the delay of its own profile; every other path keeps

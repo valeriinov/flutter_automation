@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 0.8.5
 
 - The Response sheet sets the latency of one request: Default (the latency of
   every request), Fast, Real or Slow, with the delay line under it. Apply with
