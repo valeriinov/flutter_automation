@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.9.0
+
+- Version bump with `flutter_automation_panel` 0.9.0.
+
 ## 0.8.7
 
 - Version bump with `flutter_automation_panel` 0.8.7.
