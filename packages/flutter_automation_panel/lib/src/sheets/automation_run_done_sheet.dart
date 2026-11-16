@@ -12,7 +12,8 @@ import 'package:flutter_automation_panel/src/theme/automation_panel_theme.dart';
 ///
 /// The sheet that ends a run: what the run was, how long it took and the
 /// requests it sent. The tester shares the logs, runs again or leaves the run.
-/// The buttons stay at the bottom, and the requests scroll above them. Exit is
+/// The sheet stands still and has no grabber. The buttons stay at the bottom,
+/// and the requests scroll above them. Exit is
 /// the main button; Share logs and Run again are second actions.
 ///
 /// The sheet takes the data of a stored report, so a project shows it after a
@@ -54,6 +55,7 @@ class AutomationRunDoneSheet extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return AutomationPanelSheet(
+      hasGrabber: false,
       header: _Header(
         outcome: outcome,
         stepCount: stepCount,

@@ -7,7 +7,8 @@ import 'package:flutter_automation_panel/src/theme/automation_panel_strings.dart
 /// {@category Widgets}
 ///
 /// The content of a bottom sheet of the panel: a grabber, a title with a
-/// cross, and the [child].
+/// cross, and the [child]. A sheet that the tester cannot drag, such as the end
+/// of a run, sets [hasGrabber] to `false`.
 ///
 /// The head stands still. The [child] scrolls only when it does not fit. It
 /// does not stretch.
@@ -31,12 +32,16 @@ class AutomationPanelSheet extends StatelessWidget {
   /// Content pinned under [child], missing when the sheet has none.
   final Widget? footer;
 
+  /// Whether the sheet shows the grabber.
+  final bool hasGrabber;
+
   const AutomationPanelSheet({
     required this.child,
     this.title,
     this.header,
     this.onClose,
     this.footer,
+    this.hasGrabber = true,
     super.key,
   });
 
@@ -67,16 +72,17 @@ class AutomationPanelSheet extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           spacing: AutomationPanelTheme.gapMedium,
           children: [
-            Center(
-              child: Container(
-                width: 36,
-                height: 4,
-                decoration: BoxDecoration(
-                  color: theme.lineStrong,
-                  borderRadius: BorderRadius.circular(2),
+            if (hasGrabber)
+              Center(
+                child: Container(
+                  width: 36,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: theme.lineStrong,
+                    borderRadius: BorderRadius.circular(2),
+                  ),
                 ),
               ),
-            ),
             ?header,
             if (title != null)
               Row(

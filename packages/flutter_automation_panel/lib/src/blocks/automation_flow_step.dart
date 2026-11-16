@@ -4,8 +4,8 @@ import 'package:flutter_automation_panel/src/theme/automation_panel_theme.dart';
 /// {@category Widgets}
 ///
 /// One step of a flow: a numbered circle on a rail and a card with the title
-/// and the requests of the step. A step that forks the flow fills its circle
-/// with the accent.
+/// and the requests of the step. The circle stands at the vertical centre of
+/// the card. A step that forks the flow fills its circle with the accent.
 class AutomationFlowStep extends StatelessWidget {
   static const _circleSize = 28.0;
   static const _railLineWidth = 2.0;
@@ -45,7 +45,12 @@ class AutomationFlowStep extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         spacing: AutomationPanelTheme.gapMedium,
         children: [
-          _Rail(number: number, isFilled: isFork || isCurrent, isLast: isLast),
+          _Rail(
+            number: number,
+            isFilled: isFork || isCurrent,
+            isFirst: number == 1,
+            isLast: isLast,
+          ),
           Expanded(
             child: _Card(title: title, children: children),
           ),
@@ -56,13 +61,17 @@ class AutomationFlowStep extends StatelessWidget {
 }
 
 class _Rail extends StatelessWidget {
+  static const _lineGap = 4.0;
+
   final int number;
   final bool isFilled;
+  final bool isFirst;
   final bool isLast;
 
   const _Rail({
     required this.number,
     required this.isFilled,
+    required this.isFirst,
     required this.isLast,
   });
 
@@ -74,6 +83,12 @@ class _Rail extends StatelessWidget {
       width: AutomationFlowStep._circleSize,
       child: Column(
         children: [
+          Expanded(
+            child: _RailLine(
+              isShown: !isFirst,
+              margin: const EdgeInsets.only(bottom: _lineGap),
+            ),
+          ),
           Container(
             width: AutomationFlowStep._circleSize,
             height: AutomationFlowStep._circleSize,
@@ -95,16 +110,38 @@ class _Rail extends StatelessWidget {
               ),
             ),
           ),
-          if (!isLast)
-            Expanded(
-              child: Container(
-                width: AutomationFlowStep._railLineWidth,
-                margin: const EdgeInsets.symmetric(vertical: 4),
-                color: theme.lineStrong,
-              ),
+          Expanded(
+            child: _RailLine(
+              isShown: !isLast,
+              margin: const EdgeInsets.only(top: _lineGap),
             ),
+          ),
+          SizedBox(
+            height: AutomationPanelTheme.gapSmall,
+            child: _RailLine(isShown: !isLast, margin: EdgeInsets.zero),
+          ),
         ],
       ),
+    );
+  }
+}
+
+class _RailLine extends StatelessWidget {
+  final bool isShown;
+  final EdgeInsets margin;
+
+  const _RailLine({required this.isShown, required this.margin});
+
+  @override
+  Widget build(BuildContext context) {
+    if (!isShown) {
+      return const SizedBox.shrink();
+    }
+
+    return Container(
+      width: AutomationFlowStep._railLineWidth,
+      margin: margin,
+      color: AutomationPanelTheme.of(context).lineStrong,
     );
   }
 }
