@@ -58,6 +58,11 @@ Two things keep it so.
    body. A wrapper that takes the constant as a parameter, or builds the mock
    inside its own `async` body, hides it from the AOT compiler.
 
+   A host with the QA panel passes `isMockEnabled && bootstrap.isOnMock`. The
+   left operand is the compile-time constant. `bootstrap.isOnMock` is the part
+   that the app reads at run time. The constant still lets the compiler drop the
+   mock from a build without the define.
+
 A check on a release build of an Android app:
 
 ```shell

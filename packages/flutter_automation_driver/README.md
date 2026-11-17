@@ -53,6 +53,8 @@ launch ends.
   platform. The request `{"texts": true, "widgets": true}` adds the texts and
   the widget types of the frame. Without the flags the command does not walk
   the widget tree.
+- `keyboard.read` answers `{"inset": <height>}`, the height of the keyboard inset. The
+  runner reads it to wait for the system keyboard in a capture.
 - `locale.apply` takes `{"locale": <language code>}` and calls the
   `localeApplier` of the project. The runner sends it for `--locale`. The
   command needs no mock. Without a `localeApplier` the command is not

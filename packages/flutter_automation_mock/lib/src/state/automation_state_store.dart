@@ -9,7 +9,8 @@ import 'package:flutter_automation_mock/src/state/automation_state.dart';
 /// the runs, in one folder of the project.
 ///
 /// Only the code of the package writes and reads them. `state.json` holds the
-/// mode, the scenario, the substitutes and the walk in progress. The launch
+/// mode, the scenario, the walk in progress and the outcome failures. The
+/// scenario holds the failures and latencies of single paths. The launch
 /// reads it and keeps it. `presets/<name>.json` holds a scenario the tester
 /// saved. `runs/<id>/report.json` holds the report of a run; the store keeps
 /// the newest [maxRuns].

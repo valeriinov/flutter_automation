@@ -21,6 +21,19 @@ final catalogue = await AutomationCatalogueAsset.load(
   'assets/qa_catalogue.json',
 );
 
+// The `fake` builder of `mock.substitute` assigns the backend
+// (flutter_automation_mock README, Answer requests).
+MockScenarioBackend? backend;
+
+final mock = await AutomationMock.init(
+  isEnabled: isMockEnabled && bootstrap.isOnMock,
+  scenarioDirectory: temporaryDirectory.path,
+  stateStore: bootstrap.store,
+  sections: [catalogSection],
+  onScenarioApplied: (scenario) => backend?.rebuild(),
+  onScenarioUpdated: (scenario) => backend?.rebuild(),
+);
+
 final controller = AutomationPanelController(
   AutomationPanelDefinition.standard(
     mock: mock,
@@ -29,6 +42,9 @@ final controller = AutomationPanelController(
     sections: [
       AutomationSectionPanel.fromSection(catalogSection, api: catalogApi),
     ],
+    backendErrorCodes: const ['rateLimited'],
+    readEndpointResolver: () =>
+        backend?.endpointResolver ?? MockApiEndpointResolver(const []),
     onShare: (context, report) => shareFile(context, report),
   ),
 );
@@ -44,6 +60,10 @@ MaterialApp(
   ),
 );
 ```
+
+`onScenarioUpdated` runs after the panel changes the scenario. Without it, a
+latency profile set in the panel takes effect only after a rebuild of the
+backend.
 
 `AutomationModeBootstrap.restore` reads the saved mode before the dependency
 injection. Build the mock with `isEnabled: isMockEnabled && bootstrap.isOnMock`
@@ -63,6 +83,27 @@ title and the description of the `MockSection`, the `MockProfile` titles and
 descriptions, and the `title` of each `MockApiEndpoint`. A card of a section
 that has an api and no `MockSection` uses `AutomationSectionPanel(title: ...,
 api: ...)`.
+
+## Backend error codes
+
+The response sheet of a request offers a `Backend error code` list.
+`AutomationPanelDefinition.backendErrorCodes` holds the codes that every
+request can answer with. `MockApiEndpoint.backendErrorCodes` holds the codes
+that only that endpoint answers with. The sheet offers the codes of the
+definition first, then the codes of the endpoint. The codes of the endpoint
+reach the sheet only with `readEndpointResolver` of the definition, for
+example `() => backend.endpointResolver`. Without it the sheet offers only the
+codes of the definition.
+
+## Overrides of a request
+
+The controller keeps one failure and one latency profile for each request
+path. `failureOf`, `latencyOf` and `backendErrorCodesOf` read them for a path.
+`setFailure`, `setLatency` and `setResponse` write them, and `clearOverride`
+removes both. A `null` failure or a `null` latency clears the override, also
+when the override stands on the endpoint path of the request. A failure or a
+latency of a single path applies at once. Matching a request path to an
+endpoint with a path id needs `readEndpointResolver` of the definition.
 
 ## Language
 

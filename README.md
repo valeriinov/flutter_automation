@@ -13,7 +13,8 @@ journey from the command line.
 - A mock backend puts the app into a known state without a remote
   environment. The flow names the state; the runner pushes it into the app
   before the first step.
-- A release build holds none of it: the switches are compile-time constants.
+- A build without those defines holds none of it: the switches are compile-time
+  constants.
 
 ## How the parts connect
 
@@ -42,7 +43,7 @@ flowchart LR
   end
 
   runner <-->|"VM service, ext.flutter.driver"| ext
-  runner -.->|"scenario.apply, journal.read, screen.read, locale.apply"| cmds
+  runner -.->|"scenario.apply, journal.read, screen.read, keyboard.read, locale.apply, locale.save"| cmds
 ```
 
 The runner never links to the app. It talks to the driver extension through
@@ -73,36 +74,36 @@ dependencies:
     git:
       url: https://github.com/valeriinov/flutter_automation.git
       path: packages/flutter_automation
-      ref: 0.9.1
+      ref: 0.9.2
   flutter_automation_driver:
     git:
       url: https://github.com/valeriinov/flutter_automation.git
       path: packages/flutter_automation_driver
-      ref: 0.9.1
+      ref: 0.9.2
   flutter_automation_mock:
     git:
       url: https://github.com/valeriinov/flutter_automation.git
       path: packages/flutter_automation_mock
-      ref: 0.9.1
+      ref: 0.9.2
   # Only for an app that uses Dio.
   flutter_automation_mock_dio:
     git:
       url: https://github.com/valeriinov/flutter_automation.git
       path: packages/flutter_automation_mock_dio
-      ref: 0.9.1
+      ref: 0.9.2
   # Only with the mock, for the QA panel.
   flutter_automation_panel:
     git:
       url: https://github.com/valeriinov/flutter_automation.git
       path: packages/flutter_automation_panel
-      ref: 0.9.1
+      ref: 0.9.2
 
 dev_dependencies:
   flutter_automation_runner:
     git:
       url: https://github.com/valeriinov/flutter_automation.git
       path: packages/flutter_automation_runner
-      ref: 0.9.1
+      ref: 0.9.2
 ```
 
 Skip `flutter_automation_mock`, `flutter_automation_mock_dio` and
@@ -300,8 +301,11 @@ fvm dart run melos run test
 fvm dart run melos run format
 ```
 
-The five packages and `example/` are members of one pub workspace. CI runs the
-same commands and builds the example (`.github/workflows/ci.yml`).
+The six packages and `example/` are members of one pub workspace. CI runs
+`melos run analyze`, then `flutter test --exclude-tags golden` in each package
+that has tests, and builds the debug apk of the example
+(`.github/workflows/ci.yml`). CI skips the format check and the golden tests,
+and runs the tests without `ENABLE_AUTOMATION_MARKING`.
 
 ## License
 

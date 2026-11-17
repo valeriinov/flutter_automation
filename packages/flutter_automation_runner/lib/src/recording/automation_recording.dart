@@ -161,8 +161,8 @@ final class AutomationRecordedStep {
 /// mock answered in each step.
 ///
 /// A capture run and a plain run with `--record` write the same schema. The
-/// capture run adds the names of its screenshots. The atlas and the catalogue
-/// of the panel read it.
+/// capture run adds the names of its screenshots. The catalogue of the panel
+/// reads it.
 final class AutomationRecording {
   /// Name of the flow.
   final String flow;
