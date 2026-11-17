@@ -128,7 +128,8 @@ code in the api that owns the path.
 
 **Add a mock api for a section that has none.** Write a class that implements
 `MockApi` with one `MockApiEndpoint` per endpoint it owns (`path`, `respond`,
-`hasPathId` for a path that ends in an id, `title` for the name in the QA panel). Add it to the list that the project
+`hasPathId` for a path that ends in an id, `title` for the name in the QA panel,
+`backendErrorCodes` for the error codes that only this endpoint answers with). Add it to the list that the project
 passes to the transport, and add the state it reads to the mock state. The
 `MockApiEndpointResolver` sends a path that no api owns to the network, and
 `MockApiTransport` answers the rest. The Dio adapter of

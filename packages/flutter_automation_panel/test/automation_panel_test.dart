@@ -38,6 +38,8 @@ void main() {
     _automationResponseSheet_should_applyALatencyWithTheMockAnswer();
     _automationResponseSheet_should_clearBothOverridesOnUseMockResponse();
     _automationResponseSheet_should_dropTheErrorOnASecondTapOfItsCode();
+    _automationResponseSheet_should_followEveryRequestOnATapOfItsLatency();
+    _automationResponseSheet_should_keepALatencyEqualToEveryRequest();
     _automationPanelLauncher_should_sendTheBackButtonToThePanel();
     _automationPresetsSheet_should_rejectABadName();
     _automationAutorunPage_should_narrowTheFlowsBySearch();
@@ -724,6 +726,59 @@ void _automationResponseSheet_should_dropTheErrorOnASecondTapOfItsCode() {
       await tester.pump();
 
       expect(applied, [(null, MockLatencyProfile.slow)]);
+    },
+  );
+}
+
+void _automationResponseSheet_should_followEveryRequestOnATapOfItsLatency() {
+  testWidgets(
+    'AutomationResponseSheet should follow every request on a tap of its '
+    'latency',
+    (tester) async {
+      final applied = <(MockApiFailure?, MockLatencyProfile?)>[];
+
+      await _pumpResponseSheet(
+        tester,
+        applied,
+        initialLatency: MockLatencyProfile.slow,
+      );
+      await tester.tap(find.text(sampleStrings.latencyRealistic));
+      await tester.pump();
+
+      expect(
+        find.text(
+          sampleStrings.asEveryRequest(sampleStrings.delayOf(150, 400)),
+        ),
+        findsOne,
+      );
+
+      await tester.tap(find.text(sampleStrings.apply));
+      await tester.pump();
+
+      expect(applied, [(null, null)]);
+    },
+  );
+}
+
+void _automationResponseSheet_should_keepALatencyEqualToEveryRequest() {
+  testWidgets(
+    'AutomationResponseSheet should keep a latency equal to every request',
+    (tester) async {
+      final applied = <(MockApiFailure?, MockLatencyProfile?)>[];
+
+      await _pumpResponseSheet(
+        tester,
+        applied,
+        initialLatency: MockLatencyProfile.realistic,
+      );
+      await tester.tap(find.text('429'));
+      await tester.pump();
+      await tester.tap(find.text(sampleStrings.apply));
+      await tester.pump();
+
+      expect(applied, [
+        (const MockApiFailure(statusCode: 429), MockLatencyProfile.realistic),
+      ]);
     },
   );
 }

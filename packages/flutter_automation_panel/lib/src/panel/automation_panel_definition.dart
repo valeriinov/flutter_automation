@@ -35,7 +35,9 @@ final class AutomationPanelDefinition {
   /// Pages in tab order.
   final List<AutomationPanelPage> pages;
 
-  /// Backend error codes the response sheet offers as chips.
+  /// Backend error codes that every request can answer with. The response
+  /// sheet offers them as chips, after them the codes of the endpoint of the
+  /// request.
   final List<String> backendErrorCodes;
 
   /// Look of the panel.
@@ -64,8 +66,10 @@ final class AutomationPanelDefinition {
   final List<AutomationSectionPanel> sections;
 
   /// Reads the endpoints of the mock backend, so an override of an endpoint
-  /// with a path id shows on each request under it, as the mock applies it.
-  /// Without it the panel matches an override on the exact path only.
+  /// with a path id shows on each request under it, as the mock applies it,
+  /// and the response sheet offers the backend error codes of the endpoint.
+  /// Without it the panel matches an override on the exact path only and
+  /// offers [backendErrorCodes] alone.
   final MockApiEndpointResolver Function()? readEndpointResolver;
 
   const AutomationPanelDefinition({

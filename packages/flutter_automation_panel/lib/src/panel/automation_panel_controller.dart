@@ -255,6 +255,19 @@ class AutomationPanelController extends ChangeNotifier
     return key == null ? null : current[key];
   }
 
+  /// Backend error codes that [path] can answer with: the codes of every
+  /// request, then the codes of the endpoint that answers [path]. The panel
+  /// needs `readEndpointResolver` of the definition for the codes of the
+  /// endpoint.
+  List<String> backendErrorCodesOf(String path) {
+    final endpoint = definition.readEndpointResolver?.call().tryResolve(path);
+
+    return {
+      ...definition.backendErrorCodes,
+      ...?endpoint?.backendErrorCodes,
+    }.toList();
+  }
+
   @override
   Future<bool> didPopRoute() async {
     final navigator = navigatorKey.currentState;

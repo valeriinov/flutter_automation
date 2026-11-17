@@ -52,7 +52,9 @@ from `example/lib/panel/example_panel.dart` in the package repository:
    `MockSection`. The texts come from the declarations of the section, the
    profiles and the endpoints.
 3. Add `wrapPage`, `onShare`, `backendErrorCodes` or `playerSettings` only when the
-   project needs them.
+   project needs them. `backendErrorCodes` holds only the codes that every request
+   can answer with. A code that one endpoint answers with goes on its
+   `MockApiEndpoint`.
 
 Add the file path to **QA panel file**.
 

@@ -22,10 +22,15 @@ class MockApiEndpoint {
   /// request without a title shows its path.
   final AutomationLocalizedText? title;
 
+  /// Backend error codes that only this endpoint answers with. The QA panel
+  /// offers them for this request beside the codes of every request.
+  final List<String> backendErrorCodes;
+
   const MockApiEndpoint({
     required this.path,
     required this.respond,
     this.title,
     this.hasPathId = false,
+    this.backendErrorCodes = const [],
   });
 }
