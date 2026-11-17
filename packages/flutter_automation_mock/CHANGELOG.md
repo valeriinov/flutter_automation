@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.9.4
+
+- New `MockApiEndpoint.backendErrorStatusCodes`: the status codes that a
+  backend error code of the endpoint comes with.
+
 ## 0.9.3
 
 - New `AutomationLocalizedText.en(text)`: a text written in English only.

@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.9.4
+
+- New `backendErrorStatusCodes` on `AutomationPanelDefinition` and
+  `AutomationResponseSheet`, and `AutomationPanelController.backendErrorStatusCodesOf`.
+  A code with statuses takes its first status when chosen, and the sheet offers
+  its statuses alone; a chosen status leaves out the codes it does not come
+  with. A code without an entry keeps any status.
+
 ## 0.9.3
 
 - Version bump with `flutter_automation_mock` 0.9.3.
