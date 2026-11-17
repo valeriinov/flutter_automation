@@ -40,6 +40,13 @@ void main() {
     _automationResponseSheet_should_dropTheErrorOnASecondTapOfItsCode();
     _automationResponseSheet_should_followEveryRequestOnATapOfItsLatency();
     _automationResponseSheet_should_keepALatencyEqualToEveryRequest();
+    _automationResponseSheet_should_takeTheStatusOfAChosenBackendErrorCode();
+    _automationResponseSheet_should_offerOnlyTheStatusesOfAChosenCode();
+    _automationResponseSheet_should_leaveOutCodesAChosenStatusDoesNotComeWith();
+    _automationResponseSheet_should_dropACodeAStatusDoesNotComeWith();
+    _automationResponseSheet_should_keepTheStatusOfACodeWithTheStatusCleared();
+    _automationResponseSheet_should_answer500ForACodeWithoutStatuses();
+    _automationResponseSheet_should_openASavedErrorOutsideItsStatuses();
     _automationPanelLauncher_should_sendTheBackButtonToThePanel();
     _automationPresetsSheet_should_rejectABadName();
     _automationAutorunPage_should_narrowTheFlowsBySearch();
@@ -783,11 +790,169 @@ void _automationResponseSheet_should_keepALatencyEqualToEveryRequest() {
   );
 }
 
+void _automationResponseSheet_should_takeTheStatusOfAChosenBackendErrorCode() {
+  testWidgets(
+    'AutomationResponseSheet should take the status of a chosen backend error '
+    'code',
+    (tester) async {
+      final applied = <(MockApiFailure?, MockLatencyProfile?)>[];
+
+      await _pumpResponseSheet(tester, applied, hasErrorStatuses: true);
+      await tester.tap(find.text('tokenExpired'));
+      await tester.pump();
+      await tester.tap(find.text(sampleStrings.apply));
+      await tester.pump();
+
+      expect(applied, [
+        (
+          const MockApiFailure(statusCode: 401, errorCode: 'tokenExpired'),
+          null,
+        ),
+      ]);
+    },
+  );
+}
+
+void _automationResponseSheet_should_offerOnlyTheStatusesOfAChosenCode() {
+  testWidgets(
+    'AutomationResponseSheet should offer only the statuses of a chosen code',
+    (tester) async {
+      await _pumpResponseSheet(tester, [], hasErrorStatuses: true);
+      await tester.tap(find.text('tokenExpired'));
+      await tester.pump();
+
+      expect(find.text('401'), findsOne);
+      expect(find.text('500'), findsNothing);
+    },
+  );
+}
+
+void
+_automationResponseSheet_should_leaveOutCodesAChosenStatusDoesNotComeWith() {
+  testWidgets(
+    'AutomationResponseSheet should leave out codes a chosen status does not '
+    'come with',
+    (tester) async {
+      await _pumpResponseSheet(tester, [], hasErrorStatuses: true);
+      await tester.tap(find.text('500'));
+      await tester.pump();
+
+      expect(find.text('tokenExpired'), findsNothing);
+      expect(find.text('invalidPhone'), findsOne);
+    },
+  );
+}
+
+void _automationResponseSheet_should_dropACodeAStatusDoesNotComeWith() {
+  testWidgets(
+    'AutomationResponseSheet should drop a code a status does not come with',
+    (tester) async {
+      final applied = <(MockApiFailure?, MockLatencyProfile?)>[];
+
+      await _pumpResponseSheet(
+        tester,
+        applied,
+        initial: const MockApiFailure(
+          statusCode: 401,
+          errorCode: 'tokenExpired',
+        ),
+        hasErrorStatuses: true,
+      );
+      await tester.tap(find.text(sampleStrings.custom).first);
+      await tester.pumpAndSettle();
+      await tester.enterText(find.byType(TextField).last, '500');
+      await tester.tap(find.text(sampleStrings.ok));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text(sampleStrings.apply));
+      await tester.pump();
+
+      expect(applied, [(const MockApiFailure(), null)]);
+    },
+  );
+}
+
+void
+_automationResponseSheet_should_keepTheStatusOfACodeWithTheStatusCleared() {
+  testWidgets(
+    'AutomationResponseSheet should keep the status of a code with the status '
+    'cleared',
+    (tester) async {
+      final applied = <(MockApiFailure?, MockLatencyProfile?)>[];
+
+      await _pumpResponseSheet(
+        tester,
+        applied,
+        initial: const MockApiFailure(
+          statusCode: 401,
+          errorCode: 'tokenExpired',
+        ),
+        hasErrorStatuses: true,
+      );
+      await tester.tap(find.text('401'));
+      await tester.pump();
+      await tester.tap(find.text(sampleStrings.apply));
+      await tester.pump();
+
+      expect(applied, [
+        (
+          const MockApiFailure(statusCode: 401, errorCode: 'tokenExpired'),
+          null,
+        ),
+      ]);
+    },
+  );
+}
+
+void _automationResponseSheet_should_answer500ForACodeWithoutStatuses() {
+  testWidgets(
+    'AutomationResponseSheet should answer 500 for a code without statuses',
+    (tester) async {
+      final applied = <(MockApiFailure?, MockLatencyProfile?)>[];
+
+      await _pumpResponseSheet(tester, applied, hasErrorStatuses: true);
+      await tester.tap(find.text('invalidPhone'));
+      await tester.pump();
+      await tester.tap(find.text(sampleStrings.apply));
+      await tester.pump();
+
+      expect(applied, [
+        (const MockApiFailure(errorCode: 'invalidPhone'), null),
+      ]);
+    },
+  );
+}
+
+void _automationResponseSheet_should_openASavedErrorOutsideItsStatuses() {
+  testWidgets(
+    'AutomationResponseSheet should open a saved error outside its statuses',
+    (tester) async {
+      final applied = <(MockApiFailure?, MockLatencyProfile?)>[];
+      const saved = MockApiFailure(errorCode: 'tokenExpired');
+
+      await _pumpResponseSheet(
+        tester,
+        applied,
+        initial: saved,
+        hasErrorStatuses: true,
+      );
+
+      expect(find.text('500'), findsOne);
+      expect(find.text('tokenExpired'), findsOne);
+
+      await tester.tap(find.text(sampleStrings.apply));
+      await tester.pump();
+
+      expect(applied, [(saved, null)]);
+    },
+  );
+}
+
 Future<void> _pumpResponseSheet(
   WidgetTester tester,
   List<(MockApiFailure?, MockLatencyProfile?)> applied, {
   MockApiFailure? initial,
   MockLatencyProfile? initialLatency,
+  bool hasErrorStatuses = false,
 }) async {
   tester.view.physicalSize = const Size(800, 2400);
 
@@ -801,6 +966,14 @@ Future<void> _pumpResponseSheet(
         mockDescription: 'the profile',
         initial: initial,
         initialLatency: initialLatency,
+        backendErrorCodes: hasErrorStatuses
+            ? const ['tokenExpired', 'invalidPhone']
+            : const [],
+        backendErrorStatusCodes: hasErrorStatuses
+            ? const {
+                'tokenExpired': {401},
+              }
+            : const {},
         onApply: (failure, latency) => applied.add((failure, latency)),
         onClose: () {},
       ),

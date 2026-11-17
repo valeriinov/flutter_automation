@@ -300,6 +300,9 @@ final class SamplePanel {
       theme: sampleTheme,
       strings: strings,
       backendErrorCodes: const ['tooManyRequests', 'invalidPhone'],
+      backendErrorStatusCodes: const {
+        'tooManyRequests': {429},
+      },
       readEndpointResolver: () => _sampleEndpointResolver,
       sections: _sampleSections,
       isRestartRequired: isRestartRequired,
@@ -361,6 +364,10 @@ class _ItemsApi implements MockApi {
         respond: _respondEmpty,
         hasPathId: true,
         backendErrorCodes: const ['itemLocked', 'tooManyRequests'],
+        backendErrorStatusCodes: const {
+          'itemLocked': {409, 423},
+          'tooManyRequests': {503},
+        },
       ),
       MockApiEndpoint(path: '/items/list', respond: _respondEmpty),
     ];

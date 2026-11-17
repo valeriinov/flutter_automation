@@ -26,11 +26,17 @@ class MockApiEndpoint {
   /// offers them for this request beside the codes of every request.
   final List<String> backendErrorCodes;
 
+  /// Status codes that a backend error code of this endpoint comes with. A
+  /// code with an entry here comes with these statuses alone in the QA panel.
+  /// A code without an entry comes with any status.
+  final Map<String, Set<int>> backendErrorStatusCodes;
+
   const MockApiEndpoint({
     required this.path,
     required this.respond,
     this.title,
     this.hasPathId = false,
     this.backendErrorCodes = const [],
+    this.backendErrorStatusCodes = const {},
   });
 }

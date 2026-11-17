@@ -240,6 +240,11 @@ A `MockApiEndpoint` takes these parameters:
   QA panel offers the codes of every request first, from
   `AutomationPanelDefinition.backendErrorCodes`, then these. The panel needs
   `readEndpointResolver` in its definition to read them.
+- `backendErrorStatusCodes` maps a code of this endpoint to the status codes it
+  comes with, for example `{'token-expired': {401}}`. The QA panel then offers
+  the code with these statuses alone. An entry here replaces the entry of the
+  same code in `AutomationPanelDefinition.backendErrorStatusCodes`. A code
+  without an entry comes with any status.
 
 `MockApiEndpointResolver` matches a request path to an endpoint. It tries the
 exact path first. Then it tries the endpoints with `hasPathId`, whose

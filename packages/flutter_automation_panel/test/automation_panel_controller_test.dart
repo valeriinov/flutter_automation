@@ -27,6 +27,7 @@ void main() {
     _latencyOf_should_matchTheParentPathOfAPathId();
     _failureOf_should_leaveAnExactEndpointUnderAPathIdAlone();
     _backendErrorCodesOf_should_addTheCodesOfTheEndpoint();
+    _backendErrorStatusCodesOf_should_letTheEndpointReplaceTheStatusesOfACode();
     _overrideCount_should_countAPathWithAFailureAndALatencyOnce();
     _clearOverride_should_clearTheFailureAndTheLatency();
     _startWalk_should_saveTheWalkAndAskForARestart();
@@ -198,6 +199,27 @@ void _backendErrorCodesOf_should_addTheCodesOfTheEndpoint() {
       'invalidPhone',
     ]);
   });
+}
+
+void
+_backendErrorStatusCodesOf_should_letTheEndpointReplaceTheStatusesOfACode() {
+  test(
+    'backendErrorStatusCodesOf should let the endpoint replace the statuses of '
+    'a code',
+    () async {
+      final sample = await _createSample();
+
+      final controller = sample.controller;
+
+      expect(controller.backendErrorStatusCodesOf('/items/7'), {
+        'tooManyRequests': {503},
+        'itemLocked': {409, 423},
+      });
+      expect(controller.backendErrorStatusCodesOf('/auth/otp'), {
+        'tooManyRequests': {429},
+      });
+    },
+  );
 }
 
 void _setFailure_should_clearTheOverrideOfTheParentPath() {

@@ -268,6 +268,18 @@ class AutomationPanelController extends ChangeNotifier
     }.toList();
   }
 
+  /// Status codes that each backend error code of [path] comes with: the
+  /// statuses of every request, then the statuses of the endpoint that
+  /// answers [path], which replace those of the same code.
+  Map<String, Set<int>> backendErrorStatusCodesOf(String path) {
+    final endpoint = definition.readEndpointResolver?.call().tryResolve(path);
+
+    return {
+      ...definition.backendErrorStatusCodes,
+      ...?endpoint?.backendErrorStatusCodes,
+    };
+  }
+
   @override
   Future<bool> didPopRoute() async {
     final navigator = navigatorKey.currentState;
