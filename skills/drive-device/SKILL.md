@@ -348,7 +348,7 @@ touch, what covers it" in a few hundred bytes.
    ```shell
    # Android
    adb shell uiautomator dump /sdcard/ui.xml && adb shell cat /sdcard/ui.xml \
-     | tr '>' '>\n' | grep -o 'resource-id="[a-z_]*\.[a-z]*\.[a-zA-Z]*"' | sort -u
+     | tr '>' '>\n' | grep -oE 'resource-id="[a-z_]+\.[a-z]+\.[A-Za-z0-9_.]+"' | sort -u
 
    # iOS: AXe describe-ui, filtered to the lines that carry an AXUniqueId
    axe describe-ui --udid <udid>

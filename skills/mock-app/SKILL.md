@@ -165,8 +165,8 @@ key of `restartKeys` appears in the `toJson` of the default settings or of a
 profile. A failed assert names the section and the key: fix the spelling in the
 section.
 
-`AutomationStateStore` keeps `state.json` (mode, scenario, overrides, walk), the
-presets and the last 20 run reports in one folder. The mock starts from
+`AutomationStateStore` keeps `state.json` (mode, scenario, walk, outcome
+failures), the presets and the last 20 run reports in one folder. The mock starts from
 `state.json`. A scenario that `scenario.apply` saved wins over it. The mode of the
 app, mock or server, is part of `state.json`. A tester switches it with
 `AutomationMockModeTile` in the file that **Debug menu** names. A **Debug menu**

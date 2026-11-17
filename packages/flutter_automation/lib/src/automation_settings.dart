@@ -93,7 +93,7 @@ abstract final class AutomationSettings {
       isEnabled && bool.fromEnvironment(_frameProfilingFlag);
 
   /// Whether every translation string carries the invisible mark of its locale
-  /// key, read back from the rendered text by a screen flows capture.
+  /// key, read back from the rendered text by a screenshot capture run.
   ///
   /// Set by the capture launch on top of [isEnabled]. A build that sets
   /// `ENABLE_AUTOMATION_MARKING` marks its locale keys too. An in-app player

@@ -22,4 +22,4 @@ about this project. Commands run from the `example/` folder.
 - **Post-edit steps**: `fvm dart run tool/run_flows.dart --qa-catalogue
   assets/qa_catalogue.json --recordings tool/recordings --check`.
 - **Format-change places**: none.
-- **Learned rules**: `AUTOMATION_NOTES.md`.
+- **Learned rules**: none.

@@ -41,7 +41,7 @@ final _flows = [
     ],
   ),
   AutomationFlowDefinition(
-    name: 'login_atlas',
+    name: 'login_hidden',
     variants: [
       FlowVariant(
         'frame',
@@ -97,7 +97,7 @@ AutomationRecording _recording(
 void main() {
   group('AutomationCatalogueBuilder Tests', () {
     _automationCatalogueBuilder_should_showAForkWhenBodiesDiffer();
-    _automationCatalogueBuilder_should_leaveOutAtlasAndProbeFlows();
+    _automationCatalogueBuilder_should_leaveOutFlowsOutsideTheQaCatalogue();
     _automationCatalogueBuilder_should_markServiceStepsAndCollectGroups();
     _automationCatalogueBuilder_should_showNoForkForEqualAnswers();
     _automationCatalogueBuilder_should_takeTheFlowsThatSetTheFlagOnly();
@@ -279,12 +279,15 @@ void _automationRecordingFiles_should_writeAPassedRunOnly() {
   });
 }
 
-void _automationCatalogueBuilder_should_leaveOutAtlasAndProbeFlows() {
-  test('AutomationCatalogueBuilder should leave out atlas and probe flows', () {
-    final catalogue = _build(const []);
+void _automationCatalogueBuilder_should_leaveOutFlowsOutsideTheQaCatalogue() {
+  test(
+    'AutomationCatalogueBuilder should leave out flows not in the QA catalogue',
+    () {
+      final catalogue = _build(const []);
 
-    expect(catalogue.flows.map((flow) => flow.name), ['login']);
-  });
+      expect(catalogue.flows.map((flow) => flow.name), ['login']);
+    },
+  );
 }
 
 void _automationCatalogueBuilder_should_markServiceStepsAndCollectGroups() {

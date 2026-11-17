@@ -50,6 +50,10 @@ final loginFlow = AutomationFlowDefinition(
   `scenario.apply` before the first step, unless the command line says
   `--no-scenario`. A variant that names a scenario makes the runner restart the
   app after the push. `--locale` makes the runner restart the app too.
+- `FlowVariant.stateOf` names the variant of the same flow whose frame this
+  variant shows in another state. A variant without it is a way of its own.
+- `AutomationFlowDefinition.subtitle` holds one sentence about what the journey
+  is about. It is optional.
 - A block takes parameters. `FlowBlock.params` names them with defaults, the
   build function reads `params['name']`, and `Use(block, arguments: {...})`
   fills them in.
@@ -85,11 +89,17 @@ fvm dart run tool/run_flows.dart <flow> [variant] [options]
 
 | Option | Effect |
 | --- | --- |
-| `--uri <ws://...>` | VM service address of the running app. |
+| `--uri <ws://...>` | VM service address of the running app. The runner caches it in `.dart_tool/automation_runner_uri` and reuses it until the app relaunches. |
 | `--dry-run` | Prints the resolved steps as JSON. Needs no device. |
 | `--catalogue` | Prints every flow and block as one line of JSON. |
 | `--no-scenario` | Does not push the scenario into the app. |
 | `--locale <code>` | Language of the run, sent with `locale.apply` to the `localeApplier` of the driver. The app restarts in it. Works on an app without a mock. Default is `defaultLocale`. |
+| `--record <dir>` | Writes `<dir>/<flow>/<variant>.json` with the steps, timings and requests of the run. Needs a full run. |
+| `--qa-catalogue <file>` | Writes the QA catalogue of the flows. Needs no device. |
+| `--recordings <dir>` | With `--qa-catalogue`: adds the recorded answers of the runs that passed. |
+| `--check` | With `--qa-catalogue`: writes nothing and tests that the file is the catalogue the flows and recordings give. |
+| `--shoot <i,j>` | With `--capture`: names the stages that get a screenshot, a target rect and their journal. |
+| `--until <k>` | With `--capture`: ends the walk before the action of stage `k + 1`. |
 | `--timeline-out <path>` | Writes the raw timeline of a traced window. |
 | `--capture <dir>` | Captures the frames of the variant into the directory. |
 | `--system-keyboard` | Turns text entry emulation off for the whole run, so the system keyboard rises over a focused field and shows in a capture. `EnterText` switches the emulation on for its own call. |

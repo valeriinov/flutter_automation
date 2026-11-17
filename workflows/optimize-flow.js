@@ -229,9 +229,11 @@ async function applyOneFix(config, flow, findings, round) {
 ${listed}
 
 The change has to be one of these kinds, and it has to land in a tracked file:
-- flowStep: edit the flow ${flow} in ${config.flowsFolder}
+- product: the app misbehaves the same way for a live user doing the step by hand; a defect of the app is fixed in the app, never by a step, a wait or an expectation. The user chooses that fix, so apply no change for it: set applied:false, kind "product", and name the defect in reason
+- flowVariant: edit the step, its timeout or its order in the flow ${flow} in ${config.flowsFolder}
+- mockScenario: the state the step needed, in the variant scenario (the mock is ${config.mockFile}); close a gap in the mock that makes a path untestable or slow
 - automationTarget: add a target through the add-automation-targets skill, so a hand-assembled finder becomes an id (targets in ${config.targetsFolder})
-- mock: close a gap in the mock (${config.mockFile}) that makes a path untestable or slow
+- block: extract a stretch that a second variant now shares into a block
 - runner: add a step kind or an option the flutter_automation_runner package lacks
 - rule: write a rule the next agent needs, as one sentence, into ${config.learnedRules || 'the document the user names (none is set: skip this kind)'}; never into an installed skill
 

@@ -55,6 +55,9 @@ from `example/lib/panel/example_panel.dart` in the package repository:
    project needs them. `backendErrorCodes` holds only the codes that every request
    can answer with. A code that one endpoint answers with goes on its
    `MockApiEndpoint`.
+   The codes of an endpoint reach the panel only with `readEndpointResolver:
+   () => <backend>.endpointResolver`, where `<backend>` is the
+   `MockScenarioBackend` of the app.
 
 Add the file path to **QA panel file**.
 

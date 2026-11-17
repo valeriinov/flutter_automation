@@ -10,6 +10,9 @@ and the build switches. Every other package builds on it.
 | `package:flutter_automation/automation_target.dart` | Yes, no Flutter import | `AutomationTarget`, `AutomationTargetType`, `AutomationIdComposer`, `AutomationTargetWithKey`, `AutomationTimelineLabel`. |
 | `package:flutter_automation/flutter_automation.dart` | No, imports Flutter | Everything above, plus `automationTarget()`, `AutomationSettings`, `AutomationCommandRegistry`, `AutomationCommandHandler`, `AutomationTimeline`, `LocaleKeyMarker`. |
 
+| `package:flutter_automation/automation_date_pattern.dart` | Yes | `AutomationDatePattern`: writes a date by a pattern of `yyyy`, `MM` and `dd`. |
+| `package:flutter_automation/locale_key_marker.dart` | Yes, no Flutter import | `LocaleKeyMarker`: the invisible mark of a locale key in a translation string. |
+
 "Host-safe" means a program in the plain Dart VM can import the library. A flow
 and the target enums it reads import only `automation_target.dart`.
 `tool/host_probe.dart` runs that import in the Dart VM.

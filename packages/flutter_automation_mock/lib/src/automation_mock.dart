@@ -62,8 +62,8 @@ class AutomationMock {
 
   /// Sections of the mock the project declared.
   ///
-  /// The package keeps the list for tools that build a form from the settings
-  /// of the sections. Nothing in the package reads it.
+  /// [requiresRestart] and the restart check of the QA panel read the list.
+  /// Tools that build a form from the settings of the sections read it too.
   final List<MockSection<Object?>> sections;
 
   /// Whether the app runs on the mock.
@@ -105,8 +105,8 @@ class AutomationMock {
   /// The [isEnabled] parameter is the project's decision to run on the mock.
   /// The [scenarioDirectory] parameter is a writable folder that holds the
   /// scenario file between launches.
-  /// The [sections] parameter lists the sections of the mock; the package only
-  /// keeps it.
+  /// The [sections] parameter lists the sections of the mock; it feeds
+  /// [requiresRestart] and the restart check of the QA panel.
   /// The [onScenarioApplied] parameter runs after `scenario.apply` applied its
   /// own part.
   /// The [stateStore] parameter holds the choice of a tester between launches.

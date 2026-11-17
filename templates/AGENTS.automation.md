@@ -42,7 +42,7 @@ repository root.
 - **After an edit**: the commands that format and analyze after a Dart edit, in
   order. Example: `fvm dart format . && fvm dart analyze`.
 - **Post-edit steps**: what else a flow, a block, a target or a mock key change
-  must update, one item per line: a generated catalogue, an atlas, a
+  must update, one item per line: a generated catalogue, a
   documentation check. Write `none` when there is nothing.
 - **Format-change places**: the places that change in one commit when the flow
   format or the mock sections change: the code, the documents and the

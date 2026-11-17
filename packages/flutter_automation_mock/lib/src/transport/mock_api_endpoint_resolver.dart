@@ -6,7 +6,7 @@ import 'package:flutter_automation_mock/src/contract/mock_api_endpoint.dart';
 ///
 /// Resolves a request path to the endpoint that answers it.
 ///
-/// Holds every endpoint of the apis the scenario installed. A path no api
+/// Holds every endpoint of the apis the backend built. A path no api
 /// claimed resolves to null, which is what sends the request on to the remote
 /// environment.
 class MockApiEndpointResolver {
