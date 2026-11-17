@@ -356,7 +356,12 @@ class _ItemsApi implements MockApi {
   @override
   List<MockApiEndpoint> get endpoints {
     return [
-      MockApiEndpoint(path: '/items', respond: _respondEmpty, hasPathId: true),
+      MockApiEndpoint(
+        path: '/items',
+        respond: _respondEmpty,
+        hasPathId: true,
+        backendErrorCodes: const ['itemLocked', 'tooManyRequests'],
+      ),
       MockApiEndpoint(path: '/items/list', respond: _respondEmpty),
     ];
   }

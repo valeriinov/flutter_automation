@@ -23,6 +23,10 @@ import 'package:flutter_automation_panel/src/theme/automation_panel_strings.dart
 /// with no error chosen keeps the mock answer and sets only the latency. Use
 /// mock response calls [onApply] with `null` for both and removes every
 /// override of the request.
+///
+/// A request with no latency of its own shows the latency of every request as
+/// chosen. A tap on another profile gives the request its own latency, and a
+/// tap on the latency of every request takes it away.
 class AutomationResponseSheet extends StatefulWidget {
   /// HTTP method of the request.
   final String method;
@@ -169,16 +173,15 @@ class _AutomationResponseSheetState extends State<AutomationResponseSheet> {
             onPressed: _toggleNoNetwork,
           ),
           AutomationPanelLabel(text: strings.requestLatency),
-          AutomationPanelSegments<MockLatencyProfile?>(
+          AutomationPanelSegments<MockLatencyProfile>(
             options: [
-              AutomationPanelOption(value: null, label: strings.defaultName),
               for (final profile in MockLatencyProfile.values)
                 AutomationPanelOption(
                   value: profile,
                   label: strings.latencyLabel(profile),
                 ),
             ],
-            selected: _latency,
+            selected: _latency ?? widget.globalLatency,
             onChanged: _selectLatency,
           ),
           AutomationLatencyNote(
@@ -247,8 +250,8 @@ class _AutomationResponseSheetState extends State<AutomationResponseSheet> {
     setState(() => _isNoNetwork = !_isNoNetwork);
   }
 
-  void _selectLatency(MockLatencyProfile? profile) {
-    setState(() => _latency = profile);
+  void _selectLatency(MockLatencyProfile profile) {
+    setState(() => _latency = profile == widget.globalLatency ? null : profile);
   }
 
   Future<void> _askForStatusCode() async {
@@ -458,7 +461,7 @@ Future<void> showAutomationResponseSheet({
         initial: controller.failureOf(path),
         initialLatency: controller.latencyOf(path),
         globalLatency: controller.mock.latency.profile,
-        backendErrorCodes: controller.definition.backendErrorCodes,
+        backendErrorCodes: controller.backendErrorCodesOf(path),
         onClose: () => Navigator.of(sheetContext).pop(),
         onApply: (failure, latency) {
           controller.setResponse(path, failure: failure, latency: latency);

@@ -26,6 +26,7 @@ void main() {
     _applyOutcome_should_keepTheLatenciesOfTheTester();
     _latencyOf_should_matchTheParentPathOfAPathId();
     _failureOf_should_leaveAnExactEndpointUnderAPathIdAlone();
+    _backendErrorCodesOf_should_addTheCodesOfTheEndpoint();
     _overrideCount_should_countAPathWithAFailureAndALatencyOnce();
     _clearOverride_should_clearTheFailureAndTheLatency();
     _startWalk_should_saveTheWalkAndAskForARestart();
@@ -178,6 +179,24 @@ void _failureOf_should_matchTheParentPathOfAPathId() {
 
     expect(sample.controller.failureOf('/items/7'), isNotNull);
     expect(sample.controller.failureOf('/other/7'), isNull);
+  });
+}
+
+void _backendErrorCodesOf_should_addTheCodesOfTheEndpoint() {
+  test('backendErrorCodesOf should add the codes of the endpoint', () async {
+    final sample = await _createSample();
+
+    final controller = sample.controller;
+
+    expect(controller.backendErrorCodesOf('/items/7'), [
+      'tooManyRequests',
+      'invalidPhone',
+      'itemLocked',
+    ]);
+    expect(controller.backendErrorCodesOf('/auth/otp'), [
+      'tooManyRequests',
+      'invalidPhone',
+    ]);
   });
 }
 
