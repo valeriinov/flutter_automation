@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.9.1
+
+- The response sheet offers the backend error codes of every request, then the
+  codes of the endpoint of the request (`MockApiEndpoint.backendErrorCodes`).
+  `AutomationPanelController.backendErrorCodesOf(path)` lists them. The codes
+  of the endpoint need `readEndpointResolver` of the definition.
+- The latency of the response sheet has no Default segment. A request with no
+  latency of its own shows the latency of every request as chosen. A tap on it
+  takes the latency of the request away.
+
 ## 0.9.0
 
 - Breaking: `AutomationPanelStrings` is a class with a `const` constructor,

@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.9.1
+
+- New `MockApiEndpoint.backendErrorCodes`: the backend error codes that only
+  this endpoint answers with. The QA panel offers them for its requests.
+
 ## 0.9.0
 
 - Breaking: `MockSection` takes a required `title` and an optional
