@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.9.3
+
+- New `AutomationLocalizedText.en(text)`: a text written in English only.
+  `texts` is a getter that answers `{'en': text}` for it.
+
 ## 0.9.2
 
 - Documentation: the README describes the endpoints (`title`, `hasPathId`,
