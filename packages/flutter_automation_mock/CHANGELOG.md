@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.9.2
+
+- Documentation: the README describes the endpoints (`title`, `hasPathId`,
+  `backendErrorCodes`, the resolver match), `restartKeys`, the content of
+  `state.json`, what `sections` feeds and when a latency of a single path
+  applies.
+
 ## 0.9.1
 
 - New `MockApiEndpoint.backendErrorCodes`: the backend error codes that only

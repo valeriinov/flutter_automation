@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.9.2
+
+- Documentation: the option table lists `--record`, `--recordings`,
+  `--qa-catalogue`, `--check`, `--shoot` and `--until`; "Write a flow" names
+  `FlowVariant.stateOf` and `AutomationFlowDefinition.subtitle`.
+
 ## 0.9.1
 
 - Version bump with `flutter_automation_panel` 0.9.1.

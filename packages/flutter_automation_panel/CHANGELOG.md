@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.9.2
+
+- Documentation: the README describes the backend error codes, the overrides
+  of a request and a full build of the mock for the panel.
+
 ## 0.9.1
 
 - The response sheet offers the backend error codes of every request, then the

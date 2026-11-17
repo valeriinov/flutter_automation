@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.9.2
+
+- Documentation: the library table lists `automation_date_pattern.dart` and
+  `locale_key_marker.dart`.
+
 ## 0.9.1
 
 - Version bump with `flutter_automation_panel` 0.9.1.
