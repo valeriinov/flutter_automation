@@ -95,10 +95,26 @@ reach the sheet only with `readEndpointResolver` of the definition, for
 example `() => backend.endpointResolver`. Without it the sheet offers only the
 codes of the definition.
 
+`backendErrorStatusCodes` of the definition and of an endpoint maps a code to
+the status codes it comes with, for example `{'token-expired': {401}}`. The
+project declares these pairs from its backend contract; the panel knows no
+code. The sheet applies them in three ways:
+
+- A tap on such a code sets its first status, and the status chips then offer
+  its statuses alone.
+- A chosen status leaves out the codes it does not come with. A custom status
+  outside the statuses of the chosen code clears the code.
+- A code without an entry comes with any status, and the answer takes `500`
+  when the tester chooses no status.
+
+An entry of the endpoint replaces the entry of the same code in the
+definition. A saved override outside these pairs opens as it was saved.
+
 ## Overrides of a request
 
 The controller keeps one failure and one latency profile for each request
-path. `failureOf`, `latencyOf` and `backendErrorCodesOf` read them for a path.
+path. `failureOf`, `latencyOf`, `backendErrorCodesOf` and `backendErrorStatusCodesOf`
+read them for a path.
 `setFailure`, `setLatency` and `setResponse` write them, and `clearOverride`
 removes both. A `null` failure or a `null` latency clears the override, also
 when the override stands on the endpoint path of the request. A failure or a

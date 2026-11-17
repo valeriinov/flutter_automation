@@ -19,7 +19,10 @@ import 'package:flutter_automation_panel/src/theme/automation_panel_strings.dart
 /// The sheet that sets the answer of one request: an error code, a backend
 /// error code and a message, or no network, and the latency of the request.
 ///
-/// The mock answer is the default. A tap on a chosen code clears it. Apply
+/// The mock answer is the default. A tap on a chosen code clears it. A backend
+/// error code with an entry in [backendErrorStatusCodes] takes its first status
+/// when the tester picks it, and the sheet then offers its statuses alone. A
+/// chosen status leaves out the codes it does not come with. Apply
 /// with no error chosen keeps the mock answer and sets only the latency. Use
 /// mock response calls [onApply] with `null` for both and removes every
 /// override of the request.
@@ -53,6 +56,10 @@ class AutomationResponseSheet extends StatefulWidget {
   /// Backend error codes the sheet offers as chips.
   final List<String> backendErrorCodes;
 
+  /// Status codes that a backend error code comes with. A code without an
+  /// entry comes with any status.
+  final Map<String, Set<int>> backendErrorStatusCodes;
+
   /// Called with the failure and the latency profile the tester sets. A `null`
   /// failure keeps the mock answer, and a `null` profile follows every request.
   final void Function(MockApiFailure? failure, MockLatencyProfile? latency)
@@ -72,6 +79,7 @@ class AutomationResponseSheet extends StatefulWidget {
     this.initialLatency,
     this.globalLatency = MockLatencyProfile.realistic,
     this.backendErrorCodes = const [],
+    this.backendErrorStatusCodes = const {},
     super.key,
   });
 
@@ -92,19 +100,21 @@ class _AutomationResponseSheetState extends State<AutomationResponseSheet> {
 
   List<int> get _offeredStatusCodes {
     final chosen = _statusCode;
+    final statusCodes = _statusCodesOf(_errorCode)?.toList() ?? _statusCodes;
 
     return [
-      ..._statusCodes,
-      if (chosen != null && !_statusCodes.contains(chosen)) chosen,
+      ...statusCodes,
+      if (chosen != null && !statusCodes.contains(chosen)) chosen,
     ];
   }
 
   List<String> get _offeredErrorCodes {
     final chosen = _errorCode;
+    final errorCodes = widget.backendErrorCodes.where(_comesWithStatusCode);
 
     return [
-      ...widget.backendErrorCodes,
-      if (chosen != null && !widget.backendErrorCodes.contains(chosen)) chosen,
+      ...errorCodes,
+      if (chosen != null && !errorCodes.contains(chosen)) chosen,
     ];
   }
 
@@ -236,13 +246,23 @@ class _AutomationResponseSheetState extends State<AutomationResponseSheet> {
     setState(() {
       _statusCode = code;
       _isNoNetwork = false;
+
+      if (!_comesWithStatusCode(_errorCode)) {
+        _errorCode = null;
+      }
     });
   }
 
   void _selectErrorCode(String code) {
+    final statusCodes = _statusCodesOf(code);
+
     setState(() {
       _errorCode = code;
       _isNoNetwork = false;
+
+      if (statusCodes != null && !statusCodes.contains(_statusCode)) {
+        _statusCode = statusCodes.first;
+      }
     });
   }
 
@@ -302,7 +322,7 @@ class _AutomationResponseSheetState extends State<AutomationResponseSheet> {
     }
 
     return MockApiFailure(
-      statusCode: _statusCode ?? 500,
+      statusCode: _statusCode ?? _statusCodesOf(_errorCode)?.first ?? 500,
       errorCode: _errorCode,
       message: message.isEmpty ? null : message,
     );
@@ -310,6 +330,21 @@ class _AutomationResponseSheetState extends State<AutomationResponseSheet> {
 
   bool _hasError(String message) {
     return _statusCode != null || _errorCode != null || message.isNotEmpty;
+  }
+
+  Set<int>? _statusCodesOf(String? errorCode) {
+    final statusCodes = widget.backendErrorStatusCodes[errorCode];
+
+    return statusCodes == null || statusCodes.isEmpty ? null : statusCodes;
+  }
+
+  bool _comesWithStatusCode(String? errorCode) {
+    final statusCode = _statusCode;
+    final statusCodes = _statusCodesOf(errorCode);
+
+    return statusCode == null ||
+        statusCodes == null ||
+        statusCodes.contains(statusCode);
   }
 }
 
@@ -462,6 +497,7 @@ Future<void> showAutomationResponseSheet({
         initialLatency: controller.latencyOf(path),
         globalLatency: controller.mock.latency.profile,
         backendErrorCodes: controller.backendErrorCodesOf(path),
+        backendErrorStatusCodes: controller.backendErrorStatusCodesOf(path),
         onClose: () => Navigator.of(sheetContext).pop(),
         onApply: (failure, latency) {
           controller.setResponse(path, failure: failure, latency: latency);

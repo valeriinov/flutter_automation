@@ -54,7 +54,9 @@ from `example/lib/panel/example_panel.dart` in the package repository:
 3. Add `wrapPage`, `onShare`, `backendErrorCodes` or `playerSettings` only when the
    project needs them. `backendErrorCodes` holds only the codes that every request
    can answer with. A code that one endpoint answers with goes on its
-   `MockApiEndpoint`.
+   `MockApiEndpoint`. When the backend contract ties a code to statuses, add
+   the pair to `backendErrorStatusCodes` beside the code, for example
+   `{'token-expired': {401}}`.
    The codes of an endpoint reach the panel only with `readEndpointResolver:
    () => <backend>.endpointResolver`, where `<backend>` is the
    `MockScenarioBackend` of the app.

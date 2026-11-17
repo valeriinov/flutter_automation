@@ -40,6 +40,11 @@ final class AutomationPanelDefinition {
   /// request.
   final List<String> backendErrorCodes;
 
+  /// Status codes that a backend error code comes with on every request. The
+  /// response sheet offers a code with an entry here together with these
+  /// statuses alone. A code without an entry comes with any status.
+  final Map<String, Set<int>> backendErrorStatusCodes;
+
   /// Look of the panel.
   final AutomationPanelTheme theme;
 
@@ -78,6 +83,7 @@ final class AutomationPanelDefinition {
     required this.pages,
     required this.isRestartRequired,
     this.backendErrorCodes = const [],
+    this.backendErrorStatusCodes = const {},
     this.theme = const AutomationPanelTheme.light(),
     this.strings = const AutomationPanelStrings(),
     this.onShare,
@@ -104,6 +110,7 @@ final class AutomationPanelDefinition {
     List<AutomationSectionPanel> sections = const [],
     FutureOr<void> Function(BuildContext context, File report)? onShare,
     List<String> backendErrorCodes = const [],
+    Map<String, Set<int>> backendErrorStatusCodes = const {},
     AutomationPlayerSettings playerSettings = const AutomationPlayerSettings(),
     MockApiEndpointResolver Function()? readEndpointResolver,
     AutomationPanelTheme theme = const AutomationPanelTheme.light(),
@@ -117,6 +124,7 @@ final class AutomationPanelDefinition {
       catalogue: catalogue,
       isRestartRequired: isRestartRequired,
       backendErrorCodes: backendErrorCodes,
+      backendErrorStatusCodes: backendErrorStatusCodes,
       theme: theme,
       strings: strings,
       onShare: onShare,
