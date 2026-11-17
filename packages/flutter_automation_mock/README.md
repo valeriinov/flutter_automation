@@ -49,15 +49,15 @@ final class CatalogSettings {
 
 final catalogSection = MockSection<CatalogSettings>(
   name: 'catalog',
-  title: AutomationLocalizedText({'en': 'Catalog'}),
-  description: AutomationLocalizedText({'en': 'Items of the catalog.'}),
+  title: AutomationLocalizedText.en('Catalog'),
+  description: AutomationLocalizedText.en('Items of the catalog.'),
   fromJson: CatalogSettings.fromJson,
   restartKeys: {'itemCount'},
   profiles: {
     'empty': MockProfile(
       (settings) => settings.copyWith(itemCount: 0),
-      title: AutomationLocalizedText({'en': 'Empty shelf'}),
-      description: AutomationLocalizedText({'en': 'The catalog has no items.'}),
+      title: AutomationLocalizedText.en('Empty shelf'),
+      description: AutomationLocalizedText.en('The catalog has no items.'),
     ),
   },
 );
@@ -72,7 +72,8 @@ A profile is a `MockProfile`: a function over the settings, run by
 `MockProfile.update(settings)`, and the texts that the QA panel shows for it.
 The `title` of a section and of a profile is required. The
 `description` of a profile is optional. An `AutomationLocalizedText` holds one text per
-language code, such as `{'en': '...', 'uk': '...'}`. The panel reads the
+language code, such as `{'en': '...', 'uk': '...'}`.
+`AutomationLocalizedText.en('...')` holds a text written in English only. The panel reads the
 `languageCode` of its strings and falls back to `en`, then to the first text. The key of a setting is
 written once, in the settings class. `catalogSection.profile('empty')` gives a `MockOverride`.
 `catalogSection.override((settings) => ...)` gives one for a function the flow
@@ -187,7 +188,7 @@ final class CatalogMockApi implements MockApi {
   List<MockApiEndpoint> get endpoints => [
     MockApiEndpoint(
       path: '/catalog/items',
-      title: AutomationLocalizedText({'en': 'Catalog items'}),
+      title: AutomationLocalizedText.en('Catalog items'),
       respond: _respondItems,
     ),
   ];

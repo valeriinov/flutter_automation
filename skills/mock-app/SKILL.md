@@ -114,7 +114,8 @@ plus one override, not one of them.
 
 **Add a profile.** Add a `MockProfile` to `profiles` of the section: the function over
 the settings (`copyWith` of the fields it changes) and a `title` as an
-`AutomationLocalizedText`, such as `{'en': 'Empty shelf'}`. Add a `description` when the
+`AutomationLocalizedText`, such as `AutomationLocalizedText.en('Empty shelf')` or
+`AutomationLocalizedText({'en': 'Empty shelf', 'uk': 'Порожня полиця'})`. Add a `description` when the
 title does not say what the profile changes. The QA panel shows the texts, so a profile
 without a title does not compile.
 
