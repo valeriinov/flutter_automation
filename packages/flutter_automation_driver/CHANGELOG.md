@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.9.3
+
+- Version bump with `flutter_automation_mock` 0.9.3.
+
 ## 0.9.2
 
 - Documentation: the commands list `keyboard.read`.
