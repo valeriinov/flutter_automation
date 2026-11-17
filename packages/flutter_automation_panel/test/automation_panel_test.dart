@@ -954,7 +954,7 @@ Future<void> _pumpResponseSheet(
   MockLatencyProfile? initialLatency,
   bool hasErrorStatuses = false,
 }) async {
-  tester.view.physicalSize = const Size(800, 2400);
+  tester.view.physicalSize = const Size(800, 3200);
 
   addTearDown(tester.view.resetPhysicalSize);
 
