@@ -14,6 +14,7 @@ void main() {
     _automationLocalizedText_should_fallBackToTheFirstText();
     _automationLocalizedText_should_resolveAnEmptyStringWhenNoTextIsWritten();
     _automationLocalizedText_should_writeSortedJson();
+    _automationLocalizedText_should_holdAnEnglishOnlyText();
   });
 }
 
@@ -50,5 +51,16 @@ void _automationLocalizedText_should_writeSortedJson() {
   test('AutomationLocalizedText should write sorted JSON', () {
     expect(_text.toJson().keys, ['en', 'pl', 'uk']);
     expect(_text.locales, ['uk', 'en', 'pl']);
+  });
+}
+
+void _automationLocalizedText_should_holdAnEnglishOnlyText() {
+  test('AutomationLocalizedText should hold an English-only text', () {
+    const text = AutomationLocalizedText.en('Remove the item');
+
+    expect(text.texts, {'en': 'Remove the item'});
+    expect(text.locales, ['en']);
+    expect(text.resolve('uk'), 'Remove the item');
+    expect(text.toJson(), {'en': 'Remove the item'});
   });
 }

@@ -8,10 +8,22 @@ import 'package:collection/collection.dart';
 final class AutomationLocalizedText {
   static const _fallbackLanguageCode = 'en';
 
-  /// The texts by language code.
-  final Map<String, String> texts;
+  final Map<String, String>? _texts;
+  final String? _englishText;
 
-  const AutomationLocalizedText(this.texts);
+  const AutomationLocalizedText(Map<String, String> texts)
+    : _texts = texts,
+      _englishText = null;
+
+  /// A text written in English only.
+  const AutomationLocalizedText.en(String text)
+    : _texts = null,
+      _englishText = text;
+
+  /// The texts by language code.
+  Map<String, String> get texts {
+    return _texts ?? {_fallbackLanguageCode: _englishText ?? ''};
+  }
 
   /// The language codes that hold a version of the text.
   Iterable<String> get locales => texts.keys;
