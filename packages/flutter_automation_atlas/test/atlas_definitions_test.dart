@@ -6,9 +6,9 @@ import 'package:flutter_automation_atlas/src/atlas_exception.dart';
 import 'test_utils/fake_atlas_project.dart';
 import 'test_utils/test_atlas_root.dart';
 
-const _flowTitle = {'en': 'Quote an item', 'uk': 'Запропонувати поїздку'};
-const _variantTitle = {'en': 'From a new item', 'uk': 'З нової поїздки'};
-const _variantProves = {'en': 'A new item', 'uk': 'Нова поїздка'};
+const _flowTitle = {'en': 'Quote an item', 'uk': 'Запропонувати товар'};
+const _variantTitle = {'en': 'From a new item', 'uk': 'З нового товару'};
+const _variantProves = {'en': 'A new item', 'uk': 'Новий товар'};
 const _openBlock = {
   'steps': [
     {

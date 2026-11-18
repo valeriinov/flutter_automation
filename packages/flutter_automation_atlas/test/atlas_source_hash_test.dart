@@ -70,10 +70,10 @@ void _atlasSourceHash_should_changeForEditBesideTarget() {
 
 void _atlasSourceHash_should_keepCharactersOfStringLiterals() {
   test('AtlasSourceHash should keep characters of string literals', () {
-    const spacedSource = "final title = 'Нова  поїздка';";
+    const spacedSource = "final title = 'Новий  товар';";
     final normalized = AtlasSourceHash.normalize(spacedSource);
 
-    expect(normalized, "finaltitle='Нова  поїздка';");
+    expect(normalized, "finaltitle='Новий  товар';");
   });
 }
 

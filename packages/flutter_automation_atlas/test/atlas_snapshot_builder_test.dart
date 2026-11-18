@@ -32,7 +32,7 @@ const _detailsScreen = {
 const _cartsWidgets = ['CartsScreen', 'CartsView'];
 const _detailsWidgets = ['CartDetailsScreen', 'CartDetailsView'];
 const _toastText = 'Поїздку видалено';
-const _detailsTitle = 'Деталі посилки';
+const _detailsTitle = 'Деталі товару';
 const _toastTranslations = {
   'cartsTitle': 'Посилки',
   'detailsTitle': _detailsTitle,
