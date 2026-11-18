@@ -61,8 +61,9 @@ Each line names a variant and one reason, or `fresh`. The reasons:
 | `failed` | the snapshot holds a walk that did not pass |
 
 `stale` compares content. It holds before a commit. The baseline of a headless
-walk is the source commit of the snapshot, or the commit that git history
-holds for the stage sources when the source commit is not an ancestor of `HEAD`.
+walk is the source commit of the snapshot. When that commit is not an ancestor
+of `HEAD`, the baseline is the commit that git history holds for the stage
+sources.
 `stale --published` keeps to the published variants of the project.
 `stale --no-walk` reads the headless reports that exist and walks nothing.
 

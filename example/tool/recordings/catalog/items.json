@@ -2,7 +2,7 @@
   "flow": "catalog",
   "variant": "items",
   "ok": true,
-  "totalMs": 2894,
+  "totalMs": 2866,
   "steps": [
     {
       "label": "waitFor example.screen.loginScreen",
@@ -17,7 +17,7 @@
           "value": "example.screen.loginScreen"
         }
       },
-      "ms": 10,
+      "ms": 8,
       "ok": true,
       "requests": []
     },
@@ -51,7 +51,7 @@
           "value": "example.screen.catalogScreen"
         }
       },
-      "ms": 544,
+      "ms": 554,
       "ok": true,
       "requests": [
         {

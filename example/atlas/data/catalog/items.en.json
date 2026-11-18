@@ -401,6 +401,7 @@
       "_WalkStripLayer"
     ]
   },
-  "sourceCommit": "fb11964c5775bd20f49c89030cb381c5a3a37141",
-  "sourceDirty": true
+  "headlessRenderer": "Flutter 3.47.5 · macos_arm64",
+  "sourceCommit": "51d4356699b2435d6ffc6081e59f06229d6b6406",
+  "sourceDirty": false
 }
