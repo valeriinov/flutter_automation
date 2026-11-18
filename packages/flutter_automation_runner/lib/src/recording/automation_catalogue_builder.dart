@@ -4,6 +4,7 @@ import 'package:collection/collection.dart';
 import 'package:flutter_automation_mock/mock_catalogue.dart';
 import 'package:flutter_automation_mock/mock_section.dart';
 
+import 'package:flutter_automation_runner/src/definition/automation_flow_group.dart';
 import 'package:flutter_automation_runner/src/recording/automation_recording.dart';
 
 /// {@category Utils}
@@ -22,6 +23,10 @@ import 'package:flutter_automation_runner/src/recording/automation_recording.dar
 /// or the body. A request is the n-th call of one method and path inside its
 /// variant.
 ///
+/// The catalogue lists the groups of [groupOrder] first, in its order, then the
+/// other groups in the order of their first flow. It lists the areas of the
+/// groups in the order they first stand.
+///
 /// A branch carries the title of its variant. The tester picks a branch before
 /// the start when its scenario differs in a restart key of a section from the
 /// scenario of another branch. An empty scenario counts as a scenario.
@@ -36,6 +41,7 @@ final class AutomationCatalogueBuilder {
   final List<MockSection<Object?>> _sections;
   final Map<String, String> _dateFormats;
   final Map<String, String> _dateValueKeys;
+  final List<AutomationFlowGroup> _groupOrder;
 
   /// Creates a builder.
   ///
@@ -45,35 +51,42 @@ final class AutomationCatalogueBuilder {
   /// `restartKeys` decide which branch is chosen before the start.
   /// The [dateFormats] and [dateValueKeys] parameters are the date settings of
   /// the project. The catalogue carries them, so the player reads a date
-  /// finder as the runner does.
+  /// finder as the runner does. The [groupOrder] parameter lists the groups in
+  /// the order the catalogue shows them.
   const AutomationCatalogueBuilder({
     required Map<String, Object?> flows,
     required List<AutomationRecording> recordings,
     List<MockSection<Object?>> sections = const [],
     Map<String, String> dateFormats = const {},
     Map<String, String> dateValueKeys = const {},
+    List<AutomationFlowGroup> groupOrder = const [],
   }) : _flows = flows,
        _recordings = recordings,
        _sections = sections,
        _dateFormats = dateFormats,
-       _dateValueKeys = dateValueKeys;
+       _dateValueKeys = dateValueKeys,
+       _groupOrder = groupOrder;
 
   /// The catalogue of the flows a tester walks.
   AutomationCatalogue build() {
     final flows = <AutomationCatalogueFlow>[];
     final groups = <String, AutomationCatalogueGroup>{};
+    final areas = <String, AutomationCatalogueArea>{};
 
     for (final MapEntry(:key, :value) in _flows.entries) {
       final json = CatalogueJson.asObject(value);
 
       if (json[isInQaCatalogueKey] == true) {
         flows.add(_buildFlow(key, json));
-        _collectGroup(groups, json);
+        _collectGroup(groups, areas, json);
       }
     }
 
+    final ordered = _orderGroups(groups);
+
     return AutomationCatalogue(
-      groups: groups.values.toList(growable: false),
+      areas: _orderAreas(ordered, areas),
+      groups: ordered,
       flows: flows,
       dateFormats: _dateFormats,
       dateValueKeys: _dateValueKeys,
@@ -82,15 +95,47 @@ final class AutomationCatalogueBuilder {
 
   void _collectGroup(
     Map<String, AutomationCatalogueGroup> groups,
+    Map<String, AutomationCatalogueArea> areas,
     Map<String, Object?> flow,
   ) {
-    final group = AutomationCatalogueGroup.fromJson(
-      CatalogueJson.asObject(flow['group']),
-    );
+    final json = CatalogueJson.asObject(flow['group']);
+    final areaJson = CatalogueJson.asObject(json['area']);
+    final area = AutomationCatalogueArea.fromJson(areaJson);
+    final group = AutomationCatalogueGroup.fromJson({
+      ...json,
+      if (area.name.isNotEmpty) 'area': area.name,
+    });
+
+    if (area.name.isNotEmpty) {
+      areas.putIfAbsent(area.name, () => area);
+    }
 
     if (group.name.isNotEmpty) {
       groups.putIfAbsent(group.name, () => group);
     }
+  }
+
+  List<AutomationCatalogueGroup> _orderGroups(
+    Map<String, AutomationCatalogueGroup> groups,
+  ) {
+    final named = _groupOrder
+        .map((group) => groups[group.name])
+        .nonNulls
+        .toList(growable: false);
+
+    return [
+      ...named,
+      ...groups.values.where((group) => !named.contains(group)),
+    ];
+  }
+
+  List<AutomationCatalogueArea> _orderAreas(
+    List<AutomationCatalogueGroup> groups,
+    Map<String, AutomationCatalogueArea> areas,
+  ) {
+    final names = groups.map((group) => group.area).nonNulls.toSet();
+
+    return [for (final name in names) ?areas[name]];
   }
 
   AutomationCatalogueFlow _buildFlow(String name, Map<String, Object?> json) {

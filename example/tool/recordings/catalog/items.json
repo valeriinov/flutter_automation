@@ -2,7 +2,7 @@
   "flow": "catalog",
   "variant": "items",
   "ok": true,
-  "totalMs": 596,
+  "totalMs": 2894,
   "steps": [
     {
       "label": "waitFor example.screen.loginScreen",
@@ -17,7 +17,7 @@
           "value": "example.screen.loginScreen"
         }
       },
-      "ms": 8,
+      "ms": 10,
       "ok": true,
       "requests": []
     },
@@ -34,7 +34,7 @@
           "value": "example.button.loginButton"
         }
       },
-      "ms": 46,
+      "ms": 30,
       "ok": true,
       "requests": []
     },
@@ -51,7 +51,7 @@
           "value": "example.screen.catalogScreen"
         }
       },
-      "ms": 531,
+      "ms": 544,
       "ok": true,
       "requests": [
         {
@@ -97,7 +97,7 @@
           "value": "example.panel.catalogList"
         }
       },
-      "ms": 0,
+      "ms": 1,
       "ok": true,
       "requests": []
     },

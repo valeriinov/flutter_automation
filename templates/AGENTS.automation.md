@@ -13,7 +13,7 @@ repository root.
   `--uri`, `--capture`, `--locale`.
 - **Launch**: the arguments of `flutter run` that start the app for a walk, with
   the flavor, the entry point and the defines. Example:
-  `--flavor dev -t lib/main_dev.dart --dart-define=ENABLE_AUTOMATION=true`.
+  `--flavor dev -t lib/main_automation.dart --dart-define=ENABLE_AUTOMATION=true`.
   Add the define that turns the mock on when the project has one.
 - **Flows folder**: the folder of the flow and block Dart files. Example:
   `tool/flows`.
@@ -37,6 +37,17 @@ repository root.
 - **Debug menu**: the file of the debug menu that holds the mock mode tile, and
   the gesture that opens the menu, or `none`. Example:
   `lib/debug/debug_menu.dart`, long press on the version label.
+- **Atlas command**: the one command that calls `runAtlas`, or `none` when the
+  project has no atlas. The skills append a subcommand and flags
+  (`capture`, `stale`, `headless`, `render`, `bundle`, `--store`, `--locale`).
+  Example: `fvm dart run tool/atlas.dart`.
+- **Atlas store**: exactly one path, the default of `--store`: the folder of the
+  snapshots, the declarations, the screenshots and the page, or `none`. A
+  declaration record holds the parts of a source file that a snapshot read. Example:
+  `docs/atlas`.
+- **Atlas publish**: the project document that holds the publish procedure of
+  the atlas, or `none`. A skill that finds a document runs the capture by it
+  and not straight into **Atlas store**. Example: `docs/atlas_publish.md`.
 - **Default flow**: the flow a skill walks when the user names none. Example:
   `login`.
 - **After an edit**: the commands that format and analyze after a Dart edit, in

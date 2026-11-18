@@ -7,6 +7,7 @@ publish_to: none
 
 workspace:
   - packages/flutter_automation
+  - packages/flutter_automation_atlas
   - packages/flutter_automation_driver
   - packages/flutter_automation_mock
   - packages/flutter_automation_mock_dio

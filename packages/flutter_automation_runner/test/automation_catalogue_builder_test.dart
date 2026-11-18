@@ -105,6 +105,8 @@ void main() {
     _automationCatalogueBuilder_should_skipAFailedRecording();
     _automationCatalogueBuilder_should_matchTheForkByOccurrenceNotStepIndex();
     _automationCatalogueBuilder_should_compareListBodies();
+    _automationCatalogueBuilder_should_storeRepeatsOnce();
+    _automationCatalogueBuilder_should_orderGroupsByGroupOrder();
   });
   group('AutomationRecordingFiles Tests', () {
     _automationRecordingFiles_should_writeAPassedRunOnly();
@@ -325,5 +327,113 @@ void _automationRunner_should_writeTheCatalogueFile() {
 
     directory.deleteSync(recursive: true);
     expect(written.flows.single.fork?.path, '/auth/otp');
+  });
+}
+
+AutomationRecording _imageRecording(String variant, String code) {
+  return AutomationRecording.fromReport({
+    'flow': 'login',
+    'variant': variant,
+    'ok': true,
+    'totalMs': 10,
+    'steps': [
+      for (final label in ['first', 'second'])
+        {
+          'label': label,
+          'action': 'tap',
+          'ok': true,
+          'journal': [
+            {
+              'method': 'GET',
+              'path': '/profile',
+              'status': 200,
+              'response': {'code': code, 'image': 'a' * 2000},
+            },
+          ],
+        },
+    ],
+  });
+}
+
+void _automationCatalogueBuilder_should_storeRepeatsOnce() {
+  test('AutomationCatalogueBuilder should store repeats once', () {
+    final json = _build([
+      _imageRecording('accepted', 'ok'),
+      _imageRecording('rejected', 'wrong'),
+    ]).toJson();
+    final text = jsonEncode(json);
+
+    expect(json['version'], 2);
+    expect((json['responses'] as Map<String, Object?>).length, 2);
+    expect(json['blobs'], ['a' * 2000]);
+    expect(RegExp('a{2000}').allMatches(text).length, 1);
+  });
+}
+
+AutomationFlowDefinition _flowIn(String name, AutomationFlowGroup group) {
+  return AutomationFlowDefinition(
+    name: name,
+    group: group,
+    isInQaCatalogue: true,
+    variants: [FlowVariant('main', items: _items)],
+  );
+}
+
+void _automationCatalogueBuilder_should_orderGroupsByGroupOrder() {
+  test('AutomationCatalogueBuilder should order groups by groupOrder', () {
+    const browse = AutomationFlowArea(
+      name: 'browse',
+      title: AutomationLocalizedText({'en': 'Browse'}),
+    );
+    const shopping = AutomationFlowArea(
+      name: 'shopping',
+      title: AutomationLocalizedText({'en': 'Shopping'}),
+    );
+    const catalog = AutomationFlowGroup(
+      name: 'catalog',
+      title: AutomationLocalizedText({'en': 'Catalog'}),
+      area: browse,
+    );
+    const basket = AutomationFlowGroup(
+      name: 'basket',
+      title: AutomationLocalizedText({'en': 'Basket'}),
+      area: shopping,
+    );
+    const items = AutomationFlowGroup(
+      name: 'items',
+      title: AutomationLocalizedText({'en': 'Items'}),
+      area: browse,
+    );
+    const profile = AutomationFlowGroup(
+      name: 'profile',
+      title: AutomationLocalizedText({'en': 'Profile'}),
+    );
+    final flows = [
+      _flowIn('a', catalog),
+      _flowIn('b', profile),
+      _flowIn('c', basket),
+      _flowIn('d', items),
+    ];
+    final catalogue = AutomationCatalogueBuilder(
+      flows: {for (final flow in flows) flow.name: flow.toJson()},
+      recordings: const [],
+      groupOrder: const [basket, items, catalog],
+    ).build();
+    final read = AutomationCatalogue.fromJson(catalogue.toJson());
+
+    expect(read.groups.map((group) => group.name), [
+      'basket',
+      'items',
+      'catalog',
+      'profile',
+    ]);
+    expect(read.groups.map((group) => group.area), [
+      'shopping',
+      'browse',
+      'browse',
+      null,
+    ]);
+    expect(read.areas.map((area) => area.name), ['shopping', 'browse']);
+    expect(read.areas.last.title['en'], 'Browse');
   });
 }

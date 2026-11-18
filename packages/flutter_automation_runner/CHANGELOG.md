@@ -1,5 +1,20 @@
 # Changelog
 
+## Unreleased
+
+- The QA catalogue has `version: 2`: each distinct answer of the mock stands
+  once in `responses`, and each repeated string of 1024 characters or more
+  stands once in `blobs`. Migration: regenerate the catalogue with
+  `--qa-catalogue`.
+- New `AutomationFlowArea` and `AutomationFlowGroup.area`. The catalogue
+  carries `areas`.
+- New `AutomationRunnerConfig.groupOrder` and `withGroupOrder`: the groups of
+  the catalogue in display order. `AutomationCatalogueBuilder` takes
+  `groupOrder`.
+- A recording holds no screenshot names: `AutomationRecordedStep.screenshot`
+  and `AutomationRecording.endScreenshot` are removed, and `--capture` with
+  `--record` writes the same recording as a plain run.
+
 ## 0.9.4
 
 - Version bump with `flutter_automation_mock` 0.9.4.

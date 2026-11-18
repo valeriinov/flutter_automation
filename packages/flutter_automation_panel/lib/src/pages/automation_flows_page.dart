@@ -12,8 +12,9 @@ import 'package:flutter_automation_panel/src/theme/automation_panel_strings.dart
 
 /// {@category Widgets}
 ///
-/// The Flows tab: the flows of the catalogue under their groups, with a search
-/// over flows, outcomes and requests. A tap opens the map of the flow.
+/// The Flows tab: the flows of the catalogue under their groups, and the groups
+/// under their areas, with a search over flows, outcomes and requests. A tap
+/// opens the map of the flow.
 class AutomationFlowsPage extends StatefulWidget {
   const AutomationFlowsPage({super.key});
 
@@ -27,6 +28,7 @@ class _AutomationFlowsPageState extends State<AutomationFlowsPage> {
   @override
   Widget build(BuildContext context) {
     final strings = AutomationPanelStrings.of(context);
+    final theme = AutomationPanelTheme.of(context);
     final controller = AutomationPanelScope.of(context);
     final catalogue = controller.definition.catalogue;
     final flows = catalogue.flows.where(_matchesQuery).toList();
@@ -38,29 +40,45 @@ class _AutomationFlowsPageState extends State<AutomationFlowsPage> {
           hint: strings.flowSearchHint,
           onChanged: (value) => setState(() => _query = value),
         ),
-        for (final group in _groupsOf(strings, catalogue, flows)) ...[
+        for (final section in _sectionsOf(strings, catalogue, flows)) ...[
           const SizedBox(height: AutomationPanelTheme.gapMedium),
-          Padding(
-            padding: const EdgeInsets.only(
-              bottom: AutomationPanelTheme.gapSmall,
-            ),
-            child: AutomationPanelLabel(text: group.title),
-          ),
-          for (final flow in group.flows)
+          if (section.areaTitle case final areaTitle?)
             Padding(
               padding: const EdgeInsets.only(
                 bottom: AutomationPanelTheme.gapSmall,
               ),
-              child: AutomationFlowTile(
-                title: AutomationCatalogueText.read(
-                  flow.title,
-                  flow.name,
-                  strings.languageCode,
+              child: Text(
+                areaTitle,
+                style: theme.textStyle(
+                  size: 16,
+                  weight: FontWeight.w700,
+                  color: theme.text,
                 ),
-                subtitle: _describe(flow),
-                onPressed: () => _open(context, controller, flow),
               ),
             ),
+          for (final group in section.groups) ...[
+            Padding(
+              padding: const EdgeInsets.only(
+                bottom: AutomationPanelTheme.gapSmall,
+              ),
+              child: AutomationPanelLabel(text: group.title),
+            ),
+            for (final flow in group.flows)
+              Padding(
+                padding: const EdgeInsets.only(
+                  bottom: AutomationPanelTheme.gapSmall,
+                ),
+                child: AutomationFlowTile(
+                  title: AutomationCatalogueText.read(
+                    flow.title,
+                    flow.name,
+                    strings.languageCode,
+                  ),
+                  subtitle: _describe(flow),
+                  onPressed: () => _open(context, controller, flow),
+                ),
+              ),
+          ],
         ],
       ],
     );
@@ -83,6 +101,31 @@ class _AutomationFlowsPageState extends State<AutomationFlowsPage> {
     ]);
   }
 
+  List<_Section> _sectionsOf(
+    AutomationPanelStrings strings,
+    AutomationCatalogue catalogue,
+    List<AutomationCatalogueFlow> flows,
+  ) {
+    final areas = {for (final area in catalogue.areas) area.name: area};
+    final sections = <String, _Section>{};
+
+    for (final group in _groupsOf(strings, catalogue, flows)) {
+      final area = areas[group.area];
+      final key = area?.name ?? group.name;
+      final areaTitle = area == null
+          ? null
+          : AutomationCatalogueText.read(
+              area.title,
+              area.name,
+              strings.languageCode,
+            );
+
+      sections.putIfAbsent(key, () => _Section(areaTitle)).groups.add(group);
+    }
+
+    return sections.values.toList();
+  }
+
   List<_Group> _groupsOf(
     AutomationPanelStrings strings,
     AutomationCatalogue catalogue,
@@ -96,12 +139,14 @@ class _AutomationFlowsPageState extends State<AutomationFlowsPage> {
       if (inGroup.isNotEmpty) {
         groups.add(
           _Group(
+            group.name,
             AutomationCatalogueText.read(
               group.title,
               group.name,
               strings.languageCode,
             ),
             inGroup,
+            area: group.area,
           ),
         );
       }
@@ -111,7 +156,7 @@ class _AutomationFlowsPageState extends State<AutomationFlowsPage> {
     final others = flows.where((flow) => !known.contains(flow.group)).toList();
 
     if (others.isNotEmpty) {
-      groups.add(_Group(strings.flows, others));
+      groups.add(_Group('', strings.flows, others));
     }
 
     return groups;
@@ -145,8 +190,17 @@ class _AutomationFlowsPageState extends State<AutomationFlowsPage> {
 }
 
 class _Group {
+  final String name;
   final String title;
   final List<AutomationCatalogueFlow> flows;
+  final String? area;
 
-  const _Group(this.title, this.flows);
+  const _Group(this.name, this.title, this.flows, {this.area});
+}
+
+class _Section {
+  final String? areaTitle;
+  final List<_Group> groups = [];
+
+  _Section(this.areaTitle);
 }

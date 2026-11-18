@@ -46,7 +46,10 @@ void main() {
     MockOverride.failures({'/items': {}}),
   ]);
   final isEmpty = scenario.settingsOf(_catalog).isEmpty;
-  final catalogue = AutomationCatalogue.fromJson(const {'flows': []});
+  final catalogue = AutomationCatalogue.fromJson(const {
+    'version': 2,
+    'flows': [],
+  });
   final title = _catalog.profiles['empty']?.title.resolve('uk');
   final isRestart = _catalog.changesRestartKey(const {}, scenario.toJson());
 

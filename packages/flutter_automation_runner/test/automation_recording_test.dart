@@ -136,12 +136,11 @@ void _automationRecording_should_giveACaptureRunAndAPlainRunOneSchema() {
         containsAll(['flow', 'variant', 'ok', 'totalMs', 'steps']),
       );
       expect(
-        (captureStep as Map<String, Object?>).keys.toSet().difference(
-          (plainStep as Map<String, Object?>).keys.toSet(),
-        ),
-        {'screenshot'},
+        (captureStep as Map<String, Object?>).keys.toSet(),
+        (plainStep as Map<String, Object?>).keys.toSet(),
       );
-      expect(capture['endScreenshot'], 'login_otp_end.png');
+      expect(capture.keys, isNot(contains('endScreenshot')));
+      expect(captureStep.keys, isNot(contains('screenshot')));
     },
   );
 }

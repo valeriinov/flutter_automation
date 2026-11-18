@@ -1,0 +1,311 @@
+import 'dart:io';
+
+import 'package:flutter_test/flutter_test.dart';
+
+import 'package:flutter_automation_atlas/src/atlas_exception.dart';
+import 'package:flutter_automation_atlas/src/atlas_shot.dart';
+import 'package:flutter_automation_atlas/src/atlas_shot_publisher.dart';
+import 'package:flutter_automation_atlas/src/atlas_snapshot.dart';
+import 'package:flutter_automation_atlas/src/atlas_snapshot_store.dart';
+import 'package:flutter_automation_atlas/src/run_atlas.dart';
+
+import 'test_utils/create_atlas_snapshot.dart';
+import 'test_utils/test_atlas_root.dart';
+
+const _stageShot = '0123456789ab';
+const _endShot = 'ba9876543210';
+const _tapStep = {
+  'action': 'tap',
+  'label': 'open',
+  'finder': {'by': 'text', 'value': 'open'},
+};
+const _pubspecWithLimits = '''
+name: sample
+flutter_automation:
+  defaultLocale: uk
+  atlas:
+    maxBundleBytes: 15728640
+    maxBundleImages: 500
+''';
+const _pubspecWithSmallLimit = '''
+name: sample
+flutter_automation:
+  defaultLocale: uk
+  atlas:
+    maxBundleBytes: 10
+    maxBundleImages: 500
+''';
+const _pubspecWithoutLimits = '''
+name: sample
+flutter_automation:
+  defaultLocale: uk
+''';
+
+void main() {
+  group('AtlasRun Page Tests', () {
+    _atlasRun_should_renderThePageAndHandStoreToProjectReports();
+    _atlasRun_should_showSourceLabelOnTheRenderedPage();
+    _atlasRun_should_renderTheEditionTheOptionNames();
+    _atlasRun_should_bundleUrlsPageWithoutInlineImages();
+    _atlasRun_should_stopBundleWithTheTextOfAFailedPublish();
+    _atlasRun_should_failBundleOverTheLimitWithItsSize();
+    _atlasRun_should_nameTheMissingLimitKeyOnBundle();
+    _atlasRun_should_rejectBundleWithoutEditionOrShots();
+    _atlasRun_should_rejectBundleOfUnknownEdition();
+  });
+}
+
+void _atlasRun_should_renderThePageAndHandStoreToProjectReports() {
+  test(
+    'AtlasRun should render the page and hand store to project reports',
+    () async {
+      await TestAtlasRoot.run((root) async {
+        _writeStore(root);
+
+        await _runIn(root, ['render']);
+
+        expect(File(root.paths.pagePath).existsSync(), isTrue);
+        expect(root.project.reportedStores, [root.paths.storePath]);
+      });
+    },
+  );
+}
+
+void _atlasRun_should_showSourceLabelOnTheRenderedPage() {
+  test('AtlasRun should show source label on the rendered page', () async {
+    await TestAtlasRoot.run((root) async {
+      _writeStore(root);
+
+      await _runIn(root, ['render', '--source-label', 'build 7']);
+
+      expect(
+        File(root.paths.pagePath).readAsStringSync(),
+        contains('"sourceLabel":"build 7"'),
+      );
+    });
+  });
+}
+
+void _atlasRun_should_renderTheEditionTheOptionNames() {
+  test('AtlasRun should render the edition the option names', () async {
+    await TestAtlasRoot.run((root) async {
+      _writeStore(root);
+
+      await _runIn(root, ['render', '--edition', 'lite']);
+
+      expect(
+        File(root.paths.pagePath).readAsStringSync(),
+        isNot(contains('"journalRecords"')),
+      );
+    });
+  });
+}
+
+void _atlasRun_should_bundleUrlsPageWithoutInlineImages() {
+  test('AtlasRun should bundle urls page without inline images', () async {
+    await TestAtlasRoot.run((root) async {
+      _writeStore(root);
+
+      root.project.publisher = _UrlPublisher();
+
+      await _runIn(root, [
+        'bundle',
+        '--edition',
+        'full',
+        '--shots',
+        'urls',
+        '--locale',
+        'all',
+      ]);
+
+      final bundle = File(
+        root.paths.resolveBundlePagePath('full'),
+      ).readAsStringSync();
+
+      expect(bundle, contains('https://shots.example/$_stageShot.png'));
+      expect(bundle, isNot(contains('data:image')));
+    });
+  });
+}
+
+void _atlasRun_should_stopBundleWithTheTextOfAFailedPublish() {
+  test(
+    'AtlasRun should stop bundle with the text of a failed publish',
+    () async {
+      await TestAtlasRoot.run((root) async {
+        _writeStore(root);
+
+        root.project.publisher = _FailingPublisher();
+
+        await expectLater(
+          _runIn(root, ['bundle', '--edition', 'full', '--shots', 'urls']),
+          throwsA(
+            isA<AtlasException>().having(
+              (error) => error.message,
+              'message',
+              contains('quota exceeded'),
+            ),
+          ),
+        );
+
+        expect(
+          File(root.paths.resolveBundlePagePath('full')).existsSync(),
+          isFalse,
+        );
+      });
+    },
+  );
+}
+
+void _atlasRun_should_failBundleOverTheLimitWithItsSize() {
+  test('AtlasRun should fail bundle over the limit with its size', () async {
+    await TestAtlasRoot.run((root) async {
+      _writeStore(root, pubspec: _pubspecWithSmallLimit);
+
+      final error = await _runIn(root, [
+        'bundle',
+        '--edition',
+        'full',
+        '--shots',
+        'files',
+      ]).then<Object?>((_) => null, onError: (Object error) => error);
+
+      final size = File(root.paths.resolveBundlePagePath('full')).lengthSync();
+
+      expect(size, greaterThan(10));
+      expect(
+        error,
+        isA<AtlasException>().having(
+          (error) => error.message,
+          'message',
+          contains('takes $size bytes, over the 10 byte limit'),
+        ),
+      );
+    });
+  });
+}
+
+void _atlasRun_should_nameTheMissingLimitKeyOnBundle() {
+  test('AtlasRun should name the missing limit key on bundle', () async {
+    await TestAtlasRoot.run((root) async {
+      _writeStore(root, pubspec: _pubspecWithoutLimits);
+
+      await expectLater(
+        _runIn(root, ['bundle', '--edition', 'full', '--shots', 'files']),
+        throwsA(
+          isA<AtlasException>().having(
+            (error) => error.message,
+            'message',
+            contains('flutter_automation: atlas: maxBundleBytes:'),
+          ),
+        ),
+      );
+    });
+  });
+}
+
+void _atlasRun_should_rejectBundleWithoutEditionOrShots() {
+  test('AtlasRun should reject bundle without edition or shots', () async {
+    await TestAtlasRoot.run((root) async {
+      _writeStore(root);
+
+      for (final args in [
+        ['bundle', '--shots', 'files'],
+        ['bundle', '--edition', 'full'],
+        ['bundle', '--edition', 'full', '--shots', 'unknown-source'],
+      ]) {
+        await expectLater(
+          _runIn(root, args),
+          throwsA(
+            isA<AtlasException>().having(
+              (error) => error.message,
+              'message',
+              startsWith('usage: atlas'),
+            ),
+          ),
+        );
+      }
+    });
+  });
+}
+
+void _atlasRun_should_rejectBundleOfUnknownEdition() {
+  test('AtlasRun should reject bundle of unknown edition', () async {
+    await TestAtlasRoot.run((root) async {
+      _writeStore(root);
+
+      await expectLater(
+        _runIn(root, ['bundle', '--edition', 'gold', '--shots', 'files']),
+        throwsA(
+          isA<AtlasException>().having(
+            (error) => error.message,
+            'message',
+            contains('full, lite'),
+          ),
+        ),
+      );
+    });
+  });
+}
+
+Future<void> _runIn(TestAtlasRoot root, List<String> args) {
+  return AtlasRun(args, root.project, rootPath: root.directory.path).run();
+}
+
+void _writeStore(TestAtlasRoot root, {String pubspec = _pubspecWithLimits}) {
+  root
+    ..writeSource('pubspec.yaml', pubspec)
+    ..writePublishedVariants({
+      'catalog_flow': ['openNewItem'],
+    })
+    ..writeShot(_stageShot, [1, 2, 3])
+    ..writeShot(_endShot, [4, 5, 6])
+    ..writeFlow('catalog_flow', {
+      'title': {'en': 'Browse items', 'uk': 'Переглянути товари'},
+      'variants': {
+        'openNewItem': {
+          'items': [_tapStep],
+        },
+      },
+    });
+
+  AtlasSnapshotStore(root.paths).write(
+    createAtlasSnapshot(
+      flow: 'catalog_flow',
+      variant: 'openNewItem',
+      stages: const [
+        AtlasStage(
+          label: 'open',
+          action: 'tap',
+          journal: [],
+          ok: true,
+          target: null,
+          block: null,
+          targetRect: null,
+          screen: null,
+          designScreen: null,
+          shot: _stageShot,
+          error: null,
+        ),
+      ],
+      end: const AtlasEnd(screen: null, designScreen: null, shot: _endShot),
+    ),
+  );
+}
+
+final class _UrlPublisher implements AtlasShotPublisher {
+  @override
+  Future<Map<String, Uri>> publish(List<AtlasShot> shots) async {
+    return {
+      for (final shot in shots)
+        shot.hash: Uri.parse('https://shots.example/${shot.hash}.png'),
+    };
+  }
+}
+
+final class _FailingPublisher implements AtlasShotPublisher {
+  @override
+  Future<Map<String, Uri>> publish(List<AtlasShot> shots) {
+    throw StateError('quota exceeded');
+  }
+}

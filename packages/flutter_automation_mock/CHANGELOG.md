@@ -1,5 +1,15 @@
 # Changelog
 
+## Unreleased
+
+- `AutomationCatalogue.toJson` writes `version: 2` and stores each distinct
+  response once in `responses` and each repeated string of 1024 characters or
+  more once in `blobs`. `fromJson` reads that format and throws an
+  `AutomationCatalogueVersionException` for a missing or unknown `version`.
+  Migration: regenerate the catalogue.
+- New `AutomationCatalogueArea`, `AutomationCatalogue.areas` and
+  `AutomationCatalogueGroup.area`.
+
 ## 0.9.4
 
 - New `MockApiEndpoint.backendErrorStatusCodes`: the status codes that a

@@ -31,6 +31,9 @@ the fields **Mock configuration file**, **Flows folder**, **Launch** and
   of `none` counts as unset. This skill replaces `none` with the real value.
 - A field that is empty or missing: find candidates, ask the user one question and
   write the answer into the section. Step 8 lists where to look.
+- The groups of the panel follow `references/flow-groups.md` of the `atlas`
+  skill. The project passes its one `groupOrder` constant to
+  `AutomationRunnerConfig.read().withGroupOrder(...)`.
 
 ## 2. Add the dependency
 

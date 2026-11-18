@@ -24,7 +24,7 @@ final _flows = [
     ],
   ),
   AutomationFlowDefinition(
-    name: 'chat',
+    name: 'help',
     variants: [FlowVariant('main', items: _items)],
   ),
 ];
@@ -243,7 +243,7 @@ void _automationRunner_should_acceptARecordingOfAFlowOutsideTheCatalogue() {
       'catalogue', () async {
     final result = await _check([
       ..._fresh(),
-      _recording('main', flow: 'chat'),
+      _recording('main', flow: 'help'),
     ]);
 
     expect(result.report['ok'], isTrue);

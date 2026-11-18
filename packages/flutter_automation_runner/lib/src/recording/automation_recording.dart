@@ -93,10 +93,6 @@ final class AutomationRecordedStep {
   /// Why the step failed, missing when it passed.
   final String? error;
 
-  /// File name of the screenshot a capture run took before the step, missing
-  /// when it took none.
-  final String? screenshot;
-
   /// Requests the mock answered while the step ran, with the code and the body
   /// of each answer.
   final List<AutomationRecordingRequest> requests;
@@ -110,7 +106,6 @@ final class AutomationRecordedStep {
     this.step,
     this.ms,
     this.error,
-    this.screenshot,
     this.requests = const [],
   });
 
@@ -127,7 +122,6 @@ final class AutomationRecordedStep {
       step: CatalogueJson.tryObject(json, 'step'),
       ms: ms is int ? ms : null,
       error: CatalogueJson.tryString(json, 'error'),
-      screenshot: CatalogueJson.tryString(json, 'screenshot'),
       requests: CatalogueJson.objects(
         json,
         'requests',
@@ -149,7 +143,6 @@ final class AutomationRecordedStep {
       'ms': ?ms,
       'ok': ok,
       'error': ?error,
-      'screenshot': ?screenshot,
       'requests': requests.map((request) => request.toJson()).toList(),
     };
   }
@@ -160,9 +153,9 @@ final class AutomationRecordedStep {
 /// What a run of one flow variant did: its steps, timings and the requests the
 /// mock answered in each step.
 ///
-/// A capture run and a plain run with `--record` write the same schema. The
-/// capture run adds the names of its screenshots. The catalogue of the panel
-/// reads it.
+/// A capture run and a plain run with `--record` write the same schema. A
+/// capture run keeps its screenshots in the capture folder, so the recording it
+/// writes names none. The catalogue of the panel reads it.
 final class AutomationRecording {
   /// Name of the flow.
   final String flow;
@@ -179,10 +172,6 @@ final class AutomationRecording {
   /// Record of the launch that the app keeps, missing when it keeps none.
   final Map<String, Object?>? launch;
 
-  /// File name of the screenshot a capture run took at the end, missing when it
-  /// took none.
-  final String? endScreenshot;
-
   /// Steps in the order the run walked them.
   final List<AutomationRecordedStep> steps;
 
@@ -193,14 +182,12 @@ final class AutomationRecording {
     required this.totalMs,
     required this.steps,
     this.launch,
-    this.endScreenshot,
   });
 
   /// Reads the recording out of its JSON.
   factory AutomationRecording.fromJson(Map<String, Object?> json) {
     final totalMs = json['totalMs'];
     final launch = json['launch'];
-    final endScreenshot = json['endScreenshot'];
 
     return AutomationRecording(
       flow: '${json['flow']}',
@@ -208,7 +195,6 @@ final class AutomationRecording {
       ok: json['ok'] != false,
       totalMs: totalMs is int ? totalMs : 0,
       launch: launch is Map<String, Object?> ? launch : null,
-      endScreenshot: endScreenshot is String ? endScreenshot : null,
       steps: CatalogueJson.objects(
         json,
         'steps',
@@ -245,7 +231,6 @@ final class AutomationRecording {
 
     final totalMs = report['totalMs'];
     final launch = report['launch'];
-    final endScreenshot = report['endScreenshot'];
 
     return AutomationRecording(
       flow: '${report['flow']}',
@@ -253,7 +238,6 @@ final class AutomationRecording {
       ok: report['ok'] == true,
       totalMs: totalMs is int ? totalMs : 0,
       launch: launch is Map<String, Object?> ? launch : null,
-      endScreenshot: endScreenshot is String ? endScreenshot : null,
       steps: [
         for (int index = 0; index < reportSteps.length; index += 1)
           AutomationRecordedStep.fromJson({
@@ -272,7 +256,6 @@ final class AutomationRecording {
       'ok': ok,
       'totalMs': totalMs,
       'launch': ?launch,
-      'endScreenshot': ?endScreenshot,
       'steps': steps.map((step) => step.toJson()).toList(),
     };
   }

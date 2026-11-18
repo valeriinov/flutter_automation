@@ -517,6 +517,7 @@ final class AutomationRunner {
       sections: _sections,
       dateFormats: config.dateFormats,
       dateValueKeys: config.dateValueKeys,
+      groupOrder: config.groupOrder,
     ).build();
     final text = const JsonEncoder.withIndent('  ').convert(catalogue.toJson());
 

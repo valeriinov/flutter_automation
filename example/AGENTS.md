@@ -17,6 +17,9 @@ about this project. Commands run from the `example/` folder.
 - **QA panel file**: `lib/panel/example_panel.dart`.
 - **Debug menu**: `lib/example_app.dart` opens the mode sheet. The Mock mode
   button in the app bar of `lib/login_screen.dart` opens it.
+- **Atlas command**: `fvm dart run tool/atlas.dart`.
+- **Atlas store**: `atlas`.
+- **Atlas publish**: none.
 - **Default flow**: `catalog`.
 - **After an edit**: `fvm dart format . && fvm dart analyze`.
 - **Post-edit steps**: `fvm dart run tool/run_flows.dart --qa-catalogue

@@ -5,6 +5,7 @@ import 'package:yaml/yaml.dart';
 import 'package:flutter_automation_runner/src/automation_finder_kind.dart';
 import 'package:flutter_automation_runner/src/automation_frame_summary.dart';
 import 'package:flutter_automation_runner/src/automation_runner_exception.dart';
+import 'package:flutter_automation_runner/src/definition/automation_flow_group.dart';
 
 /// {@category Utils}
 ///
@@ -53,6 +54,12 @@ final class AutomationRunnerConfig {
   /// that ends an error message. Missing when there is none to say.
   final String? launchHint;
 
+  /// Groups of the QA catalogue in display order. The catalogue lists these
+  /// groups first, in this order, then the groups the list leaves out, in the
+  /// order of their first flow. It lists the areas of the groups in the order
+  /// they first stand.
+  final List<AutomationFlowGroup> groupOrder;
+
   const AutomationRunnerConfig({
     required this.packagePrefix,
     this.defaultLocale = _defaultLocale,
@@ -61,6 +68,7 @@ final class AutomationRunnerConfig {
     this.splashScreen,
     this.launchHint,
     this.dateValueKeys = const {},
+    this.groupOrder = const [],
   });
 
   /// Reads the `pubspec.yaml` at [pubspecPath], the one of the directory where
@@ -99,6 +107,23 @@ final class AutomationRunnerConfig {
       splashScreen: _readString(section, 'splashScreen'),
       launchHint: _readString(section, 'launchHint'),
       dateValueKeys: _readDateValueKeys(section),
+    );
+  }
+
+  /// This config with [groupOrder] set.
+  ///
+  /// A project passes it to `runFlows`:
+  /// `AutomationRunnerConfig.read().withGroupOrder([...])`.
+  AutomationRunnerConfig withGroupOrder(List<AutomationFlowGroup> groupOrder) {
+    return AutomationRunnerConfig(
+      packagePrefix: packagePrefix,
+      defaultLocale: defaultLocale,
+      dateFormats: dateFormats,
+      frameBudgetMs: frameBudgetMs,
+      splashScreen: splashScreen,
+      launchHint: launchHint,
+      dateValueKeys: dateValueKeys,
+      groupOrder: groupOrder,
     );
   }
 

@@ -7,7 +7,13 @@ final class AutomationCatalogueRequest {
   static const _methodKey = 'method';
   static const _pathKey = 'path';
   static const _statusCodeKey = 'statusCode';
-  static const _responseKey = 'response';
+
+  /// Key of the request JSON that holds the body of the answer.
+  static const responseKey = 'response';
+
+  /// Key of the request JSON that refers to its response in the `responses`
+  /// table of the catalogue.
+  static const responseHashKey = 'responseHash';
 
   /// HTTP method of the request.
   final String method;
@@ -37,7 +43,7 @@ final class AutomationCatalogueRequest {
       method: CatalogueJson.tryString(json, _methodKey) ?? '',
       path: CatalogueJson.tryString(json, _pathKey) ?? '',
       statusCode: statusCode is int ? statusCode : null,
-      response: json[_responseKey],
+      response: json[responseKey],
     );
   }
 
@@ -47,7 +53,7 @@ final class AutomationCatalogueRequest {
       _methodKey: method,
       _pathKey: path,
       _statusCodeKey: ?statusCode,
-      _responseKey: ?response,
+      responseKey: ?response,
     };
   }
 }

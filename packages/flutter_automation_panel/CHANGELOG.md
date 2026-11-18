@@ -1,5 +1,13 @@
 # Changelog
 
+## Unreleased
+
+- `AutomationCatalogueAsset.load` throws an
+  `AutomationCatalogueVersionException` for a catalogue without `version: 2`.
+  It answered `null` before. Migration: regenerate the catalogue.
+- The Flows tab draws area, then group, then flow. It lists the areas in the
+  order of their first group. A group without an area stays flat.
+
 ## 0.9.4
 
 - New `backendErrorStatusCodes` on `AutomationPanelDefinition` and

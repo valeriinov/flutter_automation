@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_automation_mock/mock_catalogue.dart';
 import 'package:flutter_automation_panel/flutter_automation_panel.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -12,6 +13,8 @@ void main() {
     _load_should_decodeTheCatalogueAsset();
     _load_should_returnNullForABrokenAsset();
     _load_should_returnNullForAMissingAsset();
+    _load_should_throwForAnUnknownVersion();
+    _load_should_throwForACatalogueWithoutVersion();
   });
 }
 
@@ -70,5 +73,45 @@ void _load_should_returnNullForAMissingAsset() {
     );
 
     expect(catalogue, isNull);
+  });
+}
+
+void _load_should_throwForAnUnknownVersion() {
+  testWidgets('load should throw for an unknown version', (tester) async {
+    final json = jsonEncode({...sampleCatalogue.toJson(), 'version': 3});
+
+    await tester.runAsync(() async {
+      await expectLater(
+        AutomationCatalogueAsset.load(
+          _StringBundle({'catalogue.json': json}),
+          'catalogue.json',
+        ),
+        throwsA(
+          isA<AutomationCatalogueVersionException>().having(
+            (error) => error.message,
+            'message',
+            allOf(contains('version 3'), contains('Regenerate')),
+          ),
+        ),
+      );
+    });
+  });
+}
+
+void _load_should_throwForACatalogueWithoutVersion() {
+  testWidgets('load should throw for a catalogue without version', (
+    tester,
+  ) async {
+    final json = jsonEncode({...sampleCatalogue.toJson()}..remove('version'));
+
+    await tester.runAsync(() async {
+      await expectLater(
+        AutomationCatalogueAsset.load(
+          _StringBundle({'catalogue.json': json}),
+          'catalogue.json',
+        ),
+        throwsA(isA<AutomationCatalogueVersionException>()),
+      );
+    });
   });
 }

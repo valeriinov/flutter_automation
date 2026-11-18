@@ -146,8 +146,11 @@ a full run: it rejects `--shoot` and `--until`. A run that fails writes no
 recording.
 
 `--qa-catalogue <file>` writes the catalogue of `flutter_automation_panel` out
-of the flows. With `--recordings <dir>` it adds the recorded answers of the runs
-that passed. It needs no device. A flow stays in the catalogue only when its
+of the flows. The file holds `version: 2`. It stores each distinct response of
+the mock once under `responses`, keyed by a hash of the response with its keys
+sorted. It stores each repeated string of 1024 characters or more once under
+`blobs`. A step refers to its response by hash. With `--recordings <dir>` it
+adds the recorded answers of the runs that passed. It needs no device. A flow stays in the catalogue only when its
 `AutomationFlowDefinition` sets `isInQaCatalogue: true`. The `entry` title of a
 variant becomes the entry of its catalogue variant. A recorded step keeps its
 `step` JSON: the action, the finder with each block parameter substituted, the
@@ -161,6 +164,10 @@ the variant. A recording of a flow outside the catalogue is not a problem; a
 recording that no flow or variant holds is. The command prints one line of
 JSON, `{"qaCatalogue", "ok", "problems": [...]}`, and exits with code 1 when
 `problems` is not empty.
+
+The catalogue lists its groups and areas in the order of `groupOrder`.
+`AutomationRunnerConfig.read().withGroupOrder(groupOrder)` sets it. A project
+that keeps the atlas passes the same constant to `AtlasProject.groupOrder`.
 
 The fork of a flow stands at the earlier of two places: the first step at which
 the steps of two variants differ in their action, finder or text, and the first

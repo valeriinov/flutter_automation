@@ -14,6 +14,10 @@ abstract final class AutomationCatalogueAsset {
   /// Returns `null` when the asset is missing or does not hold a catalogue.
   /// The project then passes `catalogue ?? const AutomationCatalogue()` and
   /// keeps the panel.
+  ///
+  /// Throws an [AutomationCatalogueVersionException] when the catalogue has no
+  /// `version` or one this build does not read. The project regenerates the
+  /// catalogue then.
   static Future<AutomationCatalogue?> load(
     AssetBundle bundle,
     String path,
@@ -22,7 +26,13 @@ abstract final class AutomationCatalogueAsset {
       final text = await bundle.loadString(path);
       final json = await compute(jsonDecode, text);
 
-      return AutomationCatalogue.fromJson(json as Map<String, Object?>);
+      if (json is! Map<String, Object?>) {
+        return null;
+      }
+
+      return AutomationCatalogue.fromJson(json);
+    } on AutomationCatalogueVersionException {
+      rethrow;
     } on Object {
       return null;
     }

@@ -1,4 +1,5 @@
 import 'package:flutter_automation_runner/src/automation_localized_text.dart';
+import 'package:flutter_automation_runner/src/definition/automation_flow_area.dart';
 
 /// {@category Utils}
 ///
@@ -10,8 +11,17 @@ final class AutomationFlowGroup {
   /// Caption of the group, written once per locale.
   final AutomationLocalizedText title;
 
-  const AutomationFlowGroup({required this.name, required this.title});
+  /// Area the group belongs to, missing when the group stands alone.
+  final AutomationFlowArea? area;
+
+  const AutomationFlowGroup({
+    required this.name,
+    required this.title,
+    this.area,
+  });
 
   /// The group as the flow JSON holds it.
-  Map<String, Object?> toJson() => {'name': name, 'title': title.toJson()};
+  Map<String, Object?> toJson() {
+    return {'name': name, 'title': title.toJson(), 'area': ?area?.toJson()};
+  }
 }

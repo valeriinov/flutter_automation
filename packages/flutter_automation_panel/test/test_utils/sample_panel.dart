@@ -111,7 +111,7 @@ final sampleCatalogue = AutomationCatalogue(
   groups: const [
     AutomationCatalogueGroup(name: 'account', title: {'en': 'Sign-in'}),
     AutomationCatalogueGroup(name: 'items', title: {'en': 'Catalog'}),
-    AutomationCatalogueGroup(name: 'chat', title: {'en': 'Chat'}),
+    AutomationCatalogueGroup(name: 'help', title: {'en': 'Help'}),
   ],
   flows: [
     AutomationCatalogueFlow(
@@ -166,9 +166,9 @@ final sampleCatalogue = AutomationCatalogue(
       ],
     ),
     AutomationCatalogueFlow(
-      name: 'supportChat',
-      group: 'chat',
-      title: const {'en': 'Support chat'},
+      name: 'supportHelp',
+      group: 'help',
+      title: const {'en': 'Support help'},
       variants: [AutomationCatalogueVariant(name: 'a')],
     ),
   ],

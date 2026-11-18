@@ -72,7 +72,9 @@ mock.
 
 `AutomationCatalogueAsset.load` returns `null` when the asset is missing or
 does not hold a catalogue. The project then passes
-`catalogue ?? const AutomationCatalogue()` and keeps the panel.
+`catalogue ?? const AutomationCatalogue()` and keeps the panel. It throws an
+`AutomationCatalogueVersionException` for a catalogue without `version: 2`.
+The project regenerates the catalogue then.
 `AutomationPanelDefinition.standard` builds the pages Flows,
 Autorun, Sections and Log. `wrapPage` wraps each page, so the project marks it
 for automation. A project with other pages uses the plain

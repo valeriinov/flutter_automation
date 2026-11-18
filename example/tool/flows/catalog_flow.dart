@@ -12,13 +12,21 @@ List<FlowStep> _buildSignInSteps(FlowParams params) => const [
   WaitFor(ByTarget(ExampleTarget.catalogScreen)),
 ];
 
+const catalogGroup = AutomationFlowGroup(
+  name: 'catalog',
+  title: AutomationLocalizedText({'en': 'Catalog', 'uk': 'Каталог'}),
+  area: AutomationFlowArea(
+    name: 'shop',
+    title: AutomationLocalizedText({'en': 'Shop', 'uk': 'Магазин'}),
+  ),
+);
+
+const catalogGroupOrder = [catalogGroup];
+
 /// Signs in and reads the catalog: with items, and empty.
 final catalogFlow = AutomationFlowDefinition(
   name: 'catalog',
-  group: const AutomationFlowGroup(
-    name: 'catalog',
-    title: AutomationLocalizedText({'en': 'Catalog', 'uk': 'Каталог'}),
-  ),
+  group: catalogGroup,
   title: const AutomationLocalizedText({
     'en': 'Sign in and read the catalog',
     'uk': 'Вхід і перегляд каталогу',

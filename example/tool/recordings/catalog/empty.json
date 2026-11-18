@@ -2,7 +2,7 @@
   "flow": "catalog",
   "variant": "empty",
   "ok": true,
-  "totalMs": 599,
+  "totalMs": 2851,
   "steps": [
     {
       "label": "waitFor example.screen.loginScreen",
@@ -34,7 +34,7 @@
           "value": "example.button.loginButton"
         }
       },
-      "ms": 47,
+      "ms": 34,
       "ok": true,
       "requests": []
     },
@@ -51,7 +51,7 @@
           "value": "example.screen.catalogScreen"
         }
       },
-      "ms": 533,
+      "ms": 494,
       "ok": true,
       "requests": [
         {

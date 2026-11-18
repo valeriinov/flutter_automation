@@ -58,6 +58,7 @@ mock.
 | Package | Purpose |
 | --- | --- |
 | [`flutter_automation`](packages/flutter_automation) | Target markup, command registry, build switches. |
+| [`flutter_automation_atlas`](packages/flutter_automation_atlas) | `runAtlas`: the atlas of the flows, with a snapshot, a screenshot and a journal per stage, and the page in two editions (Full and Lite). A project describes itself in one `AtlasProject`. |
 | [`flutter_automation_driver`](packages/flutter_automation_driver) | Driver extension for the app and the finders the host uses. |
 | [`flutter_automation_mock`](packages/flutter_automation_mock) | Scenario, `MockSection`, `AutomationMock`, `AutomationStateStore`, `MockScenarioBackend`, transport, journal and the catalogue model. HTTP-client free. |
 | [`flutter_automation_mock_dio`](packages/flutter_automation_mock_dio) | `MockDioHttpClientAdapter` that answers Dio requests from the mock. |
@@ -99,6 +100,12 @@ dependencies:
       ref: 0.9.4
 
 dev_dependencies:
+  # Only for the atlas of the flows.
+  flutter_automation_atlas:
+    git:
+      url: https://github.com/valeriinov/flutter_automation.git
+      path: packages/flutter_automation_atlas
+      ref: 0.9.4
   flutter_automation_runner:
     git:
       url: https://github.com/valeriinov/flutter_automation.git
@@ -107,7 +114,9 @@ dev_dependencies:
 ```
 
 Skip `flutter_automation_mock`, `flutter_automation_mock_dio` and
-`flutter_automation_panel` when the app needs no mock. The runner pulls in the other packages it needs.
+`flutter_automation_panel` when the app needs no mock. Skip
+`flutter_automation_atlas` when the project keeps no atlas. The runner pulls in
+the other packages it needs.
 
 ## Quick start
 
@@ -227,6 +236,8 @@ own facts (commands, folders, defaults) in an `## Automation` section of its
 | `mock-app` | Run the app on the in-memory mock, choose scenarios and profiles, tune a `MockSection`, add a mock api | — |
 | `add-automation-targets` | Declare target enums and mark widgets with `automationTarget()` so a flow addresses ids, not text | — |
 | `setup-qa-panel` | Add the QA panel to a project that has the mock: panel dependency, mode bootstrap, panel file, restart screen, mode tile in the debug menu, catalogue asset, QA build, and the `--check` of the QA catalogue | — |
+| `atlas` | Keep the atlas of the flows in step with the app: `stale`, `capture` on a simulator, `headless`, `render`, `bundle` of the Full and Lite editions, publish by the fields of the project. Its `references/flow-groups.md` sets the menu of the atlas and the groups of the QA panel | — |
+| `setup-atlas` | Add the atlas to a project that has flows: dependency, `AtlasProject` file, `atlas:` section of `pubspec.yaml`, the three atlas fields of `## Automation`, a first capture and page | — |
 | `setup-automation` | Set a project up from `flutter create`: dependencies at the tag, `flutter_automation:` section, `## Automation` in `AGENTS.md`, driver in `main`, `run_flows.dart` and a first flow, optionally the mock | — |
 
 The workflows `measure-flow` and `optimize-flow` ship in the Claude Code plugin only.
@@ -277,12 +288,21 @@ npx skills add https://github.com/valeriinov/flutter_automation/tree/<tag> \
   --skill add-automation-targets
 ```
 
-`setup-qa-panel` needs the other five skills, so name all six:
+`setup-qa-panel` needs the other six skills, so name all seven:
 
 ```bash
 npx skills add https://github.com/valeriinov/flutter_automation/tree/<tag> \
   --skill setup-qa-panel --skill setup-automation --skill mock-app \
-  --skill run-flow --skill drive-device --skill add-automation-targets
+  --skill run-flow --skill drive-device --skill add-automation-targets \
+  --skill atlas
+```
+
+`setup-atlas` needs `atlas`, `setup-automation` and `drive-device`:
+
+```bash
+npx skills add https://github.com/valeriinov/flutter_automation/tree/<tag> \
+  --skill setup-atlas --skill atlas --skill setup-automation \
+  --skill drive-device
 ```
 
 Update: `npx skills update`. Remove:
@@ -301,7 +321,7 @@ fvm dart run melos run test
 fvm dart run melos run format
 ```
 
-The six packages and `example/` are members of one pub workspace. CI runs
+The seven packages and `example/` are members of one pub workspace. CI runs
 `melos run analyze`, then `flutter test --exclude-tags golden` in each package
 that has tests, and builds the debug apk of the example
 (`.github/workflows/ci.yml`). CI skips the format check and the golden tests,
