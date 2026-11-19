@@ -1,5 +1,17 @@
 # Changelog
 
+## 0.12.1
+
+- A capture run does not check the end frame after a failed step. The report
+  keeps the end screenshot, the end journal and `manifest` of that run.
+- An end frame defect keeps `endJournal`, `endTexts`, `endWidgets` and
+  `manifest` in the report. Only the end screenshot is left out.
+- The `end` step of an end frame defect has no `screenshot` key, so the atlas
+  does not read it as a stage.
+- The error of a frame that the driver cannot read names
+  `flutter_automation_driver` 0.12.0 or later, and calls the end frame by
+  that name.
+
 ## 0.12.0
 
 - A capture run fails on a frame that is not ready before a screenshot: a frame

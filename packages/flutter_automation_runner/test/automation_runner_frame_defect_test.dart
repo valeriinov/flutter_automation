@@ -11,9 +11,18 @@ import 'package:flutter_automation_runner/src/automation_runner.dart';
 import 'package:flutter_automation_runner/src/automation_runner_config.dart';
 
 const _config = AutomationRunnerConfig(packagePrefix: 'package:sample_app/');
-const _grace = Duration(milliseconds: 300);
+const _grace = Duration(seconds: 1);
 const _readyFrame = _FakeFrame(loadingImages: 0, emptyTexts: 0);
-const _loadingImageFrame = _FakeFrame(loadingImages: 2, emptyTexts: 0);
+const _loadingImageFrame = _FakeFrame(
+  loadingImages: 2,
+  emptyTexts: 0,
+  loadingImageItems: [
+    {
+      'rect': [0, 40, 120, 0],
+      'target': 'list.cover',
+    },
+  ],
+);
 const _emptyTextFrame = _FakeFrame(
   loadingImages: 0,
   emptyTexts: 1,
@@ -33,6 +42,7 @@ void main() {
     _automationRunner_should_failOnAnImageStillLoading();
     _automationRunner_should_failOnAnEmptyText();
     _automationRunner_should_failOnAnEndFrameDefect();
+    _automationRunner_should_skipTheEndFrameAfterAFailedStep();
     _automationRunner_should_reportTheItemsOfAFrameDefect();
     _automationRunner_should_waitForAnImageThatLoadsInTheGrace();
     _automationRunner_should_passAFrameDeclaredAsLoadingState();
@@ -76,6 +86,16 @@ void _automationRunner_should_failOnAnImageStillLoading() {
 
     _expectFailedAtStepTwo(run, 'loadingImage');
     expect((run.report['frameDefect'] as Map)['count'], 2);
+    expect((run.report['frameDefect'] as Map)['items'], [
+      {
+        'rect': [0, 40, 120, 0],
+        'target': 'list.cover',
+      },
+    ]);
+    expect(
+      ((run.report['steps'] as List).last as Map)['error'],
+      contains('first at [0, 40, 120, 0], inside list.cover'),
+    );
   });
 }
 
@@ -109,20 +129,51 @@ void _automationRunner_should_failOnAnEndFrameDefect() {
         },
       ],
     });
-    expect(run.report.containsKey('screenshot'), isFalse);
     expect(run.report.containsKey('error'), isFalse);
+    expect(run.report.containsKey('endJournal'), isTrue);
+    expect(run.report.containsKey('manifestError'), isTrue);
+    expect(run.report.containsKey('endScreenshot'), isFalse);
+
+    final endStep = (run.report['steps'] as List).last as Map;
+
     expect(
-      (run.report['steps'] as List).last,
+      endStep,
       allOf(
         containsPair('label', 'end'),
         containsPair('ok', false),
         containsPair('frameDefect', run.report['frameDefect']),
       ),
     );
+    expect(endStep.containsKey('screenshot'), isFalse);
+    expect(endStep.containsKey('action'), isFalse);
     expect(run.endScreenshot.existsSync(), isFalse);
     expect(run.recording.existsSync(), isFalse);
     expect(exitCode, 1);
   });
+}
+
+void _automationRunner_should_skipTheEndFrameAfterAFailedStep() {
+  test(
+    'AutomationRunner should skip the end frame after a failed step',
+    () async {
+      final run = await _run(
+        _twoTaps(),
+        frameAfterShots: (shots) => shots == 2 ? _emptyTextFrame : _readyFrame,
+        failingTap: 2,
+      );
+
+      final steps = run.report['steps'] as List;
+
+      expect(run.report['ok'], isFalse);
+      expect(run.report.containsKey('frameDefect'), isFalse);
+      expect(steps, hasLength(2));
+      expect(steps.last, containsPair('label', 'tap B'));
+      expect(steps.last, containsPair('ok', false));
+      expect(run.report.containsKey('endJournal'), isTrue);
+      expect(run.endScreenshot.existsSync(), isTrue);
+      expect(exitCode, 1);
+    },
+  );
 }
 
 void _automationRunner_should_reportTheItemsOfAFrameDefect() {
@@ -231,18 +282,17 @@ void _automationRunner_should_failWhenTheDriverCannotReadTheFrame() {
       expect(run.report['ok'], isFalse);
       expect(run.report.containsKey('frameDefect'), isFalse);
 
-      final failedStep = (run.report['steps'] as List).firstWhere(
-        (step) => (step as Map)['ok'] == false,
-      );
+      final steps = run.report['steps'] as List;
 
+      expect(steps, hasLength(1));
       expect(
-        (failedStep as Map)['error'],
+        (steps.single as Map)['error'],
         allOf(
           contains('Could not read the frame before step 1'),
-          contains('frame.read'),
+          contains('(flutter_automation_driver 0.12.0 or later)'),
         ),
       );
-      expect(run.endScreenshot.existsSync(), isFalse);
+      expect(run.endScreenshot.existsSync(), isTrue);
       expect(exitCode, 1);
     },
   );
@@ -261,7 +311,10 @@ void _automationRunner_should_failWhenTheDriverCannotReadTheEndFrame() {
       expect(run.report.containsKey('error'), isFalse);
       expect(
         ((run.report['steps'] as List).last as Map)['error'],
-        contains('Could not read the frame before step end'),
+        allOf(
+          contains('Could not read the end frame'),
+          contains('(flutter_automation_driver 0.12.0 or later)'),
+        ),
       );
       expect(exitCode, 1);
     },
@@ -290,6 +343,7 @@ Future<_Run> _run(
   bool Function(int waits)? isAnimatingOnWait,
   bool Function(int shots)? frameReadFailsAfterShots,
   int loadingReadsBeforeReady = 0,
+  int? failingTap,
 }) async {
   final directory = Directory.systemTemp.createTempSync('frame_defect_');
 
@@ -301,6 +355,7 @@ Future<_Run> _run(
     isAnimatingOnWait: isAnimatingOnWait ?? (_) => false,
     frameReadFailsAfterShots: frameReadFailsAfterShots ?? (_) => false,
     loadingReadsBeforeReady: loadingReadsBeforeReady,
+    failingTap: failingTap,
   );
   final lines = <String>[];
   final sut = AutomationRunner.fromDefinitions(
@@ -354,11 +409,13 @@ final class _FakeFrame {
   final int loadingImages;
   final int emptyTexts;
 
+  final List<Map<String, Object?>> loadingImageItems;
   final List<Map<String, Object?>> emptyTextItems;
 
   const _FakeFrame({
     required this.loadingImages,
     required this.emptyTexts,
+    this.loadingImageItems = const [],
     this.emptyTextItems = const [],
   });
 }
@@ -368,9 +425,11 @@ final class _FakeDriver implements FlutterDriver {
   final bool Function(int shots) isAnimatingAfterShots;
   final bool Function(int waits) isAnimatingOnWait;
   final bool Function(int shots) frameReadFailsAfterShots;
+  final int? failingTap;
   int loadingReadsBeforeReady;
   int _shots = 0;
   int _waits = 0;
+  int _taps = 0;
 
   _FakeDriver({
     required this.frameAfterShots,
@@ -378,6 +437,7 @@ final class _FakeDriver implements FlutterDriver {
     required this.isAnimatingOnWait,
     required this.frameReadFailsAfterShots,
     required this.loadingReadsBeforeReady,
+    required this.failingTap,
   });
 
   @override
@@ -407,6 +467,7 @@ final class _FakeDriver implements FlutterDriver {
     return {
       'loadingImages': frame.loadingImages,
       'emptyTexts': frame.emptyTexts,
+      'loadingImageItems': frame.loadingImageItems,
       'emptyTextItems': frame.emptyTextItems,
     };
   }
@@ -433,7 +494,13 @@ final class _FakeDriver implements FlutterDriver {
   Future<void> waitFor(SerializableFinder finder, {Duration? timeout}) async {}
 
   @override
-  Future<void> tap(SerializableFinder finder, {Duration? timeout}) async {}
+  Future<void> tap(SerializableFinder finder, {Duration? timeout}) async {
+    _taps += 1;
+
+    if (_taps == failingTap) {
+      throw DriverError('no widget to tap');
+    }
+  }
 
   @override
   Future<void> close() async {}

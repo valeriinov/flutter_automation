@@ -431,6 +431,7 @@ final class AutomationRunner {
       isCut: isCut,
       isRecording: isRecording,
       hasFrameDefect: _findFrameDefect(steps) != null,
+      hasFailedStep: steps.any((step) => step['ok'] == false),
     );
 
     final failedFrame = runEnd.failedFrame;
@@ -1384,6 +1385,7 @@ final class AutomationRunner {
     required bool isCut,
     required bool isRecording,
     required bool hasFrameDefect,
+    required bool hasFailedStep,
   }) async {
     if (capture != null && hasFrameDefect) {
       return (fields: const <String, Object?>{}, failedFrame: null);
@@ -1402,10 +1404,18 @@ final class AutomationRunner {
       return (fields: await _readManifest(driver), failedFrame: null);
     }
 
-    final failedFrame = await _checkFrame(driver, step: _endStepName);
+    final failedFrame = hasFailedStep
+        ? null
+        : await _checkFrame(driver, step: _endStepName);
 
     if (failedFrame != null) {
-      return (fields: const <String, Object?>{}, failedFrame: failedFrame);
+      return (
+        fields: {
+          ...await _captureEndJournal(driver),
+          ...await _readManifest(driver),
+        },
+        failedFrame: failedFrame,
+      );
     }
 
     return (
@@ -1437,8 +1447,10 @@ final class AutomationRunner {
 
   /// Waits until the frame is still, then reads whether it is ready. It answers
   /// `null` for a frame that is ready or that the flow declares a loading
-  /// state. Otherwise it answers a failed step entry that holds the
-  /// `frameDefect`: its `step`, its `kind` and its `count`.
+  /// state. A frame that is not ready gives a failed step entry that holds the
+  /// `frameDefect`: its `step`, its `kind`, and its `count` and `items` when
+  /// the defect has them. A frame that the driver cannot read gives a failed
+  /// step entry that holds only the `error`.
   ///
   /// The [step] parameter is the number of the step the frame precedes, or the
   /// name of the end frame. A frame that is not still within the timeout has
@@ -1464,14 +1476,18 @@ final class AutomationRunner {
 
       return defect == null ? null : _describeFrameDefect(step, label, defect);
     } on Object catch (error) {
+      final frame = label == null
+          ? 'the end frame'
+          : 'the frame before step $step';
+
       stderr.writeln('fail capture  frame of step $step');
 
       return {
         'ok': false,
         'error':
-            'Could not read the frame before step $step: $error\n'
-            'A capture run needs an app that answers '
-            '$_frameReadCommand$_launchClause.',
+            'Could not read $frame: $error\n'
+            'A capture run needs an app that answers $_frameReadCommand '
+            '(flutter_automation_driver 0.12.0 or later)$_launchClause.',
       };
     }
   }
@@ -1576,7 +1592,8 @@ final class AutomationRunner {
       'loadingImage' => '${defect.count} image(s) had no frame yet',
       _ => '${defect.count} text(s) were empty',
     };
-    final where = label == null ? 'the end frame' : 'the frame before $label';
+    final isEndFrame = label == null;
+    final where = isEndFrame ? 'the end frame' : 'the frame before $label';
 
     stderr.writeln('fail frame    step $step  ${defect.kind}');
 
@@ -1587,7 +1604,9 @@ final class AutomationRunner {
 
     return {
       'ok': false,
-      'screenshot': null,
+      // The atlas reads a step with a `screenshot` key as a stage, and the end
+      // frame is none.
+      if (!isEndFrame) 'screenshot': null,
       'frameDefect': {
         'step': step,
         'kind': defect.kind,
