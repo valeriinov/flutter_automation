@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.12.0
+
+- The response sheet keeps the `messageKey` of the failure it edits.
+- A request row names the `messageKey` of a failure that has no error code and
+  no message.
+
 ## 0.11.0
 
 - Version bump with `flutter_automation_atlas` 0.11.0.

@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.12.0
+
+- Version bump with `flutter_automation_runner` 0.12.0.
+
 ## 0.11.0
 
 - New screenshot source `sheets`. `bundle --shots sheets` writes the WebP sheets

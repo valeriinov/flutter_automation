@@ -1,13 +1,17 @@
 # Changelog
 
-## 0.11.1
+## 0.12.0
 
 - New `frame.read` command (`AutomationProtocol.frameReadCommand`). It answers
   `loadingImages`, the count of shown images with no decoded frame, and
-  `emptyTexts`, the count of shown texts with no visible character. It also answers `loadingImageItems` and
-  `emptyTextItems`: up to 5 items of each kind, `{rect: [l, t, w, h], target}`,
-  with the global rect in rounded logical pixels and the id of the nearest
-  ancestor that the marking keys, or null.
+  `emptyTexts`, the count of shown texts with no visible character. It also
+  answers `loadingImageItems` and `emptyTextItems`: up to 5 items of each
+  kind, `{rect: [l, t, w, h], target}`, with the global rect in rounded logical
+  pixels and the id of the nearest ancestor that the marking keys, or null.
+- `frame.read` does not count a text inside an `InputDecorator`. A `TextField`
+  builds empty hint, helper and error texts there.
+- The `target` of an item is the id of the nearest `KeyedSubtree` that has a
+  `ValueKey<String>`, which is how the marking keys a widget.
 
 ## 0.11.0
 

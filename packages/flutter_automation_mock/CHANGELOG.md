@@ -1,13 +1,14 @@
 # Changelog
 
-## 0.11.1
+## 0.12.0
 
-- `MockBackend.buildFailureBody` and the `buildFailureBody` callback of
-  `MockScenarioBackend` take the `MockApiRequest` the failure answers, so the
-  body can follow the request, such as a message in its language. Migration:
-  add the request parameter to the callback.
+- Breaking: `MockBackend.buildFailureBody` and the `buildFailureBody` callback
+  of `MockScenarioBackend` take the `MockApiRequest` the failure answers, so
+  the body can follow the request, such as a message in its language.
+  Migration: add the request parameter to the callback.
 - New `MockApiFailure.messageKey`: the key of a message the project keeps in
-  each app language, for a failure whose backend answer has no error code.
+  each app language. The package only stores the key. A body builder of the
+  project reads it.
 
 ## 0.11.0
 

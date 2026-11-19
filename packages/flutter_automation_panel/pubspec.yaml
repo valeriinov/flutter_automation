@@ -1,6 +1,6 @@
 name: flutter_automation_panel
 description: Builder of the QA panel of an app that runs on the mock of flutter_automation_mock, in a style of its own.
-version: 0.11.0
+version: 0.12.0
 repository: https://github.com/valeriinov/flutter_automation
 publish_to: none
 
@@ -18,12 +18,12 @@ dependencies:
   flutter_automation:
     git:
       url: https://github.com/valeriinov/flutter_automation.git
-      ref: 0.11.0
+      ref: 0.12.0
       path: packages/flutter_automation
   flutter_automation_mock:
     git:
       url: https://github.com/valeriinov/flutter_automation.git
-      ref: 0.11.0
+      ref: 0.12.0
       path: packages/flutter_automation_mock
 
 dev_dependencies:
