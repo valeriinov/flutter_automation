@@ -18,13 +18,15 @@ import 'package:flutter_automation_atlas/src/atlas_source_hash.dart';
 /// Each reader and writer of the atlas takes an instance, so a test points
 /// them at a temporary directory instead of the repository.
 final class AtlasLocations {
+  /// The folder of the shots beside a page, by its name.
+  static const shotsDirectory = 'shots';
+
   static final _configs = Expando<AutomationRunnerConfig>();
   static final _pageConfigs = Expando<AtlasPageConfig>();
   static final _sourceHashes = Expando<AtlasSourceHash>();
 
   static const _pubspecPath = 'pubspec.yaml';
   static const _dataDirectory = 'data';
-  static const _shotsDirectory = 'shots';
   static const _declarationsDirectory = 'declarations';
   static const _shotCacheDirectory = 'shot_cache';
   static const _headlessDirectory = 'headless';
@@ -101,7 +103,7 @@ final class AtlasLocations {
   String get dataPath => p.join(storePath, _dataDirectory);
 
   /// Directory holding the screenshots, each named by its content hash.
-  String get shotsPath => p.join(storePath, _shotsDirectory);
+  String get shotsPath => p.join(storePath, shotsDirectory);
 
   /// Directory holding the declarations of every manifest file, each record
   /// named by the source hash of the file content it was read from.
@@ -159,7 +161,7 @@ final class AtlasLocations {
 
   /// The shots a bundle page reads from files, beside the page.
   String resolveBundleShotsPath(String bundlePagePath) {
-    return p.join(p.dirname(bundlePagePath), _shotsDirectory);
+    return p.join(p.dirname(bundlePagePath), shotsDirectory);
   }
 
   /// The snapshot file of one variant of a flow captured in [locale].

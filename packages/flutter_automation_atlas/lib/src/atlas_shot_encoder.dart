@@ -23,8 +23,10 @@ abstract interface class AtlasShotEncoder {
 ///
 /// One image holding several shots, with the place of each on it.
 final class AtlasShotSheet {
+  /// The extension of a sheet file and of an encode of a sheet.
+  static const fileExtension = '.webp';
+
   static const _dataUriPrefix = 'data:image/webp;base64,';
-  static const _fileExtension = '.webp';
 
   /// The WebP bytes of the sheet image.
   final Uint8List bytes;
@@ -38,7 +40,7 @@ final class AtlasShotSheet {
   String get dataUri => '$_dataUriPrefix${base64Encode(bytes)}';
 
   /// The file name of the sheet, the hash of its bytes with `.webp`.
-  String get fileName => '${sha1.convert(bytes)}$_fileExtension';
+  String get fileName => '${sha1.convert(bytes)}$fileExtension';
 }
 
 /// {@category Utils}
@@ -76,7 +78,6 @@ final class AtlasShotCell {
 final class AtlasShotWebpEncoder implements AtlasShotEncoder {
   static const _columns = 4;
   static const _executable = 'cwebp';
-  static const _webpExtension = '.webp';
   static const _pngExtension = '.png';
 
   final AtlasLocations _paths;
@@ -98,7 +99,10 @@ final class AtlasShotWebpEncoder implements AtlasShotEncoder {
         ),
     };
     final cached = File(
-      p.join(_paths.bundleShotCachePath, '${_nameSheet(shots)}$_webpExtension'),
+      p.join(
+        _paths.bundleShotCachePath,
+        '${_nameSheet(shots)}${AtlasShotSheet.fileExtension}',
+      ),
     );
 
     if (!cached.existsSync()) {
