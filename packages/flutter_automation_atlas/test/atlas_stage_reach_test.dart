@@ -18,15 +18,15 @@ const _repositoryImplPath = 'lib/home/home_repository_impl.dart';
 const _otherViewPath = 'lib/other/other_view.dart';
 const _otherSourcesPath = 'lib/other/other_sources.dart';
 const _mainPath = 'lib/main.dart';
-const _sizesPath = 'lib/theme/app_sizes_ext.dart';
-const _spacingPath = 'lib/theme/app_spacing_ext.dart';
-const _spacingGeneratedPath = 'lib/theme/app_spacing_ext.g.dart';
+const _sizesPath = 'lib/theme/ui_sizes_ext.dart';
+const _spacingPath = 'lib/theme/ui_spacing_ext.dart';
+const _spacingGeneratedPath = 'lib/theme/ui_spacing_ext.g.dart';
 const _themeHostViewPath = 'lib/theme/theme_host_view.dart';
 const _spacingFieldOwners = [
-  'AppSpacingExt',
-  'AppSpacingFactory',
-  '_AppSpacing',
-  r'_$AppSpacingExtMixin',
+  'UiSpacingExt',
+  'UiSpacingFactory',
+  '_UiSpacing',
+  r'_$UiSpacingExtMixin',
 ];
 const _firstNamesPath = 'lib/names/first_names.dart';
 const _secondNamesPath = 'lib/names/second_names.dart';
@@ -78,7 +78,7 @@ environment:
 import 'package:flutter/widgets.dart';
 import 'package:sample/home/home_owner.dart';
 import 'package:sample/other/other_view.dart';
-import 'package:sample/theme/app_sizes_ext.dart';
+import 'package:sample/theme/ui_sizes_ext.dart';
 
 class HomeView extends StatefulWidget {
   const HomeView({super.key});
@@ -93,7 +93,7 @@ class _HomeViewState extends State<HomeView> {
   @override
   Widget build(BuildContext context) {
     return SizedBox(
-      height: context.appSizesExt.gapLg,
+      height: context.uiSizesExt.gapLg,
       child: OtherView(title: _owner.loadTitle()),
     );
   }
@@ -204,75 +204,75 @@ String readStartTitle() => 'start';
   _sizesPath: '''
 import 'package:flutter/widgets.dart';
 
-class AppSizesExt {
+class UiSizesExt {
   final double gapLg;
   final double gapSm;
 
-  const AppSizesExt({required this.gapLg, required this.gapSm});
+  const UiSizesExt({required this.gapLg, required this.gapSm});
 }
 
-extension AppSizesExtBuildContext on BuildContext {
-  AppSizesExt get appSizesExt => throw UnimplementedError();
+extension UiSizesExtBuildContext on BuildContext {
+  UiSizesExt get uiSizesExt => throw UnimplementedError();
 }
 ''',
   _spacingPath: r'''
 import 'package:flutter/material.dart';
 
-part 'app_spacing_ext.g.dart';
+part 'ui_spacing_ext.g.dart';
 
-class AppSpacingExt extends ThemeExtension<AppSpacingExt>
-    with _$AppSpacingExtMixin {
+class UiSpacingExt extends ThemeExtension<UiSpacingExt>
+    with _$UiSpacingExtMixin {
   @override
   final double padSm;
 
   @override
   final double padLg;
 
-  const AppSpacingExt({required this.padSm, required this.padLg});
+  const UiSpacingExt({required this.padSm, required this.padLg});
 }
 
-abstract final class _AppSpacing {
+abstract final class _UiSpacing {
   static const double padSm = 4;
   static const double padLg = 16;
 }
 
-abstract final class AppSpacingFactory {
-  static AppSpacingExt createSpacing() {
-    return const AppSpacingExt(
-      padSm: _AppSpacing.padSm,
-      padLg: _AppSpacing.padLg,
+abstract final class UiSpacingFactory {
+  static UiSpacingExt createSpacing() {
+    return const UiSpacingExt(
+      padSm: _UiSpacing.padSm,
+      padLg: _UiSpacing.padLg,
     );
   }
 }
 
-extension AppSpacingExtBuildContext on BuildContext {
-  AppSpacingExt get appSpacingExt => throw UnimplementedError();
+extension UiSpacingExtBuildContext on BuildContext {
+  UiSpacingExt get uiSpacingExt => throw UnimplementedError();
 }
 ''',
   _spacingGeneratedPath: r'''
-part of 'app_spacing_ext.dart';
+part of 'ui_spacing_ext.dart';
 
-mixin _$AppSpacingExtMixin on ThemeExtension<AppSpacingExt> {
+mixin _$UiSpacingExtMixin on ThemeExtension<UiSpacingExt> {
   double get padSm;
   double get padLg;
 
   @override
-  AppSpacingExt copyWith({double? padSm, double? padLg}) {
-    return AppSpacingExt(
+  UiSpacingExt copyWith({double? padSm, double? padLg}) {
+    return UiSpacingExt(
       padSm: padSm ?? this.padSm,
       padLg: padLg ?? this.padLg,
     );
   }
 
   @override
-  AppSpacingExt lerp(covariant ThemeExtension<AppSpacingExt>? other, double t) {
-    return other is AppSpacingExt ? other : copyWith();
+  UiSpacingExt lerp(covariant ThemeExtension<UiSpacingExt>? other, double t) {
+    return other is UiSpacingExt ? other : copyWith();
   }
 }
 ''',
   _themeHostViewPath: '''
 import 'package:flutter/material.dart';
-import 'package:sample/theme/app_spacing_ext.dart';
+import 'package:sample/theme/ui_spacing_ext.dart';
 
 class ThemeHostView extends StatelessWidget {
   const ThemeHostView({super.key});
@@ -280,7 +280,7 @@ class ThemeHostView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Theme(
-      data: ThemeData(extensions: [AppSpacingFactory.createSpacing()]),
+      data: ThemeData(extensions: [UiSpacingFactory.createSpacing()]),
       child: const SizedBox(),
     );
   }
@@ -291,7 +291,7 @@ class SpacedView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return SizedBox(height: context.appSpacingExt.padLg);
+    return SizedBox(height: context.uiSpacingExt.padLg);
   }
 }
 ''',
@@ -359,13 +359,13 @@ void _atlasStageReach_should_reachThemeFieldOnlyByItsName() {
     expect(
       reached.ids,
       containsAll([
-        AtlasStageReach.idOf(_sizesPath, 'AppSizesExt'),
-        AtlasStageReach.idOf(_sizesPath, 'AppSizesExt.gapLg'),
+        AtlasStageReach.idOf(_sizesPath, 'UiSizesExt'),
+        AtlasStageReach.idOf(_sizesPath, 'UiSizesExt.gapLg'),
       ]),
     );
     expect(
       reached.ids,
-      isNot(contains(AtlasStageReach.idOf(_sizesPath, 'AppSizesExt.gapSm'))),
+      isNot(contains(AtlasStageReach.idOf(_sizesPath, 'UiSizesExt.gapSm'))),
     );
   }, timeout: _analysisTimeout);
 }
@@ -381,16 +381,16 @@ void _atlasStageReach_should_reachThemeFieldOnlyFromWidgetReadingIt() {
 
       expect(
         hostIds,
-        contains(AtlasStageReach.idOf(_spacingPath, 'AppSpacingFactory')),
+        contains(AtlasStageReach.idOf(_spacingPath, 'UiSpacingFactory')),
       );
       expect(hostIds.where(_isSpacingField), isEmpty);
       expect(spacedIds.where(_isSpacingField).toSet(), {
-        AtlasStageReach.idOf(_spacingPath, 'AppSpacingExt.padLg'),
-        AtlasStageReach.idOf(_spacingPath, 'AppSpacingFactory.padLg'),
-        AtlasStageReach.idOf(_spacingPath, '_AppSpacing.padLg'),
+        AtlasStageReach.idOf(_spacingPath, 'UiSpacingExt.padLg'),
+        AtlasStageReach.idOf(_spacingPath, 'UiSpacingFactory.padLg'),
+        AtlasStageReach.idOf(_spacingPath, '_UiSpacing.padLg'),
         AtlasStageReach.idOf(
           _spacingGeneratedPath,
-          r'_$AppSpacingExtMixin.padLg',
+          r'_$UiSpacingExtMixin.padLg',
         ),
       });
     },

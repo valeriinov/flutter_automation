@@ -135,7 +135,7 @@ const _updateTitleMethod = '''
 const _cartsViewPath = 'lib/carts/carts_view.dart';
 const _cartsRepositoryImplPath = 'lib/carts/carts_repository_impl.dart';
 const _cartViewPath = 'lib/cart/cart_view.dart';
-const _sizesPath = 'lib/theme/app_sizes_ext.dart';
+const _sizesPath = 'lib/theme/ui_sizes_ext.dart';
 const _stageWidgets = [
   ['HomeView'],
   ['CartsView'],
@@ -194,7 +194,7 @@ class HomeOwner {
   _cartsViewPath: '''
 import 'package:flutter/widgets.dart';
 import 'package:sample/di/locator.dart';
-import 'package:sample/theme/app_sizes_ext.dart';
+import 'package:sample/theme/ui_sizes_ext.dart';
 
 class CartsView extends StatelessWidget {
   const CartsView({super.key});
@@ -202,7 +202,7 @@ class CartsView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return SizedBox(
-      height: context.appSizesExt.gapLg,
+      height: context.uiSizesExt.gapLg,
       child: Text(CartsOwner().loadTitle()),
     );
   }
@@ -244,7 +244,7 @@ class CartsHint {}
   _cartViewPath: '''
 import 'package:flutter/widgets.dart';
 import 'package:sample/home/home_owner.dart';
-import 'package:sample/theme/app_sizes_ext.dart';
+import 'package:sample/theme/ui_sizes_ext.dart';
 
 class CartView extends StatefulWidget {
   const CartView({super.key});
@@ -257,7 +257,7 @@ class _CartViewState extends State<CartView> {
   @override
   Widget build(BuildContext context) {
     return SizedBox(
-      height: context.appSizesExt.gapSm,
+      height: context.uiSizesExt.gapSm,
       child: Text(HomeOwner().loadHeading()),
     );
   }
@@ -266,15 +266,15 @@ class _CartViewState extends State<CartView> {
   _sizesPath: '''
 import 'package:flutter/widgets.dart';
 
-class AppSizesExt {
+class UiSizesExt {
   final double gapLg;
   final double gapSm;
 
-  const AppSizesExt({required this.gapLg, required this.gapSm});
+  const UiSizesExt({required this.gapLg, required this.gapSm});
 }
 
-extension AppSizesExtBuildContext on BuildContext {
-  AppSizesExt get appSizesExt => throw UnimplementedError();
+extension UiSizesExtBuildContext on BuildContext {
+  UiSizesExt get uiSizesExt => throw UnimplementedError();
 }
 ''',
 };
@@ -282,23 +282,23 @@ const _mockDifference = 'GET /items/creation-limit status 200, now 500';
 const _changedOwnerSource = 'class ExistingItemsOwner { int a = 0; }';
 const _snapshotCommit = 'c0ffee000000';
 const _otherCommit = 'decaf0000000';
-const _appSetupPath = 'lib/app/app_setup.dart';
+const _bootPath = 'lib/app/boot.dart';
 const _systemSettingsSource = '''
-abstract final class AppSetup {
+abstract final class Boot {
   static Future<void> initialize() async {}
 
   static Future<String> resolveLanguage() async => 'uk';
 }
 ''';
 const _changedInitializeSource = '''
-abstract final class AppSetup {
+abstract final class Boot {
   static Future<void> initialize() async => print('');
 
   static Future<String> resolveLanguage() async => 'uk';
 }
 ''';
 const _changedStartLanguageSource = '''
-abstract final class AppSetup {
+abstract final class Boot {
   static Future<void> initialize() async {}
 
   static Future<String> resolveLanguage() async => 'en';
@@ -1078,9 +1078,9 @@ void _atlasStaleCheck_should_reportEveryStageForAddedUnreachedTheme() {
         _replaceSource(
           root,
           _sizesPath,
-          'extension AppSizesExtBuildContext',
-          'class AppSpacingExt {\n  final double gapXs = 0;\n}\n\n'
-              'extension AppSizesExtBuildContext',
+          'extension UiSizesExtBuildContext',
+          'class UiSpacingExt {\n  final double gapXs = 0;\n}\n\n'
+              'extension UiSizesExtBuildContext',
         );
 
         final staleness = await _check(root);
@@ -1827,8 +1827,8 @@ void _atlasStaleCheck_should_keepStagesOfChangedStubbedDeclaration() {
     'AtlasStaleCheck should keep stages of changed stubbed declaration',
     () async {
       await TestAtlasRoot.run((root) async {
-        _writeAppSetupSnapshot(root);
-        root.writeSource(_appSetupPath, _changedInitializeSource);
+        _writeBootSnapshot(root);
+        root.writeSource(_bootPath, _changedInitializeSource);
         _writeHeadlessReports(root);
 
         final staleness = await _check(root);
@@ -1845,8 +1845,8 @@ void _atlasStaleCheck_should_reportFreshForChangedKeptDeclaration() {
     'AtlasStaleCheck should report fresh for changed kept declaration',
     () async {
       await TestAtlasRoot.run((root) async {
-        _writeAppSetupSnapshot(root);
-        root.writeSource(_appSetupPath, _changedStartLanguageSource);
+        _writeBootSnapshot(root);
+        root.writeSource(_bootPath, _changedStartLanguageSource);
         _writeHeadlessReports(root);
 
         final staleness = await _check(root);
@@ -2083,18 +2083,18 @@ void _writeStagedSnapshot(
   );
 }
 
-// Writes the staged variant with AppSetup in its manifest, outside the
+// Writes the staged variant with Boot in its manifest, outside the
 // sources of every stage, and its declarations record.
-void _writeAppSetupSnapshot(TestAtlasRoot root) {
+void _writeBootSnapshot(TestAtlasRoot root) {
   _writeStagedFlow(root);
-  root.writeSource(_appSetupPath, _systemSettingsSource);
+  root.writeSource(_bootPath, _systemSettingsSource);
 
   final sourceHash = testSourceHash.hashSource(_systemSettingsSource);
 
   AtlasDeclarationsStore(
     root.paths,
   ).maybeWrite(sourceHash: sourceHash, source: _systemSettingsSource);
-  _writeStagedSnapshot(root, extraManifest: {_appSetupPath: sourceHash});
+  _writeStagedSnapshot(root, extraManifest: {_bootPath: sourceHash});
 }
 
 // Writes the current report of the variant, walked on the manifest files as

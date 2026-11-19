@@ -99,11 +99,11 @@ const fakeAtlasStaleSettings = AtlasStaleSettings(
     'lib/app/diagnostics_service.dart',
   ],
   themeClassPattern:
-      r'^(?:App\w*Ext|_App\w*(?:Styles|Colors|Sizes|Shadows|Overlays|Durations)|'
-      r'App\w*Factory|_\$App\w*ExtMixin)$',
+      r'^(?:Ui\w*Ext|_Ui\w*(?:Styles|Colors|Sizes|Shadows|Overlays|Durations)|'
+      r'Ui\w*Factory|_\$Ui\w*ExtMixin)$',
   themeValueClassPattern:
-      r'^_App\w*(?:Styles|Colors|Sizes|Shadows|Overlays|Durations)$',
-  themeExtensionPattern: r'^App\w*Ext$',
+      r'^_Ui\w*(?:Styles|Colors|Sizes|Shadows|Overlays|Durations)$',
+  themeExtensionPattern: r'^Ui\w*Ext$',
   themeFactorySuffix: 'Factory',
   excludedSuffix: '.config.dart',
   registrationAnnotations: {'Register', 'Provide'},
@@ -129,20 +129,17 @@ const fakeAtlasHeadlessSettings = AtlasHeadlessSettings(
   mainPath: 'lib/main.dart',
   mainPatch: [
     (
-      'void main(List<String> entryArg) async {',
-      'Future<void> _runAppMain(List<String> entryArg) async {',
+      'void main(List<String> args) async {',
+      'Future<void> _runAppMain(List<String> args) async {',
     ),
-    (
-      'await AppSetup.initialize(flavor);',
-      'await HeadlessApp.initialize(flavor);',
-    ),
+    ('await Boot.initialize(flavor);', 'await HeadlessApp.initialize(flavor);'),
     ('  runApp(', '  HeadlessApp.runApp('),
-    ('AppSetup.schedulePostStartupTasks();', ''),
+    ('Boot.afterFirstFrame();', ''),
   ],
   stubbedPaths: [
     'lib/entries/',
-    'lib/app/adapters/device_info_adapter_impl.dart',
-    'lib/app/adapters/path_adapter_impl.dart',
+    'lib/app/adapters/device_adapter.dart',
+    'lib/app/adapters/storage_adapter.dart',
     'lib/app/diagnostics/',
     'lib/app/diagnostics_service.dart',
     'lib/app/notifications_service.dart',
@@ -151,7 +148,7 @@ const fakeAtlasHeadlessSettings = AtlasHeadlessSettings(
     'lib/app/modules/image_cache_module.dart',
   ],
   keptDeclarations: {
-    'lib/app/app_setup.dart': {'AppSetup', 'AppSetup.resolveLanguage'},
+    'lib/app/boot.dart': {'Boot', 'Boot.resolveLanguage'},
   },
   stubbedDeclarations: {
     'lib/app/input_validator.dart': {'InputValidator.parse'},

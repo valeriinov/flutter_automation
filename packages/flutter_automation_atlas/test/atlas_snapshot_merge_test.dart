@@ -12,7 +12,7 @@ const _flow = 'shop_flow';
 const _variant = 'shopFromExistingItem';
 const _mockPath = 'lib/support/mock/mock_setup.dart';
 const _viewPath = 'lib/existing_items_view.dart';
-const _sizesPath = 'lib/theme/app_sizes_ext.dart';
+const _sizesPath = 'lib/theme/ui_sizes_ext.dart';
 const _anchor = '2026-10-03T09:00:00.000Z';
 const _previousManifest = {
   _mockPath: 'aaaaaaaaaaaa',

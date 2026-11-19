@@ -14,12 +14,11 @@ const _bodyValue = 550;
 const _queryKey = 'id';
 const _queryValue = 7;
 const _attachmentId = '3f1c2a7e-mock';
-const _variantKey = 'variant';
-const _variantValue = 'preview';
+const _variantKey = 'size';
+const _variantValue = 'small';
 const _acceptLanguage = 'en-GB';
 const _putMethod = 'PUT';
-const _fileUrl =
-    'https://file-host.mock.invalid/file-attachment/original/$_attachmentId';
+const _fileUrl = 'https://files.example.invalid/blob/$_attachmentId';
 
 final _bytes = Uint8List.fromList(const [1, 2, 3]);
 
@@ -164,7 +163,7 @@ void _mockDioRequest_should_readTheFullPathOfAnAbsoluteUrl() {
       _createOptions(baseUrl: '', path: _fileUrl),
     );
 
-    expect(request.path, '/file-attachment/original/$_attachmentId');
+    expect(request.path, '/blob/$_attachmentId');
   });
 }
 

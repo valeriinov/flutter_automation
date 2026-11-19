@@ -136,13 +136,13 @@ void _atlasMockAnswerComparison_should_pairIssuedIds() {
       recorded: const {
         'status': 200,
         'response': {
-          'url': 'https://file-host.mock.invalid/original/$_recordedId',
+          'url': 'https://files.example.invalid/original/$_recordedId',
         },
       },
       replayed: const {
         'status': 200,
         'response': {
-          'url': 'https://file-host.mock.invalid/original/$_issuedId',
+          'url': 'https://files.example.invalid/original/$_issuedId',
         },
       },
     );

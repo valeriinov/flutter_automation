@@ -16,10 +16,10 @@ const _source = 'class Carts {}';
 const _recordWithoutFormat =
     '{"declarations":[{"key":"Carts","hash":"000000000000"}]}';
 const _themeSource = '''
-class AppSizesExt {
+class UiSizesExt {
   final double gapLg;
 
-  const AppSizesExt({required this.gapLg});
+  const UiSizesExt({required this.gapLg});
 }
 ''';
 
@@ -122,7 +122,7 @@ void _atlasDeclarationsStore_should_readHashesByDeclarationKey() {
           ).declarations)
             declaration.key: declaration.hash,
         });
-        expect(hashes?.keys, contains('AppSizesExt.gapLg'));
+        expect(hashes?.keys, contains('UiSizesExt.gapLg'));
         expect(
           _readRecordFieldNames(
             root.paths.resolveDeclarationsPath(_referencedHash),

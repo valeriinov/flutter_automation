@@ -39,34 +39,34 @@ const _firstScreenPath = 'lib/first_screen.dart';
 const _secondScreenPath = 'lib/second_screen.dart';
 const _stagedLabels = ['open the search', 'open the cart', 'quote an item'];
 const _addedLabels = [..._stagedLabels, 'send the quote'];
-const _themePath = 'lib/theme/app_sizes_ext.dart';
+const _themePath = 'lib/theme/ui_sizes_ext.dart';
 const _packageConfigPath = '.dart_tool/package_config.json';
 const _analysisTimeout = Timeout(Duration(minutes: 2));
 const _stageWidgets = ['FirstScreen', 'FirstScreen', 'SecondScreen'];
 const _themedSecondScreenSource = '''
 import 'package:flutter/widgets.dart';
-import 'package:sample/theme/app_sizes_ext.dart';
+import 'package:sample/theme/ui_sizes_ext.dart';
 
 class SecondScreen extends StatelessWidget {
   const SecondScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return SizedBox(height: context.appSizesExt.gapLg);
+    return SizedBox(height: context.uiSizesExt.gapLg);
   }
 }
 ''';
 const _themeSource = '''
 import 'package:flutter/widgets.dart';
 
-class AppSizesExt {
+class UiSizesExt {
   final double gapLg;
 
-  const AppSizesExt({required this.gapLg});
+  const UiSizesExt({required this.gapLg});
 }
 
-extension AppSizesExtBuildContext on BuildContext {
-  AppSizesExt get appSizesExt => throw UnimplementedError();
+extension UiSizesExtBuildContext on BuildContext {
+  UiSizesExt get uiSizesExt => throw UnimplementedError();
 }
 ''';
 const _snapshotCommit = 'c0ffee000000';

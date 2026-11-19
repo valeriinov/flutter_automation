@@ -30,7 +30,7 @@ const _sourcePath = 'lib/settings/settings_view.dart';
 const _recordedSource = 'class SettingsView {}';
 const _changedSource = 'class SettingsView { int a = 0; }';
 const _otherSourcePath = 'lib/settings/settings_owner.dart';
-const _appSetupPath = 'lib/app/app_setup.dart';
+const _bootPath = 'lib/app/boot.dart';
 const _validatorPath = 'lib/app/input_validator.dart';
 const _devEntryPath = 'lib/entries/main_alt.dart';
 const _mainPath = 'lib/main.dart';
@@ -40,10 +40,10 @@ const _flutterVersionStub =
 #!/bin/sh
 echo '{"frameworkVersion": "$_stubFlutterVersion"}'
 ''';
-const _missingMainAnchor = 'AppSetup.schedulePostStartupTasks();';
+const _missingMainAnchor = 'Boot.afterFirstFrame();';
 const _mainWithoutPostStartupTasks = '''
-void main(List<String> entryArg) async {
-  await AppSetup.initialize(flavor);
+void main(List<String> args) async {
+  await Boot.initialize(flavor);
   runApp(const App());
 }
 ''';
@@ -479,11 +479,11 @@ AtlasSnapshot _createStagelessSnapshot() {
 void _atlasHeadless_should_tellStubbedDeclarations() {
   test('AtlasHeadless should tell stubbed declarations', () {
     final isInitializeStubbed = fakeAtlasHeadlessSettings.isStubbedDeclaration(
-      _appSetupPath,
-      'AppSetup.initialize',
+      _bootPath,
+      'Boot.initialize',
     );
     final isStartLanguageStubbed = fakeAtlasHeadlessSettings
-        .isStubbedDeclaration(_appSetupPath, 'AppSetup.resolveLanguage');
+        .isStubbedDeclaration(_bootPath, 'Boot.resolveLanguage');
     final isParseStubbed = fakeAtlasHeadlessSettings.isStubbedDeclaration(
       _validatorPath,
       'InputValidator.parse',
