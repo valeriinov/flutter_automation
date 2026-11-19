@@ -6,6 +6,8 @@
   `MockScenarioBackend` take the `MockApiRequest` the failure answers, so the
   body can follow the request, such as a message in its language. Migration:
   add the request parameter to the callback.
+- New `MockApiFailure.messageKey`: the key of a message the project keeps in
+  each app language, for a failure whose backend answer has no error code.
 
 ## 0.11.0
 

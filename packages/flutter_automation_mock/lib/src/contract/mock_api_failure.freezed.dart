@@ -19,12 +19,17 @@ mixin _$MockApiFailure {
 /// Status the answer carries.
  int get statusCode;/// Code that the app reads out of the payload to map the error.
  String? get errorCode;/// Message the payload carries next to [errorCode].
- String? get message;/// Whether the request never reaches the backend, the way a device without
+ String? get message;/// Key of a message the project keeps in each app language, for a failure
+/// whose backend answer carries a message and no [errorCode].
+///
+/// The project reads it in `MockBackend.buildFailureBody` and answers the
+/// message in the language of the request. A [message] wins over it.
+ String? get messageKey;/// Whether the request never reaches the backend, the way a device without
 /// a connection fails it.
 ///
 /// Turned on, the request fails with the connection error that the HTTP
 /// client raises for a socket that cannot connect. The request does not
-/// read [statusCode], [errorCode] and [message].
+/// read [statusCode], [errorCode], [message] and [messageKey].
  bool get isConnectionError;
 /// Create a copy of MockApiFailure
 /// with the given fields replaced by the non-null parameter values.
@@ -39,20 +44,20 @@ $MockApiFailureCopyWith<MockApiFailure> get copyWith => _$MockApiFailureCopyWith
 @override
 bool operator ==(Object other) {
   final _this = this as MockApiFailure;
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is MockApiFailure&&(identical(other.statusCode, _this.statusCode) || other.statusCode == _this.statusCode)&&(identical(other.errorCode, _this.errorCode) || other.errorCode == _this.errorCode)&&(identical(other.message, _this.message) || other.message == _this.message)&&(identical(other.isConnectionError, _this.isConnectionError) || other.isConnectionError == _this.isConnectionError));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is MockApiFailure&&(identical(other.statusCode, _this.statusCode) || other.statusCode == _this.statusCode)&&(identical(other.errorCode, _this.errorCode) || other.errorCode == _this.errorCode)&&(identical(other.message, _this.message) || other.message == _this.message)&&(identical(other.messageKey, _this.messageKey) || other.messageKey == _this.messageKey)&&(identical(other.isConnectionError, _this.isConnectionError) || other.isConnectionError == _this.isConnectionError));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
 int get hashCode {
   final _this = this as MockApiFailure;
-  return Object.hash(runtimeType,_this.statusCode,_this.errorCode,_this.message,_this.isConnectionError);
+  return Object.hash(runtimeType,_this.statusCode,_this.errorCode,_this.message,_this.messageKey,_this.isConnectionError);
 }
 
 @override
 String toString() {
   final _this = this as MockApiFailure;
-  return 'MockApiFailure(statusCode: ${_this.statusCode}, errorCode: ${_this.errorCode}, message: ${_this.message}, isConnectionError: ${_this.isConnectionError})';
+  return 'MockApiFailure(statusCode: ${_this.statusCode}, errorCode: ${_this.errorCode}, message: ${_this.message}, messageKey: ${_this.messageKey}, isConnectionError: ${_this.isConnectionError})';
 }
 
 
@@ -63,7 +68,7 @@ abstract mixin class $MockApiFailureCopyWith<$Res>  {
   factory $MockApiFailureCopyWith(MockApiFailure value, $Res Function(MockApiFailure) _then) = _$MockApiFailureCopyWithImpl;
 @useResult
 $Res call({
- int statusCode, String? errorCode, String? message, bool isConnectionError
+ int statusCode, String? errorCode, String? message, String? messageKey, bool isConnectionError
 });
 
 
@@ -80,11 +85,12 @@ class _$MockApiFailureCopyWithImpl<$Res>
 
 /// Create a copy of MockApiFailure
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? statusCode = null,Object? errorCode = freezed,Object? message = freezed,Object? isConnectionError = null,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? statusCode = null,Object? errorCode = freezed,Object? message = freezed,Object? messageKey = freezed,Object? isConnectionError = null,}) {
   return _then(MockApiFailure(
 statusCode: null == statusCode ? _self.statusCode : statusCode // ignore: cast_nullable_to_non_nullable
 as int,errorCode: freezed == errorCode ? _self.errorCode : errorCode // ignore: cast_nullable_to_non_nullable
 as String?,message: freezed == message ? _self.message : message // ignore: cast_nullable_to_non_nullable
+as String?,messageKey: freezed == messageKey ? _self.messageKey : messageKey // ignore: cast_nullable_to_non_nullable
 as String?,isConnectionError: null == isConnectionError ? _self.isConnectionError : isConnectionError // ignore: cast_nullable_to_non_nullable
 as bool,
   ));
@@ -98,7 +104,7 @@ as bool,
 @JsonSerializable()
 
 class _MockApiFailure implements MockApiFailure {
-  const _MockApiFailure({this.statusCode = HttpStatus.internalServerError, this.errorCode, this.message, this.isConnectionError = false});
+  const _MockApiFailure({this.statusCode = HttpStatus.internalServerError, this.errorCode, this.message, this.messageKey, this.isConnectionError = false});
   factory _MockApiFailure.fromJson(Map<String, dynamic> json) => _$MockApiFailureFromJson(json);
 
 /// Status the answer carries.
@@ -107,12 +113,18 @@ class _MockApiFailure implements MockApiFailure {
 @override final  String? errorCode;
 /// Message the payload carries next to [errorCode].
 @override final  String? message;
+/// Key of a message the project keeps in each app language, for a failure
+/// whose backend answer carries a message and no [errorCode].
+///
+/// The project reads it in `MockBackend.buildFailureBody` and answers the
+/// message in the language of the request. A [message] wins over it.
+@override final  String? messageKey;
 /// Whether the request never reaches the backend, the way a device without
 /// a connection fails it.
 ///
 /// Turned on, the request fails with the connection error that the HTTP
 /// client raises for a socket that cannot connect. The request does not
-/// read [statusCode], [errorCode] and [message].
+/// read [statusCode], [errorCode], [message] and [messageKey].
 @override@JsonKey() final  bool isConnectionError;
 
 /// Create a copy of MockApiFailure
@@ -128,18 +140,18 @@ Map<String, dynamic> toJson() {
 
 @override
 bool operator ==(Object other) {
-    return identical(this, other) || (other.runtimeType == runtimeType&&other is _MockApiFailure&&(identical(other.statusCode, statusCode) || other.statusCode == statusCode)&&(identical(other.errorCode, errorCode) || other.errorCode == errorCode)&&(identical(other.message, message) || other.message == message)&&(identical(other.isConnectionError, isConnectionError) || other.isConnectionError == isConnectionError));
+    return identical(this, other) || (other.runtimeType == runtimeType&&other is _MockApiFailure&&(identical(other.statusCode, statusCode) || other.statusCode == statusCode)&&(identical(other.errorCode, errorCode) || other.errorCode == errorCode)&&(identical(other.message, message) || other.message == message)&&(identical(other.messageKey, messageKey) || other.messageKey == messageKey)&&(identical(other.isConnectionError, isConnectionError) || other.isConnectionError == isConnectionError));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
 int get hashCode {
-    return Object.hash(runtimeType,statusCode,errorCode,message,isConnectionError);
+    return Object.hash(runtimeType,statusCode,errorCode,message,messageKey,isConnectionError);
 }
 
 @override
 String toString() {
-    return 'MockApiFailure(statusCode: $statusCode, errorCode: $errorCode, message: $message, isConnectionError: $isConnectionError)';
+    return 'MockApiFailure(statusCode: $statusCode, errorCode: $errorCode, message: $message, messageKey: $messageKey, isConnectionError: $isConnectionError)';
 }
 
 
@@ -150,7 +162,7 @@ abstract mixin class _$MockApiFailureCopyWith<$Res> implements $MockApiFailureCo
   factory _$MockApiFailureCopyWith(_MockApiFailure value, $Res Function(_MockApiFailure) _then) = __$MockApiFailureCopyWithImpl;
 @override @useResult
 $Res call({
- int statusCode, String? errorCode, String? message, bool isConnectionError
+ int statusCode, String? errorCode, String? message, String? messageKey, bool isConnectionError
 });
 
 
@@ -167,11 +179,12 @@ class __$MockApiFailureCopyWithImpl<$Res>
 
 /// Create a copy of MockApiFailure
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? statusCode = null,Object? errorCode = freezed,Object? message = freezed,Object? isConnectionError = null,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? statusCode = null,Object? errorCode = freezed,Object? message = freezed,Object? messageKey = freezed,Object? isConnectionError = null,}) {
   return _then(_MockApiFailure(
 statusCode: null == statusCode ? _self.statusCode : statusCode // ignore: cast_nullable_to_non_nullable
 as int,errorCode: freezed == errorCode ? _self.errorCode : errorCode // ignore: cast_nullable_to_non_nullable
 as String?,message: freezed == message ? _self.message : message // ignore: cast_nullable_to_non_nullable
+as String?,messageKey: freezed == messageKey ? _self.messageKey : messageKey // ignore: cast_nullable_to_non_nullable
 as String?,isConnectionError: null == isConnectionError ? _self.isConnectionError : isConnectionError // ignore: cast_nullable_to_non_nullable
 as bool,
   ));

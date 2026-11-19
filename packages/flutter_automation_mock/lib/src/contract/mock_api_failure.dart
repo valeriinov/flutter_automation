@@ -25,12 +25,19 @@ sealed class MockApiFailure with _$MockApiFailure {
     /// Message the payload carries next to [errorCode].
     String? message,
 
+    /// Key of a message the project keeps in each app language, for a failure
+    /// whose backend answer carries a message and no [errorCode].
+    ///
+    /// The project reads it in `MockBackend.buildFailureBody` and answers the
+    /// message in the language of the request. A [message] wins over it.
+    String? messageKey,
+
     /// Whether the request never reaches the backend, the way a device without
     /// a connection fails it.
     ///
     /// Turned on, the request fails with the connection error that the HTTP
     /// client raises for a socket that cannot connect. The request does not
-    /// read [statusCode], [errorCode] and [message].
+    /// read [statusCode], [errorCode], [message] and [messageKey].
     @Default(false) bool isConnectionError,
   }) = _MockApiFailure;
 

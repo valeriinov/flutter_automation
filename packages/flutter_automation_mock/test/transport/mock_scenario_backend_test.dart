@@ -14,6 +14,7 @@ void main() {
     _mockScenarioBackend_should_buildItsEndpointsOnCreation();
     _mockScenarioBackend_should_changeItsEndpointsOnRebuild();
     _mockScenarioBackend_should_readTheFailuresFromTheScenarioOnEachRequest();
+    _mockScenarioBackend_should_readTheMessageKeyOfAFailure();
     _mockScenarioBackend_should_readTheLatenciesFromTheScenarioOnEachRequest();
     _mockScenarioBackend_should_holdOneLatencyBetweenRebuilds();
     _mockScenarioBackend_should_giveTwoRequestsInARowDifferentDelays();
@@ -69,6 +70,23 @@ void _mockScenarioBackend_should_readTheFailuresFromTheScenarioOnEachRequest() {
 
     expect(sut.failures.keys, [_firstPath]);
     expect(sut.failures[_firstPath]?.statusCode, 503);
+  });
+}
+
+void _mockScenarioBackend_should_readTheMessageKeyOfAFailure() {
+  test('MockScenarioBackend should read the message key of a failure', () {
+    final sut = _createBackend(
+      readScenario: () => MockScenario([
+        MockOverride.failures({
+          _firstPath: {'statusCode': 409, 'messageKey': 'chatCloseRefused'},
+        }),
+      ]),
+      buildApis: () => const [],
+    );
+    final failure = sut.failures[_firstPath];
+
+    expect(failure?.messageKey, 'chatCloseRefused');
+    expect(failure?.message, isNull);
   });
 }
 

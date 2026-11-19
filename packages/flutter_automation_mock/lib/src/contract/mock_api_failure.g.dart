@@ -13,6 +13,7 @@ _MockApiFailure _$MockApiFailureFromJson(Map<String, dynamic> json) =>
           HttpStatus.internalServerError,
       errorCode: json['errorCode'] as String?,
       message: json['message'] as String?,
+      messageKey: json['messageKey'] as String?,
       isConnectionError: json['isConnectionError'] as bool? ?? false,
     );
 
@@ -21,5 +22,6 @@ Map<String, dynamic> _$MockApiFailureToJson(_MockApiFailure instance) =>
       'statusCode': instance.statusCode,
       'errorCode': ?instance.errorCode,
       'message': ?instance.message,
+      'messageKey': ?instance.messageKey,
       'isConnectionError': instance.isConnectionError,
     };
