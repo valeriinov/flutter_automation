@@ -974,6 +974,7 @@
   }
 
   footer p { margin: 0; overflow-wrap: anywhere; }
+  footer[hidden] { display: none; }
 
   @media (prefers-reduced-motion: reduce) {
     * { transition: none !important; animation: none !important; scroll-behavior: auto !important; }
@@ -2206,7 +2207,10 @@ readAtlasPageData().then(function (data) {
   function renderFooter() {
     var builtAt = meta.builtAt ? new Date(meta.builtAt) : null;
     var date = builtAt ? builtAt.toLocaleDateString(lang === 'uk' ? 'uk-UA' : 'en-GB', { day: 'numeric', month: 'long', year: 'numeric' }) : '';
-    document.getElementById('page-footer').textContent = [meta.sourceLabel, date].filter(Boolean).join(' · ');
+    var text = [meta.sourceLabel, date].filter(Boolean).join(' · ');
+    var footer = document.getElementById('page-footer');
+    footer.textContent = text;
+    footer.closest('footer').hidden = !text;
   }
 
   function switchLang(value) {
