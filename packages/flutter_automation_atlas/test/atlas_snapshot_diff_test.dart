@@ -15,8 +15,8 @@ void main() {
 void _atlasSnapshotDiff_should_describeEndTextsChange() {
   test('AtlasSnapshotDiff should describe end texts change', () {
     final lines = AtlasSnapshotDiff.describe(
-      previous: _createSnapshot(const ['Посилки']),
-      next: _createSnapshot(const ['Посилки', 'Київ → Львів']),
+      previous: _createSnapshot(const ['Кошики']),
+      next: _createSnapshot(const ['Кошики', 'Кошик → Оплата']),
     );
 
     expect(lines, ['~ end: texts']);
@@ -26,8 +26,8 @@ void _atlasSnapshotDiff_should_describeEndTextsChange() {
 void _atlasSnapshotDiff_should_describeNoChangesForEqualEndTexts() {
   test('AtlasSnapshotDiff should describe no changes for equal end texts', () {
     final lines = AtlasSnapshotDiff.describe(
-      previous: _createSnapshot(const ['Посилки']),
-      next: _createSnapshot(const ['Посилки']),
+      previous: _createSnapshot(const ['Кошики']),
+      next: _createSnapshot(const ['Кошики']),
     );
 
     expect(lines, ['no changes']);

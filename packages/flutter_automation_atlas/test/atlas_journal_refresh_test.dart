@@ -330,7 +330,7 @@ Map<String, Object?> _mediaRecord(String mediaId, {required bool isWalked}) {
   return {
     'kind': 'request',
     'method': 'GET',
-    'path': '/inboxes/media/by-id/$mediaId',
+    'path': '/files/$mediaId',
     if (isWalked) 'acceptLanguage': 'uk',
     'status': _okStatus,
   };

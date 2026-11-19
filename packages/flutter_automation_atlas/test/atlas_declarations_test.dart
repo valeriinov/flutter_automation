@@ -15,7 +15,7 @@ class FirstCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Text('\${context.appDimensExt.gapLg} first');
+    return Text('\${context.appSizesExt.gapLg} first');
   }
 }
 

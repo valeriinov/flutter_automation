@@ -18,8 +18,8 @@ final _uk = fakeAtlasLocales.first;
 const _defHash = testAtlasDefHash;
 const _okStatus = 200;
 const _stepHash = '111111111111';
-const _frameTexts = ['Посилки', '3 спроби', 'Київ → Львів'];
-const _attemptForms = {'few': 'спроби', 'other': 'спроби'};
+const _frameTexts = ['Кошики', '3 товари', 'Кошик → Оплата'];
+const _itemCountForms = {'few': 'товари', 'other': 'товарів'};
 const _cartsScreen = {
   'screenName': 'carts-route',
   'designScreenName': 'home/buyer',
@@ -30,10 +30,10 @@ const _detailsScreen = {
 };
 const _cartsWidgets = ['CartsScreen', 'CartsView'];
 const _detailsWidgets = ['CartDetailsScreen', 'CartDetailsView'];
-const _toastText = 'Поїздку видалено';
+const _toastText = 'Товар видалено';
 const _detailsTitle = 'Деталі товару';
 const _toastTranslations = {
-  'cartsTitle': 'Посилки',
+  'cartsTitle': 'Кошики',
   'detailsTitle': _detailsTitle,
   'deletedToast': _toastText,
 };
@@ -544,8 +544,8 @@ void _atlasSnapshotBuilder_should_holdTextsAndTheKeysTheyRender() {
     () async {
       await TestAtlasRoot.run((root) {
         root.writeTranslations('uk', {
-          'cartsTitle': 'Посилки',
-          'attempts': _attemptForms,
+          'cartsTitle': 'Кошики',
+          'itemCount': _itemCountForms,
           'unused': 'Невидимий',
         });
 
@@ -554,9 +554,9 @@ void _atlasSnapshotBuilder_should_holdTextsAndTheKeysTheyRender() {
           {
             ..._openDetailsStep,
             'texts': [
-              LocaleKeyMarker.mark('cartsTitle', 'Посилки'),
-              LocaleKeyMarker.mark('attempts', '3 спроби'),
-              'Київ → Львів',
+              LocaleKeyMarker.mark('cartsTitle', 'Кошики'),
+              LocaleKeyMarker.mark('itemCount', '3 товари'),
+              'Кошик → Оплата',
             ],
           },
           _detailsShownStep,
@@ -565,8 +565,8 @@ void _atlasSnapshotBuilder_should_holdTextsAndTheKeysTheyRender() {
 
         expect(stage?.texts, _frameTexts);
         expect(stage?.localeKeys, {
-          'cartsTitle': AtlasContentHash.hashJson('Посилки'),
-          'attempts': AtlasContentHash.hashJson(_attemptForms),
+          'cartsTitle': AtlasContentHash.hashJson('Кошики'),
+          'itemCount': AtlasContentHash.hashJson(_itemCountForms),
         });
       });
     },
@@ -579,8 +579,8 @@ void _atlasSnapshotBuilder_should_holdEndTextsAndTheKeysTheyRender() {
     () async {
       await TestAtlasRoot.run((root) {
         root.writeTranslations('uk', {
-          'cartsTitle': 'Посилки',
-          'attempts': _attemptForms,
+          'cartsTitle': 'Кошики',
+          'itemCount': _itemCountForms,
           'unused': 'Невидимий',
         });
 
@@ -589,17 +589,17 @@ void _atlasSnapshotBuilder_should_holdEndTextsAndTheKeysTheyRender() {
           [_openDetailsStep, _detailsShownStep],
           reportFields: {
             'endTexts': [
-              LocaleKeyMarker.mark('cartsTitle', 'Посилки'),
-              LocaleKeyMarker.mark('attempts', '3 спроби'),
-              'Київ → Львів',
+              LocaleKeyMarker.mark('cartsTitle', 'Кошики'),
+              LocaleKeyMarker.mark('itemCount', '3 товари'),
+              'Кошик → Оплата',
             ],
           },
         );
 
         expect(snapshot.end.texts, _frameTexts);
         expect(snapshot.end.localeKeys, {
-          'cartsTitle': AtlasContentHash.hashJson('Посилки'),
-          'attempts': AtlasContentHash.hashJson(_attemptForms),
+          'cartsTitle': AtlasContentHash.hashJson('Кошики'),
+          'itemCount': AtlasContentHash.hashJson(_itemCountForms),
         });
         expect(snapshot.stages.single.localeKeys, isEmpty);
       });
@@ -655,7 +655,7 @@ void _atlasSnapshotBuilder_should_addTextsReadAfterStepsToNextStage() {
         final firstStage = snapshot.stages.firstOrNull;
         final lastStage = snapshot.stages.lastOrNull;
 
-        expect(firstStage?.texts, ['Посилки']);
+        expect(firstStage?.texts, ['Кошики']);
         expect(firstStage?.localeKeys.keys, ['cartsTitle']);
         expect(lastStage?.texts, [_detailsTitle, _toastText]);
         expect(lastStage?.localeKeys, {
@@ -682,16 +682,16 @@ void _atlasSnapshotBuilder_should_addTextsReadAfterLastStageToEnd() {
               ..._detailsShownStep,
               'textsAfterStep': [
                 LocaleKeyMarker.mark('deletedToast', _toastText),
-                'Київ → Львів',
+                'Кошик → Оплата',
               ],
             },
           ],
           reportFields: {
-            'endTexts': ['Київ → Львів'],
+            'endTexts': ['Кошик → Оплата'],
           },
         );
 
-        expect(snapshot.end.texts, ['Київ → Львів', _toastText]);
+        expect(snapshot.end.texts, ['Кошик → Оплата', _toastText]);
         expect(snapshot.end.localeKeys, {
           'deletedToast': AtlasContentHash.hashJson(_toastText),
         });
@@ -752,19 +752,19 @@ void _atlasSnapshotBuilder_should_leaveOutMarkedKeyTranslationsLack() {
     'AtlasSnapshotBuilder should leave out marked key translations lack',
     () async {
       await TestAtlasRoot.run((root) {
-        root.writeTranslations('uk', {'cartsTitle': 'Посилки'});
+        root.writeTranslations('uk', {'cartsTitle': 'Кошики'});
 
         final snapshot = _build(root, [
           _leadingStep,
           {
             ..._openDetailsStep,
-            'texts': [LocaleKeyMarker.mark('removedTitle', 'Посилки')],
+            'texts': [LocaleKeyMarker.mark('removedTitle', 'Кошики')],
           },
           _detailsShownStep,
         ]);
         final stage = snapshot.stages.firstOrNull;
 
-        expect(stage?.texts, ['Посилки']);
+        expect(stage?.texts, ['Кошики']);
         expect(stage?.localeKeys, isEmpty);
       });
     },
@@ -776,7 +776,7 @@ void _atlasSnapshotBuilder_should_readKeysFromTranslationsOfItsLocale() {
       'locale', () async {
     await TestAtlasRoot.run((root) {
       root
-        ..writeTranslations('uk', {'cartsTitle': 'Посилки'})
+        ..writeTranslations('uk', {'cartsTitle': 'Кошики'})
         ..writeTranslations('en', {'cartsTitle': 'Carts'});
 
       final snapshot = AtlasSnapshotBuilder(root.paths, 'en').build(
@@ -808,7 +808,7 @@ void _atlasSnapshotBuilder_should_readKeysFromTranslationsOfItsLocale() {
 }
 
 List<Map<String, Object?>> _toastSteps() {
-  final cartsTitle = LocaleKeyMarker.mark('cartsTitle', 'Посилки');
+  final cartsTitle = LocaleKeyMarker.mark('cartsTitle', 'Кошики');
   final detailsTitle = LocaleKeyMarker.mark('detailsTitle', _detailsTitle);
 
   return [

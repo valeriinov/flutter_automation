@@ -134,14 +134,14 @@ const _updateTitleMethod = '''
   }''';
 const _cartsViewPath = 'lib/carts/carts_view.dart';
 const _cartsRepositoryImplPath = 'lib/carts/carts_repository_impl.dart';
-const _inboxViewPath = 'lib/inbox/inbox_view.dart';
-const _dimensPath = 'lib/theme/app_dimens_ext.dart';
+const _cartViewPath = 'lib/cart/cart_view.dart';
+const _sizesPath = 'lib/theme/app_sizes_ext.dart';
 const _stageWidgets = [
   ['HomeView'],
   ['CartsView'],
-  ['InboxView'],
+  ['CartView'],
 ];
-const _endWidgets = ['InboxView'];
+const _endWidgets = ['CartView'];
 const _widgetSources = {
   'lib/di/annotations.dart': '''
 class Register {
@@ -194,7 +194,7 @@ class HomeOwner {
   _cartsViewPath: '''
 import 'package:flutter/widgets.dart';
 import 'package:sample/di/locator.dart';
-import 'package:sample/theme/app_dimens_ext.dart';
+import 'package:sample/theme/app_sizes_ext.dart';
 
 class CartsView extends StatelessWidget {
   const CartsView({super.key});
@@ -202,7 +202,7 @@ class CartsView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return SizedBox(
-      height: context.appDimensExt.gapLg,
+      height: context.appSizesExt.gapLg,
       child: Text(CartsOwner().loadTitle()),
     );
   }
@@ -241,40 +241,40 @@ class CartsMapper {
 
 class CartsHint {}
 ''',
-  _inboxViewPath: '''
+  _cartViewPath: '''
 import 'package:flutter/widgets.dart';
 import 'package:sample/home/home_owner.dart';
-import 'package:sample/theme/app_dimens_ext.dart';
+import 'package:sample/theme/app_sizes_ext.dart';
 
-class InboxView extends StatefulWidget {
-  const InboxView({super.key});
+class CartView extends StatefulWidget {
+  const CartView({super.key});
 
   @override
-  State<InboxView> createState() => _InboxViewState();
+  State<CartView> createState() => _CartViewState();
 }
 
-class _InboxViewState extends State<InboxView> {
+class _CartViewState extends State<CartView> {
   @override
   Widget build(BuildContext context) {
     return SizedBox(
-      height: context.appDimensExt.gapSm,
+      height: context.appSizesExt.gapSm,
       child: Text(HomeOwner().loadHeading()),
     );
   }
 }
 ''',
-  _dimensPath: '''
+  _sizesPath: '''
 import 'package:flutter/widgets.dart';
 
-class AppDimensExt {
+class AppSizesExt {
   final double gapLg;
   final double gapSm;
 
-  const AppDimensExt({required this.gapLg, required this.gapSm});
+  const AppSizesExt({required this.gapLg, required this.gapSm});
 }
 
-extension AppDimensExtBuildContext on BuildContext {
-  AppDimensExt get appDimensExt => throw UnimplementedError();
+extension AppSizesExtBuildContext on BuildContext {
+  AppSizesExt get appSizesExt => throw UnimplementedError();
 }
 ''',
 };
@@ -333,21 +333,21 @@ const _channelReadRecords = [
   {
     'kind': 'socket',
     'method': 'POST',
-    'path': '/inbox/threads/mock-cart-9001/read',
+    'path': '/carts/mock-cart-9001/read',
     'query': {'api_key': 'mock-api-key', 'user_id': 'user_1'},
     'body': <String, Object?>{},
     'status': _okStatus,
   },
   {
-    'kind': 'inbox',
+    'kind': 'cart',
     'call': 'unreadCount',
     'totalUnreadMessages': 0,
     'totalUnreadChannels': 0,
   },
   {
-    'kind': 'inbox',
+    'kind': 'cart',
     'call': 'channelPreviews',
-    'threadIds': ['inbox:mock-cart-9001'],
+    'cartIds': ['cart:mock-cart-9001'],
   },
 ];
 
@@ -710,7 +710,7 @@ void _atlasStaleCheck_should_reportLastStageForChangedKeyOfTheEnd() {
         root.writeTranslations('uk', {
           _sendKey: 'Надіслати',
           _backKey: 'Назад',
-          _doneKey: 'Пропозицію надіслано',
+          _doneKey: 'Запит надіслано',
         });
 
         final staleness = await _check(root);
@@ -1015,14 +1015,14 @@ void _atlasStaleCheck_should_reportStagesShowingRenamedThemeField() {
     () async {
       await TestAtlasRoot.run((root) async {
         _writeWidgetsSnapshotWithoutSources(root);
-        _replaceSource(root, _dimensPath, 'gapLg', 'gapXl');
+        _replaceSource(root, _sizesPath, 'gapLg', 'gapXl');
         _replaceSource(root, _cartsViewPath, 'gapLg', 'gapXl');
 
         final staleness = await _check(root);
 
         expect(staleness.reason, AtlasStaleReason.stageCode);
         expect(staleness.stages, [0, 1]);
-        expect(staleness.changedPaths, [_cartsViewPath, _dimensPath]);
+        expect(staleness.changedPaths, [_cartsViewPath, _sizesPath]);
       });
     },
     timeout: _analysisTimeout,
@@ -1036,13 +1036,13 @@ void _atlasStaleCheck_should_reportEveryStageForAddedThemeFieldNoStageReads() {
     () async {
       await TestAtlasRoot.run((root) async {
         _writeWidgetsSnapshotWithoutSources(root);
-        _addDimensField(root);
+        _addSizesField(root);
 
         final staleness = await _check(root);
 
         expect(staleness.reason, AtlasStaleReason.stageCode);
         expect(staleness.stages, [0, 1, 2]);
-        expect(staleness.unattributedPaths, [_dimensPath]);
+        expect(staleness.unattributedPaths, [_sizesPath]);
       });
     },
     timeout: _analysisTimeout,
@@ -1055,14 +1055,14 @@ void _atlasStaleCheck_should_reportStageReadingAddedThemeField() {
     () async {
       await TestAtlasRoot.run((root) async {
         _writeWidgetsSnapshotWithoutSources(root);
-        _addDimensField(root);
+        _addSizesField(root);
         _replaceSource(root, _cartsViewPath, 'gapLg', 'gapXs');
 
         final staleness = await _check(root);
 
         expect(staleness.reason, AtlasStaleReason.stageCode);
         expect(staleness.stages, [0, 1]);
-        expect(staleness.attributedPaths[_dimensPath], {1});
+        expect(staleness.attributedPaths[_sizesPath], {1});
       });
     },
     timeout: _analysisTimeout,
@@ -1077,17 +1077,17 @@ void _atlasStaleCheck_should_reportEveryStageForAddedUnreachedTheme() {
         _writeWidgetsSnapshotWithoutSources(root);
         _replaceSource(
           root,
-          _dimensPath,
-          'extension AppDimensExtBuildContext',
+          _sizesPath,
+          'extension AppSizesExtBuildContext',
           'class AppSpacingExt {\n  final double gapXs = 0;\n}\n\n'
-              'extension AppDimensExtBuildContext',
+              'extension AppSizesExtBuildContext',
         );
 
         final staleness = await _check(root);
 
         expect(staleness.reason, AtlasStaleReason.stageCode);
         expect(staleness.stages, [0, 1, 2]);
-        expect(staleness.unattributedPaths, [_dimensPath]);
+        expect(staleness.unattributedPaths, [_sizesPath]);
       });
     },
     timeout: _analysisTimeout,
@@ -1114,7 +1114,7 @@ void _atlasStaleCheck_should_reportStagesShowingWidgetWithAddedMember() {
     () async {
       await TestAtlasRoot.run((root) async {
         _writeWidgetsSnapshotWithoutSources(root);
-        _addInboxInitState(root);
+        _addCartInitState(root);
 
         final staleness = await _check(root);
 
@@ -1132,7 +1132,7 @@ void _atlasStaleCheck_should_reportStageWithoutWidgetsBySources() {
     () async {
       await TestAtlasRoot.run((root) async {
         _writeWidgetsSnapshotWithoutSources(root, stageWithoutWidgets: 0);
-        _addInboxInitState(root);
+        _addCartInitState(root);
 
         final staleness = await _check(root);
 
@@ -1189,14 +1189,14 @@ void _atlasStaleCheck_should_reportEveryStageForSnapshotWithoutWidgets() {
       await TestAtlasRoot.run((root) async {
         _writeWidgetsSnapshotWithoutSources(root, hasWidgets: false);
         File(root.paths.resolve(_packageConfigPath)).deleteSync();
-        _replaceSource(root, _dimensPath, 'gapLg', 'gapXl');
+        _replaceSource(root, _sizesPath, 'gapLg', 'gapXl');
         _replaceSource(root, _cartsViewPath, 'gapLg', 'gapXl');
 
         final staleness = await _check(root);
 
         expect(staleness.reason, AtlasStaleReason.stageCode);
         expect(staleness.stages, [0, 1, 2]);
-        expect(staleness.unattributedPaths, [_cartsViewPath, _dimensPath]);
+        expect(staleness.unattributedPaths, [_cartsViewPath, _sizesPath]);
       });
     },
   );
@@ -1208,13 +1208,13 @@ void _atlasStaleCheck_should_reportEveryStageForRenamedStageWidget() {
     () async {
       await TestAtlasRoot.run((root) async {
         _writeWidgetsSnapshotWithoutSources(root);
-        _replaceSource(root, _inboxViewPath, 'InboxView', 'InboxPanel');
+        _replaceSource(root, _cartViewPath, 'CartView', 'CartPanel');
 
         final staleness = await _check(root);
 
         expect(staleness.reason, AtlasStaleReason.stageCode);
         expect(staleness.stages, [0, 1, 2]);
-        expect(staleness.unattributedPaths, [_inboxViewPath]);
+        expect(staleness.unattributedPaths, [_cartViewPath]);
       });
     },
     timeout: _analysisTimeout,
@@ -1249,13 +1249,13 @@ void _atlasStaleCheck_should_reportStagesShowingWidgetOfDeletedFile() {
     () async {
       await TestAtlasRoot.run((root) async {
         _writeWidgetsSnapshotWithoutSources(root);
-        root.deleteSource(_inboxViewPath);
+        root.deleteSource(_cartViewPath);
 
         final staleness = await _check(root);
 
         expect(staleness.reason, AtlasStaleReason.stageCode);
         expect(staleness.stages, [1, 2]);
-        expect(staleness.changedPaths, ['$_inboxViewPath (deleted)']);
+        expect(staleness.changedPaths, ['$_cartViewPath (deleted)']);
         expect(staleness.unattributedPaths, isEmpty);
       });
     },
@@ -1738,7 +1738,7 @@ void _atlasStaleCheck_should_keepWalkIdsOfUnprovenVariantForCapture() {
         expect(staleness.journalStages, isEmpty);
         expect(staleness.journalDifferences, {
           1:
-              'request GET /inboxes/media/by-id/$_currentMediaId holds '
+              'request GET /files/$_currentMediaId holds '
               '$_currentMediaId',
         });
       });
@@ -1903,7 +1903,7 @@ _atlasStaleCheck_should_reportFreshForUnreachedThemeFieldOfBaselineHashes() {
     () async {
       await TestAtlasRoot.run((root) async {
         _writeWidgetsSnapshotWithoutSources(root);
-        _addDimensField(root);
+        _addSizesField(root);
         _writeHeadlessReports(root);
 
         final staleness = await _check(root);
@@ -1919,7 +1919,7 @@ Map<String, Object?> _mediaRecord(String mediaId, {required bool isWalked}) {
   return {
     'kind': 'request',
     'method': 'GET',
-    'path': '/inboxes/media/by-id/$mediaId',
+    'path': '/files/$mediaId',
     if (isWalked) 'acceptLanguage': 'uk',
     'status': _okStatus,
   };
@@ -2305,8 +2305,8 @@ void _replaceSource(TestAtlasRoot root, String path, String from, String to) {
   root.writeSource(path, source.replaceAll(from, to));
 }
 
-void _addInboxInitState(TestAtlasRoot root) {
-  _replaceSource(root, _inboxViewPath, '  @override\n  Widget build', '''
+void _addCartInitState(TestAtlasRoot root) {
+  _replaceSource(root, _cartViewPath, '  @override\n  Widget build', '''
   @override
   void initState() {
     super.initState();
@@ -2316,11 +2316,11 @@ void _addInboxInitState(TestAtlasRoot root) {
   Widget build''');
 }
 
-void _addDimensField(TestAtlasRoot root) {
-  final source = _widgetSources[_dimensPath] ?? '';
+void _addSizesField(TestAtlasRoot root) {
+  final source = _widgetSources[_sizesPath] ?? '';
 
   root.writeSource(
-    _dimensPath,
+    _sizesPath,
     source
         .replaceAll(
           'final double gapSm;',

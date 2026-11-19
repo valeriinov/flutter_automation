@@ -4,8 +4,8 @@ import 'package:flutter_test/flutter_test.dart';
 
 import 'package:flutter_automation_atlas/src/atlas_snapshot.dart';
 
-const _texts = ['Посилки', 'Київ → Львів'];
-const _localeKeys = {'cartsTitle': 'a1b2c3', 'attempts': 'd4e5f6'};
+const _texts = ['Кошики', 'Кошик → Оплата'];
+const _localeKeys = {'cartsTitle': 'a1b2c3', 'itemCount': 'd4e5f6'};
 const _widgets = ['CartsScreen', 'CartsView'];
 const _end = AtlasEnd(
   screen: 'carts-route',

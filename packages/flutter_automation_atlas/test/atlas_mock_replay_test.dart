@@ -6,7 +6,7 @@ import 'package:flutter_automation_atlas/src/atlas_snapshot.dart';
 import 'test_utils/create_atlas_snapshot.dart';
 import 'test_utils/fake_atlas_project.dart';
 
-const _variantId = 'login_atlas signedInForInbox';
+const _variantId = 'login_atlas signedInForCart';
 final _loginRecord = {
   'kind': 'request',
   'method': 'POST',
@@ -103,7 +103,7 @@ AtlasMockReplayInput _createInput(List<List<Object?>> journals) {
     schema: fakeAtlasJournalSchema,
     snapshot: createAtlasSnapshot(
       flow: 'login_atlas',
-      variant: 'signedInForInbox',
+      variant: 'signedInForCart',
       stages: [
         for (final journal in journals)
           AtlasStage(

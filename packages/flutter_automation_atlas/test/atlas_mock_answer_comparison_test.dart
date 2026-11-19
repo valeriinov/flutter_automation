@@ -156,7 +156,7 @@ void _atlasMockAnswerComparison_should_substituteIssuedIds() {
   test('AtlasMockAnswerComparison should substitute issued ids', () {
     final substituted = AtlasMockAnswerComparison.substituteIssuedIds(
       const {
-        'path': '/inboxes/media/complete/$_recordedId',
+        'path': '/files/complete/$_recordedId',
         'body': {
           'ids': [_recordedId],
         },
@@ -165,7 +165,7 @@ void _atlasMockAnswerComparison_should_substituteIssuedIds() {
     );
 
     expect(substituted, {
-      'path': '/inboxes/media/complete/$_issuedId',
+      'path': '/files/complete/$_issuedId',
       'body': {
         'ids': [_issuedId],
       },

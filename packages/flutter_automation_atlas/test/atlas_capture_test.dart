@@ -30,7 +30,7 @@ const _walkedVariant = 'shopFromSearch';
 const _shotFileName = 'shop_flow_shot_0.png';
 const _frameSize = 16;
 const _failedLoadScenario = {
-  'inbox': {'failedChannelListLoadCount': 1},
+  'cart': {'failedLoadCount': 1},
 };
 const _runnerError = 'The app rejected the mock configuration';
 const _walkFailure = 'The runner printed no report: Cannot connect.';
@@ -39,34 +39,34 @@ const _firstScreenPath = 'lib/first_screen.dart';
 const _secondScreenPath = 'lib/second_screen.dart';
 const _stagedLabels = ['open the search', 'open the cart', 'quote an item'];
 const _addedLabels = [..._stagedLabels, 'send the quote'];
-const _themePath = 'lib/theme/app_dimens_ext.dart';
+const _themePath = 'lib/theme/app_sizes_ext.dart';
 const _packageConfigPath = '.dart_tool/package_config.json';
 const _analysisTimeout = Timeout(Duration(minutes: 2));
 const _stageWidgets = ['FirstScreen', 'FirstScreen', 'SecondScreen'];
 const _themedSecondScreenSource = '''
 import 'package:flutter/widgets.dart';
-import 'package:sample/theme/app_dimens_ext.dart';
+import 'package:sample/theme/app_sizes_ext.dart';
 
 class SecondScreen extends StatelessWidget {
   const SecondScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return SizedBox(height: context.appDimensExt.gapLg);
+    return SizedBox(height: context.appSizesExt.gapLg);
   }
 }
 ''';
 const _themeSource = '''
 import 'package:flutter/widgets.dart';
 
-class AppDimensExt {
+class AppSizesExt {
   final double gapLg;
 
-  const AppDimensExt({required this.gapLg});
+  const AppSizesExt({required this.gapLg});
 }
 
-extension AppDimensExtBuildContext on BuildContext {
-  AppDimensExt get appDimensExt => throw UnimplementedError();
+extension AppSizesExtBuildContext on BuildContext {
+  AppSizesExt get appSizesExt => throw UnimplementedError();
 }
 ''';
 const _snapshotCommit = 'c0ffee000000';
@@ -1370,7 +1370,7 @@ final class _DifferentMockReplay implements AtlasMockReplay {
       for (final input in inputs)
         input.id: const AtlasMockReplayOutcome(
           stage: 0,
-          difference: 'GET /inboxes/media/by-id/1 answered 404',
+          difference: 'GET /files/1 answered 404',
         ),
     };
   }

@@ -18,7 +18,7 @@ const _repositoryImplPath = 'lib/home/home_repository_impl.dart';
 const _otherViewPath = 'lib/other/other_view.dart';
 const _otherSourcesPath = 'lib/other/other_sources.dart';
 const _mainPath = 'lib/main.dart';
-const _dimensPath = 'lib/theme/app_dimens_ext.dart';
+const _sizesPath = 'lib/theme/app_sizes_ext.dart';
 const _spacingPath = 'lib/theme/app_spacing_ext.dart';
 const _spacingGeneratedPath = 'lib/theme/app_spacing_ext.g.dart';
 const _themeHostViewPath = 'lib/theme/theme_host_view.dart';
@@ -78,7 +78,7 @@ environment:
 import 'package:flutter/widgets.dart';
 import 'package:sample/home/home_owner.dart';
 import 'package:sample/other/other_view.dart';
-import 'package:sample/theme/app_dimens_ext.dart';
+import 'package:sample/theme/app_sizes_ext.dart';
 
 class HomeView extends StatefulWidget {
   const HomeView({super.key});
@@ -93,7 +93,7 @@ class _HomeViewState extends State<HomeView> {
   @override
   Widget build(BuildContext context) {
     return SizedBox(
-      height: context.appDimensExt.gapLg,
+      height: context.appSizesExt.gapLg,
       child: OtherView(title: _owner.loadTitle()),
     );
   }
@@ -201,18 +201,18 @@ void main() {
 
 String readStartTitle() => 'start';
 ''',
-  _dimensPath: '''
+  _sizesPath: '''
 import 'package:flutter/widgets.dart';
 
-class AppDimensExt {
+class AppSizesExt {
   final double gapLg;
   final double gapSm;
 
-  const AppDimensExt({required this.gapLg, required this.gapSm});
+  const AppSizesExt({required this.gapLg, required this.gapSm});
 }
 
-extension AppDimensExtBuildContext on BuildContext {
-  AppDimensExt get appDimensExt => throw UnimplementedError();
+extension AppSizesExtBuildContext on BuildContext {
+  AppSizesExt get appSizesExt => throw UnimplementedError();
 }
 ''',
   _spacingPath: r'''
@@ -359,13 +359,13 @@ void _atlasStageReach_should_reachThemeFieldOnlyByItsName() {
     expect(
       reached.ids,
       containsAll([
-        AtlasStageReach.idOf(_dimensPath, 'AppDimensExt'),
-        AtlasStageReach.idOf(_dimensPath, 'AppDimensExt.gapLg'),
+        AtlasStageReach.idOf(_sizesPath, 'AppSizesExt'),
+        AtlasStageReach.idOf(_sizesPath, 'AppSizesExt.gapLg'),
       ]),
     );
     expect(
       reached.ids,
-      isNot(contains(AtlasStageReach.idOf(_dimensPath, 'AppDimensExt.gapSm'))),
+      isNot(contains(AtlasStageReach.idOf(_sizesPath, 'AppSizesExt.gapSm'))),
     );
   }, timeout: _analysisTimeout);
 }

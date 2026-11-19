@@ -47,7 +47,7 @@ const _walkedLanguageSubscription = {
 };
 const _recordedUuid = '975f305f-aeba-4e77-8109-1c54fd02d19c';
 const _walkUuid = '0fb39a87-0a41-441f-990d-13310d8d3d92';
-const _walkAttachmentName = 'inbox_attachment_1791462043267073.jpg';
+const _walkAttachmentName = 'upload_1791462043267073.jpg';
 
 void main() {
   group('AtlasJournalComparison Tests', () {
@@ -171,7 +171,7 @@ Map<String, Object?> _messageWithId(String id) {
   return {
     'kind': 'socket',
     'method': 'POST',
-    'path': '/inbox/threads/mock-cart-9001/message',
+    'path': '/carts/mock-cart-9001/message',
     'body': {
       'message': {'id': id, 'text': 'hello'},
     },
@@ -244,10 +244,10 @@ void _atlasJournalComparison_should_tellRecordsOfOtherAttachmentNames() {
     () {
       final isSame = testJournalComparison.isSame(
         const [
-          {'kind': 'socket', 'title': 'inbox_attachment_1791287569553676.jpg'},
+          {'kind': 'socket', 'title': 'upload_1791287569553676.jpg'},
         ],
         const [
-          {'kind': 'socket', 'title': 'inbox_attachment_1791462043267073.jpg'},
+          {'kind': 'socket', 'title': 'upload_1791462043267073.jpg'},
         ],
       );
 
@@ -287,24 +287,17 @@ void _atlasJournalComparison_should_nameUuidRecordedStageDoesNotHold() {
           {
             'kind': 'request',
             'method': 'GET',
-            'path': '/inboxes/media/by-id/$_walkUuid',
+            'path': '/files/$_walkUuid',
             'acceptLanguage': 'uk',
           },
         ],
         recorded: const [
-          {
-            'kind': 'request',
-            'method': 'GET',
-            'path': '/inboxes/media/by-id/$_recordedUuid',
-          },
+          {'kind': 'request', 'method': 'GET', 'path': '/files/$_recordedUuid'},
         ],
         installValue: null,
       );
 
-      expect(
-        walkValue,
-        'request GET /inboxes/media/by-id/$_walkUuid holds $_walkUuid',
-      );
+      expect(walkValue, 'request GET /files/$_walkUuid holds $_walkUuid');
     },
   );
 }
@@ -316,7 +309,7 @@ void _atlasJournalComparison_should_nameAttachmentNameWalkDrew() {
         {'kind': 'socket', 'title': _walkAttachmentName, 'size': 2},
       ],
       recorded: const [
-        {'kind': 'socket', 'title': 'inbox_attachment_1791287569553676.jpg'},
+        {'kind': 'socket', 'title': 'upload_1791287569553676.jpg'},
       ],
       installValue: null,
     );
@@ -365,7 +358,7 @@ void _atlasJournalComparison_should_rewriteWalkWithDeviceNamesAndToken() {
           [
             {
               'kind': 'socket',
-              'title': 'inbox_attachment_1791287569553676.jpg',
+              'title': 'upload_1791287569553676.jpg',
               'id': _recordedUuid,
             },
           ],
@@ -378,7 +371,7 @@ void _atlasJournalComparison_should_rewriteWalkWithDeviceNamesAndToken() {
         [
           {
             'kind': 'socket',
-            'title': 'inbox_attachment_1791287569553676.jpg',
+            'title': 'upload_1791287569553676.jpg',
             'id': _walkUuid,
           },
         ],

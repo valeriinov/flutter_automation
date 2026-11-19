@@ -8,7 +8,7 @@ import 'test_utils/fake_atlas_project.dart';
 
 final _uk = fakeAtlasLocales.first;
 const _en = 'en';
-const _flow = 'inbox_flow';
+const _flow = 'cart_flow';
 const _declinedVariant = 'counterQuoteDeclined';
 const _acceptedVariant = 'sellerQuoteAccepted';
 const _keyHash = '111111111111';
@@ -36,7 +36,7 @@ void _atlasSeries_should_fallBackToUkSnapshotWithItsKeys() {
     expect(declined?.snapshot, same(_ukDeclined));
     expect(declined?.fallbackLocale, _uk);
     expect(declined?.snapshot.stages.single.localeKeys, {
-      'inboxTitle': _keyHash,
+      'cartTitle': _keyHash,
     });
   });
 }
@@ -76,18 +76,18 @@ AtlasSnapshot _createSnapshot(String variant, String locale) {
     locale: locale,
     stages: const [
       AtlasStage(
-        label: 'open the inbox',
+        label: 'open the cart',
         action: 'tap',
         journal: [],
         ok: true,
         target: null,
         block: null,
         targetRect: null,
-        screen: 'inbox-route',
+        screen: 'cart-route',
         designScreen: null,
         shot: null,
         error: null,
-        localeKeys: {'inboxTitle': _keyHash},
+        localeKeys: {'cartTitle': _keyHash},
       ),
     ],
   );

@@ -7,8 +7,8 @@ const _itemsScreen = 'items-route';
 const _cartSearchScreen = 'cart-search-content-route';
 const _itemDetailsScreen = 'quote-item-details-content-route';
 const _successScreen = 'quote-item-success-route';
-const _inboxScreen = 'inbox-cart-route';
-const _amountQuoteScreen = 'inbox-cart-quote-route';
+const _cartScreen = 'cart-route';
+const _amountQuoteScreen = 'cart-quote-route';
 
 const _findCartsTapRecord = {
   'kind': 'analytics',
@@ -91,10 +91,10 @@ const _quoteCreatedRecord = {
   'name': 'buyer_quote_created',
   'parameters': {'screen_name': _itemDetailsScreen},
 };
-const _appChangedRecord = {
+const _itemsChangedRecord = {
   'kind': 'state',
-  'owner': 'AppChangeOwner',
-  'status': 'AppChangeStatusChanged',
+  'owner': 'ItemsOwner',
+  'status': 'ItemsStatusChanged',
   'isLoading': false,
 };
 const _itemsReloadingRecord = {
@@ -149,27 +149,27 @@ const _amountQuoteViewRecord = {
   'parameters': {'screen_name': _amountQuoteScreen},
 };
 
-const _inboxViewRecord = {
+const _cartViewRecord = {
   'kind': 'analytics',
   'target': 'tracker',
   'name': 'screen_opened',
-  'parameters': {'screen_name': _inboxScreen},
+  'parameters': {'screen_name': _cartScreen},
 };
 const _channelQueryRecord = {
   'kind': 'socket',
   'method': 'POST',
-  'path': '/inbox/threads/mock-cart-9001/query',
+  'path': '/carts/mock-cart-9001/query',
 };
-const _inboxOpenedRecord = {
+const _cartOpenedRecord = {
   'kind': 'analytics',
   'target': 'tracker',
-  'name': 'inbox_opened',
-  'parameters': {'screen_name': _inboxScreen},
+  'name': 'cart_opened',
+  'parameters': {'screen_name': _cartScreen},
 };
-const _inboxOpenedAttributionRecord = {
+const _cartOpenedAttributionRecord = {
   'kind': 'analytics',
   'target': 'attribution',
-  'name': 'inbox_opened',
+  'name': 'cart_opened',
   'parameters': <String, Object?>{},
 };
 
@@ -221,7 +221,7 @@ void _atlasJournalSplit_should_keepReloadsOfOtherScreensAfterAction() {
           _basketCreateRecord,
           _basketCreatedRecord,
           _quoteCreatedRecord,
-          _appChangedRecord,
+          _itemsChangedRecord,
           _itemsReloadingRecord,
           _cartSearchLoadingRecord,
           _sellerItemsRecord,
@@ -242,7 +242,7 @@ void _atlasJournalSplit_should_keepReloadsOfOtherScreensAfterAction() {
         _basketCreateRecord,
         _basketCreatedRecord,
         _quoteCreatedRecord,
-        _appChangedRecord,
+        _itemsChangedRecord,
         _itemsReloadingRecord,
         _cartSearchLoadingRecord,
         _sellerItemsRecord,
@@ -278,20 +278,20 @@ void _atlasJournalSplit_should_keepAnalyticsCopyWithEventItCopies() {
   test('AtlasJournalSplit should keep analytics copy with event it copies', () {
     final split = testJournalSplit.split(
       journal: [
-        _inboxViewRecord,
+        _cartViewRecord,
         _channelQueryRecord,
-        _inboxOpenedRecord,
-        _inboxOpenedAttributionRecord,
+        _cartOpenedRecord,
+        _cartOpenedAttributionRecord,
       ],
       screen: _amountQuoteScreen,
-      destination: _inboxScreen,
+      destination: _cartScreen,
     );
 
     expect(split.afterAction, [_channelQueryRecord]);
     expect(split.onScreenOpen, [
-      _inboxViewRecord,
-      _inboxOpenedRecord,
-      _inboxOpenedAttributionRecord,
+      _cartViewRecord,
+      _cartOpenedRecord,
+      _cartOpenedAttributionRecord,
     ]);
   });
 }

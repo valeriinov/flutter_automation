@@ -50,7 +50,7 @@ final fakeAtlasJournalSchema = AtlasJournalSchema(
   stateKind: 'state',
   requestKinds: {'request', 'socket'},
   launchKind: 'launch',
-  answerKinds: {'request', 'socket', 'session', 'launch', 'device', 'inbox'},
+  answerKinds: {'request', 'socket', 'session', 'launch', 'device', 'cart'},
   stateKey: 'owner',
   createdKey: 'created',
   parametersKey: 'parameters',
@@ -72,7 +72,7 @@ final fakeAtlasJournalSchema = AtlasJournalSchema(
     placeholder: '<install>',
   ),
   generatedValue: AtlasJournalPlaceholder(
-    pattern: r'inbox_attachment_\d+\.jpg',
+    pattern: r'upload_\d+\.jpg',
     placeholder: '<generated>',
   ),
 );
@@ -94,10 +94,10 @@ const fakeAtlasStaleSettings = AtlasStaleSettings(
     'lib/app/diagnostics_service.dart',
   ],
   themeClassPattern:
-      r'^(?:App\w*Ext|_App\w*(?:Styles|Colors|Dimens|Shadows|Overlays|Durations)|'
+      r'^(?:App\w*Ext|_App\w*(?:Styles|Colors|Sizes|Shadows|Overlays|Durations)|'
       r'App\w*Factory|_\$App\w*ExtMixin)$',
   themeValueClassPattern:
-      r'^_App\w*(?:Styles|Colors|Dimens|Shadows|Overlays|Durations)$',
+      r'^_App\w*(?:Styles|Colors|Sizes|Shadows|Overlays|Durations)$',
   themeExtensionPattern: r'^App\w*Ext$',
   themeFactorySuffix: 'Factory',
   excludedSuffix: '.config.dart',

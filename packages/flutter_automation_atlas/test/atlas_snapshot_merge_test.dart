@@ -10,9 +10,9 @@ import 'test_utils/fake_atlas_project.dart';
 
 const _flow = 'shop_flow';
 const _variant = 'shopFromExistingItem';
-const _mockPath = 'lib/support/mock/mock_config.dart';
+const _mockPath = 'lib/support/mock/mock_setup.dart';
 const _viewPath = 'lib/existing_items_view.dart';
-const _dimensPath = 'lib/theme/app_dimens_ext.dart';
+const _sizesPath = 'lib/theme/app_sizes_ext.dart';
 const _anchor = '2026-10-03T09:00:00.000Z';
 const _previousManifest = {
   _mockPath: 'aaaaaaaaaaaa',
@@ -72,12 +72,12 @@ void _atlasSnapshotMerge_should_takeNewHashOfFilePlacedOnNoStage() {
       final merged = _merge(
         previousAnchor: _anchor,
         shotStages: [1],
-        previousManifest: {..._capturedManifest, _dimensPath: 'cccccccccccc'},
-        capturedManifest: {..._capturedManifest, _dimensPath: 'dddddddddddd'},
-        attributedPaths: {_dimensPath: {}},
+        previousManifest: {..._capturedManifest, _sizesPath: 'cccccccccccc'},
+        capturedManifest: {..._capturedManifest, _sizesPath: 'dddddddddddd'},
+        attributedPaths: {_sizesPath: {}},
       );
 
-      expect(merged?.manifest[_dimensPath], 'dddddddddddd');
+      expect(merged?.manifest[_sizesPath], 'dddddddddddd');
     },
   );
 }
@@ -89,12 +89,12 @@ void _atlasSnapshotMerge_should_dropDeletedFileFromManifestAndSources() {
       final merged = _merge(
         previousAnchor: _anchor,
         shotStages: [1],
-        previousManifest: {..._capturedManifest, _dimensPath: 'cccccccccccc'},
+        previousManifest: {..._capturedManifest, _sizesPath: 'cccccccccccc'},
         attributedPaths: {
-          _dimensPath: {1},
+          _sizesPath: {1},
         },
-        previousSources: {_dimensPath: 'cccccccccccc'},
-        deletedPaths: {_dimensPath},
+        previousSources: {_sizesPath: 'cccccccccccc'},
+        deletedPaths: {_sizesPath},
       );
 
       expect(merged?.manifest, _capturedManifest);

@@ -17,12 +17,12 @@ const _screenViewRecord = {
 const _cartRecord = {
   'kind': 'request',
   'method': 'GET',
-  'path': '/carts/available/by-id/304',
+  'path': '/catalog/items/304',
   'status': _okStatus,
 };
 const _cartRecordInOtherKeyOrder = {
   'status': _okStatus,
-  'path': '/carts/available/by-id/304',
+  'path': '/catalog/items/304',
   'method': 'GET',
   'kind': 'request',
 };
