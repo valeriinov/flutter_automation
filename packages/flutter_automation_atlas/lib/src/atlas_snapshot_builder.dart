@@ -25,10 +25,11 @@ typedef _StageSteps = ({
 /// A stage opens on every user action and holds the steps up to the next one:
 /// the screenshot and the screen logged before the action, and the journal
 /// the action and the steps after it produced. The runner writes a
-/// `screenshot` key, `null` when the shot failed, on every user action and on
-/// nothing else, so that key is what opens a stage. Steps before the first
-/// action only bring the app to where the walk starts, so they open no stage
-/// and their journal is dropped.
+/// `screenshot` key, `null` when the shot failed, on every user action, so a
+/// step with that key and an `action` opens a stage. The step of the end
+/// frame names no `action` and opens no stage. Steps before the first action
+/// only bring the app to where the walk starts, so they open no stage and
+/// their journal is dropped.
 ///
 /// Records that arrive after the last step of a stage are read just before
 /// the next action as its `journalBeforeAction`, or after the run as
@@ -229,8 +230,12 @@ final class AtlasSnapshotBuilder {
   List<int> _readActionIndexes(List<Map<String, Object?>> steps) {
     return [
       for (final (index, step) in steps.indexed)
-        if (step.containsKey(_screenshotKey)) index,
+        if (_isUserActionStep(step)) index,
     ];
+  }
+
+  bool _isUserActionStep(Map<String, Object?> step) {
+    return step.containsKey(_screenshotKey) && step[_actionKey] is String;
   }
 
   List<String> _readStageMarkedTexts(

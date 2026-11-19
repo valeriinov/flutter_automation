@@ -121,6 +121,7 @@ void main() {
     _atlasSnapshotBuilder_should_dropJournalBeforeFirstAction();
     _atlasSnapshotBuilder_should_appendEndJournalToLastStage();
     _atlasSnapshotBuilder_should_openStageOnStepsCarryingScreenshot();
+    _atlasSnapshotBuilder_should_openNoStageForFailedEndFrame();
     _atlasSnapshotBuilder_should_reportFirstErrorOfStage();
     _atlasSnapshotBuilder_should_readEndFromLastCapturedStep();
     _atlasSnapshotBuilder_should_hashManifestFiles();
@@ -309,6 +310,40 @@ void _atlasSnapshotBuilder_should_openStageOnStepsCarryingScreenshot() {
     },
   );
 }
+
+void _atlasSnapshotBuilder_should_openNoStageForFailedEndFrame() {
+  test(
+    'AtlasSnapshotBuilder should open no stage for failed end frame',
+    () async {
+      await TestAtlasRoot.run((root) {
+        for (final endStep in [_failedEndStep, _failedEndStepWithScreenshot]) {
+          final snapshot = _build(root, [
+            _leadingStep,
+            _openDetailsStep,
+            endStep,
+          ], isOk: false);
+
+          expect(snapshot.stages.map((stage) => stage.label), [
+            'open cart details',
+          ]);
+        }
+      });
+    },
+  );
+}
+
+const _failedEndStep = {
+  'label': 'end',
+  'ok': false,
+  'frameDefect': {
+    'step': 'end',
+    'kind': 'emptyText',
+    'count': 1,
+    'items': <Object?>[],
+  },
+  'error': 'The end frame is not ready',
+};
+const _failedEndStepWithScreenshot = {..._failedEndStep, 'screenshot': null};
 
 void _atlasSnapshotBuilder_should_reportFirstErrorOfStage() {
   test('AtlasSnapshotBuilder should report first error of stage', () async {
