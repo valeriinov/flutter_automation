@@ -18,11 +18,22 @@ const _openBlock = {
     },
   ],
 };
+const _probeSeriesStep = {
+  'action': 'probeSeries',
+  'label': 'read the cart list',
+  'durationMs': 1000,
+  'probes': [
+    {
+      'name': 'list',
+      'finder': {'by': 'valueKey', 'value': 'cart.list'},
+    },
+  ],
+};
 
 void main() {
   group('AtlasDefinitions Tests', () {
-    _atlasDefinitions_should_skipProbeSeriesFlows();
-    _atlasDefinitions_should_readProbeSeriesFlowsWhenAsked();
+    _atlasDefinitions_should_skipFlowHoldingProbeSeriesStep();
+    _atlasDefinitions_should_keepFlowNamedAsProbeSeriesWithoutProbes();
     _atlasDefinitions_should_keepVariantOrderTextsAndDefault();
     _atlasDefinitions_should_keepDefHashAcrossKeyOrder();
     _atlasDefinitions_should_changeDefHashWhenStepChanges();
@@ -34,13 +45,15 @@ void main() {
   });
 }
 
-void _atlasDefinitions_should_skipProbeSeriesFlows() {
-  test('AtlasDefinitions should skip probe series flows', () async {
+void _atlasDefinitions_should_skipFlowHoldingProbeSeriesStep() {
+  test('AtlasDefinitions should skip flow holding probe series step', () async {
     await TestAtlasRoot.run((root) {
       _writeQuoteFlow(root);
-      root.writeFlow('inbox_keyboard_probe_series', {
+      root.writeFlow('cart_scroll', {
         'variants': {
-          'rise': {'items': <Object?>[]},
+          'rise': {
+            'items': [_probeSeriesStep],
+          },
         },
       });
 
@@ -51,27 +64,27 @@ void _atlasDefinitions_should_skipProbeSeriesFlows() {
   });
 }
 
-void _atlasDefinitions_should_readProbeSeriesFlowsWhenAsked() {
-  test('AtlasDefinitions should read probe series flows when asked', () async {
-    await TestAtlasRoot.run((root) {
-      _writeQuoteFlow(root);
-      root.writeFlow('inbox_keyboard_probe_series', {
-        'variants': {
-          'rise': {'items': <Object?>[]},
-        },
+void _atlasDefinitions_should_keepFlowNamedAsProbeSeriesWithoutProbes() {
+  test(
+    'AtlasDefinitions should keep flow named as probe series without probes',
+    () async {
+      await TestAtlasRoot.run((root) {
+        _writeQuoteFlow(root);
+        root.writeFlow('cart_probe_series', {
+          'variants': {
+            'rise': {'items': <Object?>[]},
+          },
+        });
+
+        final definitions = AtlasDefinitions.read(root.paths);
+
+        expect(definitions.flows.map((flow) => flow.name), [
+          'cart_probe_series',
+          'shop_flow',
+        ]);
       });
-
-      final definitions = AtlasDefinitions.read(
-        root.paths,
-        includeProbeSeries: true,
-      );
-
-      expect(definitions.flows.map((flow) => flow.name), [
-        'inbox_keyboard_probe_series',
-        'shop_flow',
-      ]);
-    });
-  });
+    },
+  );
 }
 
 void _atlasDefinitions_should_keepVariantOrderTextsAndDefault() {

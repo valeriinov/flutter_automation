@@ -101,6 +101,17 @@ const _tapStep = {
   'title': _tapTitle,
   'finder': {'by': 'valueKey', 'value': 'bottom_bar.button.primary'},
 };
+const _probeSeriesStep = {
+  'action': 'probeSeries',
+  'label': 'read the cart list',
+  'durationMs': 1000,
+  'probes': [
+    {
+      'name': 'list',
+      'finder': {'by': 'valueKey', 'value': 'cart.list'},
+    },
+  ],
+};
 const _scrollLabel = 'items list';
 const _scrollTitle = {'en': 'Scroll the items', 'uk': 'Прогорнути товари'};
 const _scrollDy = -300.0;
@@ -1805,10 +1816,10 @@ void _writeCatalogue(TestAtlasRoot root, {String label = 'browse'}) {
         },
       },
     })
-    ..writeFlow('cart_probe_series', {
+    ..writeFlow('cart_scroll', {
       'variants': {
         'rise': {
-          'items': [_tapStep],
+          'items': [_probeSeriesStep],
         },
       },
     });

@@ -11,8 +11,9 @@ import 'package:flutter_automation_atlas/src/atlas_locations.dart';
 ///
 /// Every flow of the automation runner, read in the order of their names.
 ///
-/// The probe series measure motion and walk no journey. The definitions leave
-/// them out unless the caller asks for them.
+/// A flow that holds a `probeSeries` step measures motion and walks no
+/// journey ([AtlasDefinition.holdsProbeSeries]). The definitions leave it
+/// out.
 final class AtlasDefinitions {
   /// Flows sorted by name.
   final List<AtlasDefinition> flows;
@@ -23,24 +24,16 @@ final class AtlasDefinitions {
 
   const AtlasDefinitions(this.flows, {required this.declarationOrder});
 
-  /// Reads the flows of the runner catalogue of [paths], in the order of
-  /// their names.
-  ///
-  /// The [includeProbeSeries] parameter takes the probe series in as well,
-  /// which the catalogue of every flow wants and the atlas of the journeys
-  /// does not.
-  factory AtlasDefinitions.read(
-    AtlasLocations paths, {
-    bool includeProbeSeries = false,
-  }) {
+  /// Reads the flows of the runner catalogue of [paths] but the probe
+  /// series, in the order of their names.
+  factory AtlasDefinitions.read(AtlasLocations paths) {
     final finders = paths.config.finderRegistry;
     final catalogue = AtlasRunnerCatalogue.read(paths);
     final blocks = AutomationBlockLibrary.fromJson(catalogue.blocks);
-    final names = catalogue.flows.keys
-        .where((name) => _isFlowName(name, includeProbeSeries))
-        .sorted((first, second) => first.compareTo(second));
-
-    return AtlasDefinitions([
+    final names = catalogue.flows.keys.sorted(
+      (first, second) => first.compareTo(second),
+    );
+    final flows = [
       for (final name in names)
         AtlasDefinition.fromJson(
           name,
@@ -49,7 +42,12 @@ final class AtlasDefinitions {
           finders,
           paths,
         ),
-    ], declarationOrder: catalogue.flows.keys.toList());
+    ];
+
+    return AtlasDefinitions(
+      flows.whereNot((flow) => flow.holdsProbeSeries).toList(),
+      declarationOrder: catalogue.flows.keys.toList(),
+    );
   }
 
   /// Every variant of every flow, in catalogue order.
@@ -70,20 +68,12 @@ final class AtlasDefinitions {
 
     return flow;
   }
-
-  static bool _isFlowName(String name, bool includeProbeSeries) {
-    return includeProbeSeries ||
-        !name.endsWith(AtlasDefinition.probeSeriesSuffix);
-  }
 }
 
 /// {@category Utils}
 ///
 /// One flow: its variants in the order the flow lists them.
 final class AtlasDefinition {
-  /// Suffix on the name of a flow holding a probe series rather than a journey.
-  static const probeSeriesSuffix = '_probe_series';
-
   /// Name of the flow, equal to its key in the runner catalogue.
   final String name;
 
@@ -104,7 +94,8 @@ final class AtlasDefinition {
   /// each variant from [blocks] and parses its finders with [finders].
   ///
   /// Throws a [AtlasException] when the flow declares a `group` without
-  /// a string `name`.
+  /// a string `name`, or when a flow without a probe series lacks a text in
+  /// a page locale.
   factory AtlasDefinition.fromJson(
     String name,
     Object? flowJson,
@@ -138,7 +129,9 @@ final class AtlasDefinition {
       ],
     );
 
-    definition._requireEveryPageLocale(paths.pageLocales);
+    if (!definition.holdsProbeSeries) {
+      definition._requireEveryPageLocale(paths.pageLocales);
+    }
 
     return definition;
   }
@@ -149,9 +142,13 @@ final class AtlasDefinition {
     return variants.firstOrNull?.automationFlow.title;
   }
 
-  /// Whether the flow holds a probe series rather than a journey.
-  bool get isProbeSeries {
-    return name.endsWith(probeSeriesSuffix);
+  /// Whether the flow holds a probe series rather than a journey: a variant
+  /// has a `probeSeries` step, the one step that reads probes.
+  bool get holdsProbeSeries {
+    return variants.any(
+      (variant) =>
+          variant.automationFlow.steps.any((step) => step.probes.isNotEmpty),
+    );
   }
 
   /// What the journey is about in one sentence, null when the flow names
