@@ -123,8 +123,6 @@ final class AtlasPageRenderer {
     'shotSheets',
     'shotCells',
     'shotUrls',
-    'artifactUrl',
-    'artifactUrls',
   };
   static const _shotsPerSheet = 16;
   static const _shotsDirectory = 'shots';

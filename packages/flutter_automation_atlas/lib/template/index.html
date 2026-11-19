@@ -4700,10 +4700,7 @@ readAtlasPageData().then(function (data) {
     seg.setAttribute('role', 'group');
     seg.setAttribute('aria-label', t('Shot series', 'Серія знімків'));
     LOCALES.forEach(function (locale) {
-      if (data.seriesLocale && locale !== series) {
-        if ((data.artifactUrls || {})[locale]) { seg.appendChild(seriesLink(locale)); }
-        return;
-      }
+      if (data.seriesLocale && locale !== series) { return; }
       var button = el('button', null, locale);
       button.type = 'button';
       button.setAttribute('data-key', 'series:' + locale);
@@ -4721,17 +4718,6 @@ readAtlasPageData().then(function (data) {
       wrap.appendChild(mark);
     }
     return wrap;
-  }
-
-  function seriesLink(locale) {
-    var url = (data.artifactUrls || {})[locale] || '';
-    var link = el('a', null, locale);
-    link.href = url + hashFor();
-    link.target = '_blank';
-    link.rel = 'noopener noreferrer';
-    link.setAttribute('data-key', 'series:' + locale);
-    link.addEventListener('click', function () { link.href = url + hashFor(); });
-    return link;
   }
 
   function selectSeries(locale) {
@@ -6016,7 +6002,7 @@ readAtlasPageData().then(function (data) {
         design_screen: row.seen.map(function (place) { return place.screen; }).join('\n'),
         route: row.seen.map(function (place) { return place.route; }).join('\n'),
         design_urls: row.seen.map(function (place) { return isDesignUrl(place.designUrl) ? place.designUrl : ''; }).join('\n'),
-        atlas_urls: row.seen.map(function (place) { return new URL(atlasHash(place), data.artifactUrl || window.location.href).href; }).join('\n'),
+        atlas_urls: row.seen.map(function (place) { return new URL(atlasHash(place), window.location.href).href; }).join('\n'),
         code_usages: row.usages.join('\n'),
         note: exportNote(row)
       });
@@ -6476,7 +6462,7 @@ readAtlasPageData().then(function (data) {
       design_screen: row.seen.map(function (place) { return place.screen; }).join('\n'),
       route: row.seen.map(function (place) { return place.route; }).join('\n'),
       design_urls: row.seen.map(function (place) { return isDesignUrl(place.designUrl) ? place.designUrl : ''; }).join('\n'),
-      atlas_urls: row.seen.map(function (place) { return new URL(atlasHash(place), data.artifactUrl || window.location.href).href; }).join('\n')
+      atlas_urls: row.seen.map(function (place) { return new URL(atlasHash(place), window.location.href).href; }).join('\n')
     };
   }
 
