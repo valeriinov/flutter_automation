@@ -2071,6 +2071,10 @@ readAtlasPageData().then(function (data) {
     return isPlainObject(entry) ? entry : null;
   }
 
+  function hasOtherSeries(variant) {
+    return Boolean(variant) && isPlainObject(variant.series) && Object.keys(variant.series).length > 0;
+  }
+
   function seriesOf(variant) {
     var translated = series !== DEFAULT_LOCALE ? translatedSeries(variant) : null;
     return translated && Array.isArray(translated.stages) ? translated : variant;
@@ -2196,6 +2200,13 @@ readAtlasPageData().then(function (data) {
     langButtons.en.setAttribute('aria-pressed', String(lang === 'en'));
     langButtons.uk.setAttribute('aria-pressed', String(lang === 'uk'));
     document.title = (meta.projectName ? meta.projectName + ' · ' : '') + COPY[lang].title;
+    renderFooter();
+  }
+
+  function renderFooter() {
+    var builtAt = meta.builtAt ? new Date(meta.builtAt) : null;
+    var date = builtAt ? builtAt.toLocaleDateString(lang === 'uk' ? 'uk-UA' : 'en-GB', { day: 'numeric', month: 'long', year: 'numeric' }) : '';
+    document.getElementById('page-footer').textContent = [meta.sourceLabel, date].filter(Boolean).join(' · ');
   }
 
   function switchLang(value) {
@@ -4678,7 +4689,7 @@ readAtlasPageData().then(function (data) {
         device.appendChild(el('span', null, deviceName));
         box.appendChild(device);
       }
-      if (data.seriesLocale || translatedSeries(variantNow)) { box.appendChild(seriesSwitch(variantNow)); }
+      if (data.seriesLocale || hasOtherSeries(variantNow)) { box.appendChild(seriesSwitch(variantNow)); }
       if (about) { about.parentNode.replaceChild(box, about); } else if (box.childNodes.length) { toolbar.appendChild(box); }
     }
   };
@@ -6518,7 +6529,6 @@ readAtlasPageData().then(function (data) {
   ['side-logo', 'head-logo'].forEach(function (id) { document.getElementById(id).textContent = brandLetter; });
   document.getElementById('side-name').textContent = (meta.projectName || '') + ' · Atlas';
   document.getElementById('head-project').textContent = meta.projectName || '';
-  document.getElementById('page-footer').textContent = [meta.sourceLabel, meta.footer].filter(Boolean).join(' · ');
   applyLang(readStoredLang() || 'en');
   renderStats();
   if (flows.length) {

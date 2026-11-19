@@ -29,8 +29,7 @@ final class AtlasLocations {
   static const _headlessBaselineDirectory = 'headless_baseline';
   static const _baselineWorktreesDirectory = 'baseline_worktrees';
   static const _pageFileName = 'index.html';
-  static const _pageBaseName = 'index';
-  static const _htmlExtension = '.html';
+  static const _bundleDirectoryPrefix = 'bundle';
   static const _jsonExtension = '.json';
   static const _pngExtension = '.png';
 
@@ -135,18 +134,22 @@ final class AtlasLocations {
   /// The bundle page of the [edition], for the series of [locale] or, when
   /// [locale] is absent, for every page locale, kept out of the repository
   /// under the build folder.
+  ///
+  /// The page is `bundle.<edition>[.<locale>]/index.html` under the build
+  /// folder.
   String resolveBundlePagePath(String edition, {String? locale}) {
     final suffix = locale == null ? '' : '.$locale';
 
     return resolve(
       p.join(
         project.paths.build,
-        '$_pageBaseName.$edition$suffix$_htmlExtension',
+        '$_bundleDirectoryPrefix.$edition$suffix',
+        _pageFileName,
       ),
     );
   }
 
-  /// The shots a bundle page of the `files` source reads, beside the page.
+  /// The shots a bundle page reads from files, beside the page.
   String resolveBundleShotsPath(String bundlePagePath) {
     return p.join(p.dirname(bundlePagePath), _shotsDirectory);
   }

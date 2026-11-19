@@ -100,6 +100,8 @@ void _atlasShotWebpEncoder_should_answerFromCache() {
       final sheet = AtlasShotWebpEncoder(root.paths).encodeSheet(_shots);
 
       expect(sheet.dataUri, '$_webpDataUriPrefix${base64Encode(_cachedWebp)}');
+      expect(sheet.bytes, _cachedWebp);
+      expect(sheet.fileName, '${sha1.convert(_cachedWebp)}.webp');
     });
   });
 }

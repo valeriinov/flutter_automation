@@ -1,7 +1,6 @@
 import 'dart:io';
 
 import 'package:collection/collection.dart';
-import 'package:path/path.dart' as p;
 import 'package:flutter_automation_runner/flutter_automation_runner.dart';
 
 import 'package:flutter_automation_atlas/src/atlas_capture.dart';
@@ -89,14 +88,18 @@ import 'package:flutter_automation_atlas/src/atlas_stale_check.dart';
 ///   stored snapshot names and writes the reports of the project
 ///   ([AtlasProject.writeReports]).
 /// - `bundle --edition <name> --shots <source> [--locale <code|all>]` writes
-///   the page of the edition as one file under the build folder; the source
-///   is `files`, `inline` or `urls`. `files` copies the shots to `shots/` beside it, `inline` embeds them as
-///   WebP sheets and `urls` takes their links from
+///   the page of the edition as `index.html` in its own folder under the
+///   build folder, one folder per edition and locale. The source is `files`,
+///   `inline`, `sheets` or `urls`. `files` copies the shots to `shots/`
+///   beside the page. `inline` embeds them as WebP sheets. `sheets` writes
+///   the WebP sheets as `shots/<hash>.webp` beside the page and deletes all
+///   other files in that folder. `urls` takes their links from
 ///   [AtlasProject.shotPublisher]. `--locale` names the one series the page
 ///   shows; `all`, or none, shows every page locale in one file. The bundle
 ///   stops with its size when it passes the `maxBundleBytes` or the
-///   `maxBundleImages` limit of `flutter_automation: atlas:`, and with the
-///   message of a publisher that fails.
+///   `maxBundleImages` limit of `flutter_automation: atlas:`.
+///   `maxBundleImages` counts the inline sheets or the sheet files. The
+///   bundle also stops with the message of a publisher that fails.
 ///
 /// `capture` and `stale` take `--locale <code>`, the first locale of the
 /// project when absent: the app runs in that locale and its values come from
@@ -164,7 +167,7 @@ final class AtlasRun {
       '$_sourceCommitCommand $_snapshotOption <file> | '
       '$_renderCommand [$_editionOption <name>] | '
       '$_bundleCommand $_editionOption <name> '
-      '$_shotsOption <files|inline|urls> '
+      '$_shotsOption <files|inline|sheets|urls> '
       '[$_localeOption <code|$_allLocales>] '
       '[$_storeOption <folder>] [$_sourceLabelOption <text>]';
 
@@ -184,7 +187,7 @@ final class AtlasRun {
   /// the variants in their order, [AtlasStaleCheck] when absent; the
   /// [headlessPass] parameter walks variants headless, on the working tree
   /// when absent; the [shotEncoder] parameter turns shots into the sheets a
-  /// bundle inlines, WebP sheets when absent.
+  /// bundle inlines or writes as files, WebP sheets when absent.
   AtlasRun(
     this.args,
     this._project, {
@@ -437,24 +440,7 @@ final class AtlasRun {
       locations,
       shotEncoder: _shotEncoder,
       sourceLabel: sourceLabel,
-      command: _describeCommand(),
     );
-  }
-
-  String _describeCommand() {
-    final script = p.relative(
-      Platform.script.toFilePath(),
-      from: p.absolute(locations.rootPath),
-    );
-    final launch = locations.project.launch.resolveCommand('dart');
-
-    return [
-      launch.executable,
-      ...launch.arguments,
-      'run',
-      script,
-      ...args,
-    ].join(' ');
   }
 
   void _printSourceCommit() {

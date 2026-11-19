@@ -23,13 +23,22 @@ abstract interface class AtlasShotEncoder {
 ///
 /// One image holding several shots, with the place of each on it.
 final class AtlasShotSheet {
-  /// The data URI of the sheet image.
-  final String dataUri;
+  static const _dataUriPrefix = 'data:image/webp;base64,';
+  static const _fileExtension = '.webp';
+
+  /// The WebP bytes of the sheet image.
+  final Uint8List bytes;
 
   /// The place of each shot on the sheet, by its content hash.
   final Map<String, AtlasShotCell> cells;
 
-  const AtlasShotSheet({required this.dataUri, required this.cells});
+  const AtlasShotSheet({required this.bytes, required this.cells});
+
+  /// The data URI of the sheet image.
+  String get dataUri => '$_dataUriPrefix${base64Encode(bytes)}';
+
+  /// The file name of the sheet, the hash of its bytes with `.webp`.
+  String get fileName => '${sha1.convert(bytes)}$_fileExtension';
 }
 
 /// {@category Utils}
@@ -67,7 +76,6 @@ final class AtlasShotCell {
 final class AtlasShotWebpEncoder implements AtlasShotEncoder {
   static const _columns = 4;
   static const _executable = 'cwebp';
-  static const _dataUriPrefix = 'data:image/webp;base64,';
   static const _webpExtension = '.webp';
   static const _pngExtension = '.png';
 
@@ -97,10 +105,7 @@ final class AtlasShotWebpEncoder implements AtlasShotEncoder {
       _encode(cells, cached);
     }
 
-    return AtlasShotSheet(
-      dataUri: '$_dataUriPrefix${base64Encode(cached.readAsBytesSync())}',
-      cells: cells,
-    );
+    return AtlasShotSheet(bytes: cached.readAsBytesSync(), cells: cells);
   }
 
   ({int width, int height}) _readShotSize(String shot) {

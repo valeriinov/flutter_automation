@@ -1,5 +1,21 @@
 # Changelog
 
+## Unreleased
+
+- New screenshot source `sheets`. `bundle --shots sheets` writes the WebP sheets
+  as files `shots/<hash>.webp` beside the page. The page crops each screenshot
+  from its sheet. `bundle` deletes every other file in `shots/`. A host serves
+  the page together with its files.
+- `maxBundleImages` limits the images of a bundle, inline or as sheet files.
+  `maxBundleBytes` limits the bundle page.
+- Breaking: `AtlasShotSheet` takes the WebP `bytes` of the sheet instead of
+  `dataUri`. It gives `dataUri` and `fileName` as getters.
+- Breaking: `AtlasPageRenderer` takes `clock` instead of `command`. The page
+  footer shows the source label and, on a bundle page, the build date in the
+  page language.
+- Breaking: a bundle page is `index.html` in a folder of its own for each
+  edition and locale under the build folder: `bundle.<edition>[.<locale>]/`.
+
 ## 0.10.0
 
 - New package. It is the atlas engine of an automation flow project. `runAtlas`

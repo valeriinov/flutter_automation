@@ -102,12 +102,12 @@ void _atlasLocations_should_keepBundlePageUnderBuild() {
     final path = _locations.resolveBundlePagePath('lite');
     final localePath = _locations.resolveBundlePagePath('lite', locale: 'en');
 
-    expect(path, '/repo/build/atlas/index.lite.html');
-    expect(localePath, '/repo/build/atlas/index.lite.en.html');
+    expect(path, '/repo/build/atlas/bundle.lite/index.html');
+    expect(localePath, '/repo/build/atlas/bundle.lite.en/index.html');
     expect(_locations.bundleShotCachePath, '/repo/build/atlas/shot_cache');
     expect(
       _locations.resolveBundleShotsPath(path),
-      p.join('/repo/build/atlas', 'shots'),
+      p.join('/repo/build/atlas/bundle.lite', 'shots'),
     );
   });
 }

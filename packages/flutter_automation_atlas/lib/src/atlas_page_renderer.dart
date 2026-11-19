@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:io';
 import 'dart:isolate';
+import 'dart:typed_data';
 
 import 'package:collection/collection.dart';
 import 'package:flutter_automation_runner/flutter_automation_runner.dart';
@@ -80,7 +81,8 @@ typedef _GatheredPage = ({
 ///   records the page searches.
 ///
 /// A second script of the page, `atlas-meta`, holds what the page needs to
-/// draw itself: the project name, the source label, the footer, the parts,
+/// draw itself: the project name, the source label, the build time of a
+/// bundle as `builtAt`, the parts,
 /// the menu of the tables with their columns, the locales and the journal
 /// kinds. The page data replaces the placeholder inside the template's JSON
 /// script, so every `</` in it is written as `<\/` to keep a text from closing
@@ -98,6 +100,9 @@ typedef _GatheredPage = ({
 /// sheet index, left, top, width and height of each shot by its content hash
 /// in `shotCells`; with [AtlasShotSource.urls] it holds the link of each shot
 /// in `shotUrls`; and its page data is one string, the base64 of its gzip.
+/// With [AtlasShotSource.sheets] a bundle writes each sheet as the file
+/// `shots/<hash>.webp` beside the page. It holds that relative path in
+/// `shotSheets` instead of a data URI.
 final class AtlasPageRenderer {
   static const _templateUri =
       'package:flutter_automation_atlas/template/index.html';
@@ -122,6 +127,7 @@ final class AtlasPageRenderer {
     'artifactUrls',
   };
   static const _shotsPerSheet = 16;
+  static const _shotsDirectory = 'shots';
   static const _pngType = 'image/png';
   static const _designLinkKey = 'designUrl';
   static const _journalKey = 'journal';
@@ -137,23 +143,24 @@ final class AtlasPageRenderer {
   final AtlasShotEncoder? _shotEncoder;
   final String? _template;
   final String? _sourceLabel;
-  final String? _command;
+  final DateTime Function() _clock;
 
-  /// The [shotEncoder] parameter turns a shot into the data URI the bundle
-  /// inlines, an [AtlasShotWebpEncoder] when absent; the [template] parameter
-  /// replaces the page template of the package; the [sourceLabel] parameter
-  /// is the label of the source the page header shows; the [command]
-  /// parameter is the command text the footer names.
-  const AtlasPageRenderer(
+  /// The [shotEncoder] parameter turns shots into the sheets the bundle
+  /// inlines or writes, an [AtlasShotWebpEncoder] when absent; the [template]
+  /// parameter replaces the page template of the package; the [sourceLabel]
+  /// parameter is the label of the source the page header and footer show;
+  /// the [clock] parameter gives the build time of a bundle, which its footer
+  /// shows as a date, [DateTime.now] when absent.
+  AtlasPageRenderer(
     this._paths, {
     AtlasShotEncoder? shotEncoder,
     String? template,
     String? sourceLabel,
-    String? command,
+    DateTime Function()? clock,
   }) : _shotEncoder = shotEncoder,
        _template = template,
        _sourceLabel = sourceLabel,
-       _command = command;
+       _clock = clock ?? DateTime.now;
 
   /// Reads every source and returns the page of [edition], the `full` one
   /// when absent, its snapshots make now.
@@ -212,7 +219,9 @@ final class AtlasPageRenderer {
   /// The [locale] parameter names the one series the bundle shows; the
   /// bundle holds every page locale when it is absent. For
   /// [AtlasShotSource.urls] the shot publisher of the project puts the shots
-  /// where a browser reads them.
+  /// where a browser reads them. For [AtlasShotSource.sheets] the folder
+  /// `shots/` beside the page holds the sheet files the page reads.
+  /// [renderBundle] deletes every other file and folder in it.
   ///
   /// Throws an [AtlasException] when [locale] is none of
   /// [AtlasLocations.pageLocales], when [source] is [AtlasShotSource.urls]
@@ -230,10 +239,15 @@ final class AtlasPageRenderer {
       );
     }
 
-    final gathered = _gather(edition, bundleLocale: locale);
+    final gathered = _gather(edition, bundleLocale: locale, builtAt: _clock());
     final shots = gathered.shots.whereNot(_isShotMissing).toList();
+    final path = _paths.resolveBundlePagePath(edition.name, locale: locale);
 
-    final (:shotsData, :images) = await _prepareShots(source, shots);
+    final (:shotsData, :images) = await _prepareShots(
+      source,
+      shots,
+      _paths.resolveBundleShotsPath(path),
+    );
 
     final page = _assemble(
       template: await _readTemplate(),
@@ -242,7 +256,6 @@ final class AtlasPageRenderer {
       isPacked: true,
     );
     final bytes = utf8.encode(page);
-    final path = _paths.resolveBundlePagePath(edition.name, locale: locale);
 
     File(path)
       ..createSync(recursive: true)
@@ -354,7 +367,11 @@ final class AtlasPageRenderer {
     }
   }
 
-  _GatheredPage _gather(AtlasEdition edition, {String? bundleLocale}) {
+  _GatheredPage _gather(
+    AtlasEdition edition, {
+    String? bundleLocale,
+    DateTime? builtAt,
+  }) {
     final project = _paths.project;
     final definitions = AtlasDefinitions.read(_paths);
     final publishedVariants = AtlasPublishedVariants.read(_paths, definitions);
@@ -427,7 +444,7 @@ final class AtlasPageRenderer {
 
     return (
       data: data,
-      meta: _buildMeta(edition, tables),
+      meta: _buildMeta(edition, tables, builtAt),
       shots: shots,
       totals: totals,
       unlistedSnapshots: _findUnlistedSnapshots(snapshots, definitions),
@@ -466,6 +483,7 @@ final class AtlasPageRenderer {
   Future<({Map<String, Object?> shotsData, int images})> _prepareShots(
     AtlasShotSource source,
     List<String> shots,
+    String shotsDirectory,
   ) async {
     switch (source) {
       case AtlasShotSource.files:
@@ -473,7 +491,25 @@ final class AtlasPageRenderer {
       case AtlasShotSource.inline:
         final sheets = _encodeShotSheets(shots);
 
-        return (shotsData: _buildShotSheetData(sheets), images: sheets.length);
+        return (
+          shotsData: _buildShotSheetData(sheets, (sheet) => sheet.dataUri),
+          images: sheets.length,
+        );
+      case AtlasShotSource.sheets:
+        final sheets = _encodeShotSheets(shots);
+        final sheetFiles = {
+          for (final sheet in sheets) sheet.fileName: sheet.bytes,
+        };
+
+        _writeSheets(sheetFiles, shotsDirectory);
+
+        return (
+          shotsData: _buildShotSheetData(
+            sheets,
+            (sheet) => '$_shotsDirectory/${sheet.fileName}',
+          ),
+          images: sheetFiles.length,
+        );
       case AtlasShotSource.urls:
         final links = await _publish(shots);
 
@@ -533,6 +569,24 @@ final class AtlasPageRenderer {
           p.join(directory, '$shot.png'),
         )..createSync(recursive: true)).path,
       );
+    }
+  }
+
+  void _writeSheets(Map<String, Uint8List> sheetFiles, String directory) {
+    final folder = Directory(directory);
+
+    if (folder.existsSync()) {
+      for (final entity in folder.listSync()) {
+        if (!sheetFiles.containsKey(p.basename(entity.path))) {
+          entity.deleteSync(recursive: true);
+        }
+      }
+    }
+
+    for (final MapEntry(key: name, value: bytes) in sheetFiles.entries) {
+      File(p.join(directory, name))
+        ..createSync(recursive: true)
+        ..writeAsBytesSync(bytes);
     }
   }
 
@@ -631,6 +685,7 @@ final class AtlasPageRenderer {
   Map<String, Object?> _buildMeta(
     AtlasEdition edition,
     List<AtlasTable> tables,
+    DateTime? builtAt,
   ) {
     final project = _paths.project;
     final schema = project.journalSchema;
@@ -638,7 +693,7 @@ final class AtlasPageRenderer {
     return {
       'projectName': project.projectName,
       'sourceLabel': ?_sourceLabel,
-      'footer': _buildFooter(),
+      'builtAt': ?builtAt?.toUtc().toIso8601String(),
       'locales': project.locales,
       'parts': [for (final part in edition.parts) part.name],
       'tables': [
@@ -662,15 +717,6 @@ final class AtlasPageRenderer {
         'createdKey': schema.createdKey,
         'parametersKey': schema.parametersKey,
       },
-    };
-  }
-
-  String _buildFooter() {
-    final shownStore = p.relative(_paths.storePath);
-
-    return switch (_command) {
-      final command? => 'Generated by $command from $shownStore.',
-      null => 'Generated from $shownStore.',
     };
   }
 
@@ -729,9 +775,12 @@ final class AtlasPageRenderer {
     return shots.slices(_shotsPerSheet).map(shotEncoder.encodeSheet).toList();
   }
 
-  Map<String, Object?> _buildShotSheetData(List<AtlasShotSheet> sheets) {
+  Map<String, Object?> _buildShotSheetData(
+    List<AtlasShotSheet> sheets,
+    String Function(AtlasShotSheet sheet) reference,
+  ) {
     return {
-      'shotSheets': [for (final sheet in sheets) sheet.dataUri],
+      'shotSheets': [for (final sheet in sheets) reference(sheet)],
       'shotCells': {
         for (final (index, sheet) in sheets.indexed)
           for (final MapEntry(key: shot, value: cell) in sheet.cells.entries)
@@ -1086,7 +1135,7 @@ final class AtlasBundleRendering {
   /// Bytes of the bundle.
   final int bytes;
 
-  /// Images the bundle inlines.
+  /// Images the bundle holds: the sheets it inlines or writes as files.
   final int images;
 
   const AtlasBundleRendering({
@@ -1105,7 +1154,7 @@ final class AtlasBundleRendering {
       if (bytes > maxBytes)
         'The bundle $path takes $bytes bytes, over the $maxBytes byte limit.',
       if (images > maxImages)
-        'The bundle $path inlines $images images, over the $maxImages image '
+        'The bundle $path holds $images images, over the $maxImages image '
             'limit.',
     ];
 

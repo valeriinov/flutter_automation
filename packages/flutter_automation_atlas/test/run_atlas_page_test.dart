@@ -10,6 +10,7 @@ import 'package:flutter_automation_atlas/src/atlas_snapshot_store.dart';
 import 'package:flutter_automation_atlas/src/run_atlas.dart';
 
 import 'test_utils/create_atlas_snapshot.dart';
+import 'test_utils/hash_shot_encoder.dart';
 import 'test_utils/test_atlas_root.dart';
 
 const _stageShot = '0123456789ab';
@@ -35,6 +36,15 @@ flutter_automation:
     maxBundleBytes: 10
     maxBundleImages: 500
 ''';
+const _pubspecWithOneImage = '''
+name: sample
+flutter_automation:
+  defaultLocale: uk
+  atlas:
+    maxBundleBytes: 15728640
+    maxBundleImages: 1
+''';
+const _shotsOfTwoSheets = 17;
 const _pubspecWithoutLimits = '''
 name: sample
 flutter_automation:
@@ -47,6 +57,8 @@ void main() {
     _atlasRun_should_showSourceLabelOnTheRenderedPage();
     _atlasRun_should_renderTheEditionTheOptionNames();
     _atlasRun_should_bundleUrlsPageWithoutInlineImages();
+    _atlasRun_should_bundleSheetsIntoShotsFilesWithinTheLimit();
+    _atlasRun_should_stopSheetsBundleOverTheImageLimitWithItsCount();
     _atlasRun_should_stopBundleWithTheTextOfAFailedPublish();
     _atlasRun_should_failBundleOverTheLimitWithItsSize();
     _atlasRun_should_nameTheMissingLimitKeyOnBundle();
@@ -126,6 +138,63 @@ void _atlasRun_should_bundleUrlsPageWithoutInlineImages() {
       expect(bundle, isNot(contains('data:image')));
     });
   });
+}
+
+void _atlasRun_should_bundleSheetsIntoShotsFilesWithinTheLimit() {
+  test(
+    'AtlasRun should bundle sheets into shots files within the limit',
+    () async {
+      await TestAtlasRoot.run((root) async {
+        _writeStore(root);
+
+        await _runIn(root, [
+          'bundle',
+          '--edition',
+          'full',
+          '--shots',
+          'sheets',
+          '--locale',
+          'all',
+        ]);
+
+        final pagePath = root.paths.resolveBundlePagePath('full');
+        final page = File(pagePath).readAsStringSync();
+        final sheetFiles = Directory(
+          root.paths.resolveBundleShotsPath(pagePath),
+        ).listSync();
+
+        expect(sheetFiles, hasLength(1));
+        expect(page, contains('"shotSheets":["shots/'));
+        expect(page, isNot(contains('data:image')));
+      });
+    },
+  );
+}
+
+void _atlasRun_should_stopSheetsBundleOverTheImageLimitWithItsCount() {
+  test(
+    'AtlasRun should stop sheets bundle over the image limit with its count',
+    () async {
+      await TestAtlasRoot.run((root) async {
+        _writeStore(
+          root,
+          pubspec: _pubspecWithOneImage,
+          stageCount: _shotsOfTwoSheets,
+        );
+
+        await expectLater(
+          _runIn(root, ['bundle', '--edition', 'full', '--shots', 'sheets']),
+          throwsA(
+            isA<AtlasException>().having(
+              (error) => error.message,
+              'message',
+              contains('holds 2 images, over the 1 image limit'),
+            ),
+          ),
+        );
+      });
+    },
+  );
 }
 
 void _atlasRun_should_stopBundleWithTheTextOfAFailedPublish() {
@@ -249,10 +318,29 @@ void _atlasRun_should_rejectBundleOfUnknownEdition() {
 }
 
 Future<void> _runIn(TestAtlasRoot root, List<String> args) {
-  return AtlasRun(args, root.project, rootPath: root.directory.path).run();
+  return AtlasRun(
+    args,
+    root.project,
+    rootPath: root.directory.path,
+    shotEncoder: const HashShotEncoder(),
+  ).run();
 }
 
-void _writeStore(TestAtlasRoot root, {String pubspec = _pubspecWithLimits}) {
+void _writeStore(
+  TestAtlasRoot root, {
+  String pubspec = _pubspecWithLimits,
+  int stageCount = 1,
+}) {
+  final stageShots = [
+    _stageShot,
+    for (int index = 1; index < stageCount; index++)
+      index.toRadixString(16).padLeft(_stageShot.length, '0'),
+  ];
+
+  for (final shot in stageShots) {
+    root.writeShot(shot, [1, 2, 3]);
+  }
+
   root
     ..writeSource('pubspec.yaml', pubspec)
     ..writePublishedVariants({
@@ -273,20 +361,21 @@ void _writeStore(TestAtlasRoot root, {String pubspec = _pubspecWithLimits}) {
     createAtlasSnapshot(
       flow: 'catalog_flow',
       variant: 'openNewItem',
-      stages: const [
-        AtlasStage(
-          label: 'open',
-          action: 'tap',
-          journal: [],
-          ok: true,
-          target: null,
-          block: null,
-          targetRect: null,
-          screen: null,
-          designScreen: null,
-          shot: _stageShot,
-          error: null,
-        ),
+      stages: [
+        for (final shot in stageShots)
+          AtlasStage(
+            label: 'open',
+            action: 'tap',
+            journal: const [],
+            ok: true,
+            target: null,
+            block: null,
+            targetRect: null,
+            screen: null,
+            designScreen: null,
+            shot: shot,
+            error: null,
+          ),
       ],
       end: const AtlasEnd(screen: null, designScreen: null, shot: _endShot),
     ),

@@ -70,12 +70,12 @@ final class AtlasPageConfig {
     );
   }
 
-  /// The most bytes a bundle may take.
+  /// The most bytes the bundle page may take.
   ///
   /// Throws an [AtlasException] naming the key when the project sets none.
   int get maxBundleBytes => _requireLimit(_maxBundleBytes, _maxBytesKey);
 
-  /// The most images a bundle may inline.
+  /// The most images a bundle may hold, inline or as sheet files.
   ///
   /// Throws an [AtlasException] naming the key when the project sets none.
   int get maxBundleImages => _requireLimit(_maxBundleImages, _maxImagesKey);

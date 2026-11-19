@@ -8,6 +8,10 @@ enum AtlasShotSource {
   /// WebP sheets inside the page.
   inline,
 
+  /// WebP sheets written as files `shots/<hash>.webp` beside the page; the
+  /// page crops each shot from its sheet as with [inline].
+  sheets,
+
   /// The links an `AtlasShotPublisher` returns, one per screenshot hash.
   urls;
 

@@ -133,26 +133,31 @@ To add a part to Lite, add its name to the list and render again.
 ## 6. Bundle the page
 
 ```bash
-ATLAS bundle --edition <name> --shots files|inline|urls --locale <code|all>
+ATLAS bundle --edition <name> --shots files|inline|sheets|urls --locale <code|all>
 ```
 
-A bundle is a page file. With `inline` or `urls` it is the only file. With
-`files` the bundle also copies the screenshots to `shots/` beside the page. The
+A bundle is a page `index.html` in a folder of its own for the edition and the
+locale. With `inline` or `urls` it is the only file. With `files` the bundle
+also copies the screenshots to `shots/` beside the page. With `sheets` the
+bundle writes the WebP sheets to `shots/` beside the page and deletes every
+other file there. The
 `--shots` value sets where a screenshot comes from:
 
 | Value | Source of the image | Use |
 | --- | --- | --- |
 | `files` | `shots/<hash>.png` beside the page | a folder or a site that holds many files |
 | `inline` | sheets of WebP in the page | one file with no host |
+| `sheets` | `shots/<hash>.webp` beside the page, cropped by the page | a host that serves the page with its files |
 | `urls` | a link for each hash, from the project publisher | a page that must stay small |
 
-The limits of the size and of the number of images come from the `atlas:`
+The limits of the size and of the number of images (sheet files count as
+images) come from the `atlas:`
 section of `pubspec.yaml`. A bundle over a limit fails and prints its size.
 `urls` calls the publisher of the project. A publisher error stops the bundle
 and prints its text.
 
 A Claude artifact blocks an `<img>` from another host. The viewer applies a CSP
-that allows none. A page for a Claude artifact uses `inline` or `files`. Never
+that allows none. A page for a Claude artifact uses `inline`, `sheets` or `files`. Never
 use `urls` for it.
 
 `--locale all` puts every locale of the project into one page.
