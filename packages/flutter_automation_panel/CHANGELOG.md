@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.11.0
+
+- Version bump with `flutter_automation_atlas` 0.11.0.
+
 ## 0.10.0
 
 - `AutomationCatalogueAsset.load` throws an

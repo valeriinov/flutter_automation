@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 0.11.0
 
 - New screenshot source `sheets`. `bundle --shots sheets` writes the WebP sheets
   as files `shots/<hash>.webp` beside the page. The page crops each screenshot
