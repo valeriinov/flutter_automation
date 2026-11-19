@@ -51,7 +51,7 @@ final class AtlasGroups {
 
     return [
       for (final (:area, :groups) in areas.values)
-        {'name': area.name, 'title': area.title.toJson(), 'scenarios': groups},
+        {'name': area.name, 'title': area.title.toJson(), 'groups': groups},
     ];
   }
 

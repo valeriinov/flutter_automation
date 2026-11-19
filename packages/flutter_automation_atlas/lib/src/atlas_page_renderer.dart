@@ -59,9 +59,9 @@ typedef _GatheredPage = ({
 ///
 /// The page data holds only the [AtlasPagePart]s of the [AtlasEdition]:
 ///
-/// - [AtlasPagePart.flowStages]: the `flows`, the `groups` of
-///   [AtlasGroups], the `totals`, and on each stage its screenshot, the place
-///   of the tap, its step `title` and, for a `scroll`, its distances;
+/// - [AtlasPagePart.flowStages]: the `flows`, the `areas` of [AtlasGroups]
+///   with their `groups`, the `totals`, and on each stage its screenshot, the
+///   place of the tap, its step `title` and, for a `scroll`, its distances;
 /// - [AtlasPagePart.screenDescriptions]: the `screenDescriptions` of every
 ///   design screen a shown stage or end names;
 /// - [AtlasPagePart.designLinks]: the `designUrl` of a stage and of an end,
@@ -114,7 +114,7 @@ final class AtlasPageRenderer {
   static const _metaPlaceholder = '/*ATLAS_META*/';
   static const _reservedTableIds = {
     'flows',
-    'groups',
+    'areas',
     'screenDescriptions',
     'locales',
     'totals',
@@ -422,7 +422,7 @@ final class AtlasPageRenderer {
         for (final flow in flows)
           _buildFlowData(edition, flow.flow, flow.variants),
       ],
-      'groups': groups.buildPageData(
+      'areas': groups.buildPageData(
         shownFlows: flows.map((flow) => flow.flow.name).toList(),
       ),
       if (edition.has(AtlasPagePart.screenDescriptions))

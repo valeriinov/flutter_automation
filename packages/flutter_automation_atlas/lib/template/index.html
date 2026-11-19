@@ -2573,17 +2573,17 @@ readAtlasPageData().then(function (data) {
   function flowGroups() {
     var byName = {};
     flows.forEach(function (flow, index) { byName[flow.name] = index; });
-    return (data.groups || []).map(function (group) {
-      var scenarios = group.scenarios.map(function (scenario) {
+    return (data.areas || []).map(function (area) {
+      var groups = area.groups.map(function (group) {
         return {
-          id: scenario.name,
-          title: scenario.title,
-          flows: scenario.flows.map(function (name) { return byName[name]; })
+          id: group.name,
+          title: group.title,
+          flows: group.flows.map(function (name) { return byName[name]; })
         };
       });
       var flat = [];
-      scenarios.forEach(function (scenario) { flat = flat.concat(scenario.flows); });
-      return { id: group.name, title: group.title, scenarios: scenarios, flows: flat };
+      groups.forEach(function (group) { flat = flat.concat(group.flows); });
+      return { id: area.name, title: area.title, groups: groups, flows: flat };
     });
   }
 
@@ -2653,18 +2653,18 @@ readAtlasPageData().then(function (data) {
     lastFlowByArea[current.id] = state.flow;
     try { window.localStorage.setItem(AREA_KEY, current.id); } catch (e) { /* per-device convenience */ }
     renderAreaSwitch(current);
-    current.scenarios.forEach(function (scenario, index) {
+    current.groups.forEach(function (flowGroup, index) {
       var group = el('div', 'flow-group' + (index === 0 ? ' is-first' : ''));
       group.setAttribute('role', 'presentation');
       var label = el('span', 'flow-group-label');
-      label.appendChild(el('span', null, localizedText(scenario.title, scenario.id)));
+      label.appendChild(el('span', null, localizedText(flowGroup.title, flowGroup.id)));
       group.appendChild(label);
       var row = el('div', 'flow-group-tabs');
       row.setAttribute('role', 'presentation');
       group.appendChild(row);
       flowTabs.appendChild(group);
       tabsTarget = row;
-      scenario.flows.forEach(function (flowIndex) {
+      flowGroup.flows.forEach(function (flowIndex) {
         renderFlowTab(flows[flowIndex], flowIndex);
       });
       tabsTarget = flowTabs;

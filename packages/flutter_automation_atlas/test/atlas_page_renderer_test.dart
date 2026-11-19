@@ -670,11 +670,11 @@ void _atlasPageRenderer_should_groupFlowsByAreaAndGroup() {
 
         await AtlasPageRenderer(root.paths).render();
 
-        expect(_readRenderedData(root)['groups'], [
+        expect(_readRenderedData(root)['areas'], [
           {
             'name': 'shop',
             'title': {'uk': 'Магазин', 'en': 'Shop'},
-            'scenarios': [
+            'groups': [
               {
                 'name': 'shop.catalog',
                 'title': {'uk': 'Каталог', 'en': 'Catalog'},
@@ -685,7 +685,7 @@ void _atlasPageRenderer_should_groupFlowsByAreaAndGroup() {
           {
             'name': 'support',
             'title': {'uk': 'Підтримка', 'en': 'Support'},
-            'scenarios': [
+            'groups': [
               {
                 'name': 'support.help',
                 'title': {'uk': 'Довідка', 'en': 'Help'},
@@ -739,11 +739,10 @@ void _atlasPageRenderer_should_listScenarioFlowsInDeclarationOrder() {
 
           await AtlasPageRenderer(root.paths).render();
 
-          final groups = _readRenderedData(root)['groups'] as List<Object?>;
-          final scenarios =
-              (groups.single as Map)['scenarios'] as List<Object?>;
+          final areas = _readRenderedData(root)['areas'] as List<Object?>;
+          final groups = (areas.single as Map)['groups'] as List<Object?>;
 
-          expect((scenarios.single as Map)['flows'], [
+          expect((groups.single as Map)['flows'], [
             'catalog_flow',
             'cart_flow',
           ]);
@@ -833,7 +832,7 @@ void _atlasPageRenderer_should_carryTextOfEveryPageLocale() {
 
 void _atlasPageRenderer_should_rejectTableIdOfPageData() {
   test('AtlasPageRenderer should reject table id of page data', () async {
-    for (final id in ['flows', 'groups', 'locales', 'totals']) {
+    for (final id in ['flows', 'areas', 'locales', 'totals']) {
       await TestAtlasRoot.run((root) async {
         _writeCatalogue(root);
         root.project.tablesToReturn.add(
@@ -1133,7 +1132,7 @@ void _atlasPageRenderer_should_keepFullDataOfTheProject() {
         data.keys,
         containsAll([
           'flows',
-          'groups',
+          'areas',
           'screenDescriptions',
           'locales',
           'requests',
