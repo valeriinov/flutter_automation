@@ -14,7 +14,7 @@ import 'package:flutter_automation_atlas/src/atlas_page_part.dart';
 /// flutter_automation:
 ///   atlas:
 ///     maxBundleBytes: 15728640
-///     maxBundleImages: 500
+///     maxBundleImages: 254
 ///     editions:
 ///       lite: [flowStages, screenDescriptions, designLinks]
 /// ```
