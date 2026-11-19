@@ -87,6 +87,10 @@ file**.
   - `latency` is a latency profile name. The fast profile adds no delay.
   - `latencySeed` makes two runs spend the same wall clock.
   - `failures` is keyed by endpoint path. `{"statusCode": 500}` answers an error.
+    `{"messageKey": "<key>"}` names a text that the project keeps in each app
+    language. `MockApiFailure.resolveMessage` reads the text of a failure in a
+    fixed order. It takes `message`, then the key in the request language, then
+    the key in the default language, then `errorCode`, then the key itself.
     `{"isConnectionError": true}` answers a request that never reaches the backend.
   - `latencies` is keyed by endpoint path. `"slow"` gives that path its own
     latency profile; the other paths keep `latency`.

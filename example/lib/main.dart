@@ -15,6 +15,13 @@ import 'package:example/mock/mock_catalog_api.dart';
 import 'package:example/mock/example_mock_settings.dart';
 import 'package:example/panel/example_panel.dart';
 
+const _failureMessages = {
+  'rateLimited': AutomationLocalizedText({
+    'en': 'Too many requests. Try again later.',
+    'uk': 'Забагато запитів. Спробуйте пізніше.',
+  }),
+};
+
 Future<void> main() async {
   final screenNameObserver = ScreenNameObserver();
   final locale = ValueNotifier(const Locale('en'));
@@ -63,7 +70,12 @@ Future<void> main() async {
         buildApis: () => [MockCatalogApi(mock)],
         buildFailureBody: (failure, request) => {
           'code': failure.errorCode,
-          'message': failure.message,
+          'message': failure.resolveMessage(
+            request,
+            readText: (key, languageCode) =>
+                _failureMessages[key]?.texts[languageCode],
+            defaultLanguageCode: 'en',
+          ),
         },
       );
 

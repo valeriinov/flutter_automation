@@ -9,6 +9,7 @@ import 'dart:typed_data';
 /// has run before the mock sees it: auth headers, token refresh, logging.
 class MockApiRequest {
   static const String _getMethod = 'GET';
+  static const String _anyLanguage = '*';
 
   /// Endpoint path the request addresses, relative to the base url.
   final String path;
@@ -66,4 +67,22 @@ class MockApiRequest {
     this.bytes,
     this.acceptLanguage,
   });
+
+  /// Language code of [acceptLanguage]: the primary subtag of its first
+  /// language range, in lower case, such as `uk` for `uk-UA,uk;q=0.9`.
+  ///
+  /// Null when the request carries no language or asks for any (`*`).
+  String? get languageCode {
+    final range = acceptLanguage?.split(',').first.split(';').first.trim();
+
+    if (range == null || !_isLanguageRange(range)) {
+      return null;
+    }
+
+    return range.split('-').first.toLowerCase();
+  }
+
+  static bool _isLanguageRange(String range) {
+    return range.isNotEmpty && range != _anyLanguage;
+  }
 }

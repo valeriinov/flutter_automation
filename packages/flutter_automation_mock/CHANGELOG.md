@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.12.1
+
+- New `MockApiFailure.resolveMessage`: the text of a failure, in this order:
+  `message`, the text of `messageKey` in the language of the request, the text
+  of `messageKey` in the default language, `errorCode`, `messageKey` itself.
+- New `MockApiRequest.languageCode`: the primary subtag of the first range of
+  `acceptLanguage`, in lower case.
+
 ## 0.12.0
 
 - Breaking: `MockBackend.buildFailureBody` and the `buildFailureBody` callback

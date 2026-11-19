@@ -216,9 +216,32 @@ Build the backend inside the `fake` closure of `substitute`:
 backend = MockScenarioBackend(
   readScenario: () => mock.scenario,
   buildApis: () => [CatalogMockApi(mock)],
-  buildFailureBody: (failure, request) => {'message': failure.message},
+  buildFailureBody: (failure, request) => {
+    'code': failure.errorCode,
+    'message': failure.resolveMessage(
+      request,
+      readText: (key, languageCode) => messages[key]?.texts[languageCode],
+      defaultLanguageCode: 'en',
+    ),
+  },
 );
 ```
+
+`messages` is a `Map<String, AutomationLocalizedText>` that the project keeps
+for the `messageKey` of its failures. `failure.resolveMessage` gives the text of
+a failure in this order:
+
+1. `message`;
+2. the text of `messageKey` in the language of the request;
+3. the text of `messageKey` in `defaultLanguageCode`;
+4. `errorCode`;
+5. `messageKey` itself.
+
+A failure with neither `message` nor `messageKey` gives null. `readText`
+answers the text of a key in a language code, or null when the project keeps
+none. The language of the request is `MockApiRequest.languageCode`: the primary
+subtag of the first range of `Accept-Language`, such as `uk` for
+`uk-UA,uk;q=0.9`. A request without the header goes to step 3.
 
 `MockApiTransport(backend: backend, journal: mock.journal)` answers a request
 after the delay of the latency profile, records it in the journal and applies a

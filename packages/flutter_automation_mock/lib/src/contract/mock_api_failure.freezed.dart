@@ -19,11 +19,10 @@ mixin _$MockApiFailure {
 /// Status the answer carries.
  int get statusCode;/// Code that the app reads out of the payload to map the error.
  String? get errorCode;/// Message the payload carries next to [errorCode].
- String? get message;/// Key of a message the project keeps in each app language, for a failure
-/// whose backend answer carries a message and no [errorCode].
+ String? get message;/// Key of a message that the project keeps in each app language.
 ///
-/// The project reads it in `MockBackend.buildFailureBody` and answers the
-/// message in the language of the request. A [message] wins over it.
+/// The package stores the key, and [resolveMessage] reads it into the
+/// text that `MockBackend.buildFailureBody` puts in the body.
  String? get messageKey;/// Whether the request never reaches the backend, the way a device without
 /// a connection fails it.
 ///
@@ -103,8 +102,8 @@ as bool,
 /// @nodoc
 @JsonSerializable()
 
-class _MockApiFailure implements MockApiFailure {
-  const _MockApiFailure({this.statusCode = HttpStatus.internalServerError, this.errorCode, this.message, this.messageKey, this.isConnectionError = false});
+class _MockApiFailure extends MockApiFailure {
+  const _MockApiFailure({this.statusCode = HttpStatus.internalServerError, this.errorCode, this.message, this.messageKey, this.isConnectionError = false}): super._();
   factory _MockApiFailure.fromJson(Map<String, dynamic> json) => _$MockApiFailureFromJson(json);
 
 /// Status the answer carries.
@@ -113,11 +112,10 @@ class _MockApiFailure implements MockApiFailure {
 @override final  String? errorCode;
 /// Message the payload carries next to [errorCode].
 @override final  String? message;
-/// Key of a message the project keeps in each app language, for a failure
-/// whose backend answer carries a message and no [errorCode].
+/// Key of a message that the project keeps in each app language.
 ///
-/// The project reads it in `MockBackend.buildFailureBody` and answers the
-/// message in the language of the request. A [message] wins over it.
+/// The package stores the key, and [resolveMessage] reads it into the
+/// text that `MockBackend.buildFailureBody` puts in the body.
 @override final  String? messageKey;
 /// Whether the request never reaches the backend, the way a device without
 /// a connection fails it.

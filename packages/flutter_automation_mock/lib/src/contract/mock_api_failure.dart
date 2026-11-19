@@ -2,6 +2,8 @@ import 'dart:io';
 
 import 'package:freezed_annotation/freezed_annotation.dart';
 
+import 'package:flutter_automation_mock/src/contract/mock_api_request.dart';
+
 part 'mock_api_failure.freezed.dart';
 
 part 'mock_api_failure.g.dart';
@@ -15,6 +17,8 @@ part 'mock_api_failure.g.dart';
 /// error is an answer with an error status, or a connection that fails.
 @freezed
 sealed class MockApiFailure with _$MockApiFailure {
+  const MockApiFailure._();
+
   const factory MockApiFailure({
     /// Status the answer carries.
     @Default(HttpStatus.internalServerError) int statusCode,
@@ -27,9 +31,8 @@ sealed class MockApiFailure with _$MockApiFailure {
 
     /// Key of a message that the project keeps in each app language.
     ///
-    /// The package only stores the key. A body builder of the project can
-    /// read it. For example, `MockBackend.buildFailureBody` can use [message]
-    /// first, then look up the key in the language of the request.
+    /// The package stores the key, and [resolveMessage] reads it into the
+    /// text that `MockBackend.buildFailureBody` puts in the body.
     String? messageKey,
 
     /// Whether the request never reaches the backend, the way a device without
@@ -43,4 +46,41 @@ sealed class MockApiFailure with _$MockApiFailure {
 
   factory MockApiFailure.fromJson(Map<String, Object?> json) =>
       _$MockApiFailureFromJson(json);
+
+  /// Text of the failure for [request], in this order:
+  ///
+  /// 1. [message];
+  /// 2. the text of [messageKey] in `MockApiRequest.languageCode`;
+  /// 3. the text of [messageKey] in [defaultLanguageCode];
+  /// 4. [errorCode];
+  /// 5. [messageKey] itself.
+  ///
+  /// A failure with neither [message] nor [messageKey] answers null.
+  ///
+  /// The [request] parameter is the request the failure answers.
+  /// The [readText] parameter answers the text of a key in a language code,
+  /// or null when the project keeps none.
+  /// The [defaultLanguageCode] parameter is the language of the app when the
+  /// request carries none or the project keeps no text in it.
+  String? resolveMessage(
+    MockApiRequest request, {
+    required String? Function(String key, String languageCode) readText,
+    required String defaultLanguageCode,
+  }) {
+    final key = messageKey;
+
+    if (message != null || key == null) {
+      return message;
+    }
+
+    final languageCode = request.languageCode;
+    final requestText = languageCode == null
+        ? null
+        : readText(key, languageCode);
+
+    return requestText ??
+        readText(key, defaultLanguageCode) ??
+        errorCode ??
+        key;
+  }
 }

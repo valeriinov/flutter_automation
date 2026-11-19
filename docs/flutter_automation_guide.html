@@ -1946,7 +1946,13 @@ final mock = await AutomationMock.init(
     final scenarioBackend = MockScenarioBackend(
       readScenario: () =&gt; mock.scenario,
       buildApis: () =&gt; [CatalogMockApi(mock)],
-      buildFailureBody: (failure, request) =&gt; {'message': failure.message},
+      buildFailureBody: (failure, request) =&gt; {
+        'message': failure.resolveMessage(
+          request,
+          readText: (key, languageCode) =&gt; messages[key]?.texts[languageCode],
+          defaultLanguageCode: 'en',
+        ),
+      },
     );
     backend = scenarioBackend;
 
@@ -2126,6 +2132,7 @@ final mock = await AutomationMock.init(
             <tr><td><code>pathId</code>, <code>pathSegment</code></td><td><span data-l="en">The trailing segment as an id, and as the url writes it. A string id gives <code>null</code> in <code>pathId</code>.</span><span data-l="uk">Кінцевий сегмент як id і так, як його пише url. Рядковий id дає <code>null</code> у <code>pathId</code>.</span></td></tr>
             <tr><td><code>bytes</code></td><td><span data-l="en">A binary body, <code>null</code> for any other body.</span><span data-l="uk">Бінарне тіло, <code>null</code> для будь-якого іншого.</span></td></tr>
             <tr><td><code>acceptLanguage</code></td><td><span data-l="en">The language of the <code>Accept-Language</code> header, <code>null</code> without it.</span><span data-l="uk">Мова із заголовка <code>Accept-Language</code>, <code>null</code> без нього.</span></td></tr>
+            <tr><td><code>languageCode</code></td><td><span data-l="en">The primary subtag of the first range of <code>acceptLanguage</code>, in lower case, such as <code>uk</code> for <code>uk-UA,uk;q=0.9</code>. It is <code>null</code> without a language or for <code>*</code>.</span><span data-l="uk">Основний підтег першого діапазону <code>acceptLanguage</code> у нижньому регістрі, наприклад <code>uk</code> для <code>uk-UA,uk;q=0.9</code>. Він <code>null</code>, коли мови немає або вона <code>*</code>.</span></td></tr>
           </table>
         </div>
         <p class="t"><code>MockApiResponse</code>, <code>MockApiFailure</code></p>
@@ -2133,7 +2140,9 @@ final mock = await AutomationMock.init(
           <li><span data-l="en"><code>MockApiResponse(body:, statusCode:)</code> is a JSON answer, status 200 by default. The body is the payload that the real backend would send.</span><span data-l="uk"><code>MockApiResponse(body:, statusCode:)</code> — JSON-відповідь, за замовчуванням статус 200. Тіло — це payload, який надіслав би справжній бекенд.</span></li>
           <li><span data-l="en"><code>MockApiResponse.fromBytes(bytes, contentType:)</code> answers with a file. <code>MockApiResponse.accept</code> is a ready responder with an empty body.</span><span data-l="uk"><code>MockApiResponse.fromBytes(bytes, contentType:)</code> відповідає файлом. <code>MockApiResponse.accept</code> — готовий респондер з порожнім тілом.</span></li>
           <li><span data-l="en"><code>MockApiFailure</code> is the answer in place of the payload. It holds <code>statusCode</code> (500 by default) and:</span><span data-l="uk"><code>MockApiFailure</code> — відповідь замість payload. Вона містить <code>statusCode</code> (за замовчуванням 500) і:</span><div class="chips"><code>errorCode</code><code>message</code><code>messageKey</code><code>isConnectionError</code></div></li>
-          <li><span data-l="en"><code>messageKey</code> is the key of a message that the project keeps in each app language. The package only stores the key. A body builder of the project can read it. For example, <code>buildFailureBody</code> can use <code>message</code> first, then look up the key in the language of the request.</span><span data-l="uk"><code>messageKey</code> — ключ повідомлення, яке проєкт тримає кожною мовою застосунку. Пакет лише зберігає ключ. Конструктор тіла у проєкті може його прочитати. Наприклад, <code>buildFailureBody</code> може взяти спочатку <code>message</code>, а потім знайти повідомлення за ключем мовою запиту.</span></li>
+          <li><span data-l="en"><code>messageKey</code> is the key of a message that the project keeps in each app language.</span><span data-l="uk"><code>messageKey</code> — ключ повідомлення, яке проєкт тримає кожною мовою застосунку.</span></li>
+          <li><span data-l="en"><code>resolveMessage(request, readText:, defaultLanguageCode:)</code> gives the text that <code>buildFailureBody</code> puts in the body. It takes <code>message</code>, then the text of <code>messageKey</code> in <code>request.languageCode</code>, then in <code>defaultLanguageCode</code>, then <code>errorCode</code>, then the key itself. A failure with neither <code>message</code> nor <code>messageKey</code> gives <code>null</code>.</span><span data-l="uk"><code>resolveMessage(request, readText:, defaultLanguageCode:)</code> дає текст, який <code>buildFailureBody</code> кладе в тіло. Він бере <code>message</code>, далі текст <code>messageKey</code> мовою <code>request.languageCode</code>, далі мовою <code>defaultLanguageCode</code>, далі <code>errorCode</code>, далі сам ключ. Помилка без <code>message</code> і без <code>messageKey</code> дає <code>null</code>.</span></li>
+          <li><span data-l="en"><code>readText</code> answers the text that the project keeps for a key in a language code, or <code>null</code> when it keeps none.</span><span data-l="uk"><code>readText</code> віддає текст, який проєкт тримає для ключа мовою з цим кодом, або <code>null</code>, коли тексту немає.</span></li>
           <li><span data-l="en">With <code>isConnectionError</code>, the transport throws a <code>MockConnectionException</code>. The adapter turns it into the error of a device without a connection.</span><span data-l="uk">З <code>isConnectionError</code> транспорт кидає <code>MockConnectionException</code>. Адаптер перетворює його на помилку пристрою без з'єднання.</span></li>
         </ul>
         <p class="t"><code>MockBackend</code>, <code>MockScenarioBackend</code></p>

@@ -313,7 +313,12 @@ code. Skip a part that exists: a second run adds nothing to `main`.
          buildApis: () => [MockCatalogApi(mock)],
          buildFailureBody: (failure, request) => {
            'code': failure.errorCode,
-           'message': failure.message,
+           'message': failure.resolveMessage(
+             request,
+             readText: (key, languageCode) =>
+                 failureMessages[key]?.texts[languageCode],
+             defaultLanguageCode: 'en',
+           ),
          },
        );
 
@@ -329,6 +334,15 @@ code. Skip a part that exists: a second run adds nothing to `main`.
      },
    );
    ```
+
+   `failureMessages` is a top-level `const` map in `main.dart`, from a
+   `messageKey` to an `AutomationLocalizedText`. It holds the texts that the
+   project keeps in each app language for a failure. A project without such
+   texts starts it empty: `const failureMessages =
+   <String, AutomationLocalizedText>{};`. Set `defaultLanguageCode` to the
+   default language of the app. `resolveMessage` gives `message`, then the text
+   of `messageKey` in the language of the request, then the text of
+   `messageKey` in `defaultLanguageCode`, then `errorCode`, then the key itself.
 
    `MockScenarioBackend` is the ready `MockBackend`. It reads the failures from
    the scenario on each request. It builds the endpoints from `buildApis` and one
