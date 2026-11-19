@@ -82,11 +82,10 @@ typedef _GatheredPage = ({
 ///
 /// A second script of the page, `atlas-meta`, holds what the page needs to
 /// draw itself: the project name, the source label, the build time of a
-/// bundle as `builtAt`, the parts,
-/// the menu of the tables with their columns, the locales and the journal
-/// kinds. The page data replaces the placeholder inside the template's JSON
-/// script, so every `</` in it is written as `<\/` to keep a text from closing
-/// that script.
+/// bundle as `builtAt`, the parts, the menu of the tables with their columns,
+/// the locales and the journal kinds. The page data replaces the placeholder
+/// inside the template's JSON script, so every `</` in it is written as `<\/`
+/// to keep a text from closing that script.
 ///
 /// Every long string the page data repeats is stored once, as
 /// [AtlasPageBlobs] writes it.
@@ -101,8 +100,8 @@ typedef _GatheredPage = ({
 /// in `shotCells`; with [AtlasShotSource.urls] it holds the link of each shot
 /// in `shotUrls`; and its page data is one string, the base64 of its gzip.
 /// With [AtlasShotSource.sheets] a bundle writes each sheet as the file
-/// `shots/<hash>.webp` beside the page. It holds that relative path in
-/// `shotSheets` instead of a data URI.
+/// `shots/<sheet hash>.webp` beside the page, named by the hash of the sheet
+/// bytes. It holds that relative path in `shotSheets` instead of a data URI.
 final class AtlasPageRenderer {
   static const _templateUri =
       'package:flutter_automation_atlas/template/index.html';
@@ -125,7 +124,6 @@ final class AtlasPageRenderer {
     'shotUrls',
   };
   static const _shotsPerSheet = 16;
-  static const _shotsDirectory = 'shots';
   static const _pngType = 'image/png';
   static const _designLinkKey = 'designUrl';
   static const _journalKey = 'journal';
@@ -146,7 +144,7 @@ final class AtlasPageRenderer {
   /// The [shotEncoder] parameter turns shots into the sheets the bundle
   /// inlines or writes, an [AtlasShotWebpEncoder] when absent; the [template]
   /// parameter replaces the page template of the package; the [sourceLabel]
-  /// parameter is the label of the source the page header and footer show;
+  /// parameter is the label of the source the page footer shows;
   /// the [clock] parameter gives the build time of a bundle, which its footer
   /// shows as a date, [DateTime.now] when absent.
   AtlasPageRenderer(
@@ -211,15 +209,16 @@ final class AtlasPageRenderer {
 
   /// Writes the page of [edition] for the shot [source] to
   /// [AtlasLocations.resolveBundlePagePath], leaving the page and the shots
-  /// of the store in place, over the limits or not, and returns its byte
-  /// size and image count.
+  /// of the store in place, over the limits or not, and returns the sizes,
+  /// the file count and the image count of the bundle.
   ///
   /// The [locale] parameter names the one series the bundle shows; the
   /// bundle holds every page locale when it is absent. For
   /// [AtlasShotSource.urls] the shot publisher of the project puts the shots
-  /// where a browser reads them. For [AtlasShotSource.sheets] the folder
-  /// `shots/` beside the page holds the sheet files the page reads.
-  /// [renderBundle] deletes every other file and folder in it.
+  /// where a browser reads them. The folder `shots/` beside the page holds
+  /// the sheet files of [AtlasShotSource.sheets] or the shot files of
+  /// [AtlasShotSource.files]. [renderBundle] deletes every file and folder in
+  /// it first, for every source.
   ///
   /// Throws an [AtlasException] when [locale] is none of
   /// [AtlasLocations.pageLocales], when [source] is [AtlasShotSource.urls]
@@ -240,11 +239,14 @@ final class AtlasPageRenderer {
     final gathered = _gather(edition, bundleLocale: locale, builtAt: _clock());
     final shots = gathered.shots.whereNot(_isShotMissing).toList();
     final path = _paths.resolveBundlePagePath(edition.name, locale: locale);
+    final shotsDirectory = _paths.resolveBundleShotsPath(path);
+
+    _deleteDirectory(shotsDirectory);
 
     final (:shotsData, :images) = await _prepareShots(
       source,
       shots,
-      _paths.resolveBundleShotsPath(path),
+      shotsDirectory,
     );
 
     final page = _assemble(
@@ -260,12 +262,16 @@ final class AtlasPageRenderer {
       ..writeAsBytesSync(bytes);
 
     if (source == AtlasShotSource.files) {
-      _copyShots(shots, _paths.resolveBundleShotsPath(path));
+      _copyShots(shots, shotsDirectory);
     }
+
+    final bundleFiles = _listFiles(p.dirname(path));
 
     return AtlasBundleRendering(
       path: path,
-      bytes: bytes.length,
+      pageBytes: bytes.length,
+      bundleBytes: bundleFiles.map((file) => file.lengthSync()).sum,
+      files: bundleFiles.length,
       images: images,
     );
   }
@@ -478,6 +484,14 @@ final class AtlasPageRenderer {
         );
   }
 
+  void _deleteDirectory(String path) {
+    final directory = Directory(path);
+
+    if (directory.existsSync()) {
+      directory.deleteSync(recursive: true);
+    }
+  }
+
   Future<({Map<String, Object?> shotsData, int images})> _prepareShots(
     AtlasShotSource source,
     List<String> shots,
@@ -485,7 +499,7 @@ final class AtlasPageRenderer {
   ) async {
     switch (source) {
       case AtlasShotSource.files:
-        return (shotsData: const <String, Object?>{}, images: 0);
+        return (shotsData: const <String, Object?>{}, images: shots.length);
       case AtlasShotSource.inline:
         final sheets = _encodeShotSheets(shots);
 
@@ -504,7 +518,7 @@ final class AtlasPageRenderer {
         return (
           shotsData: _buildShotSheetData(
             sheets,
-            (sheet) => '$_shotsDirectory/${sheet.fileName}',
+            (sheet) => '${AtlasLocations.shotsDirectory}/${sheet.fileName}',
           ),
           images: sheetFiles.length,
         );
@@ -571,21 +585,15 @@ final class AtlasPageRenderer {
   }
 
   void _writeSheets(Map<String, Uint8List> sheetFiles, String directory) {
-    final folder = Directory(directory);
-
-    if (folder.existsSync()) {
-      for (final entity in folder.listSync()) {
-        if (!sheetFiles.containsKey(p.basename(entity.path))) {
-          entity.deleteSync(recursive: true);
-        }
-      }
-    }
-
     for (final MapEntry(key: name, value: bytes) in sheetFiles.entries) {
       File(p.join(directory, name))
         ..createSync(recursive: true)
         ..writeAsBytesSync(bytes);
     }
+  }
+
+  List<File> _listFiles(String path) {
+    return Directory(path).listSync(recursive: true).whereType<File>().toList();
   }
 
   List<String> _deleteUnreferencedShots(List<AtlasSnapshot> snapshots) {
@@ -1127,18 +1135,27 @@ final class AtlasPageRendering {
 ///
 /// The bundle [AtlasPageRenderer.renderBundle] wrote.
 final class AtlasBundleRendering {
-  /// The file of the bundle.
+  /// The page of the bundle, `index.html`.
   final String path;
 
-  /// Bytes of the bundle.
-  final int bytes;
+  /// Bytes of the page.
+  final int pageBytes;
 
-  /// Images the bundle holds: the sheets it inlines or writes as files.
+  /// Bytes of every file of the bundle: the page and the files in `shots/`.
+  final int bundleBytes;
+
+  /// Files of the bundle: the page and the files in `shots/`.
+  final int files;
+
+  /// Images the bundle holds: the sheets it inlines or writes as files, or
+  /// the shots it copies as files; none for [AtlasShotSource.urls].
   final int images;
 
   const AtlasBundleRendering({
     required this.path,
-    required this.bytes,
+    required this.pageBytes,
+    required this.bundleBytes,
+    required this.files,
     required this.images,
   });
 
@@ -1149,8 +1166,9 @@ final class AtlasBundleRendering {
     required int maxImages,
   }) {
     final messages = [
-      if (bytes > maxBytes)
-        'The bundle $path takes $bytes bytes, over the $maxBytes byte limit.',
+      if (pageBytes > maxBytes)
+        'The page $path takes $pageBytes bytes, over the $maxBytes byte '
+            'limit.',
       if (images > maxImages)
         'The bundle $path holds $images images, over the $maxImages image '
             'limit.',

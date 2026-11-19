@@ -137,22 +137,25 @@ ATLAS bundle --edition <name> --shots files|inline|sheets|urls --locale <code|al
 ```
 
 A bundle is a page `index.html` in a folder of its own for the edition and the
-locale. With `inline` or `urls` it is the only file. With `files` the bundle
-also copies the screenshots to `shots/` beside the page. With `sheets` the
-bundle writes the WebP sheets to `shots/` beside the page and deletes every
-other file there. The
-`--shots` value sets where a screenshot comes from:
+locale. The bundle first deletes every file and folder in `shots/` beside the
+page. With `inline` or `urls` the page is the only file. With `files` the
+bundle copies the screenshots to `shots/`. With `sheets` the bundle writes the
+WebP sheets to `shots/`. The `--shots` value sets where a screenshot comes
+from:
 
 | Value | Source of the image | Use |
 | --- | --- | --- |
 | `files` | `shots/<hash>.png` beside the page | a folder or a site that holds many files |
 | `inline` | sheets of WebP in the page | one file with no host |
-| `sheets` | `shots/<hash>.webp` beside the page, cropped by the page | a host that serves the page with its files |
+| `sheets` | `shots/<sheet hash>.webp` beside the page, named by the hash of the sheet bytes and cropped by the page on a canvas | a host that serves the page and `shots/` from one http(s) origin; never a page opened from disk |
 | `urls` | a link for each hash, from the project publisher | a page that must stay small |
 
-The limits of the size and of the number of images (sheet files count as
-images) come from the `atlas:`
-section of `pubspec.yaml`. A bundle over a limit fails and prints its size.
+The limits come from the `atlas:` section of `pubspec.yaml`. `maxBundleBytes`
+limits the page. `maxBundleImages` limits the images: the inline sheets, the
+sheet files or the shot files. `bundle` prints the bytes of the page, the bytes
+and the files of the whole bundle and its images. A bundle over a limit fails
+and prints its size. A viewer that takes at most 255 files in one publish takes
+`index.html` and 254 images.
 `urls` calls the publisher of the project. A publisher error stops the bundle
 and prints its text.
 

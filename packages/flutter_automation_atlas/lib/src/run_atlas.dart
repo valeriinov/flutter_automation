@@ -90,23 +90,26 @@ import 'package:flutter_automation_atlas/src/atlas_stale_check.dart';
 /// - `bundle --edition <name> --shots <source> [--locale <code|all>]` writes
 ///   the page of the edition as `index.html` in its own folder under the
 ///   build folder, one folder per edition and locale. The source is `files`,
-///   `inline`, `sheets` or `urls`. `files` copies the shots to `shots/`
-///   beside the page. `inline` embeds them as WebP sheets. `sheets` writes
-///   the WebP sheets as `shots/<hash>.webp` beside the page and deletes all
-///   other files in that folder. `urls` takes their links from
-///   [AtlasProject.shotPublisher]. `--locale` names the one series the page
-///   shows; `all`, or none, shows every page locale in one file. The bundle
-///   stops with its size when it passes the `maxBundleBytes` or the
-///   `maxBundleImages` limit of `flutter_automation: atlas:`.
-///   `maxBundleImages` counts the inline sheets or the sheet files. The
-///   bundle also stops with the message of a publisher that fails.
+///   `inline`, `sheets` or `urls`. The bundle first deletes every file and
+///   folder in `shots/` beside the page. `files` copies the shots to
+///   `shots/`. `inline` embeds them as WebP sheets. `sheets` writes the WebP
+///   sheets as `shots/<sheet hash>.webp`, named by the hash of the sheet
+///   bytes. `urls` takes their links from [AtlasProject.shotPublisher].
+///   `--locale` names the one series the page shows; `all`, or none, shows
+///   every page locale in one file. The command prints the bytes of the
+///   page, the bytes and the files of the whole bundle and its images. The
+///   bundle stops with its size when the page passes the `maxBundleBytes` or
+///   the images pass the `maxBundleImages` limit of
+///   `flutter_automation: atlas:`. `maxBundleImages` counts the inline
+///   sheets, the sheet files or the shot files. The bundle also stops with
+///   the message of a publisher that fails.
 ///
 /// `capture` and `stale` take `--locale <code>`, the first locale of the
 /// project when absent: the app runs in that locale and its values come from
 /// the translations of the project. Every command takes `--store <folder>`,
 /// the folder of the snapshots, the declarations, the shots and the page, the
 /// output folder of the project when absent, and `--source-label <text>`, the
-/// label of the source the page shows.
+/// label of the source the page footer shows.
 ///
 /// `headless` with `--published` or `--no-walk`, and `capture` with
 /// `--no-walk` but without `--stale`, fail with the usage.
@@ -421,7 +424,8 @@ final class AtlasRun {
     );
 
     stdout.writeln(
-      'Wrote ${rendering.path}: ${rendering.bytes} bytes, '
+      'Wrote ${rendering.path}: ${rendering.pageBytes} page bytes, '
+      '${rendering.bundleBytes} bundle bytes in ${rendering.files} files, '
       '${rendering.images} images',
     );
 

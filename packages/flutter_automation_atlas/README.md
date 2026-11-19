@@ -37,7 +37,7 @@ replay test.
 | `normalize-manifests` | Rewrites the manifest hashes of the stored snapshots. |
 | `source-commit --snapshot <file>` | Prints the commit `stale` takes as the baseline of the snapshot, or `not found`. |
 | `render [--edition <name>]` | Writes `index.html` of the edition (`full` when absent) to the store, with the screenshots in `shots/` beside it. Deletes the screenshots and the declarations that no stored snapshot names, and writes the project reports. A declaration record holds the parts of a source file that a snapshot read. |
-| `bundle --edition <name> --shots <files\|inline\|sheets\|urls> [--locale <code\|all>]` | Writes `index.html` of the edition into a folder of its own under the build folder, one per edition and locale. With `inline` or `urls` the page is the only file; with `files` the screenshots go to `shots/` beside it; with `sheets` the WebP sheets go to `shots/` beside it. |
+| `bundle --edition <name> --shots <files\|inline\|sheets\|urls> [--locale <code\|all>]` | Writes `index.html` of the edition into a folder of its own under the build folder, one per edition and locale. It first empties `shots/` beside the page. With `inline` or `urls` the page is the only file; with `files` the screenshots go to `shots/` beside it; with `sheets` the WebP sheets go to `shots/` beside it. It prints the bytes of the page, the bytes and the files of the whole bundle and its images. |
 
 Every command takes `--store <folder>` and `--source-label <text>`.
 `capture` and `stale` take `--locale <code>`.
@@ -53,7 +53,7 @@ An edition is a named list of page parts. The `full` edition holds every
 flutter_automation:
   atlas:
     maxBundleBytes: 15728640
-    maxBundleImages: 500
+    maxBundleImages: 254
     editions:
       lite: [flowStages, screenDescriptions, designLinks]
 ```
@@ -63,8 +63,10 @@ the edition. The page hides every section that has no data.
 
 `bundle` needs both limits and has no default for them: a missing limit stops
 the command with the name of its key. A bundle over a limit stops the command
-with its size. `maxBundleImages` limits the images of a bundle, inline or as
-sheet files.
+with its size. `maxBundleBytes` limits the page, `index.html`.
+`maxBundleImages` limits the images of a bundle: the inline sheets, the sheet
+files or the shot files. A viewer that takes at most 255 files in one publish
+takes `index.html` and 254 images.
 
 ## Screenshot sources
 
@@ -72,7 +74,7 @@ sheet files.
 | --- | --- |
 | `files` | `shots/<hash>.png` beside the page. |
 | `inline` | WebP sheets inside the page. |
-| `sheets` | WebP sheets as files `shots/<hash>.webp` beside the page. The page crops each screenshot from its sheet. `bundle` deletes every other file in `shots/`. |
+| `sheets` | WebP sheets as files `shots/<sheet hash>.webp` beside the page, named by the hash of the sheet bytes. The page crops each screenshot from its sheet on a canvas, so the page and `shots/` stand on one http(s) origin. A page opened from disk takes `inline` or `files`. `bundle` deletes every other file and folder in `shots/`. |
 | `urls` | The link `AtlasProject.shotPublisher` returns for the screenshot hash. |
 
 The page takes the link before the sheet, and the sheet before the file.

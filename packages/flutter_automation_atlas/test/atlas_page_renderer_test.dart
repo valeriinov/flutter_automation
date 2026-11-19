@@ -264,6 +264,7 @@ void main() {
     _atlasPageRenderer_should_rejectUrlsBundleWithoutPublisher();
     _atlasPageRenderer_should_copyShotsBesideAFilesBundle();
     _atlasPageRenderer_should_writeSheetFilesBesideASheetsBundle();
+    _atlasPageRenderer_should_emptyShotsFolderOfAnInlineBundle();
     _atlasPageRenderer_should_bundleBothLocalesOfASheetsBundleInOnePage();
     _atlasPageRenderer_should_keepOnlyItsSheetsInTheShotsFolder();
     _atlasPageRenderer_should_keepShotsFoldersOfEditionsApart();
@@ -1274,7 +1275,9 @@ void _atlasPageRenderer_should_inlineEveryShownShotInBundle() {
           _endShot: [0, 1, 0, 1, 1],
         },
       });
-      expect(rendering.bytes, File(rendering.path).lengthSync());
+      expect(rendering.pageBytes, File(rendering.path).lengthSync());
+      expect(rendering.bundleBytes, rendering.pageBytes);
+      expect(rendering.files, 1);
       expect(rendering.images, 1);
       expect(File(root.paths.pagePath).existsSync(), isFalse);
       expect(_readShotFiles(root).keys, contains('$_strandedShot.png'));
@@ -1601,7 +1604,12 @@ void _atlasPageRenderer_should_copyShotsBesideAFilesBundle() {
         'shotSheets': <Object?>[],
         'shotCells': <String, Object?>{},
       });
-      expect(rendering.images, 0);
+      expect(rendering.images, 2);
+      expect(rendering.files, 3);
+      expect(
+        rendering.bundleBytes,
+        rendering.pageBytes + _shotBytes.length * 2,
+      );
     });
   });
 }
@@ -1634,7 +1642,38 @@ void _atlasPageRenderer_should_writeSheetFilesBesideASheetsBundle() {
         expect(sheetFiles.keys, [sheetName]);
         expect(sheetFiles[sheetName]?.readAsBytesSync(), sheetBytes);
         expect(rendering.images, sheetFiles.length);
+        expect(rendering.files, sheetFiles.length + 1);
         expect(page, isNot(contains('data:image')));
+      });
+    },
+  );
+}
+
+void _atlasPageRenderer_should_emptyShotsFolderOfAnInlineBundle() {
+  test(
+    'AtlasPageRenderer should empty shots folder of an inline bundle',
+    () async {
+      await TestAtlasRoot.run((root) async {
+        _writeCatalogue(root);
+
+        final renderer = _createRenderer(root);
+
+        await renderer.renderBundle(
+          edition: _fullEdition(root),
+          source: AtlasShotSource.files,
+          locale: _ukLocale,
+        );
+
+        final rendering = await renderer.renderBundle(
+          edition: _fullEdition(root),
+          source: AtlasShotSource.inline,
+          locale: _ukLocale,
+        );
+
+        final shotsPath = root.paths.resolveBundleShotsPath(rendering.path);
+
+        expect(Directory(shotsPath).existsSync(), isFalse);
+        expect(rendering.files, 1);
       });
     },
   );
@@ -1744,12 +1783,24 @@ void _atlasPageRenderer_should_keepShotsFoldersOfEditionsApart() {
 
 void _atlasBundleRendering_should_describeEachLimitItPasses() {
   test('AtlasBundleRendering should describe each limit it passes', () {
-    const over = AtlasBundleRendering(path: 'a.html', bytes: 11, images: 7);
-    const within = AtlasBundleRendering(path: 'a.html', bytes: 10, images: 5);
+    const over = AtlasBundleRendering(
+      path: 'a.html',
+      pageBytes: 11,
+      bundleBytes: 40,
+      files: 8,
+      images: 7,
+    );
+    const within = AtlasBundleRendering(
+      path: 'a.html',
+      pageBytes: 10,
+      bundleBytes: 40,
+      files: 6,
+      images: 5,
+    );
 
     expect(
       over.tryDescribeOverLimit(maxBytes: 10, maxImages: 5),
-      allOf(contains('11 bytes'), contains('7 images')),
+      allOf(contains('page a.html takes 11 bytes'), contains('7 images')),
     );
     expect(
       over.tryDescribeOverLimit(maxBytes: 11, maxImages: 5),

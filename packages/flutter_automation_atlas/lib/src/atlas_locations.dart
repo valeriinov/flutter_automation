@@ -142,11 +142,9 @@ final class AtlasLocations {
   }
 
   /// The bundle page of the [edition], for the series of [locale] or, when
-  /// [locale] is absent, for every page locale, kept out of the repository
-  /// under the build folder.
-  ///
-  /// The page is `bundle.<edition>[.<locale>]/index.html` under the build
-  /// folder.
+  /// [locale] is absent, for every page locale: the file
+  /// `bundle.<edition>[.<locale>]/index.html` under the build folder, out of
+  /// the repository.
   String resolveBundlePagePath(String edition, {String? locale}) {
     final suffix = locale == null ? '' : '.$locale';
 

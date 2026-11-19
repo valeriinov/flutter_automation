@@ -45,4 +45,4 @@ flutter_automation:
   launchHint: --dart-define=ENABLE_AUTOMATION=true --dart-define=ENABLE_MOCK=true
   atlas:
     maxBundleBytes: 15728640
-    maxBundleImages: 500
+    maxBundleImages: 254
