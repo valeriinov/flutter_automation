@@ -101,8 +101,8 @@ flutter_automation:
 ```
 
 - The limits have no default. Ask the user for them, or take the limit of the
-  place where the page goes. A page for a Claude artifact has the limit that
-  the viewer sets.
+  place where the page goes. A viewer that hosts the page sets its own limits;
+  a Claude artifact is one example.
 - The editions `full` and `lite` exist without a key. Add `editions:` only to
   change a list or to add an edition. The part names come from the
   `AtlasPagePart` enum of the package. `lite` lists no part with keys,

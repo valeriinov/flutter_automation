@@ -79,10 +79,8 @@ The page takes the link before the sheet, and the sheet before the file.
 `--locale all`, or no `--locale`, writes the series of every page locale into
 one file.
 
-## Screenshots in a Claude artifact
+## Screenshots in a viewer with a strict CSP
 
-A Claude artifact page cannot show an `<img>` from another https host. The
-viewer blocks it.
-
-The `urls` source serves a page hosted elsewhere. Inside a Claude artifact,
-use `inline`, `sheets` or `files`.
+A viewer whose CSP blocks an `<img>` from another host needs `inline`, `files`
+or `sheets`. A Claude artifact is one example. The `urls` source serves a page
+that another host serves.

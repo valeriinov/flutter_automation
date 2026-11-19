@@ -156,9 +156,9 @@ section of `pubspec.yaml`. A bundle over a limit fails and prints its size.
 `urls` calls the publisher of the project. A publisher error stops the bundle
 and prints its text.
 
-A Claude artifact blocks an `<img>` from another host. The viewer applies a CSP
-that allows none. A page for a Claude artifact uses `inline`, `sheets` or `files`. Never
-use `urls` for it.
+A viewer whose CSP blocks an `<img>` from another host needs `inline`, `files`
+or `sheets`. Never use `urls` for such a viewer. A Claude artifact is one
+example.
 
 `--locale all` puts every locale of the project into one page.
 
