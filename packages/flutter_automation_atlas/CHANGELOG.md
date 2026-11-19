@@ -41,6 +41,8 @@
   frame opens no stage.
 - `AtlasLocations.shotsDirectory` and `AtlasShotSheet.fileExtension` name the
   shots folder and the sheet extension once.
+- Breaking: the page data stores its repeated long strings through
+  `CatalogueBlobs` of `flutter_automation_mock`. `AtlasPageBlobs` is gone.
 
 ## 0.12.0
 

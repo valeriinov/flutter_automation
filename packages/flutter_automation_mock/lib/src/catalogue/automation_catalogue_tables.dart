@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:collection/collection.dart';
 
 import 'package:flutter_automation_mock/src/catalogue/automation_catalogue_step.dart';
+import 'package:flutter_automation_mock/src/catalogue/catalogue_blobs.dart';
 
 /// {@category Utils}
 ///
@@ -10,21 +11,11 @@ import 'package:flutter_automation_mock/src/catalogue/automation_catalogue_step.
 ///
 /// [pack] moves the response of each request into `responses`. The key is a
 /// hash of the JSON of the response with its keys sorted. The request keeps the
-/// key. [pack] then moves each string of at least [minBlobLength] characters
-/// that stands more than once into `blobs`, in the order it first stands. Each
-/// place it stood holds `{"$blob": <index>}`. [unpack] puts everything back.
+/// key. [pack] then stores each repeated long string once, as
+/// [CatalogueBlobs.extract] does. [unpack] puts everything back.
 abstract final class AutomationCatalogueTables {
-  /// Fewest characters a repeated string takes to move to `blobs`.
-  static const minBlobLength = 1024;
-
-  /// Key of the object that stands for a string in `blobs`.
-  static const blobReferenceKey = r'$blob';
-
   /// Key of the table that maps a response hash to the response.
   static const responsesKey = 'responses';
-
-  /// Key of the list of the repeated long strings.
-  static const blobsKey = 'blobs';
 
   static const _flowsKey = 'flows';
   static const _variantsKey = 'variants';
@@ -40,7 +31,7 @@ abstract final class AutomationCatalogueTables {
       (request) => _moveResponse(request, responses),
     );
 
-    return _moveBlobs({
+    return CatalogueBlobs.extract({
       ...withHashes,
       if (responses.isNotEmpty) responsesKey: responses,
     });
@@ -48,13 +39,7 @@ abstract final class AutomationCatalogueTables {
 
   /// [json] as [pack] found it: the blobs and the responses put back.
   static Map<String, Object?> unpack(Map<String, Object?> json) {
-    final blobs = json[blobsKey];
-    final resolved = blobs is List<Object?>
-        ? {
-            for (final MapEntry(:key, :value) in json.entries)
-              if (key != blobsKey) key: _resolveBlobs(value, blobs),
-          }
-        : json;
+    final resolved = CatalogueBlobs.resolve(json);
     final responses = resolved[responsesKey];
 
     if (responses is! Map<String, Object?>) {
@@ -191,69 +176,5 @@ abstract final class AutomationCatalogueTables {
           if (object is Map<String, Object?>) map(object) else object,
       ],
     };
-  }
-
-  static Map<String, Object?> _moveBlobs(Map<String, Object?> data) {
-    final blobs = _readLongStrings(data)
-        .groupFoldBy<String, int>(
-          (text) => text,
-          (count, _) => (count ?? 0) + 1,
-        )
-        .entries
-        .where((entry) => entry.value > 1)
-        .map((entry) => entry.key)
-        .toList();
-
-    if (blobs.isEmpty) {
-      return data;
-    }
-
-    final indexes = {for (final (index, blob) in blobs.indexed) blob: index};
-
-    return {
-      for (final MapEntry(:key, :value) in data.entries)
-        key: _referenceBlobs(value, indexes),
-      blobsKey: blobs,
-    };
-  }
-
-  static Iterable<String> _readLongStrings(Object? node) {
-    return switch (node) {
-      String() when node.length >= minBlobLength => [node],
-      Map<String, Object?>() => node.values.expand(_readLongStrings),
-      List<Object?>() => node.expand(_readLongStrings),
-      _ => const [],
-    };
-  }
-
-  static Object? _referenceBlobs(Object? node, Map<String, int> indexes) {
-    return switch (node) {
-      String() when indexes.containsKey(node) => {
-        blobReferenceKey: indexes[node],
-      },
-      Map<String, Object?>() => node.map(
-        (key, value) => MapEntry(key, _referenceBlobs(value, indexes)),
-      ),
-      List<Object?>() =>
-        node.map((value) => _referenceBlobs(value, indexes)).toList(),
-      _ => node,
-    };
-  }
-
-  static Object? _resolveBlobs(Object? node, List<Object?> blobs) {
-    return switch (node) {
-      Map<String, Object?>() when _isBlob(node) =>
-        blobs[node[blobReferenceKey] as int],
-      Map<String, Object?>() => node.map(
-        (key, value) => MapEntry(key, _resolveBlobs(value, blobs)),
-      ),
-      List<Object?>() =>
-        node.map((value) => _resolveBlobs(value, blobs)).toList(),
-      _ => node,
-    };
-  }
-
-  static bool _isBlob(Map<String, Object?> node) {
-    return node.length == 1 && node[blobReferenceKey] is int;
   }
 }

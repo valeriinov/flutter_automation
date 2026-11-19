@@ -4,6 +4,7 @@ import 'dart:isolate';
 import 'dart:typed_data';
 
 import 'package:collection/collection.dart';
+import 'package:flutter_automation_mock/mock_catalogue.dart';
 import 'package:flutter_automation_runner/flutter_automation_runner.dart';
 import 'package:path/path.dart' as p;
 
@@ -14,7 +15,6 @@ import 'package:flutter_automation_atlas/src/atlas_groups.dart';
 import 'package:flutter_automation_atlas/src/atlas_json.dart';
 import 'package:flutter_automation_atlas/src/atlas_journal_stages.dart';
 import 'package:flutter_automation_atlas/src/atlas_locations.dart';
-import 'package:flutter_automation_atlas/src/atlas_page_blobs.dart';
 import 'package:flutter_automation_atlas/src/atlas_page_part.dart';
 import 'package:flutter_automation_atlas/src/atlas_published_variants.dart';
 import 'package:flutter_automation_atlas/src/atlas_series.dart';
@@ -88,7 +88,7 @@ typedef _GatheredPage = ({
 /// to keep a text from closing that script.
 ///
 /// Every long string the page data repeats is stored once, as
-/// [AtlasPageBlobs] writes it.
+/// [CatalogueBlobs] writes it.
 ///
 /// [build] reads every source and returns the page text, writing nothing;
 /// [render] writes that text and deletes the shots no stored snapshot names;
@@ -118,7 +118,7 @@ final class AtlasPageRenderer {
     'locales',
     'totals',
     'seriesLocale',
-    AtlasPageBlobs.blobsKey,
+    CatalogueBlobs.blobsKey,
     'shotSheets',
     'shotCells',
     'shotUrls',
@@ -463,7 +463,7 @@ final class AtlasPageRenderer {
     required Map<String, Object?> shotsData,
     required bool isPacked,
   }) {
-    final dataText = jsonEncode(AtlasPageBlobs.extract(gathered.data));
+    final dataText = jsonEncode(CatalogueBlobs.extract(gathered.data));
     final shotsText = jsonEncode({
       'shotSheets': <Object?>[],
       'shotCells': <String, Object?>{},

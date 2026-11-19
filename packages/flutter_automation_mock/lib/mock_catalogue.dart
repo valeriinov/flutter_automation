@@ -8,4 +8,5 @@ library;
 export 'src/catalogue/automation_catalogue.dart';
 export 'src/catalogue/automation_catalogue_flow.dart';
 export 'src/catalogue/automation_catalogue_step.dart';
+export 'src/catalogue/catalogue_blobs.dart';
 export 'src/catalogue/catalogue_json.dart';

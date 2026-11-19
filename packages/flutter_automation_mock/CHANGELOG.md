@@ -7,6 +7,10 @@
   of `messageKey` in the default language, `errorCode`, `messageKey` itself.
 - New `MockApiRequest.languageCode`: the primary subtag of the first range of
   `acceptLanguage`, in lower case.
+- New `CatalogueBlobs` in `mock_catalogue.dart`: stores every long string a
+  JSON object repeats once, for the QA catalogue and the atlas page.
+  `AutomationCatalogueTables` has no `minBlobLength`, `blobReferenceKey` or
+  `blobsKey`; `CatalogueBlobs` holds them.
 
 ## 0.12.0
 
