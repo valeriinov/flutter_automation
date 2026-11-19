@@ -94,7 +94,13 @@ dio.httpClientAdapter = mock.substitute(
     final scenarioBackend = MockScenarioBackend(
       readScenario: () => mock.scenario,
       buildApis: () => [CatalogMockApi(mock)],
-      buildFailureBody: (failure) => {'message': failure.message},
+      buildFailureBody: (failure, request) => {
+        'message': failure.resolveMessage(
+          request,
+          readText: (key, languageCode) => messages[key]?.texts[languageCode],
+          defaultLanguageCode: 'en',
+        ),
+      },
     );
 
     backend = scenarioBackend;
@@ -115,6 +121,10 @@ single paths from the scenario. A flow sets them with
 `MockOverride.latency(MockLatencyProfile.slow)`, `MockOverride.failures({...})`
 and `MockOverride.latencies({'/items': 'slow'})`. Paths that no `MockApi` owns go to
 `networkAdapter`.
+`messages` maps a `messageKey` to the `AutomationLocalizedText` that the
+project keeps for it. `resolveMessage` takes `message`, then the text of the key
+in the request language, then in `defaultLanguageCode`, then `errorCode`, then
+the key itself.
 
 ## shared_preferences
 
