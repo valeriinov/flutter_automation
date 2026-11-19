@@ -5,6 +5,17 @@ the QA panel. Both read the same groups. The project declares one `groupOrder`
 constant and passes it to `AtlasProject.groupOrder` and to
 `AutomationRunnerConfig.read().withGroupOrder(...)`.
 
+The two menus treat a group outside `groupOrder` and a flow without a group in
+different ways:
+
+| Case | Atlas page | QA catalogue |
+| --- | --- | --- |
+| A group that `groupOrder` does not list | `render` stops with "is not in AtlasProject.groupOrder". | The catalogue lists the group after the groups of `groupOrder`, in the order of its first flow. |
+| A flow that names no group | The flow joins `AtlasProject.defaultGroup`. | The catalogue has no default group. The flow joins no group. |
+
+Rule 3 and the check below keep both menus equal: every flow names a group, and
+`groupOrder` lists every group.
+
 ## Terms
 
 - **Area**: a business area of the app. The first level of both menus.
