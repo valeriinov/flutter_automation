@@ -78,14 +78,14 @@ void _mockScenarioBackend_should_readTheMessageKeyOfAFailure() {
     final sut = _createBackend(
       readScenario: () => MockScenario([
         MockOverride.failures({
-          _firstPath: {'statusCode': 409, 'messageKey': 'chatCloseRefused'},
+          _firstPath: {'statusCode': 409, 'messageKey': 'rateLimited'},
         }),
       ]),
       buildApis: () => const [],
     );
     final failure = sut.failures[_firstPath];
 
-    expect(failure?.messageKey, 'chatCloseRefused');
+    expect(failure?.messageKey, 'rateLimited');
     expect(failure?.message, isNull);
   });
 }
