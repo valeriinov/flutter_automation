@@ -1297,6 +1297,8 @@ AutomationTimeline.instant(
           <li><span data-l="en"><code>texts</code> and <code>widgets</code> hold only what the frame shows.</span><span data-l="uk"><code>texts</code> і <code>widgets</code> містять лише те, що показує кадр.</span></li>
           <li><span data-l="en">They leave out a route under an opaque route and an <code>Offstage</code> subtree.</span><span data-l="uk">Вони пропускають маршрут під непрозорим маршрутом і піддерево <code>Offstage</code>.</span></li>
           <li><span data-l="en">They also leave out a tab that an <code>IndexedStack</code> hides and a list row past its viewport.</span><span data-l="uk">Також вони пропускають вкладку, яку ховає <code>IndexedStack</code>, і рядок списку за межами його viewport.</span></li>
+          <li><span data-l="en">They leave out a subtree under an opacity of 0 too, such as a <code>FadeTransition</code> at its start. They also leave out the child of a hidden <code>Visibility</code> that keeps its state, such as the labels of a <code>BottomNavigationBar</code> that shows none.</span><span data-l="uk">Вони пропускають і піддерево з непрозорістю 0, наприклад <code>FadeTransition</code> на початку. Також вони пропускають дочірній віджет прихованого <code>Visibility</code>, що зберігає стан, наприклад підписи <code>BottomNavigationBar</code>, яка їх не показує.</span></li>
+          <li><span data-l="en"><code>frame.read</code> counts by the same rules.</span><span data-l="uk"><code>frame.read</code> рахує за тими самими правилами.</span></li>
         </ul>
       </section>
 

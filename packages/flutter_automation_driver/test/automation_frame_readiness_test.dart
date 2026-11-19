@@ -9,6 +9,10 @@ import 'package:flutter_automation_driver/src/automation_frame_readiness.dart';
 const _windowSize = Size(400, 800);
 const _imageSize = 40.0;
 
+/// Line height of an empty `Text` under the Material 3 `bodyMedium` style:
+/// font size 14 times height 1.43, rounded.
+const _textLineHeight = 20;
+
 void main() {
   group('AutomationFrameReadiness Widget Tests', () {
     _automationFrameReadiness_should_findNoDefectInAReadyFrame();
@@ -17,6 +21,12 @@ void main() {
     _automationFrameReadiness_should_countAWhitespaceText();
     _automationFrameReadiness_should_leaveOutAnEmptyTextOffstage();
     _automationFrameReadiness_should_leaveOutAnEmptyTextField();
+    _automationFrameReadiness_should_leaveOutAnEmptyTextUnderAZeroOpacity();
+    _automationFrameReadiness_should_countAnEmptyTextUnderAHalfOpacity();
+    _automationFrameReadiness_should_leaveOutAnEmptyTextOfAFadeAtItsStart();
+    _automationFrameReadiness_should_leaveOutAnEmptyTextOfAHiddenVisibility();
+    _automationFrameReadiness_should_countAnEmptyReplacementOfAVisibility();
+    _automationFrameReadiness_should_leaveOutTheLabelsOfABarWithoutLabels();
     _automationFrameReadiness_should_leaveOutTheEmptyTextsOfAnInputDecorator();
     _automationFrameReadiness_should_leaveOutAnImageUnderAnOpaqueRoute();
     _automationFrameReadiness_should_leaveOutAnImageOffstage();
@@ -116,6 +126,112 @@ void _automationFrameReadiness_should_leaveOutAnEmptyTextField() {
 
     expect(_read(tester).emptyTexts, 0);
   });
+}
+
+void _automationFrameReadiness_should_leaveOutAnEmptyTextUnderAZeroOpacity() {
+  testWidgets(
+    'AutomationFrameReadiness should leave out an empty text under a zero '
+    'opacity',
+    (tester) async {
+      await tester.pumpWidget(
+        _buildApp([const Opacity(opacity: 0, child: Text(''))]),
+      );
+
+      expect(_read(tester).emptyTexts, 0);
+    },
+  );
+}
+
+void _automationFrameReadiness_should_countAnEmptyTextUnderAHalfOpacity() {
+  testWidgets(
+    'AutomationFrameReadiness should count an empty text under a half opacity',
+    (tester) async {
+      await tester.pumpWidget(
+        _buildApp([const Opacity(opacity: 0.5, child: Text(''))]),
+      );
+
+      expect(_read(tester).emptyTexts, 1);
+    },
+  );
+}
+
+void _automationFrameReadiness_should_leaveOutAnEmptyTextOfAFadeAtItsStart() {
+  testWidgets(
+    'AutomationFrameReadiness should leave out an empty text of a fade at its '
+    'start',
+    (tester) async {
+      await tester.pumpWidget(
+        _buildApp([
+          const FadeTransition(
+            opacity: AlwaysStoppedAnimation(0),
+            child: Text(''),
+          ),
+        ]),
+      );
+
+      expect(_read(tester).emptyTexts, 0);
+    },
+  );
+}
+
+void
+_automationFrameReadiness_should_leaveOutAnEmptyTextOfAHiddenVisibility() {
+  testWidgets(
+    'AutomationFrameReadiness should leave out an empty text of a hidden '
+    'visibility',
+    (tester) async {
+      await tester.pumpWidget(
+        _buildApp([const Visibility.maintain(visible: false, child: Text(''))]),
+      );
+
+      expect(_read(tester).emptyTexts, 0);
+    },
+  );
+}
+
+void _automationFrameReadiness_should_countAnEmptyReplacementOfAVisibility() {
+  testWidgets(
+    'AutomationFrameReadiness should count an empty replacement of a '
+    'visibility',
+    (tester) async {
+      await tester.pumpWidget(
+        _buildApp([
+          const Visibility(
+            visible: false,
+            replacement: Text(''),
+            child: Text('Hello'),
+          ),
+        ]),
+      );
+
+      expect(_read(tester).emptyTexts, 1);
+    },
+  );
+}
+
+void _automationFrameReadiness_should_leaveOutTheLabelsOfABarWithoutLabels() {
+  testWidgets(
+    'AutomationFrameReadiness should leave out the labels of a bar without '
+    'labels',
+    (tester) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            bottomNavigationBar: BottomNavigationBar(
+              showSelectedLabels: false,
+              showUnselectedLabels: false,
+              items: const [
+                BottomNavigationBarItem(icon: Icon(Icons.home), label: ''),
+                BottomNavigationBarItem(icon: Icon(Icons.star), label: ''),
+              ],
+            ),
+          ),
+        ),
+      );
+
+      expect(_read(tester).emptyTexts, 0);
+    },
+  );
 }
 
 void
@@ -252,18 +368,17 @@ void _automationFrameReadiness_should_nameTheItemsWithRectAndTarget() {
       final emptyText = sut.emptyTextItems.single;
       final loadingImage = sut.loadingImageItems.single;
 
-      expect(emptyText.target, 'form.title');
-      expect(emptyText.rect.left, _imageSize * 0);
+      // The column is as wide as its children and stands at the top left.
+      // The image under the text has no size of its own, so its box takes
+      // the width of its slot and no height.
       expect(emptyText.toJson(), {
-        'rect': [
-          emptyText.rect.left.round(),
-          emptyText.rect.top.round(),
-          emptyText.rect.width.round(),
-          emptyText.rect.height.round(),
-        ],
+        'rect': [0, 0, 200, _textLineHeight],
         'target': 'form.title',
       });
-      expect(loadingImage.target, isNull);
+      expect(loadingImage.toJson(), {
+        'rect': [0, _textLineHeight, 200, 0],
+        'target': null,
+      });
     },
   );
 }

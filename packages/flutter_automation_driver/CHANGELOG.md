@@ -4,6 +4,10 @@
 
 - The texts and widgets of `screen.read` count a box with a zero size inside
   the clip when its top left corner stands inside it, as `frame.read` does.
+- `frame.read` and the texts and widgets of `screen.read` leave out a subtree
+  under an opacity of 0, such as a `FadeTransition` at its start. They also
+  leave out the child of a hidden `Visibility` that keeps its state, such as
+  the labels of a `BottomNavigationBar` that shows none.
 
 ## 0.12.0
 

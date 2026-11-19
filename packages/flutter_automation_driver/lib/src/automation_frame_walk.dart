@@ -9,7 +9,9 @@ import 'package:flutter/widgets.dart';
 /// out. This covers the routes that an opaque one covers, under a disabled
 /// `TickerMode`. It covers the children that an `IndexedStack` lays out but
 /// does not paint, which is how the tabs not selected stay in the tree. It also
-/// covers an `Offstage` subtree.
+/// covers an `Offstage` subtree, a hidden `Visibility` that keeps its state
+/// and a subtree under an opacity of 0, such as a `FadeTransition` at its
+/// start.
 ///
 /// Below a viewport the clip narrows to the viewport. A reader can then leave
 /// out, by [readRect], the list rows built in its cache extent.
@@ -52,7 +54,7 @@ abstract final class AutomationFrameWalk {
     required Rect clip,
     required void Function(Element element, Rect clip) onShown,
   }) {
-    if (_isHidden(element.widget)) {
+    if (_isHidden(element.widget) || _isTransparent(element)) {
       return;
     }
 
@@ -73,6 +75,20 @@ abstract final class AutomationFrameWalk {
     return switch (widget) {
       TickerMode(:final enabled) => !enabled,
       Offstage(:final offstage) => offstage,
+      Visibility(:final visible, :final maintainState) =>
+        !visible && maintainState,
+      _ => false,
+    };
+  }
+
+  static bool _isTransparent(Element element) {
+    final renderObject = element is RenderObjectElement
+        ? element.renderObject
+        : null;
+
+    return switch (renderObject) {
+      RenderOpacity(:final opacity) => opacity == 0,
+      RenderAnimatedOpacityMixin(:final opacity) => opacity.value == 0,
       _ => false,
     };
   }
