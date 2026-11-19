@@ -9,7 +9,7 @@ comment that names the value to fill in. `<project>` is the name of the project.
 import 'package:flutter_automation_atlas/flutter_automation_atlas.dart';
 import 'package:flutter_automation_runner/flutter_automation_runner.dart';
 
-final class <Project>AtlasProject implements AtlasProject {
+final class <Project>AtlasProject extends AtlasProject {
   const <Project>AtlasProject();
 
   @override
@@ -22,7 +22,7 @@ final class <Project>AtlasProject implements AtlasProject {
   );
 
   @override
-  AtlasLaunchSettings get launch => const AtlasLaunchSettings(
+  AtlasLaunchSettings get launchSettings => const AtlasLaunchSettings(
     entry: 'lib/main.dart', // the entry of the Launch field
     defines: ['ENABLE_AUTOMATION=true'], // the defines of the Launch field
     commandPrefix: ['fvm'], // empty when the project has no .fvmrc
@@ -81,18 +81,6 @@ final class <Project>AtlasProject implements AtlasProject {
   String get designScreenKey => 'designScreenName';
 
   @override
-  List<AtlasTable> tables(String store) => const [];
-
-  @override
-  Map<String, Object?> translations(String locale) => const {};
-
-  @override
-  Map<String, Map<String, String>> get screenDescriptions => const {};
-
-  @override
-  String? designLink(String screen) => null;
-
-  @override
   String get projectName => '<Project name>';
 
   @override
@@ -104,19 +92,7 @@ final class <Project>AtlasProject implements AtlasProject {
   List<AutomationFlowGroup> get groupOrder => <groupOrder constant>;
 
   @override
-  List<String> get sourceDirtyIgnores => const [];
-
-  @override
-  void writeReports(String store) {}
-
-  @override
-  AtlasShotPublisher? get shotPublisher => null;
-
-  @override
   List<String> get locales => const ['en']; // the first one is the default
-
-  @override
-  bool isCataloguedAnalytics(Map<String, Object?> record) => true;
 }
 ```
 

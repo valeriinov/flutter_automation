@@ -4,7 +4,7 @@ import 'package:flutter_automation_runner/flutter_automation_runner.dart';
 import 'flows/catalog_flow.dart';
 
 /// The atlas of the example app.
-final class ExampleAtlasProject implements AtlasProject {
+final class ExampleAtlasProject extends AtlasProject {
   static const _locales = ['en', 'uk'];
 
   const ExampleAtlasProject();
@@ -19,7 +19,7 @@ final class ExampleAtlasProject implements AtlasProject {
   );
 
   @override
-  AtlasLaunchSettings get launch => const AtlasLaunchSettings(
+  AtlasLaunchSettings get launchSettings => const AtlasLaunchSettings(
     entry: 'lib/main.dart',
     defines: ['ENABLE_AUTOMATION=true', 'ENABLE_MOCK=true'],
     commandPrefix: ['fvm'],
@@ -73,18 +73,6 @@ final class ExampleAtlasProject implements AtlasProject {
   String get designScreenKey => 'designScreenName';
 
   @override
-  List<AtlasTable> tables(String store) => const [];
-
-  @override
-  Map<String, Object?> translations(String locale) => const {};
-
-  @override
-  Map<String, Map<String, String>> get screenDescriptions => const {};
-
-  @override
-  String? designLink(String screen) => null;
-
-  @override
   String get projectName => 'Example';
 
   @override
@@ -94,17 +82,5 @@ final class ExampleAtlasProject implements AtlasProject {
   List<AutomationFlowGroup> get groupOrder => catalogGroupOrder;
 
   @override
-  List<String> get sourceDirtyIgnores => const [];
-
-  @override
-  void writeReports(String store) {}
-
-  @override
-  AtlasShotPublisher? get shotPublisher => null;
-
-  @override
   List<String> get locales => _locales;
-
-  @override
-  bool isCataloguedAnalytics(Map<String, Object?> record) => true;
 }

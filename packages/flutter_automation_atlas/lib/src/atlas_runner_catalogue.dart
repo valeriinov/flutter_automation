@@ -62,7 +62,7 @@ final class AtlasRunnerCatalogue {
   }
 
   static AtlasRunnerCatalogue _run(AtlasLocations paths) {
-    final dart = paths.project.launch.resolveCommand('dart');
+    final dart = paths.project.launchSettings.resolveCommand('dart');
     final result = Process.runSync(dart.executable, [
       ...dart.arguments,
       'run',

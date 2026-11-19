@@ -1,4 +1,4 @@
-import 'package:flutter_automation_atlas/flutter_automation_atlas.dart';
+import 'package:flutter_automation_atlas/src/atlas_declarations.dart';
 
 import 'fake_atlas_project.dart';
 

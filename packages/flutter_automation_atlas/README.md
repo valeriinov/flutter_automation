@@ -6,7 +6,7 @@ and a design link. The package keeps the atlas in step with the app.
 
 ## Use
 
-A project implements `AtlasProject` and calls `runAtlas` from its own file:
+A project extends `AtlasProject` and calls `runAtlas` from its own file:
 
 ```dart
 Future<void> main(List<String> args) {
@@ -16,8 +16,15 @@ Future<void> main(List<String> args) {
 
 `AtlasProject` names what the engine cannot know. It names the paths, the launch
 settings and the journal schema. It also names the stale and headless settings,
-the locales, the tables and the translations. `AtlasStaleSettings.routes` is
-optional: a project with no routes file leaves it `null`.
+the locales and the groups. The tables, the translations, the screen
+descriptions, the design links, the reports, the shot publisher and the
+analytics check have defaults for a project without that data.
+`AtlasStaleSettings.routes` is optional: a project with no routes file leaves it
+`null`.
+
+The library `flutter_automation_atlas.dart` gives the types a project writes.
+The library `mock_replay.dart` gives `runAtlasMockReplay`, the body of the mock
+replay test.
 
 ## Commands
 

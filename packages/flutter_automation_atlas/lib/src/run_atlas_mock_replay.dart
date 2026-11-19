@@ -22,9 +22,7 @@ const isAtlasMockReplayRun = bool.hasEnvironment(
 );
 
 const _inputPath = String.fromEnvironment(AtlasMockReplayProcess.inputDefine);
-const _outputPath = String.fromEnvironment(
-  AtlasMockReplayProcess.outputDefine,
-);
+const _outputPath = String.fromEnvironment(AtlasMockReplayProcess.outputDefine);
 
 /// {@category Utils}
 ///

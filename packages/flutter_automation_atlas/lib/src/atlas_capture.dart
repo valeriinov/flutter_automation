@@ -98,7 +98,7 @@ final class AtlasCapture {
            AtlasMockReplayProcess(
              _paths.rootPath,
              _paths.project.mockReplayEntry,
-             _paths.project.launch,
+             _paths.project.launchSettings,
            ),
        _headlessPass = headlessPass ?? AtlasHeadless(_paths).run;
 
@@ -579,7 +579,7 @@ final class _SimulatorSession implements AtlasWalker {
     Directory captureDirectory,
   ) async {
     final session = _session ??= await AtlasFlutterRunSession.start(
-      _paths.project.launch,
+      _paths.project.launchSettings,
       deviceId: _deviceId,
     );
 

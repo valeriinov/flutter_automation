@@ -89,7 +89,7 @@ final class AtlasRunnerProcess {
     AtlasStageScope scope,
     Directory captureDirectory,
   ) async {
-    final dart = _paths.project.launch.resolveCommand('dart');
+    final dart = _paths.project.launchSettings.resolveCommand('dart');
 
     final process = await _startProcess(dart.executable, [
       ...dart.arguments,

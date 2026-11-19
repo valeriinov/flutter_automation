@@ -2,6 +2,11 @@ import 'dart:io';
 
 import 'package:collection/collection.dart';
 import 'package:flutter_automation_atlas/flutter_automation_atlas.dart';
+import 'package:flutter_automation_atlas/src/atlas_journal_cleaner.dart';
+import 'package:flutter_automation_atlas/src/atlas_journal_comparison.dart';
+import 'package:flutter_automation_atlas/src/atlas_journal_split.dart';
+import 'package:flutter_automation_atlas/src/atlas_mock_answer_comparison.dart';
+import 'package:flutter_automation_atlas/src/atlas_source_hash.dart';
 import 'package:flutter_automation_runner/flutter_automation_runner.dart';
 
 const fakeAtlasLocales = ['uk', 'en'];
@@ -195,7 +200,7 @@ final class FakeAtlasProject implements AtlasProject {
   );
 
   @override
-  AtlasLaunchSettings get launch => AtlasLaunchSettings(
+  AtlasLaunchSettings get launchSettings => AtlasLaunchSettings(
     entry: 'lib/main.dart',
     flavor: 'dev',
     defines: const ['ENABLE_AUTOMATION=true'],

@@ -41,22 +41,24 @@ in a workspace). Run `fvm flutter pub get`. Drop `fvm` when the project has no
 
 Read `references/atlas-project-stub.md`. It holds the stubs of the files below.
 
-1. `tool/<project>_atlas_project.dart`: a class that implements
+1. `tool/<project>_atlas_project.dart`: a class that extends
    `AtlasProject`. When `tool/atlas.dart` exists, find the class by the import
    in that file, and edit it.
    - `paths.runnerEntry` is the file that calls `runFlows`. `paths.output`
      equals **Atlas store**.
-   - `launch` and `locales` come from the **Launch** field and from the
-     `flutter_automation:` section. The first locale is the default. Set
-     `launch.commandPrefix` to `['fvm']` when the project has `.fvmrc`.
+   - `launchSettings` and `locales` come from the **Launch** field and from
+     the `flutter_automation:` section. The first locale is the default. Set
+     `launchSettings.commandPrefix` to `['fvm']` when the project has `.fvmrc`.
    - `journalSchema`, `staleSettings` and `headlessSettings` start with the
-     smallest values that compile. The class returns empty lists for the
-     tables and for the screen descriptions.
+     smallest values that compile.
+   - The class overrides no member that has a default: the tables, the
+     translations, the screen descriptions, the design links, the reports,
+     the shot publisher and the analytics check. It overrides one only when
+     the project has that data.
    - `projectName` is the name the page shows.
    - `groupOrder` and `defaultGroup` follow `references/flow-groups.md` of the
      `atlas` skill. Without a path map, derive the groups from the screens and
      the routes, and propose them to the user before you write them.
-   - `shotPublisher` returns `null`.
    - Each stub carries a short comment that names the value to fill in.
 2. `tool/atlas.dart`: one call, `runAtlas(args, <Project>AtlasProject())`.
 3. The file that `paths.publishedVariants` names, for example

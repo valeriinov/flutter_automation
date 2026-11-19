@@ -121,7 +121,7 @@ final class AtlasHeadless {
   /// operating system and the architecture this process runs on, as
   /// `Flutter 3.47.5 · macos_arm64`.
   static String readRenderer(AtlasLocations paths) {
-    final flutter = paths.project.launch.resolveCommand('flutter');
+    final flutter = paths.project.launchSettings.resolveCommand('flutter');
     final report = AtlasJson.readObject(
       jsonDecode(
         _runProcess(flutter.executable, [
@@ -759,7 +759,7 @@ final class AtlasHeadless {
       _maybeCopyMissing(path, worktreePath);
     }
 
-    final flutter = _paths.project.launch.resolveCommand('flutter');
+    final flutter = _paths.project.launchSettings.resolveCommand('flutter');
 
     _runProcess(flutter.executable, [
       ...flutter.arguments,
@@ -778,7 +778,7 @@ final class AtlasHeadless {
         ..writeAsStringSync(
           jsonEncode(inputs.map((input) => input.toJson()).toList()),
         );
-      final flutter = _paths.project.launch.resolveCommand('flutter');
+      final flutter = _paths.project.launchSettings.resolveCommand('flutter');
 
       final process = await Process.start(
         flutter.executable,
@@ -887,7 +887,7 @@ final class AtlasHeadless {
         '\n${_settings.entryMain}\n',
       );
 
-    final dart = _paths.project.launch.resolveCommand('dart');
+    final dart = _paths.project.launchSettings.resolveCommand('dart');
 
     _runProcess(dart.executable, [
       ...dart.arguments,

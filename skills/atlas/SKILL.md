@@ -77,7 +77,7 @@ ATLAS capture --stale                        # what stale names
 
 1. Run `stale` first. Name the stale variants to the user.
 2. Run the capture. It builds and launches the app itself, with the arguments
-   of `AtlasProject.launch`. It restarts the app before each variant.
+   of `AtlasProject.launchSettings`. It restarts the app before each variant.
 3. Run `stale` again. Every line must read `fresh`. A `failed` line stops the
    work: fix the walk, then capture again.
 4. A full capture of a flow in the QA catalogue also writes the QA recording of the flow.

@@ -209,7 +209,7 @@ final class AtlasStaleCheck {
            AtlasMockReplayProcess(
              _paths.rootPath,
              _paths.project.mockReplayEntry,
-             _paths.project.launch,
+             _paths.project.launchSettings,
            ),
        _declarationsStore = AtlasDeclarationsStore(_paths),
        _headlessHashes = AtlasHeadlessHashes(_paths),
