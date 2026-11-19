@@ -137,7 +137,7 @@ void _automationFlow_should_carryBlockAndTargetOnSteps() {
           'block': _openBlock,
           'with': {'author': 'John Doe'},
         },
-        {'action': 'enterText', 'text': 'Київ'},
+        {'action': 'enterText', 'text': 'Кошик'},
       ],
     );
 
@@ -178,7 +178,7 @@ void _automationFlow_should_describeEntriesOfUseList() {
         },
         {
           'action': 'enterText',
-          'text': 'Київ',
+          'text': 'Кошик',
           'title': {'en': 'Type the address', 'uk': 'Ввести адресу'},
         },
       ],
@@ -275,7 +275,7 @@ void _automationStep_should_omitBlockAndTargetFromReportWhenAbsent() {
     'AutomationStep should omit block and target from report when absent',
     () {
       final step = AutomationStep.fromJson(
-        {'action': 'enterText', 'text': 'Київ'},
+        {'action': 'enterText', 'text': 'Кошик'},
         block: null,
         finders: _finders,
         locale: _locale,
@@ -440,7 +440,7 @@ void _automationStep_should_resolveTextAndTooltipToUnmarkedFinders() {
     'AutomationStep should resolve text and tooltip to unmarked finders',
     () {
       final text = _resolveFinder(
-        {'by': 'text', 'value': 'Київ'},
+        {'by': 'text', 'value': 'Кошик'},
         locale: _locale,
         subject: _subject,
       );
@@ -450,7 +450,7 @@ void _automationStep_should_resolveTextAndTooltipToUnmarkedFinders() {
         subject: _subject,
       );
 
-      expect(text.serialize(), {'finderType': 'UnmarkedText', 'text': 'Київ'});
+      expect(text.serialize(), {'finderType': 'UnmarkedText', 'text': 'Кошик'});
       expect(tooltip.serialize(), {
         'finderType': 'UnmarkedTooltip',
         'text': 'Назад',
@@ -488,7 +488,7 @@ void _automationStep_should_keepStringFinderValueInEveryLocale() {
     final step = AutomationStep.fromJson(
       {
         'action': 'tap',
-        'finder': {'by': 'text', 'value': 'Київ'},
+        'finder': {'by': 'text', 'value': 'Кошик'},
       },
       block: null,
       finders: _finders,
@@ -497,7 +497,7 @@ void _automationStep_should_keepStringFinderValueInEveryLocale() {
 
     expect(step.finder?.serialize(), {
       'finderType': 'UnmarkedText',
-      'text': 'Київ',
+      'text': 'Кошик',
     });
   });
 }
