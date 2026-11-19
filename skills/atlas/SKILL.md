@@ -95,6 +95,10 @@ A capture exits with code 1 when a walk failed. Report the failed variant and
 its first error. Do not retry in a loop: after three failures name the doubtful
 assumption.
 
+A flow that fails with `frameDefect` needs a fix of the walk. A stage that is
+meant to show a loading state gets `showsLoading` on the last step before the
+user action.
+
 ## 4. Check with no device
 
 ```bash
