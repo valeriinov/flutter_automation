@@ -322,10 +322,13 @@ void _atlasSnapshotBuilder_should_openNoStageForFailedEndFrame() {
             _openDetailsStep,
             endStep,
           ], isOk: false);
+          final stage = snapshot.stages.firstOrNull;
 
           expect(snapshot.stages.map((stage) => stage.label), [
             'open cart details',
           ]);
+          expect(stage?.ok, isFalse);
+          expect(stage?.error, 'The end frame is not ready');
         }
       });
     },

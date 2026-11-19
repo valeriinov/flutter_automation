@@ -1,3 +1,5 @@
+import 'package:flutter_automation_atlas/src/atlas_source_hash.dart';
+import 'package:flutter_automation_atlas/src/atlas_stale_settings.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'test_utils/fake_atlas_project.dart';
@@ -44,6 +46,7 @@ void main() {
     _atlasSourceHash_should_keepCharactersOfStringLiterals();
     _atlasSourceHash_should_keepTargetCallInsideStringOrComment();
     _atlasSourceHash_should_skipParenthesesInsideTargetArguments();
+    _atlasSourceHash_should_skipImportsOfAutomationDirectoryOnly();
   });
 }
 
@@ -99,5 +102,36 @@ void _atlasSourceHash_should_skipParenthesesInsideTargetArguments() {
     final normalized = testSourceHash.normalize(source);
 
     expect(normalized, 'child.build();');
+  });
+}
+
+void _atlasSourceHash_should_skipImportsOfAutomationDirectoryOnly() {
+  test('AtlasSourceHash should skip imports of automation directory only', () {
+    final sourceHash = AtlasSourceHash(
+      const AtlasStaleSettings(
+        mockDirectory: 'lib/mock/',
+        targetsDirectory: 'lib/automation/targets/',
+        automationDirectory: 'lib/automation/',
+        stopPaths: [],
+      ),
+    );
+    const source = '''
+import 'package:app/automation/cart_flow.dart';
+import '../automation/cart_flow.dart';
+import 'package:app/my_automation/cart_flow.dart';
+class CartView {}
+''';
+
+    expect(
+      sourceHash.normalize(source),
+      sourceHash.normalize('''
+import 'package:app/my_automation/cart_flow.dart';
+class CartView {}
+'''),
+    );
+    expect(
+      sourceHash.hashSource(source),
+      isNot(sourceHash.hashSource('class CartView {}')),
+    );
   });
 }
