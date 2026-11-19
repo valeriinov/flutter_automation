@@ -67,7 +67,9 @@ Read `references/atlas-project-stub.md`. It holds the stubs of the files below.
    `test/mock_replay_test.dart`. `stale` and `capture` run it with `flutter
    test` to ask the mock of the app again for every answer a snapshot holds. A
    missing replay test stops `stale` with "The mock replay failed" once a
-   snapshot holds a mock answer.
+   snapshot holds a mock answer. The test calls `runAtlasMockReplay` of
+   `package:flutter_automation_atlas/mock_replay.dart` with the mock sections,
+   the mock apis and the journal schema of the project.
 
 `staleSettings.routes` is optional. A project whose router generates no routes
 file sets it to `null`. No stage then names route sources. A project with a

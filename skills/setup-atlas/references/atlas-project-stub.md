@@ -142,122 +142,26 @@ Future<void> main(List<String> args) {
 
 ## `test/mock_replay_test.dart`
 
-The test reads the snapshots from the file that the first define names. It asks
-the mock again for every recorded request and writes one outcome for each
-snapshot to the file that the second define names. A plain `flutter test` run
-sets no define, so the test skips itself. `<mock apis>` and
-`<mock sections>` are the apis and the sections the app puts in its mock.
+`runAtlasMockReplay` reads the snapshots from the file that the input define
+names. It asks the mock again for every recorded request and writes one outcome
+for each snapshot to the file that the output define names. A plain
+`flutter test` run sets no define, so the test skips itself. `<mock sections>`
+are the sections the app puts in its mock, and `<mock apis>` builds the apis the
+app puts in its mock.
 
 ```dart
-import 'dart:convert';
-import 'dart:io';
-
-import 'package:flutter_automation_atlas/flutter_automation_atlas.dart';
-import 'package:flutter_automation_mock/flutter_automation_mock.dart';
+import 'package:flutter_automation_atlas/mock_replay.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import '../tool/<project>_atlas_project.dart';
 
-const _inputPath = String.fromEnvironment(AtlasMockReplayProcess.inputDefine);
-const _outputPath = String.fromEnvironment(AtlasMockReplayProcess.outputDefine);
-
 void main() {
-  test('Mock replay should write the outcome of each snapshot', () async {
-    final inputs = AtlasMockReplayInput.readAll(
-      File(_inputPath).readAsStringSync(),
-    );
-    final outcomes = <String, AtlasMockReplayOutcome>{};
-
-    for (final input in inputs) {
-      outcomes[input.id] = await _replay(input);
-    }
-
-    File(_outputPath).writeAsStringSync(
-      jsonEncode({
-        for (final MapEntry(:key, :value) in outcomes.entries)
-          key: value.toJson(),
-      }),
-    );
-  }, skip: _inputPath.isEmpty);
-}
-
-Future<AtlasMockReplayOutcome> _replay(AtlasMockReplayInput input) async {
-  final directory = Directory.systemTemp.createTempSync('atlas_replay');
-
-  try {
-    final mock = await AutomationMock.init(
-      isEnabled: true,
-      scenarioDirectory: directory.path,
+  test('Mock replay should write the outcome of each snapshot', () {
+    return runAtlasMockReplay(
       sections: [<mock sections>],
+      apis: (mock) => [<mock apis>(mock)],
+      schema: const <Project>AtlasProject().journalSchema,
     );
-
-    await mock.updateScenario(MockScenario.fromJson(input.scenario));
-
-    final endpoints = MockApiEndpointResolver([<mock apis>(mock)]);
-    final comparison = AtlasMockAnswerComparison(
-      const <Project>AtlasProject().journalSchema,
-    );
-    final responses = [
-      for (final answer in input.answers)
-        await _respond(endpoints, answer.record),
-    ];
-
-    return AtlasMockReplayer(input, (input, timing) {
-      return [
-        for (final (index, answer) in input.answers.indexed)
-          _describeAnswer(answer, responses[index], comparison, timing),
-      ];
-    }).replay();
-  } finally {
-    directory.deleteSync(recursive: true);
-  }
-}
-
-Future<MockApiResponse?> _respond(
-  MockApiEndpointResolver endpoints,
-  Map<String, Object?> recorded,
-) async {
-  final path = '${recorded['path']}';
-
-  return endpoints
-      .tryResolve(path)
-      ?.respond(
-        MockApiRequest(
-          path: path,
-          method: '${recorded['method']}',
-          body: _readBody(recorded['body']),
-        ),
-      );
-}
-
-AtlasReplayedAnswer _describeAnswer(
-  AtlasRecordedAnswer answer,
-  MockApiResponse? response,
-  AtlasMockAnswerComparison comparison,
-  AtlasReplayTiming timing,
-) {
-  final recorded = answer.record;
-  final replayed = {
-    'kind': recorded['kind'],
-    'status': response?.statusCode,
-    'response': response?.body,
-  };
-
-  return AtlasReplayedAnswer(
-    stage: answer.stage,
-    request: '${recorded['method']} ${recorded['path']}',
-    difference: comparison.compare(
-      recorded: recorded,
-      replayed: replayed,
-      hasKnownMoments: timing.launchedAt != null,
-    ),
-  );
-}
-
-Map<String, Object?> _readBody(Object? body) {
-  return switch (body) {
-    final Map<String, Object?> map => map,
-    _ => const {},
-  };
+  }, skip: !isAtlasMockReplayRun);
 }
 ```
