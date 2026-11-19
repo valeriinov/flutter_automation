@@ -29,7 +29,14 @@ dio.httpClientAdapter = mock.substitute(
       backend: MockScenarioBackend(
         readScenario: () => mock.scenario,
         buildApis: () => [CatalogMockApi(mock)],
-        buildFailureBody: (failure, request) => {'message': failure.message},
+        buildFailureBody: (failure, request) => {
+          'message': failure.resolveMessage(
+            request,
+            readText: (key, languageCode) =>
+                messages[key]?.texts[languageCode],
+            defaultLanguageCode: 'en',
+          ),
+        },
       ),
       journal: mock.journal,
     ),
@@ -38,6 +45,10 @@ dio.httpClientAdapter = mock.substitute(
 );
 ```
 
+- `messages` maps a `messageKey` to the `AutomationLocalizedText` that the
+  project keeps for it. `resolveMessage` takes `message`, then the text of the
+  key in the request language, then in `defaultLanguageCode`, then
+  `errorCode`, then the key itself.
 - A path that an endpoint of the mock owns is answered from the mock.
 - Any other path goes to `networkAdapter`, so a scenario that leaves a section
   out still uses the remote environment for it.

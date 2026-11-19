@@ -2434,7 +2434,7 @@ final database = mock.substitute&lt;AppDatabase&gt;(
         <div class="stage-head"><h3><span data-l="en">Connect the adapter</span><span data-l="uk">Підключіть адаптер</span></h3></div>
         <ol class="steps">
           <li class="step"><div class="body"><span class="t"><span data-l="en">Connect the mock first</span><span data-l="uk">Спершу підключіть мок</span></span>
-            <p><span data-l="en">The code below uses <code>mock</code>, <code>backend</code> and <code>CatalogMockApi</code>. The <button class="link" type="button" data-sub="dev-mock">mock</button> pane shows how the project makes them.</span><span data-l="uk">Код нижче використовує <code>mock</code>, <code>backend</code> і <code>CatalogMockApi</code>. Як проєкт їх створює, показує розділ <button class="link" type="button" data-sub="dev-mock">мока</button>.</span></p>
+            <p><span data-l="en">The code below uses <code>mock</code>, <code>backend</code>, <code>CatalogMockApi</code> and <code>messages</code>. The <button class="link" type="button" data-sub="dev-mock">mock</button> pane shows how the project makes them.</span><span data-l="uk">Код нижче використовує <code>mock</code>, <code>backend</code>, <code>CatalogMockApi</code> і <code>messages</code>. Як проєкт їх створює, показує розділ <button class="link" type="button" data-sub="dev-mock">мока</button>.</span></p>
           </div></li>
           <li class="step"><div class="body"><span class="t"><span data-l="en">Put the substitute in place</span><span data-l="uk">Підставте заміну</span></span>
             <p><span data-l="en"><code>substitute</code> answers <code>fake(mock)</code> when the mock is on and <code>real</code> otherwise. For Dio, replace the HTTP adapter: every interceptor still runs, only the socket is fake.</span><span data-l="uk"><code>substitute</code> повертає <code>fake(mock)</code>, коли мок увімкнено, і <code>real</code> в іншому разі. Для Dio замініть HTTP-адаптер: усі інтерсептори працюють, фейковий лише сокет.</span></p>
@@ -2448,7 +2448,13 @@ dio.httpClientAdapter = mock.substitute(
     final scenarioBackend = MockScenarioBackend(
       readScenario: () =&gt; mock.scenario,
       buildApis: () =&gt; [CatalogMockApi(mock)],
-      buildFailureBody: (failure, request) =&gt; {'message': failure.message},
+      buildFailureBody: (failure, request) =&gt; {
+        'message': failure.resolveMessage(
+          request,
+          readText: (key, languageCode) =&gt; messages[key]?.texts[languageCode],
+          defaultLanguageCode: 'en',
+        ),
+      },
     );
     backend = scenarioBackend;
 
@@ -2464,6 +2470,7 @@ dio.httpClientAdapter = mock.substitute(
                 <li><code>real: networkAdapter</code><span><span data-l="en">With the mock off, Dio keeps its usual network adapter.</span><span data-l="uk">Коли мок вимкнено, Dio залишає свій звичайний мережевий адаптер.</span></span></li>
                 <li><code>fake: ...</code><span><span data-l="en">With the mock on, a path that the mock owns gets the mock answer. Any other path still goes to <code>networkAdapter</code>.</span><span data-l="uk">Коли мок увімкнено, шлях, яким володіє мок, отримує відповідь мока. Будь-який інший шлях іде в <code>networkAdapter</code>.</span></span></li>
                 <li><code>backend = scenarioBackend</code><span><span data-l="en">Keeps the backend for <code>backend?.rebuild()</code> and for the endpoint resolver of the <button class="link" type="button" data-sub="dev-panel">QA panel</button>.</span><span data-l="uk">Зберігає бекенд для <code>backend?.rebuild()</code> і для резолвера ендпоінтів <button class="link" type="button" data-sub="dev-panel">QA-панелі</button>.</span></span></li>
+                <li><code>buildFailureBody</code><span><span data-l="en">Builds the body of a failure of the scenario. <code>resolveMessage</code> takes <code>message</code>, then the text of <code>messageKey</code> in the request language, then in <code>defaultLanguageCode</code>, then <code>errorCode</code>, then the key itself. <code>messages</code> maps a key to the <code>AutomationLocalizedText</code> of the project.</span><span data-l="uk">Будує тіло збою сценарію. <code>resolveMessage</code> бере <code>message</code>, далі текст <code>messageKey</code> мовою запиту, далі мовою <code>defaultLanguageCode</code>, далі <code>errorCode</code>, далі сам ключ. <code>messages</code> зіставляє ключ з <code>AutomationLocalizedText</code> проєкту.</span></span></li>
                 <li><code>journal: mock.journal</code><span><span data-l="en">Records each request, so a run can read what the app asked for.</span><span data-l="uk">Записує кожен запит, щоб запуск міг прочитати, що запитував застосунок.</span></span></li>
               </ul>
             </details>
