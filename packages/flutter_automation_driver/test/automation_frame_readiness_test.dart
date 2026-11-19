@@ -174,8 +174,7 @@ void _automationFrameReadiness_should_leaveOutAnEmptyTextOfAFadeAtItsStart() {
   );
 }
 
-void
-_automationFrameReadiness_should_leaveOutAnEmptyTextOfAHiddenVisibility() {
+void _automationFrameReadiness_should_leaveOutAnEmptyTextOfAHiddenVisibility() {
   testWidgets(
     'AutomationFrameReadiness should leave out an empty text of a hidden '
     'visibility',
@@ -190,23 +189,20 @@ _automationFrameReadiness_should_leaveOutAnEmptyTextOfAHiddenVisibility() {
 }
 
 void _automationFrameReadiness_should_countAnEmptyReplacementOfAVisibility() {
-  testWidgets(
-    'AutomationFrameReadiness should count an empty replacement of a '
-    'visibility',
-    (tester) async {
-      await tester.pumpWidget(
-        _buildApp([
-          const Visibility(
-            visible: false,
-            replacement: Text(''),
-            child: Text('Hello'),
-          ),
-        ]),
-      );
+  testWidgets('AutomationFrameReadiness should count an empty replacement of a '
+      'visibility', (tester) async {
+    await tester.pumpWidget(
+      _buildApp([
+        const Visibility(
+          visible: false,
+          replacement: Text(''),
+          child: Text('Hello'),
+        ),
+      ]),
+    );
 
-      expect(_read(tester).emptyTexts, 1);
-    },
-  );
+    expect(_read(tester).emptyTexts, 1);
+  });
 }
 
 void _automationFrameReadiness_should_leaveOutTheLabelsOfABarWithoutLabels() {
