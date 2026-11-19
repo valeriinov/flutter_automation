@@ -110,10 +110,9 @@ void main() {
     _atlasHeadless_should_walkEveryGroupOfStageMoments();
     _atlasHeadless_should_walkSnapshotWithoutStagesOnFixedMoments();
     _atlasHeadless_should_handWalkTextsSnapshotRecorded();
-    _atlasHeadless_should_handWalkImagesMockChooserGave();
-    _atlasHeadless_should_handNoPickedImagesWhenDevicePicked();
-    _atlasHeadless_should_handNoPickedImagesWhenMockChooserGaveNone();
-    _atlasHeadlessInput_should_readPickedImagesItWrote();
+    _atlasHeadless_should_handWalkValuesProjectReadFromJournal();
+    _atlasHeadless_should_handNoValuesWhenProjectReadsNone();
+    _atlasHeadlessInput_should_readRecordedValuesItWrote();
     _atlasHeadless_should_dropStagesWhoseSourcesBaselineHolds();
     _atlasHeadless_should_keepStagesOfMatchedSourcesBesideManifest();
     _atlasHeadless_should_dropEndOfStagelessSnapshotBaselineHolds();
@@ -771,53 +770,37 @@ String _resolveSnapshotPath(TestAtlasRoot root) {
   );
 }
 
-void _atlasHeadless_should_handWalkImagesMockChooserGave() {
-  test('AtlasHeadless should hand walk images mock chooser gave', () async {
+void _atlasHeadless_should_handWalkValuesProjectReadFromJournal() {
+  test(
+    'AtlasHeadless should hand walk values project read from journal',
+    () async {
+      await TestAtlasRoot.run((root) {
+        _writeFlow(root);
+        _writeFilesSnapshot(root, fileSizes: _fileSizes);
+
+        final input = _readInput(root);
+
+        expect(input.recordedValues, {'fileSizes': _fileSizes});
+      });
+    },
+  );
+}
+
+void _atlasHeadless_should_handNoValuesWhenProjectReadsNone() {
+  test('AtlasHeadless should hand no values when project reads none', () async {
     await TestAtlasRoot.run((root) {
       _writeFlow(root);
-      _writePickedImagesSnapshot(root, pick: _mockPick);
+      _writeFilesSnapshot(root, fileSizes: const []);
 
       final input = _readInput(root);
 
-      expect(input.recordedUploads?.toJson(), _recordedUploads.toJson());
+      expect(input.recordedValues, isNull);
     });
   });
 }
 
-void _atlasHeadless_should_handNoPickedImagesWhenDevicePicked() {
-  test(
-    'AtlasHeadless should hand no picked images when device picked',
-    () async {
-      await TestAtlasRoot.run((root) {
-        _writeFlow(root);
-        _writePickedImagesSnapshot(root, pick: _devicePick);
-
-        final input = _readInput(root);
-
-        expect(input.recordedUploads, isNull);
-      });
-    },
-  );
-}
-
-void _atlasHeadless_should_handNoPickedImagesWhenMockChooserGaveNone() {
-  test(
-    'AtlasHeadless should hand no picked images when mock chooser gave none',
-    () async {
-      await TestAtlasRoot.run((root) {
-        _writeFlow(root);
-        _writePickedImagesSnapshot(root, pick: _emptyMockPick);
-
-        final input = _readInput(root);
-
-        expect(input.recordedUploads, isNull);
-      });
-    },
-  );
-}
-
-void _atlasHeadlessInput_should_readPickedImagesItWrote() {
-  test('AtlasHeadlessInput should read picked images it wrote', () {
+void _atlasHeadlessInput_should_readRecordedValuesItWrote() {
+  test('AtlasHeadlessInput should read recorded values it wrote', () {
     final input = AtlasHeadlessInput(
       id: '$_flow $_variant',
       flow: _flow,
@@ -828,87 +811,35 @@ void _atlasHeadlessInput_should_readPickedImagesItWrote() {
       reportPath: 'report.json',
       anchor: _anchor,
       launchedAt: _launchedAt,
-      recordedUploads: _recordedUploads,
+      recordedValues: {'fileSizes': _fileSizes},
     );
     final read = AtlasHeadlessInput.fromJson(
       jsonDecode(jsonEncode(input.toJson())) as Map<String, Object?>,
     );
 
-    expect(read.recordedUploads?.toJson(), _recordedUploads.toJson());
+    expect(read.recordedValues, {'fileSizes': _fileSizes});
   });
 }
 
-const _mockPick = {
-  'kind': 'device',
-  'call': 'pickGalleryImages',
-  'answer': 2,
-  'limit': 6,
-  'isDeviceAnswer': false,
-};
-const _emptyMockPick = {
-  'kind': 'device',
-  'call': 'pickGalleryImages',
-  'answer': 0,
-  'limit': 6,
-  'isDeviceAnswer': false,
-};
-const _devicePick = {
-  'kind': 'device',
-  'call': 'pickGalleryImages',
-  'answer': 2,
-  'limit': 6,
-  'isDeviceAnswer': true,
-};
-const _recordedUploads = AtlasHeadlessUploads(
-  uploads: [
-    (original: 160045, preview: 96032, width: 1200, height: 1600),
-    (original: 164033, preview: 98101, width: 1600, height: 1200),
-  ],
-);
+const _fileSizes = [160045, 164033];
 
-void _writePickedImagesSnapshot(
-  TestAtlasRoot root, {
-  required Map<String, Object?> pick,
-}) {
+void _writeFilesSnapshot(TestAtlasRoot root, {required List<int> fileSizes}) {
   AtlasSnapshotStore(root.paths).write(
     createAtlasSnapshot(
       flow: _flow,
       variant: _variant,
       stages: [
-        _withMoments(_stage, journal: [pick]),
+        _withMoments(_stage, journal: const []),
         _withMoments(
           _stage,
           journal: [
-            for (final (:original, :preview, width: _, height: _)
-                in _recordedUploads.uploads.reversed)
+            for (final size in fileSizes)
               {
                 'kind': 'request',
                 'method': 'POST',
-                'path': '/media/uploads',
-                'body': {
-                  'original': {'size': original},
-                  'preview': {'size': preview},
-                },
+                'path': '/files',
+                'body': {'size': size},
               },
-            {
-              'kind': 'socket',
-              'method': 'POST',
-              'path': '/inbox/threads/mock-cart-9001/message',
-              'body': {
-                'message': {
-                  'attachments': [
-                    for (final (:original, :width, :height, preview: _)
-                        in _recordedUploads.uploads)
-                      {
-                        'type': 'image',
-                        'size': original,
-                        'width': width,
-                        'height': height,
-                      },
-                  ],
-                },
-              },
-            },
           ],
         ),
       ],

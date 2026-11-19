@@ -152,7 +152,7 @@ const fakeAtlasHeadlessSettings = AtlasHeadlessSettings(
     'lib/app/input_validator.dart': {'InputValidator.parse'},
   },
   defines: ['APP_SCENARIO=base', 'ENABLE_AUTOMATION=true'],
-  tryReadUploads: readFakeUploads,
+  tryReadRecordedValues: readFakeRecordedValues,
 );
 
 final fakeAtlasGroups = [
@@ -272,68 +272,16 @@ final testMockAnswerComparison = AtlasMockAnswerComparison(
   fakeAtlasJournalSchema,
 );
 
-const _deviceKind = 'device';
-const _socketKind = 'socket';
-const _pickCall = 'pickGalleryImages';
-const _uploadsPath = '/media/uploads';
-const _messagePathSuffix = '/message';
+const _filesPath = '/files';
 
-List<AtlasHeadlessUpload>? readFakeUploads(List<Object?> records) {
-  if (!records.any(_isMockPick)) {
-    return null;
-  }
-
-  final previewSizes = {
+Map<String, Object?>? readFakeRecordedValues(List<Object?> records) {
+  final sizes = [
     for (final record in records)
-      if (record case {
-        'path': _uploadsPath,
-        'body': {
-          'original': {'size': final int original},
-          'preview': {'size': final int preview},
-        },
-      })
-        original: preview,
-  };
-  final attachments = records
-      .map(_readMessageAttachments)
-      .firstWhereOrNull((attachments) => attachments.isNotEmpty);
-
-  return [
-    for (final attachment in attachments ?? const <Object?>[])
-      if (attachment case {
-        'size': final int original,
-        'width': final int width,
-        'height': final int height,
-      })
-        if (previewSizes[original] case final int preview)
-          (original: original, preview: preview, width: width, height: height),
+      if (record case {'path': _filesPath, 'body': {'size': final int size}})
+        size,
   ];
-}
 
-bool _isMockPick(Object? record) {
-  return switch (record) {
-    {
-      'kind': _deviceKind,
-      'call': _pickCall,
-      'isDeviceAnswer': false,
-      'answer': final int count,
-    } =>
-      count > 0,
-    _ => false,
-  };
-}
-
-List<Object?> _readMessageAttachments(Object? record) {
-  return switch (record) {
-    {
-      'kind': _socketKind,
-      'path': final String path,
-      'body': {'message': {'attachments': final List<Object?> attachments}},
-    }
-        when path.endsWith(_messagePathSuffix) =>
-      attachments,
-    _ => const [],
-  };
+  return sizes.isEmpty ? null : {'fileSizes': sizes};
 }
 
 String _writeFakeFlutter() {

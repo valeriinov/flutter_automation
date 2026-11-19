@@ -11,7 +11,6 @@ export 'package:flutter_automation_atlas/src/atlas_headless_hashes.dart';
 export 'package:flutter_automation_atlas/src/atlas_headless_record.dart';
 export 'package:flutter_automation_atlas/src/atlas_headless_selection.dart';
 export 'package:flutter_automation_atlas/src/atlas_headless_settings.dart';
-export 'package:flutter_automation_atlas/src/atlas_headless_upload.dart';
 export 'package:flutter_automation_atlas/src/atlas_journal_cleaner.dart';
 export 'package:flutter_automation_atlas/src/atlas_journal_comparison.dart';
 export 'package:flutter_automation_atlas/src/atlas_journal_order.dart';

@@ -74,8 +74,15 @@ file sets it to `null`. No stage then names route sources. A project with a
 routes file sets `routes` to an `AtlasRouteSettings` with `routesPath`,
 `routerPath` and `routePattern`.
 
-The `headless` command needs a test harness that the project owns. Keep the
-`headlessSettings` stub, and say in the report that `headless` does not run yet.
+The `headless` command runs a test harness that the project owns.
+`headlessSettings` names its files. The test file imports `entryImports`, takes
+the `main` file of the app at `mainPath` with the `mainPatch` replacements as
+its body, and ends with `entryMain`. The harness reads the inputs with
+`AtlasHeadlessInput.readAll` from the file that the `ATLAS_HEADLESS_INPUT`
+define names. It walks the `steps` of each input and writes an
+`AtlasHeadlessReport` to its `reportPath`. Keep the stub while the project has
+no harness. Say in the report that `headless` and `stale --published` need the
+harness first.
 
 ## 4. Add the pubspec section
 

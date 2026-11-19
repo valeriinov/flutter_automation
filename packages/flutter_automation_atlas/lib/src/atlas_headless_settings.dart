@@ -1,5 +1,3 @@
-import 'package:flutter_automation_atlas/src/atlas_headless_upload.dart';
-
 /// {@category Utils}
 ///
 /// How the atlas walks a variant under `flutter test`, without a device.
@@ -39,10 +37,13 @@ final class AtlasHeadlessSettings {
   /// place.
   final List<(String, String)> mainPatch;
 
-  /// The sizes of the images the capture device sent, read from the records
-  /// of a journal; absent when the app sends none.
-  final List<AtlasHeadlessUpload>? Function(List<Object?> records)?
-  tryReadUploads;
+  /// Reads the values a walk takes from the capture out of the journal
+  /// records of a snapshot, such as the sizes of the files the capture device
+  /// sent; absent when the walk takes none. The function returns `null` when
+  /// the records hold no such value. The walk finds the result in
+  /// [AtlasHeadlessInput.recordedValues].
+  final Map<String, Object?>? Function(List<Object?> records)?
+  tryReadRecordedValues;
 
   const AtlasHeadlessSettings({
     required this.copiedDirectories,
@@ -54,7 +55,7 @@ final class AtlasHeadlessSettings {
     this.keptDeclarations = const {},
     this.stubbedDeclarations = const {},
     this.defines = const [],
-    this.tryReadUploads,
+    this.tryReadRecordedValues,
   });
 
   /// Whether the walk stands in for or skips any declaration of [path].

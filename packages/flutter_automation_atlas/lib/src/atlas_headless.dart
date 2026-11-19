@@ -14,7 +14,6 @@ import 'package:flutter_automation_atlas/src/atlas_json.dart';
 import 'package:flutter_automation_atlas/src/atlas_locations.dart';
 import 'package:flutter_automation_atlas/src/atlas_source_hash.dart';
 import 'package:flutter_automation_atlas/src/atlas_headless_settings.dart';
-import 'package:flutter_automation_atlas/src/atlas_headless_upload.dart';
 
 typedef _ReportCompletion = ({
   AtlasHeadlessUncomparableFrames uncomparableFrames,
@@ -58,8 +57,8 @@ typedef _BaselineCommits = ({
 /// the current flow files and run once on the moments of each group of stored
 /// stages captured on the same moments, every stage taken from the walk on its
 /// own moments; a snapshot without stages is walked on [stagelessMoments]. A
-/// walk compresses the uploaded images as the snapshot recorded
-/// ([AtlasHeadlessUploads]).
+/// walk takes the values the project reads out of the journal of the snapshot
+/// ([AtlasHeadlessSettings.tryReadRecordedValues]) in its input.
 final class AtlasHeadless {
   /// The define naming the file the inputs are read from.
   static const inputDefine = 'ATLAS_HEADLESS_INPUT';
@@ -552,9 +551,9 @@ final class AtlasHeadless {
           moments: moments,
           locale: _paths.defaultLocale,
           momentsIndex: index,
-          recordedUploads: snapshot == null
+          recordedValues: snapshot == null
               ? null
-              : AtlasHeadlessUploads.tryRead(snapshot, _settings),
+              : _readRecordedValues(snapshot),
           recordedTexts: [
             for (final stage in snapshot?.stages ?? const <AtlasStage>[])
               ...stage.texts,
@@ -565,6 +564,12 @@ final class AtlasHeadless {
               : _resolveMomentsPath(reportPath, index),
         ),
     ];
+  }
+
+  Map<String, Object?>? _readRecordedValues(AtlasSnapshot snapshot) {
+    return _settings.tryReadRecordedValues?.call([
+      for (final stage in snapshot.stages) ...stage.journal,
+    ]);
   }
 
   Set<int> _readUnmatchedStages(AtlasSnapshot snapshot, String rootPath) {
@@ -1047,9 +1052,10 @@ final class AtlasHeadlessInput {
   /// The launch moment the walk runs on, absent with [anchor].
   final String? launchedAt;
 
-  /// The uploads the capture device sent, absent when the snapshot recorded
-  /// no mock pick.
-  final AtlasHeadlessUploads? recordedUploads;
+  /// The values the project read out of the journal of the snapshot
+  /// ([AtlasHeadlessSettings.tryReadRecordedValues]), absent when it read
+  /// none.
+  final Map<String, Object?>? recordedValues;
 
   const AtlasHeadlessInput({
     required this.id,
@@ -1063,7 +1069,7 @@ final class AtlasHeadlessInput {
     required this.locale,
     this.momentsIndex = 0,
     this.recordedTexts = const [],
-    this.recordedUploads,
+    this.recordedValues,
   });
 
   /// The input walking [variant] on [moments].
@@ -1074,7 +1080,7 @@ final class AtlasHeadlessInput {
     required String reportPath,
     int momentsIndex = 0,
     List<String> recordedTexts = const [],
-    AtlasHeadlessUploads? recordedUploads,
+    Map<String, Object?>? recordedValues,
   }) {
     final automationFlow = variant.automationFlow;
 
@@ -1097,7 +1103,7 @@ final class AtlasHeadlessInput {
       locale: locale,
       momentsIndex: momentsIndex,
       recordedTexts: recordedTexts,
-      recordedUploads: recordedUploads,
+      recordedValues: recordedValues,
       reportPath: reportPath,
     );
   }
@@ -1121,15 +1127,7 @@ final class AtlasHeadlessInput {
         json,
         'recordedTexts',
       ).whereType<String>().toList(),
-      recordedUploads: switch (AtlasJson.tryReadObject(
-        json,
-        'recordedUploads',
-      )) {
-        final recordedUploads? => AtlasHeadlessUploads.fromJson(
-          recordedUploads,
-        ),
-        null => null,
-      },
+      recordedValues: AtlasJson.tryReadObject(json, 'recordedValues'),
       reportPath: AtlasJson.readString(json, 'reportPath'),
     );
   }
@@ -1170,75 +1168,8 @@ final class AtlasHeadlessInput {
       'launchedAt': ?launchedAt,
       'momentsIndex': momentsIndex,
       'recordedTexts': recordedTexts,
-      'recordedUploads': ?recordedUploads?.toJson(),
+      'recordedValues': ?recordedValues,
       'reportPath': reportPath,
-    };
-  }
-}
-
-/// {@category Utils}
-///
-/// The sizes of the images the capture device sent, from the journal of a
-/// snapshot.
-///
-/// A headless walk compresses its images to the same sizes. Each upload holds
-/// the size and the pixel size of the compressed original and the size of the
-/// preview, in the order of the message. The project reads them out of its
-/// journal records ([AtlasHeadlessSettings.tryReadUploads]).
-final class AtlasHeadlessUploads {
-  /// Every image sent, in the order the message sent holds them.
-  final List<AtlasHeadlessUpload> uploads;
-
-  const AtlasHeadlessUploads({required this.uploads});
-
-  /// Reads the uploads that [toJson] wrote.
-  factory AtlasHeadlessUploads.fromJson(Map<String, Object?> json) {
-    return AtlasHeadlessUploads(
-      uploads: [
-        for (final upload in AtlasJson.readObjects(json, 'uploads'))
-          ?_tryReadUpload(upload),
-      ],
-    );
-  }
-
-  /// Returns the uploads of the first message of [snapshot] with uploads, as
-  /// [settings] reads them.
-  ///
-  /// Returns `null` when the project reads none.
-  static AtlasHeadlessUploads? tryRead(
-    AtlasSnapshot snapshot,
-    AtlasHeadlessSettings settings,
-  ) {
-    final records = snapshot.stages.expand((stage) => stage.journal).toList();
-    final uploads = settings.tryReadUploads?.call(records);
-
-    return uploads == null ? null : AtlasHeadlessUploads(uploads: uploads);
-  }
-
-  Map<String, Object?> toJson() {
-    return {
-      'uploads': [
-        for (final (:original, :preview, :width, :height) in uploads)
-          {
-            'original': original,
-            'preview': preview,
-            'width': width,
-            'height': height,
-          },
-      ],
-    };
-  }
-
-  static AtlasHeadlessUpload? _tryReadUpload(Map<String, Object?> json) {
-    return switch (json) {
-      {
-        'original': final int original,
-        'preview': final int preview,
-        'width': final int width,
-        'height': final int height,
-      } =>
-        (original: original, preview: preview, width: width, height: height),
-      _ => null,
     };
   }
 }

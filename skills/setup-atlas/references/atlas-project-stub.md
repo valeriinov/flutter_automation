@@ -63,7 +63,8 @@ final class <Project>AtlasProject implements AtlasProject {
     stopPaths: ['lib/main.dart'],
   );
 
-  // Not connected: the project needs a headless test harness first.
+  // A stub until the project has a headless harness; see the headless note
+  // of the setup-atlas skill.
   @override
   AtlasHeadlessSettings get headlessSettings => const AtlasHeadlessSettings(
     copiedDirectories: ['tool'],
