@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 0.10.0
 
 - `AutomationCatalogueAsset.load` throws an
   `AutomationCatalogueVersionException` for a catalogue without `version: 2`.

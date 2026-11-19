@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 0.10.0
 
 - New package. It is the atlas engine of an automation flow project. `runAtlas`
   has the commands `capture`, `stale`, `headless`, `normalize-manifests`,

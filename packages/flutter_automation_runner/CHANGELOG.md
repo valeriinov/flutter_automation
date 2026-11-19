@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 0.10.0
 
 - The QA catalogue has `version: 2`: each distinct answer of the mock stands
   once in `responses`, and each repeated string of 1024 characters or more

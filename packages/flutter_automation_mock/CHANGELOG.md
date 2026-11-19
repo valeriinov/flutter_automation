@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 0.10.0
 
 - `AutomationCatalogue.toJson` writes `version: 2` and stores each distinct
   response once in `responses` and each repeated string of 1024 characters or
