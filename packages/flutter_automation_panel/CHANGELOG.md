@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.12.1
+
+- The response sheet keeps the `messageKey` of the failure it edits only while
+  the error code and the message stay those of that failure.
+
 ## 0.12.0
 
 - The response sheet keeps the `messageKey` of the failure it edits.

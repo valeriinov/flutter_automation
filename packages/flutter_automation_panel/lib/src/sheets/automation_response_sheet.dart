@@ -325,12 +325,20 @@ class _AutomationResponseSheetState extends State<AutomationResponseSheet> {
       statusCode: _statusCode ?? _statusCodesOf(_errorCode)?.first ?? 500,
       errorCode: _errorCode,
       message: message.isEmpty ? null : message,
-      messageKey: widget.initial?.messageKey,
+      messageKey: _isInitialText(message) ? widget.initial?.messageKey : null,
     );
   }
 
   bool _hasError(String message) {
     return _statusCode != null || _errorCode != null || message.isNotEmpty;
+  }
+
+  bool _isInitialText(String message) {
+    final initial = widget.initial;
+
+    return initial != null &&
+        _errorCode == initial.errorCode &&
+        message == (initial.message ?? '').trim();
   }
 
   Set<int>? _statusCodesOf(String? errorCode) {

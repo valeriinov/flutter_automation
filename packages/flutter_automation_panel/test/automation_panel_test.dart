@@ -41,6 +41,9 @@ void main() {
     _automationResponseSheet_should_followEveryRequestOnATapOfItsLatency();
     _automationResponseSheet_should_keepALatencyEqualToEveryRequest();
     _automationResponseSheet_should_keepTheMessageKeyOfTheInitialFailure();
+    _automationResponseSheet_should_keepTheMessageKeyOnAStatusChange();
+    _automationResponseSheet_should_dropTheMessageKeyOnAnotherErrorCode();
+    _automationResponseSheet_should_dropTheMessageKeyOnATypedMessage();
     _automationResponseSheet_should_takeTheStatusOfAChosenBackendErrorCode();
     _automationResponseSheet_should_offerOnlyTheStatusesOfAChosenCode();
     _automationResponseSheet_should_leaveOutCodesAChosenStatusDoesNotComeWith();
@@ -812,6 +815,95 @@ void _automationResponseSheet_should_keepTheMessageKeyOfTheInitialFailure() {
       expect(applied, [
         (
           const MockApiFailure(statusCode: 429, messageKey: 'rateLimited'),
+          null,
+        ),
+      ]);
+    },
+  );
+}
+
+void _automationResponseSheet_should_keepTheMessageKeyOnAStatusChange() {
+  testWidgets(
+    'AutomationResponseSheet should keep the message key on a status change',
+    (tester) async {
+      final applied = <(MockApiFailure?, MockLatencyProfile?)>[];
+
+      await _pumpResponseSheet(
+        tester,
+        applied,
+        initial: const MockApiFailure(
+          statusCode: 429,
+          messageKey: 'rateLimited',
+        ),
+      );
+      await tester.tap(find.text('503'));
+      await tester.pump();
+      await tester.tap(find.text(sampleStrings.apply));
+      await tester.pump();
+
+      expect(applied, [
+        (
+          const MockApiFailure(statusCode: 503, messageKey: 'rateLimited'),
+          null,
+        ),
+      ]);
+    },
+  );
+}
+
+void _automationResponseSheet_should_dropTheMessageKeyOnAnotherErrorCode() {
+  testWidgets(
+    'AutomationResponseSheet should drop the message key on another error '
+    'code',
+    (tester) async {
+      final applied = <(MockApiFailure?, MockLatencyProfile?)>[];
+
+      await _pumpResponseSheet(
+        tester,
+        applied,
+        initial: const MockApiFailure(
+          statusCode: 429,
+          messageKey: 'rateLimited',
+        ),
+        hasErrorStatuses: true,
+      );
+      await tester.tap(find.text('invalidPhone'));
+      await tester.pump();
+      await tester.tap(find.text(sampleStrings.apply));
+      await tester.pump();
+
+      expect(applied, [
+        (
+          const MockApiFailure(statusCode: 429, errorCode: 'invalidPhone'),
+          null,
+        ),
+      ]);
+    },
+  );
+}
+
+void _automationResponseSheet_should_dropTheMessageKeyOnATypedMessage() {
+  testWidgets(
+    'AutomationResponseSheet should drop the message key on a typed message',
+    (tester) async {
+      final applied = <(MockApiFailure?, MockLatencyProfile?)>[];
+
+      await _pumpResponseSheet(
+        tester,
+        applied,
+        initial: const MockApiFailure(
+          statusCode: 429,
+          messageKey: 'rateLimited',
+        ),
+      );
+      await tester.enterText(find.byType(TextField), 'Try again later');
+      await tester.pump();
+      await tester.tap(find.text(sampleStrings.apply));
+      await tester.pump();
+
+      expect(applied, [
+        (
+          const MockApiFailure(statusCode: 429, message: 'Try again later'),
           null,
         ),
       ]);
