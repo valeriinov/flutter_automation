@@ -33,16 +33,23 @@ import 'package:flutter_automation_runner/src/recording/automation_catalogue_che
 import 'package:flutter_automation_runner/src/recording/automation_recording.dart';
 import 'package:flutter_automation_runner/src/recording/automation_recording_files.dart';
 
-/// A step of a capture run: its 1-based [number] in the variant and the [stage]
-/// that the next user action opens. A step that is no user action belongs to
-/// the stage before it.
 typedef _FrameDefect = ({
   String kind,
   int count,
   List<Map<String, Object?>> items,
 });
 
+/// A step of a capture run: its 1-based [number] in the variant and the [stage]
+/// that the next user action opens. A step that is no user action belongs to
+/// the stage before it.
 typedef _CapturedStep = ({AutomationStep step, int number, int stage});
+
+/// The end of a capture run: the report [fields] it adds, and the
+/// [failedFrame] entry when the end frame is not ready.
+typedef _RunEnd = ({
+  Map<String, Object?> fields,
+  Map<String, Object?>? failedFrame,
+});
 
 typedef _KeyboardScreenshot = ({
   image.Image screen,
@@ -418,17 +425,19 @@ final class AutomationRunner {
 
     total.stop();
 
-    final frameDefect = _findFrameDefect(steps);
-
     final runEnd = await _captureRunEnd(
       driver,
       capture,
       isCut: isCut,
       isRecording: isRecording,
-      hasFrameDefect: frameDefect != null,
+      hasFrameDefect: _findFrameDefect(steps) != null,
     );
 
-    final endFrameDefect = runEnd['frameDefect'];
+    final failedFrame = runEnd.failedFrame;
+
+    if (failedFrame != null) {
+      steps.add({'label': _endStepName, ...failedFrame});
+    }
 
     await driver.close();
 
@@ -437,7 +446,7 @@ final class AutomationRunner {
     final report = {
       'flow': flow.name,
       'variant': flow.variant,
-      'ok': steps.every((step) => step['ok'] == true) && endFrameDefect == null,
+      'ok': steps.every((step) => step['ok'] == true),
       'commandMs': command.elapsedMilliseconds,
       'setupMs': setupMs,
       'totalMs': total.elapsedMilliseconds,
@@ -445,8 +454,8 @@ final class AutomationRunner {
       // ledger replaces `steps` with a count, so anything a later run is
       // compared against has to stand beside it.
       'frames': ?_frames,
-      ...runEnd,
-      'frameDefect': ?(frameDefect ?? endFrameDefect),
+      ...runEnd.fields,
+      'frameDefect': ?_findFrameDefect(steps),
       'launch': ?launch,
       if (isCut) 'until': _stages.lastStage,
       'steps': steps,
@@ -1366,12 +1375,10 @@ final class AutomationRunner {
   }
 
   Object? _findFrameDefect(List<Map<String, Object?>> steps) {
-    return steps
-        .map((step) => step['frameDefect'])
-        .firstWhereOrNull((defect) => defect != null);
+    return steps.lastOrNull?['frameDefect'];
   }
 
-  Future<Map<String, Object?>> _captureRunEnd(
+  Future<_RunEnd> _captureRunEnd(
     FlutterDriver driver,
     AutomationCapture? capture, {
     required bool isCut,
@@ -1379,40 +1386,42 @@ final class AutomationRunner {
     required bool hasFrameDefect,
   }) async {
     if (capture != null && hasFrameDefect) {
-      return const {};
+      return (fields: const <String, Object?>{}, failedFrame: null);
     }
 
     if (capture == null) {
-      return isRecording ? _recordEndJournal(driver) : const {};
+      return (
+        fields: isRecording
+            ? await _recordEndJournal(driver)
+            : const <String, Object?>{},
+        failedFrame: null,
+      );
     }
 
     if (isCut) {
-      return _readManifest(driver);
+      return (fields: await _readManifest(driver), failedFrame: null);
     }
 
-    final screenshot = await _captureEndScreenshot(driver, capture);
+    final failedFrame = await _checkFrame(driver, step: _endStepName);
 
-    if (screenshot['ok'] == false) {
-      return screenshot;
+    if (failedFrame != null) {
+      return (fields: const <String, Object?>{}, failedFrame: failedFrame);
     }
 
-    return {
-      ...screenshot,
-      ...await _captureEndJournal(driver),
-      ...await _readManifest(driver),
-    };
+    return (
+      fields: {
+        ...await _captureEndScreenshot(driver, capture),
+        ...await _captureEndJournal(driver),
+        ...await _readManifest(driver),
+      },
+      failedFrame: null,
+    );
   }
 
   Future<Map<String, Object?>> _captureEndScreenshot(
     FlutterDriver driver,
     AutomationCapture capture,
   ) async {
-    final check = await _checkFrame(driver, step: _endStepName);
-
-    if (check != null) {
-      return check;
-    }
-
     try {
       return {
         'endScreenshot': capture.saveEndScreenshot(
@@ -1450,7 +1459,7 @@ final class AutomationRunner {
 
     try {
       final _FrameDefect? defect = isAnimating
-          ? (kind: 'animating', count: 0, items: <Map<String, Object?>>[])
+          ? _animatingDefect()
           : await _pollFrameDefect(driver);
 
       return defect == null ? null : _describeFrameDefect(step, label, defect);
@@ -1467,18 +1476,33 @@ final class AutomationRunner {
     }
   }
 
+  /// A read after the first one means the frame moved while the runner waited,
+  /// so a frame that reads ready is checked for animation once more.
   Future<_FrameDefect?> _pollFrameDefect(FlutterDriver driver) async {
     final deadline = Stopwatch()..start();
+    int reads = 0;
 
     while (true) {
       final defect = await _readFrameDefect(driver);
 
-      if (defect == null || deadline.elapsed >= _frameReadyGrace) {
+      reads += 1;
+
+      if (defect == null) {
+        return reads > 1 && await _isAnimating(driver)
+            ? _animatingDefect()
+            : null;
+      }
+
+      if (deadline.elapsed >= _frameReadyGrace) {
         return defect;
       }
 
       await Future<void>.delayed(_frameReadyPollInterval);
     }
+  }
+
+  _FrameDefect _animatingDefect() {
+    return (kind: 'animating', count: 0, items: <Map<String, Object?>>[]);
   }
 
   Future<_FrameDefect?> _readFrameDefect(FlutterDriver driver) async {

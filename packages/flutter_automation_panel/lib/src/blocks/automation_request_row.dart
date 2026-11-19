@@ -107,7 +107,7 @@ class AutomationRequestRow extends StatelessWidget {
       return strings.noNetwork;
     }
 
-    final detail = failure.errorCode ?? failure.message;
+    final detail = failure.errorCode ?? failure.message ?? failure.messageKey;
 
     return detail == null
         ? '${failure.statusCode}'

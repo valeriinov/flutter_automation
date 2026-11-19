@@ -20,7 +20,10 @@ void _automationRunnerLibrary_should_importNoFlutterPackage() {
         .where(
           (file) => file.readAsLinesSync().any(
             (line) => line.trimLeft().startsWith(
-              RegExp('(import|export) [\'"]package:flutter/'),
+              RegExp(
+                '(import|export) [\'"](dart:ui|package:flutter/|'
+                'package:flutter_test/)',
+              ),
             ),
           ),
         )

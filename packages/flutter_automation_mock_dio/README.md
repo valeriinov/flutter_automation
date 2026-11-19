@@ -29,7 +29,7 @@ dio.httpClientAdapter = mock.substitute(
       backend: MockScenarioBackend(
         readScenario: () => mock.scenario,
         buildApis: () => [CatalogMockApi(mock)],
-        buildFailureBody: (failure) => {'message': failure.message},
+        buildFailureBody: (failure, request) => {'message': failure.message},
       ),
       journal: mock.journal,
     ),

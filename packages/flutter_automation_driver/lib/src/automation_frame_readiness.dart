@@ -1,4 +1,4 @@
-import 'package:flutter/widgets.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_automation_driver/src/automation_frame_walk.dart';
 import 'package:flutter_automation_driver/src/automation_protocol.dart';
 
@@ -20,7 +20,8 @@ final class AutomationFrameReadiness {
   final int loadingImages;
 
   /// Count of shown `RichText` widgets that hold no visible character and
-  /// still have a box with a size.
+  /// still have a box with a size. A text inside an `InputDecorator` does not
+  /// count: a `TextField` builds empty hint, helper and error texts there.
   final int emptyTexts;
 
   /// Rect and target of up to [maxItems] of the images counted in
@@ -89,9 +90,10 @@ final class AutomationFrameReadiness {
     String? target;
 
     element.visitAncestorElements((ancestor) {
-      final key = ancestor.widget.key;
+      final widget = ancestor.widget;
+      final key = widget.key;
 
-      if (key is ValueKey<String>) {
+      if (widget is KeyedSubtree && key is ValueKey<String>) {
         target = key.value;
 
         return false;
@@ -133,7 +135,13 @@ final class AutomationFrameReadiness {
       return false;
     }
 
-    return _hasSize(element) && _isInsideClip(element, clip);
+    return !_isInsideInputDecorator(element) &&
+        _hasSize(element) &&
+        _isInsideClip(element, clip);
+  }
+
+  static bool _isInsideInputDecorator(Element element) {
+    return element.findAncestorWidgetOfExactType<InputDecorator>() != null;
   }
 
   static bool _isInsideClip(Element element, Rect clip) {

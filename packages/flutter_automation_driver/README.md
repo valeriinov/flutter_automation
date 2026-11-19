@@ -37,8 +37,8 @@ a non-release build. Otherwise it:
 
 - reads and removes the language that `locale.save` left for this launch, and
   keeps it in `AutomationInstaller.launchLanguageCode`,
-- registers the `screen.read` and `keyboard.read` commands, and `locale.apply`
-  and `locale.save` when the call passes a `localeApplier`,
+- registers the `screen.read`, `keyboard.read` and `frame.read` commands, and
+  `locale.apply` and `locale.save` when the call passes a `localeApplier`,
 - calls `enableFlutterDriverExtension` with the command handler and the finders
   `UnmarkedText`, `UnmarkedTooltip`, `LocaleKeyText`, `LocaleKeyTooltip`,
 - raises the semantics tree and, on request, the frame profiling spans.
@@ -55,6 +55,11 @@ launch ends.
   the widget tree.
 - `keyboard.read` answers `{"inset": <height>}`, the height of the keyboard inset. The
   runner reads it to wait for the system keyboard in a capture.
+- `frame.read` answers `loadingImages`, the count of shown images with no
+  decoded frame, and `emptyTexts`, the count of shown texts with no visible
+  character. It also answers `loadingImageItems` and `emptyTextItems`: up to 5
+  items of each kind, `{"rect": [l, t, w, h], "target": <id or null>}`. The
+  runner reads it before a screenshot of a capture.
 - `locale.apply` takes `{"locale": <language code>}` and calls the
   `localeApplier` of the project. The runner sends it for `--locale`. The
   command needs no mock. Without a `localeApplier` the command is not

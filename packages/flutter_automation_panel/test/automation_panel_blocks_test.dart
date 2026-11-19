@@ -9,6 +9,7 @@ import 'test_utils/sample_panel.dart';
 void main() {
   group('Automation Panel Block Widget Tests', () {
     _automationRequestRow_should_nameTheOverrideAndClearIt();
+    _automationRequestRow_should_nameTheMessageKeyOfAFailure();
     _automationRequestRow_should_keepTheLastPathSegment();
     _automationPanelButtonGroup_should_shareARowOnlyForShortLabels();
     _automationPanelSheet_should_keepTheHeadWhileTheBodyScrolls();
@@ -46,6 +47,24 @@ void _automationRequestRow_should_nameTheOverrideAndClearIt() {
 
     expect(find.text('Override: 500 internalError'), findsOneWidget);
     expect(cleared, 1);
+  });
+}
+
+void _automationRequestRow_should_nameTheMessageKeyOfAFailure() {
+  testWidgets('AutomationRequestRow should name the message key of a failure', (
+    tester,
+  ) async {
+    await _pump(
+      tester,
+      AutomationRequestRow(
+        method: 'POST',
+        path: signUpPath,
+        failure: const MockApiFailure(messageKey: 'rateLimited'),
+        onClearOverride: () {},
+      ),
+    );
+
+    expect(find.text('Override: 500 rateLimited'), findsOneWidget);
   });
 }
 

@@ -216,7 +216,7 @@ Build the backend inside the `fake` closure of `substitute`:
 backend = MockScenarioBackend(
   readScenario: () => mock.scenario,
   buildApis: () => [CatalogMockApi(mock)],
-  buildFailureBody: (failure) => {'message': failure.message},
+  buildFailureBody: (failure, request) => {'message': failure.message},
 );
 ```
 

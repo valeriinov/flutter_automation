@@ -21,13 +21,12 @@ import 'package:flutter_automation_driver/src/automation_screen_reader.dart';
 /// adds the texts and the widget types of the frame when the request sets
 /// `"texts"` and `"widgets"` to true. `locale.apply` takes
 /// `{"locale": <language code>}`, runs the locale applier and answers
-/// `{"locale": <language code>}`. `frame.read` answers the counts
-/// `loadingImages` and `emptyTexts`: the shown images with no decoded frame
-/// and the shown texts with no visible character. Its lists
-/// `loadingImageItems` and `emptyTextItems` hold up to 5 items of each kind,
-/// each `{"rect": [l, t, w, h], "target": <id or null>}`.
-/// `locale.save` takes the same request, saves
-/// the language for the next launch of the app and answers the same way.
+/// `{"locale": <language code>}`. `locale.save` takes the same request,
+/// saves the language for the next launch of the app and answers the same way.
+/// `frame.read` answers the counts `loadingImages` and `emptyTexts`: the shown
+/// images with no decoded frame and the shown texts with no visible character.
+/// Its lists `loadingImageItems` and `emptyTextItems` hold up to 5 items of
+/// each kind, each `{"rect": [l, t, w, h], "target": <id or null>}`.
 abstract final class AutomationDeviceCommands {
   /// Registers the commands in [AutomationCommandRegistry].
   ///

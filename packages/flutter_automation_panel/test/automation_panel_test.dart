@@ -40,6 +40,7 @@ void main() {
     _automationResponseSheet_should_dropTheErrorOnASecondTapOfItsCode();
     _automationResponseSheet_should_followEveryRequestOnATapOfItsLatency();
     _automationResponseSheet_should_keepALatencyEqualToEveryRequest();
+    _automationResponseSheet_should_keepTheMessageKeyOfTheInitialFailure();
     _automationResponseSheet_should_takeTheStatusOfAChosenBackendErrorCode();
     _automationResponseSheet_should_offerOnlyTheStatusesOfAChosenCode();
     _automationResponseSheet_should_leaveOutCodesAChosenStatusDoesNotComeWith();
@@ -785,6 +786,34 @@ void _automationResponseSheet_should_keepALatencyEqualToEveryRequest() {
 
       expect(applied, [
         (const MockApiFailure(statusCode: 429), MockLatencyProfile.realistic),
+      ]);
+    },
+  );
+}
+
+void _automationResponseSheet_should_keepTheMessageKeyOfTheInitialFailure() {
+  testWidgets(
+    'AutomationResponseSheet should keep the message key of the initial '
+    'failure',
+    (tester) async {
+      final applied = <(MockApiFailure?, MockLatencyProfile?)>[];
+
+      await _pumpResponseSheet(
+        tester,
+        applied,
+        initial: const MockApiFailure(
+          statusCode: 429,
+          messageKey: 'rateLimited',
+        ),
+      );
+      await tester.tap(find.text(sampleStrings.apply));
+      await tester.pump();
+
+      expect(applied, [
+        (
+          const MockApiFailure(statusCode: 429, messageKey: 'rateLimited'),
+          null,
+        ),
       ]);
     },
   );

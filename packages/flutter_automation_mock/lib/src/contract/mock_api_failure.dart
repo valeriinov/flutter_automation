@@ -25,11 +25,11 @@ sealed class MockApiFailure with _$MockApiFailure {
     /// Message the payload carries next to [errorCode].
     String? message,
 
-    /// Key of a message the project keeps in each app language, for a failure
-    /// whose backend answer carries a message and no [errorCode].
+    /// Key of a message that the project keeps in each app language.
     ///
-    /// The project reads it in `MockBackend.buildFailureBody` and answers the
-    /// message in the language of the request. A [message] wins over it.
+    /// The package only stores the key. A body builder of the project can
+    /// read it. For example, `MockBackend.buildFailureBody` can use [message]
+    /// first, then look up the key in the language of the request.
     String? messageKey,
 
     /// Whether the request never reaches the backend, the way a device without

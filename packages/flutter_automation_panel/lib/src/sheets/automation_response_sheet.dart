@@ -325,6 +325,7 @@ class _AutomationResponseSheetState extends State<AutomationResponseSheet> {
       statusCode: _statusCode ?? _statusCodesOf(_errorCode)?.first ?? 500,
       errorCode: _errorCode,
       message: message.isEmpty ? null : message,
+      messageKey: widget.initial?.messageKey,
     );
   }
 

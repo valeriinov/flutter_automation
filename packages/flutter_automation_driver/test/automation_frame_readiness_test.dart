@@ -17,6 +17,11 @@ void main() {
     _automationFrameReadiness_should_countAWhitespaceText();
     _automationFrameReadiness_should_leaveOutAnEmptyTextOffstage();
     _automationFrameReadiness_should_leaveOutAnEmptyTextField();
+    _automationFrameReadiness_should_leaveOutTheEmptyTextsOfAnInputDecorator();
+    _automationFrameReadiness_should_leaveOutAnImageUnderAnOpaqueRoute();
+    _automationFrameReadiness_should_leaveOutAnImageOffstage();
+    _automationFrameReadiness_should_leaveOutAnImageInTheCacheExtent();
+    _automationFrameReadiness_should_nameTheTargetOfAKeyedSubtreeOnly();
     _automationFrameReadiness_should_nameTheItemsWithRectAndTarget();
     _automationFrameReadiness_should_capTheItemsPerKind();
   });
@@ -111,6 +116,122 @@ void _automationFrameReadiness_should_leaveOutAnEmptyTextField() {
 
     expect(_read(tester).emptyTexts, 0);
   });
+}
+
+void
+_automationFrameReadiness_should_leaveOutTheEmptyTextsOfAnInputDecorator() {
+  const decorations = {
+    'helperText': InputDecoration(helperText: ''),
+    'errorText': InputDecoration(errorText: ''),
+    'hintText': InputDecoration(hintText: ''),
+  };
+
+  for (final MapEntry(:key, :value) in decorations.entries) {
+    testWidgets(
+      'AutomationFrameReadiness should leave out an empty $key of an input '
+      'decorator',
+      (tester) async {
+        await tester.pumpWidget(
+          _buildApp([TextField(decoration: value), const Text('Hello')]),
+        );
+
+        expect(_read(tester).emptyTexts, 0);
+      },
+    );
+  }
+}
+
+void _automationFrameReadiness_should_leaveOutAnImageUnderAnOpaqueRoute() {
+  testWidgets(
+    'AutomationFrameReadiness should leave out an image under an opaque route',
+    (tester) async {
+      final navigatorKey = GlobalKey<NavigatorState>();
+
+      await tester.pumpWidget(
+        MaterialApp(
+          navigatorKey: navigatorKey,
+          home: Image(image: _TestImageProvider.loading()),
+        ),
+      );
+
+      expect(_read(tester).loadingImages, 1);
+      unawaited(
+        navigatorKey.currentState!.push(
+          MaterialPageRoute<void>(builder: (_) => const Text('Next')),
+        ),
+      );
+
+      await tester.pumpAndSettle();
+
+      expect(_read(tester).loadingImages, 0);
+    },
+  );
+}
+
+void _automationFrameReadiness_should_leaveOutAnImageOffstage() {
+  testWidgets('AutomationFrameReadiness should leave out an image offstage', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      _buildApp([Offstage(child: Image(image: _TestImageProvider.loading()))]),
+    );
+
+    expect(_read(tester).loadingImages, 0);
+  });
+}
+
+void _automationFrameReadiness_should_leaveOutAnImageInTheCacheExtent() {
+  testWidgets(
+    'AutomationFrameReadiness should leave out an image in the cache extent',
+    (tester) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: Align(
+              alignment: Alignment.topLeft,
+              child: SizedBox(
+                height: 100,
+                child: ListView(
+                  itemExtent: 100,
+                  children: [
+                    const Text('Shown'),
+                    const Text('Shown'),
+                    Image(image: _TestImageProvider.loading()),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ),
+      );
+
+      expect(find.byType(Image, skipOffstage: false), findsOneWidget);
+      expect(_read(tester).loadingImages, 0);
+    },
+  );
+}
+
+void _automationFrameReadiness_should_nameTheTargetOfAKeyedSubtreeOnly() {
+  testWidgets(
+    'AutomationFrameReadiness should name the target of a keyed subtree only',
+    (tester) async {
+      await tester.pumpWidget(
+        _buildApp([
+          Column(
+            key: const PageStorageKey<String>('list.page'),
+            children: [
+              Container(
+                key: const ValueKey<String>('list.row'),
+                child: const Text(''),
+              ),
+            ],
+          ),
+        ]),
+      );
+
+      expect(_read(tester).emptyTextItems.single.target, isNull);
+    },
+  );
 }
 
 void _automationFrameReadiness_should_nameTheItemsWithRectAndTarget() {
