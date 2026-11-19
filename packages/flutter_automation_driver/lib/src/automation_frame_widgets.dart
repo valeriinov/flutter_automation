@@ -44,6 +44,6 @@ abstract final class AutomationFrameWidgets {
   static bool _isInsideClip(Element element, Rect clip) {
     final rect = AutomationFrameWalk.readRect(element.findRenderObject());
 
-    return rect == null || rect.overlaps(clip);
+    return rect == null || AutomationFrameWalk.isInsideClip(rect, clip);
   }
 }

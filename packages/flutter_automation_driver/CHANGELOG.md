@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.12.1
+
+- The texts and widgets of `screen.read` count a box with a zero size inside
+  the clip when its top left corner stands inside it, as `frame.read` does.
+
 ## 0.12.0
 
 - New `frame.read` command (`AutomationProtocol.frameReadCommand`). It answers

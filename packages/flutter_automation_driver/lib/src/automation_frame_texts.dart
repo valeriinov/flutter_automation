@@ -33,7 +33,7 @@ abstract final class AutomationFrameTexts {
 
     final rect = AutomationFrameWalk.readRect(element.findRenderObject());
 
-    if (rect == null || !rect.overlaps(clip)) {
+    if (rect == null || !AutomationFrameWalk.isInsideClip(rect, clip)) {
       return;
     }
 

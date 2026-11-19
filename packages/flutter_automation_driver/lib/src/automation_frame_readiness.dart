@@ -16,7 +16,8 @@ final class AutomationFrameReadiness {
   static const int maxItems = 5;
 
   /// Count of shown `Image` widgets that have no decoded frame yet. An image
-  /// with no box yet counts too, because a loading image has none.
+  /// whose box has a zero size counts too, because a loading image has no
+  /// size.
   final int loadingImages;
 
   /// Count of shown `RichText` widgets that hold no visible character and
@@ -147,7 +148,7 @@ final class AutomationFrameReadiness {
   static bool _isInsideClip(Element element, Rect clip) {
     final rect = AutomationFrameWalk.readRect(element.findRenderObject());
 
-    return rect != null && (rect.overlaps(clip) || clip.contains(rect.topLeft));
+    return rect != null && AutomationFrameWalk.isInsideClip(rect, clip);
   }
 
   static bool _hasSize(Element element) {

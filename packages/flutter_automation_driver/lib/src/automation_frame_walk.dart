@@ -41,6 +41,12 @@ abstract final class AutomationFrameWalk {
     );
   }
 
+  /// Whether [rect] stands inside [clip]. A rect with a zero size stands
+  /// inside when its top left corner does, because it overlaps nothing.
+  static bool isInsideClip(Rect rect, Rect clip) {
+    return rect.overlaps(clip) || clip.contains(rect.topLeft);
+  }
+
   static void _visit(
     Element element, {
     required Rect clip,
