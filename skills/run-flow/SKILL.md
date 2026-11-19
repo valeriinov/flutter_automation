@@ -278,6 +278,7 @@ first `{`. A sweep reads its results from the ledger instead of walking again.
 | `totalMs` | the steps alone |
 | `commandMs` | the whole command, connection included: the number a target is measured against |
 | `frames` | present when the variant traced: build and raster milliseconds, late frames, the slowest frames |
+| `frameDefect` | present when a capture found a frame that is not ready: `step` (the step number, or `end`), `kind` (`animating`, `loadingImage`, `emptyText`), `count` and `items` (up to 5 `{rect, target}`). A step with `showsLoading: true` declares the frame after it a loading state, which gives no defect |
 
 A `ProbeSeries` answers under `steps[]` with one entry per read, labelled
 `<step label> <probe name> <cycle>`. The runner checks each probe `dy` series

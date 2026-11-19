@@ -52,8 +52,8 @@ the VM service. `scenario.apply` carries the scenario of the flow, and
 screen, the texts and the widgets of a frame. `frame.read` tells whether the
 frame is ready: no image still loads and no text is empty. `locale.apply` sets
 the language.
-The last two belong to the driver, so `--locale` works on an app without a
-mock.
+`screen.read`, `keyboard.read`, `frame.read` and the locale commands belong to
+the driver, so `--locale` works on an app without a mock.
 
 ## Packages
 
