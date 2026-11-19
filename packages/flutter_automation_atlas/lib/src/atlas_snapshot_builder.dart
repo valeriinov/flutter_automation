@@ -10,7 +10,6 @@ import 'package:flutter_automation_atlas/src/atlas_stage_sources.dart';
 import 'package:flutter_automation_atlas/src/atlas_translations.dart';
 import 'package:flutter_automation_atlas/src/atlas_json.dart';
 import 'package:flutter_automation_atlas/src/atlas_locations.dart';
-import 'package:flutter_automation_atlas/src/atlas_source_hash.dart';
 
 typedef _StageSteps = ({
   int? previousActionIndex,
@@ -220,7 +219,7 @@ final class AtlasSnapshotBuilder {
     }
 
     final source = file.readAsStringSync();
-    final sourceHash = AtlasSourceHash.hashSource(source);
+    final sourceHash = _paths.sourceHash.hashSource(source);
 
     declarationsStore.maybeWrite(sourceHash: sourceHash, source: source);
 

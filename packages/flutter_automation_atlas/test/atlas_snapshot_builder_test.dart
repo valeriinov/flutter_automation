@@ -8,7 +8,6 @@ import 'package:path/path.dart' as p;
 import 'package:flutter_automation_atlas/src/atlas_content_hash.dart';
 import 'package:flutter_automation_atlas/src/atlas_snapshot.dart';
 import 'package:flutter_automation_atlas/src/atlas_snapshot_builder.dart';
-import 'package:flutter_automation_atlas/src/atlas_source_hash.dart';
 
 import 'test_utils/create_atlas_snapshot.dart';
 import 'test_utils/fake_atlas_project.dart';
@@ -375,7 +374,7 @@ void _atlasSnapshotBuilder_should_hashManifestFiles() {
       );
 
       expect(snapshot.manifest, {
-        'lib/main.dart': AtlasSourceHash.hashSource(
+        'lib/main.dart': testSourceHash.hashSource(
           'void main() => runApp(App());',
         ),
       });
@@ -530,7 +529,7 @@ void _atlasSnapshotBuilder_should_holdStepHashAndSourcesOfEachStage() {
 
         expect(stage?.stepHash, _stepHash);
         expect(stage?.sources, {
-          'lib/carts_screen.dart': AtlasSourceHash.hashSource(
+          'lib/carts_screen.dart': testSourceHash.hashSource(
             'class CartsScreen {}',
           ),
         });

@@ -448,7 +448,7 @@ final class _DeclarationsReader {
   }
 
   String _hashRange(int start, int end) {
-    return AtlasSourceHash.hashSource(_uncommented.substring(start, end));
+    return AtlasSourceHash.hashDeclarations(_uncommented.substring(start, end));
   }
 
   RegExpMatch? _tryReadExtension(String header) {
@@ -562,7 +562,7 @@ final class _DeclarationsReader {
   }
 
   String _hashPieces(List<(int, int)> pieces) {
-    return AtlasSourceHash.hashSource(
+    return AtlasSourceHash.hashDeclarations(
       pieces
           .map((piece) => _uncommented.substring(piece.$1, piece.$2))
           .join('\n'),

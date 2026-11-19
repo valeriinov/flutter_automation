@@ -10,7 +10,6 @@ import 'package:flutter_automation_atlas/src/atlas_exception.dart';
 import 'package:flutter_automation_atlas/src/atlas_headless.dart';
 import 'package:flutter_automation_atlas/src/atlas_snapshot.dart';
 import 'package:flutter_automation_atlas/src/atlas_snapshot_store.dart';
-import 'package:flutter_automation_atlas/src/atlas_source_hash.dart';
 
 import 'test_utils/add_test_headless_hashes.dart';
 import 'test_utils/create_atlas_snapshot.dart';
@@ -49,11 +48,11 @@ void main(List<String> entryArg) async {
 }
 ''';
 final _recordedManifest = {
-  _sourcePath: AtlasSourceHash.hashSource(_recordedSource),
+  _sourcePath: testSourceHash.hashSource(_recordedSource),
 };
 final _changedManifest = {
   ..._recordedManifest,
-  _otherSourcePath: AtlasSourceHash.hashSource(_recordedSource),
+  _otherSourcePath: testSourceHash.hashSource(_recordedSource),
 };
 const _firstStageHash = '712bd761ea00';
 const _frameHashes = [_firstStageHash, '8af1ab1383cb'];

@@ -5,7 +5,6 @@ import 'package:flutter_automation_atlas/src/atlas_headless.dart';
 import 'package:flutter_automation_atlas/src/atlas_headless_selection.dart';
 import 'package:flutter_automation_atlas/src/atlas_snapshot.dart';
 import 'package:flutter_automation_atlas/src/atlas_snapshot_store.dart';
-import 'package:flutter_automation_atlas/src/atlas_source_hash.dart';
 import 'package:flutter_automation_atlas/src/atlas_stale_check.dart';
 
 import 'test_utils/add_test_headless_hashes.dart';
@@ -23,7 +22,7 @@ const _mainSource = 'void main() {}';
 const _changedMainSource = 'void main() { runApp(); }';
 const _otherRenderer = 'Flutter 3.41.0 · linux_x64';
 const _endFrameHash = 'd4e5f6a1b2c3';
-final _manifest = {_mainPath: AtlasSourceHash.hashSource(_mainSource)};
+final _manifest = {_mainPath: testSourceHash.hashSource(_mainSource)};
 
 void main() {
   group('AtlasHeadlessSelection Tests', () {

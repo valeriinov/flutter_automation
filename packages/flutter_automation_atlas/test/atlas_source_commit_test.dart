@@ -11,7 +11,6 @@ import 'package:flutter_automation_atlas/src/atlas_mock_replay.dart';
 import 'package:flutter_automation_atlas/src/atlas_snapshot.dart';
 import 'package:flutter_automation_atlas/src/atlas_snapshot_store.dart';
 import 'package:flutter_automation_atlas/src/atlas_stale_check.dart';
-import 'package:flutter_automation_atlas/src/atlas_source_hash.dart';
 import 'package:flutter_automation_atlas/src/atlas_stage_scope.dart';
 import 'package:flutter_automation_atlas/src/atlas_store.dart';
 import 'package:flutter_automation_atlas/src/run_atlas.dart';
@@ -36,7 +35,7 @@ const _noSourceCommit = 'not found';
 const _snapshotOption = '--snapshot';
 final _uk = fakeAtlasLocales.first;
 final _recordedManifest = {
-  _sourcePath: AtlasSourceHash.hashSource(_recordedSource),
+  _sourcePath: testSourceHash.hashSource(_recordedSource),
 };
 
 void main() {
@@ -356,7 +355,7 @@ void _atlasStaleCheck_should_reportFreshWhenOnlyPubspecVersionChanged() {
           root,
           _firstVariant,
           sources: {
-            _pubspecPath: AtlasSourceHash.hashSource(
+            _pubspecPath: testSourceHash.hashSource(
               _pubspecWithVersion('1.0.0+1'),
             ),
           },
@@ -582,7 +581,7 @@ void _writeHeadlessReports(
     journals: [const [], snapshot.stages.single.journal],
     sourceHashes: {
       for (final path in snapshot.manifest.keys)
-        path: AtlasSourceHash.tryHashFile(root.paths.resolve(path)),
+        path: testSourceHash.tryHashFile(root.paths.resolve(path)),
     },
   );
   final baseline = AtlasHeadlessReport(

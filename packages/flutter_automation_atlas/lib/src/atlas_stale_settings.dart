@@ -1,3 +1,5 @@
+import 'package:flutter_automation_atlas/src/atlas_source_hash.dart';
+
 /// {@category Utils}
 ///
 /// The files and the names the atlas compares to tell what code a stage
@@ -8,11 +10,12 @@ final class AtlasStaleSettings {
   final String mockDirectory;
 
   /// The folder of the automation targets; a change there never stales a
-  /// stage.
+  /// stage, and [AtlasSourceHash] skips each import of it.
   final String targetsDirectory;
 
-  /// The folder of the automation module; `normalize-manifests` drops a path
-  /// of it that no longer exists.
+  /// The folder of the automation module; [AtlasSourceHash] skips each import
+  /// of it, and `normalize-manifests` drops a path of it that no longer
+  /// exists.
   final String automationDirectory;
 
   /// The files and folders, by path prefix, whose change never stales a

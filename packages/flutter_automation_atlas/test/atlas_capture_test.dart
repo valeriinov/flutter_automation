@@ -11,7 +11,6 @@ import 'package:flutter_automation_atlas/src/atlas_headless.dart';
 import 'package:flutter_automation_atlas/src/atlas_mock_replay.dart';
 import 'package:flutter_automation_atlas/src/atlas_snapshot.dart';
 import 'package:flutter_automation_atlas/src/atlas_snapshot_store.dart';
-import 'package:flutter_automation_atlas/src/atlas_source_hash.dart';
 import 'package:flutter_automation_atlas/src/atlas_stage_scope.dart';
 import 'package:flutter_automation_atlas/src/atlas_stale_check.dart';
 
@@ -1231,7 +1230,7 @@ void _writeStagedHeadlessReports(
     journals: journals,
     sourceHashes: {
       for (final path in snapshot?.manifest.keys ?? const <String>[])
-        path: AtlasSourceHash.tryHashFile(root.paths.resolve(path)),
+        path: testSourceHash.tryHashFile(root.paths.resolve(path)),
     },
   );
   final baseline = AtlasHeadlessReport(
@@ -1304,7 +1303,7 @@ AtlasHeadlessPass _writeHeadlessReports(
         ],
         sourceHashes: {
           for (final path in snapshot?.manifest.keys ?? const <String>[])
-            path: AtlasSourceHash.tryHashFile(root.paths.resolve(path)),
+            path: testSourceHash.tryHashFile(root.paths.resolve(path)),
         },
       );
 

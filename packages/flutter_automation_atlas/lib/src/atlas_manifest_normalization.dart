@@ -17,10 +17,9 @@ import 'package:flutter_automation_atlas/src/atlas_stale_settings.dart';
 ///
 /// A stored hash is rewritten only for the content it was taken of: the
 /// current file when the hash is that file's raw hash, else the version of
-/// the file in git history whose raw hash it is. A hash taken by
-/// [AtlasSourceHash.hashLegacySource] is read the same way. A hash
-/// matching none of them, or one already normalized, is kept, so the command
-/// runs any number of times.
+/// the file in git history whose raw hash it is. A hash matching none of
+/// them, or one already normalized, is kept, so the command runs any number
+/// of times.
 ///
 /// The command drops a path in the automation folder
 /// ([AtlasStaleSettings.automationDirectory]) from the manifest and
@@ -102,7 +101,7 @@ final class AtlasManifestNormalization {
     final resolvedPath = _paths.resolve(path);
 
     if (_isHashOfCurrentFile(resolvedPath, hash)) {
-      return AtlasSourceHash.tryHashFile(resolvedPath) ?? hash;
+      return _paths.sourceHash.tryHashFile(resolvedPath) ?? hash;
     }
 
     final historyHash = _readHistoryHashes(path)[hash];
@@ -115,18 +114,11 @@ final class AtlasManifestNormalization {
   }
 
   bool _isHashOfCurrentFile(String resolvedPath, String hash) {
-    final file = File(resolvedPath);
-
-    if (!file.existsSync()) {
-      return false;
-    }
-
-    return AtlasContentHash.tryHashFile(resolvedPath) == hash ||
-        AtlasSourceHash.hashLegacySource(file.readAsStringSync()) == hash;
+    return AtlasContentHash.tryHashFile(resolvedPath) == hash;
   }
 
   bool _isNormalized(String path, String hash) {
-    return AtlasSourceHash.tryHashFile(_paths.resolve(path)) == hash ||
+    return _paths.sourceHash.tryHashFile(_paths.resolve(path)) == hash ||
         _readHistoryHashes(path).containsValue(hash);
   }
 
@@ -152,12 +144,10 @@ final class AtlasManifestNormalization {
       return null;
     }
 
-    final source = utf8.decode(bytes, allowMalformed: true);
-    final normalized = AtlasSourceHash.hashSource(source);
-
     return {
-      AtlasContentHash.hashBytes(bytes): normalized,
-      AtlasSourceHash.hashLegacySource(source): normalized,
+      AtlasContentHash.hashBytes(bytes): _paths.sourceHash.hashSource(
+        utf8.decode(bytes, allowMalformed: true),
+      ),
     };
   }
 

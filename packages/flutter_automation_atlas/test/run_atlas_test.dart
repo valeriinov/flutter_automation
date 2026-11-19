@@ -5,7 +5,6 @@ import 'package:flutter_automation_atlas/src/atlas_definitions.dart';
 import 'package:flutter_automation_atlas/src/atlas_exception.dart';
 import 'package:flutter_automation_atlas/src/atlas_headless.dart';
 import 'package:flutter_automation_atlas/src/atlas_snapshot_store.dart';
-import 'package:flutter_automation_atlas/src/atlas_source_hash.dart';
 import 'package:flutter_automation_atlas/src/atlas_stale_check.dart';
 import 'package:flutter_automation_atlas/src/run_atlas.dart';
 
@@ -23,7 +22,7 @@ const _freshVariant = 'settingsOpened';
 const _mainPath = 'lib/main.dart';
 const _mainSource = 'void main() {}';
 const _endFrameHash = 'd4e5f6a1b2c3';
-final _manifest = {_mainPath: AtlasSourceHash.hashSource(_mainSource)};
+final _manifest = {_mainPath: testSourceHash.hashSource(_mainSource)};
 const _tapStep = {
   'action': 'tap',
   'label': 'settings tab',

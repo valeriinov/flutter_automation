@@ -2,7 +2,7 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter_automation_atlas/src/atlas_content_hash.dart';
-import 'package:flutter_automation_atlas/src/atlas_manifest_normalization.dart';
+import 'package:flutter_automation_atlas/src/atlas_stale_settings.dart';
 
 /// {@category Utils}
 ///
@@ -10,59 +10,34 @@ import 'package:flutter_automation_atlas/src/atlas_manifest_normalization.dart';
 /// with what paints nothing taken out.
 ///
 /// The hash skips each `.automationTarget(...)` call. A target only names an
-/// element for an agent. The hash also skips each import directive of the
-/// automation module of the app (`common/automation/`) or of a
-/// `flutter_automation*` package.
+/// element for an agent. The hash also skips each import directive of a
+/// `flutter_automation*` package and of the automation module and the targets
+/// folder of the project ([AtlasStaleSettings.automationDirectory] and
+/// [AtlasStaleSettings.targetsDirectory]), by `package:` or relative URI.
 ///
 /// The hash skips whitespace and the comma that ends an argument list. The
 /// `dart format` command reflows the lines around a call that it adds or
 /// removes. String literals keep each character.
-abstract final class AtlasSourceHash {
-  static final _targetDirectivePattern = RegExp(
-    r'''^\s*import\s+['"](?:[^'"]*common/automation/[^'"]*|package:flutter_automation[a-z_]*/[^'"]*)['"]\s*;[^\n]*$''',
-    multiLine: true,
-  );
-  static final _legacyTargetDirectivePattern = RegExp(
-    r'''^\s*import\s+['"][^'"]*(?:common/automation/targets/[^'"]*|widget_automation_target\.dart)['"]\s*;[^\n]*$''',
-    multiLine: true,
-  );
+final class AtlasSourceHash {
+  static const _sourceDirectory = 'lib/';
+  static const _folderSeparator = '/';
+  static const _packageImport = r"""package:flutter_automation[a-z_]*/[^'"]*""";
 
-  /// Hashes the [source] of a Dart file.
-  static String hashSource(String source) {
-    return AtlasContentHash.hashBytes(utf8.encode(normalize(source)));
-  }
+  final RegExp _automationDirectivePattern;
 
-  /// Hashes [source] with only the imports of `common/automation/targets/` and
-  /// `widget_automation_target.dart` removed, the form older manifests hold.
-  ///
-  /// Only [AtlasManifestNormalization] reads a stored hash by it.
-  static String hashLegacySource(String source) {
+  /// The hash that skips the imports of the folders of [settings].
+  AtlasSourceHash(AtlasStaleSettings settings)
+    : _automationDirectivePattern = _buildDirectivePattern([
+        settings.automationDirectory,
+        settings.targetsDirectory,
+      ]);
+
+  /// Hashes the [text] of declarations, which holds no directive, normalized
+  /// as [normalize] does.
+  static String hashDeclarations(String text) {
     return AtlasContentHash.hashBytes(
-      utf8.encode(
-        _DartSourceNormalizer(
-          source.replaceAll(_legacyTargetDirectivePattern, ''),
-        ).normalize(),
-      ),
+      utf8.encode(_DartSourceNormalizer(text).normalize()),
     );
-  }
-
-  /// Hashes the Dart file at [path], `null` when there is no file.
-  static String? tryHashFile(String path) {
-    final file = File(path);
-
-    if (!file.existsSync()) {
-      return null;
-    }
-
-    return hashSource(file.readAsStringSync());
-  }
-
-  /// The [source] without automation target calls and directives, whitespace
-  /// outside string literals and commas closing a list.
-  static String normalize(String source) {
-    return _DartSourceNormalizer(
-      source.replaceAll(_targetDirectivePattern, ''),
-    ).normalize();
   }
 
   /// The [source] with every comment and every string literal character
@@ -76,6 +51,56 @@ abstract final class AtlasSourceHash {
   /// the result is the same offset into [source].
   static String maskComments(String source) {
     return _DartSourceNormalizer(source).mask(isLiteralMasked: false);
+  }
+
+  /// Hashes the [source] of a Dart file.
+  String hashSource(String source) {
+    return AtlasContentHash.hashBytes(utf8.encode(normalize(source)));
+  }
+
+  /// Hashes the Dart file at [path], `null` when there is no file.
+  String? tryHashFile(String path) {
+    final file = File(path);
+
+    if (!file.existsSync()) {
+      return null;
+    }
+
+    return hashSource(file.readAsStringSync());
+  }
+
+  /// The [source] without automation target calls and directives, whitespace
+  /// outside string literals and commas closing a list.
+  String normalize(String source) {
+    return _DartSourceNormalizer(
+      source.replaceAll(_automationDirectivePattern, ''),
+    ).normalize();
+  }
+
+  static RegExp _buildDirectivePattern(List<String> directories) {
+    final uris = [
+      for (final folder in directories.map(_readImportFolder).toSet())
+        if (folder.isNotEmpty)
+          """(?:[^'"]*/)?${RegExp.escape(folder)}/[^'"]*""",
+      _packageImport,
+    ];
+
+    return RegExp(
+      """^\\s*import\\s+['"](?:${uris.join('|')})['"]\\s*;[^\\n]*\$""",
+      multiLine: true,
+    );
+  }
+
+  // A directory of the project is `lib/<folder>/`; an import names it as
+  // `package:<app>/<folder>/` or by a path relative to the importing file.
+  static String _readImportFolder(String directory) {
+    final folder = directory.startsWith(_sourceDirectory)
+        ? directory.substring(_sourceDirectory.length)
+        : directory;
+
+    return folder.endsWith(_folderSeparator)
+        ? folder.substring(0, folder.length - _folderSeparator.length)
+        : folder;
   }
 }
 

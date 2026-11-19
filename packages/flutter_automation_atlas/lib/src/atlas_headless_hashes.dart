@@ -161,7 +161,7 @@ final class AtlasHeadlessHashes {
   String? readCurrentSourceHash(String path) {
     return _currentHashes.putIfAbsent(
       path,
-      () => AtlasSourceHash.tryHashFile(_paths.resolve(path)),
+      () => _paths.sourceHash.tryHashFile(_paths.resolve(path)),
     );
   }
 

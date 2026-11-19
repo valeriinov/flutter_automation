@@ -262,6 +262,8 @@ AutomationLocalizedText _title(String text) {
 
 final testJournalComparison = AtlasJournalComparison(fakeAtlasJournalSchema);
 
+final testSourceHash = AtlasSourceHash(fakeAtlasStaleSettings);
+
 final testJournalCleaner = AtlasJournalCleaner(fakeAtlasJournalSchema);
 
 final testJournalSplit = AtlasJournalSplit(fakeAtlasJournalSchema);

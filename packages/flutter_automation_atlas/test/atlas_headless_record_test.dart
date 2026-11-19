@@ -7,7 +7,6 @@ import 'package:flutter_automation_atlas/src/atlas_headless.dart';
 import 'package:flutter_automation_atlas/src/atlas_headless_record.dart';
 import 'package:flutter_automation_atlas/src/atlas_snapshot.dart';
 import 'package:flutter_automation_atlas/src/atlas_snapshot_store.dart';
-import 'package:flutter_automation_atlas/src/atlas_source_hash.dart';
 import 'package:flutter_automation_atlas/src/atlas_stale_check.dart';
 
 import 'test_utils/create_atlas_snapshot.dart';
@@ -244,7 +243,7 @@ AtlasSnapshot _createSnapshot(AtlasVariantDefinition variant) {
     flow: _flow,
     variant: variant.name,
     defHash: variant.defHash,
-    manifest: {_mainPath: AtlasSourceHash.hashSource(_mainSource)},
+    manifest: {_mainPath: testSourceHash.hashSource(_mainSource)},
     stages: [
       for (final (index, label) in _labels.indexed)
         AtlasStage(
@@ -279,7 +278,7 @@ void _writeReport(
       launch: _launch,
       endFrameHash: endFrameHash,
       error: null,
-      sourceHashes: {_mainPath: AtlasSourceHash.hashSource(_mainSource)},
+      sourceHashes: {_mainPath: testSourceHash.hashSource(_mainSource)},
     ),
     flow: _flow,
     variant: variant,

@@ -1,6 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 
-import 'package:flutter_automation_atlas/src/atlas_source_hash.dart';
+import 'test_utils/fake_atlas_project.dart';
 
 const _untargetedSource = '''
 import 'package:sample/common/generated/locale_keys.g.dart';
@@ -19,7 +19,7 @@ class ProfileForm extends StatelessWidget {
 ''';
 const _targetedSource = '''
 import 'package:flutter_automation/flutter_automation.dart';
-import 'package:sample/common/automation/targets/profile_form_automation_target.dart';
+import 'package:sample/support/automation/targets/profile_form_automation_target.dart';
 import 'package:sample/common/generated/locale_keys.g.dart';
 
 class ProfileForm extends StatelessWidget {
@@ -49,8 +49,8 @@ void main() {
 
 void _atlasSourceHash_should_ignoreAddedTargetAndItsImports() {
   test('AtlasSourceHash should ignore added target and its imports', () {
-    final untargetedHash = AtlasSourceHash.hashSource(_untargetedSource);
-    final targetedHash = AtlasSourceHash.hashSource(_targetedSource);
+    final untargetedHash = testSourceHash.hashSource(_untargetedSource);
+    final targetedHash = testSourceHash.hashSource(_targetedSource);
 
     expect(targetedHash, untargetedHash);
   });
@@ -62,16 +62,16 @@ void _atlasSourceHash_should_changeForEditBesideTarget() {
       'CommonGap.lg()',
       'CommonGap.md()',
     );
-    final editedHash = AtlasSourceHash.hashSource(editedSource);
+    final editedHash = testSourceHash.hashSource(editedSource);
 
-    expect(editedHash, isNot(AtlasSourceHash.hashSource(_untargetedSource)));
+    expect(editedHash, isNot(testSourceHash.hashSource(_untargetedSource)));
   });
 }
 
 void _atlasSourceHash_should_keepCharactersOfStringLiterals() {
   test('AtlasSourceHash should keep characters of string literals', () {
     const spacedSource = "final title = 'Новий  товар';";
-    final normalized = AtlasSourceHash.normalize(spacedSource);
+    final normalized = testSourceHash.normalize(spacedSource);
 
     expect(normalized, "finaltitle='Новий  товар';");
   });
@@ -83,7 +83,7 @@ void _atlasSourceHash_should_keepTargetCallInsideStringOrComment() {
 // Marked with .automationTarget(Target.x) on purpose.
 final hint = 'call .automationTarget(\${target.id}) here';
 ''';
-    final normalized = AtlasSourceHash.normalize(source);
+    final normalized = testSourceHash.normalize(source);
 
     expect(normalized, contains('//Markedwith.automationTarget(Target.x)'));
     expect(
@@ -96,7 +96,7 @@ final hint = 'call .automationTarget(\${target.id}) here';
 void _atlasSourceHash_should_skipParenthesesInsideTargetArguments() {
   test('AtlasSourceHash should skip parentheses inside target arguments', () {
     const source = "child.automationTarget(resolve(')', item)).build();";
-    final normalized = AtlasSourceHash.normalize(source);
+    final normalized = testSourceHash.normalize(source);
 
     expect(normalized, 'child.build();');
   });

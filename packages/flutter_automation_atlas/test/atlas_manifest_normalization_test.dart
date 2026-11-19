@@ -7,9 +7,9 @@ import 'package:flutter_automation_atlas/src/atlas_content_hash.dart';
 import 'package:flutter_automation_atlas/src/atlas_manifest_normalization.dart';
 import 'package:flutter_automation_atlas/src/atlas_snapshot.dart';
 import 'package:flutter_automation_atlas/src/atlas_snapshot_store.dart';
-import 'package:flutter_automation_atlas/src/atlas_source_hash.dart';
 
 import 'test_utils/create_atlas_snapshot.dart';
+import 'test_utils/fake_atlas_project.dart';
 import 'test_utils/test_atlas_root.dart';
 
 const _flow = 'item_create';
@@ -23,11 +23,6 @@ import 'package:flutter_automation/flutter_automation.dart';
 
 class ItemCreateView { final title = 'Нова'; }
 ''';
-const _legacyImportViewSource = '''
-import 'package:sample/common/automation/automation_target.dart';
-
-class ItemCreateView { final title = 'Нова'; }
-''';
 const _movedModulePath = 'lib/support/automation/automation_target.dart';
 const _ownerSource = 'class ItemCreateOwner {}';
 
@@ -35,7 +30,6 @@ void main() {
   group('AtlasManifestNormalization Tests', () {
     _atlasManifestNormalization_should_normalizeHashOfCurrentFile();
     _atlasManifestNormalization_should_normalizeHashOfCommitted();
-    _atlasManifestNormalization_should_normalizeLegacyHashOfCommitted();
     _atlasManifestNormalization_should_dropGonePathOfMovedModule();
     _atlasManifestNormalization_should_keepAndReportUnresolvedHash();
     _atlasManifestNormalization_should_rewriteNothingOnSecondRun();
@@ -54,7 +48,7 @@ void _atlasManifestNormalization_should_normalizeHashOfCurrentFile() {
 
         expect(result.rewrittenSnapshots, 1);
         expect(_readSnapshot(root).manifest, {
-          _ownerPath: AtlasSourceHash.hashSource(_ownerSource),
+          _ownerPath: testSourceHash.hashSource(_ownerSource),
         });
       });
     },
@@ -74,31 +68,9 @@ void _atlasManifestNormalization_should_normalizeHashOfCommitted() {
         final snapshot = _readSnapshot(root);
 
         expect(snapshot.manifest, {
-          _viewPath: AtlasSourceHash.hashSource(_targetedViewSource),
+          _viewPath: testSourceHash.hashSource(_targetedViewSource),
         });
         expect(snapshot.stages.single.sources, snapshot.manifest);
-      });
-    },
-  );
-}
-
-void _atlasManifestNormalization_should_normalizeLegacyHashOfCommitted() {
-  test(
-    'AtlasManifestNormalization should normalize legacy hash of committed',
-    () async {
-      await TestAtlasRoot.run((root) {
-        _writeCommittedSources(root, viewSource: _legacyImportViewSource);
-        root.writeSource(_viewPath, _targetedViewSource);
-        _writeSnapshot(root, {
-          _viewPath: AtlasSourceHash.hashLegacySource(_legacyImportViewSource),
-        });
-        AtlasManifestNormalization(root.paths).run();
-
-        final snapshot = _readSnapshot(root);
-
-        expect(snapshot.manifest, {
-          _viewPath: AtlasSourceHash.hashSource(_targetedViewSource),
-        });
       });
     },
   );
@@ -163,12 +135,9 @@ void _atlasManifestNormalization_should_rewriteNothingOnSecondRun() {
   );
 }
 
-void _writeCommittedSources(
-  TestAtlasRoot root, {
-  String viewSource = _committedViewSource,
-}) {
+void _writeCommittedSources(TestAtlasRoot root) {
   root
-    ..writeSource(_viewPath, viewSource)
+    ..writeSource(_viewPath, _committedViewSource)
     ..writeSource(_ownerPath, _ownerSource);
 
   for (final args in [

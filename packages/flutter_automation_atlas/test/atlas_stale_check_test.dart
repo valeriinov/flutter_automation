@@ -10,7 +10,6 @@ import 'package:flutter_automation_atlas/src/atlas_headless.dart';
 import 'package:flutter_automation_atlas/src/atlas_mock_replay.dart';
 import 'package:flutter_automation_atlas/src/atlas_snapshot.dart';
 import 'package:flutter_automation_atlas/src/atlas_snapshot_store.dart';
-import 'package:flutter_automation_atlas/src/atlas_source_hash.dart';
 import 'package:flutter_automation_atlas/src/atlas_stale_check.dart';
 
 import 'test_utils/add_test_headless_hashes.dart';
@@ -55,7 +54,7 @@ final _mockManifest = {
 };
 const _targetedWidgetSource = '''
 import 'package:flutter_automation/flutter_automation.dart';
-import 'package:sample/common/automation/targets/shop_flow_target.dart';
+import 'package:sample/support/automation/targets/shop_flow_target.dart';
 
 class ExistingItemsView {
   Widget build() {
@@ -2035,7 +2034,7 @@ void _writeStagedSnapshot(
   final stepHashes = variant.stageStepHashes;
   final manifest = {
     ..._manifest,
-    _widgetPath: AtlasSourceHash.hashSource(widgetSource),
+    _widgetPath: testSourceHash.hashSource(widgetSource),
     ...extraManifest,
   };
 
@@ -2090,7 +2089,7 @@ void _writeAppSetupSnapshot(TestAtlasRoot root) {
   _writeStagedFlow(root);
   root.writeSource(_appSetupPath, _systemSettingsSource);
 
-  final sourceHash = AtlasSourceHash.hashSource(_systemSettingsSource);
+  final sourceHash = testSourceHash.hashSource(_systemSettingsSource);
 
   AtlasDeclarationsStore(
     root.paths,
@@ -2123,7 +2122,7 @@ void _writeHeadlessReports(
     journals: _readReportJournals(snapshot, currentJournals),
     sourceHashes: {
       for (final path in snapshot?.manifest.keys ?? <String>[])
-        path: AtlasSourceHash.tryHashFile(root.paths.resolve(path)),
+        path: testSourceHash.tryHashFile(root.paths.resolve(path)),
     },
   );
   final baseline = AtlasHeadlessReport(
@@ -2244,12 +2243,12 @@ void _writeWidgetsSnapshotWithoutSources(
   final declarationsStore = AtlasDeclarationsStore(root.paths);
   final manifest = {
     for (final MapEntry(key: path, value: source) in _widgetSources.entries)
-      if (path.endsWith('.dart')) path: AtlasSourceHash.hashSource(source),
+      if (path.endsWith('.dart')) path: testSourceHash.hashSource(source),
   };
 
   _widgetSources.forEach((path, source) {
     declarationsStore.maybeWrite(
-      sourceHash: AtlasSourceHash.hashSource(source),
+      sourceHash: testSourceHash.hashSource(source),
       source: source,
     );
   });

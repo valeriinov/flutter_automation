@@ -294,7 +294,7 @@ final class AtlasHeadless {
     }
 
     return _tryFindSourcesCommit(
-      paths.rootPath,
+      paths,
       _headRevision,
       _readStageSources(snapshot),
     );
@@ -331,7 +331,7 @@ final class AtlasHeadless {
     }
 
     return _findSourcesCommit(
-      paths.rootPath,
+      paths,
       shotCommit,
       _readStageSources(
         AtlasSnapshot.fromJson(
@@ -354,7 +354,7 @@ final class AtlasHeadless {
   }
 
   static String? _tryFindSourcesCommit(
-    String rootPath,
+    AtlasLocations paths,
     String startRevision,
     Set<_RecordedSource> sources,
   ) {
@@ -362,8 +362,11 @@ final class AtlasHeadless {
       return null;
     }
 
-    return _listFirstParentCommits(rootPath, startRevision).firstWhereOrNull(
-      (commit) => _holdsRecordedSources(rootPath, commit, sources),
+    return _listFirstParentCommits(
+      paths.rootPath,
+      startRevision,
+    ).firstWhereOrNull(
+      (commit) => _holdsRecordedSources(paths, commit, sources),
     );
   }
 
@@ -397,11 +400,11 @@ final class AtlasHeadless {
   }
 
   static String _findSourcesCommit(
-    String rootPath,
+    AtlasLocations paths,
     String shotCommit,
     Set<_RecordedSource> sources,
   ) {
-    return _tryFindSourcesCommit(rootPath, shotCommit, sources) ?? shotCommit;
+    return _tryFindSourcesCommit(paths, shotCommit, sources) ?? shotCommit;
   }
 
   static Set<_RecordedSource> _readStageSources(AtlasSnapshot snapshot) {
@@ -481,7 +484,7 @@ final class AtlasHeadless {
         if (input.momentsIndex == 0)
           input.id: {
             for (final path in snapshots[input.id]?.manifest.keys ?? <String>[])
-              path: AtlasSourceHash.tryHashFile(_paths.resolve(path)),
+              path: _paths.sourceHash.tryHashFile(_paths.resolve(path)),
           },
     };
 
@@ -582,17 +585,21 @@ final class AtlasHeadless {
   }
 
   static bool _holdsRecordedSources(
-    String rootPath,
+    AtlasLocations paths,
     String commit,
     Set<_RecordedSource> sources,
   ) {
-    final paths = {for (final source in sources) source.path}.toList();
-    final contents = _readCommittedFiles(rootPath, commit, paths);
+    final contents = _readCommittedFiles(
+      paths.rootPath,
+      commit,
+      {for (final source in sources) source.path}.toList(),
+    );
 
     return sources.every((source) {
       final content = contents[source.path];
 
-      return content != null && _isRecordedContent(content, source.hash);
+      return content != null &&
+          _isRecordedContent(paths.sourceHash, content, source.hash);
     });
   }
 
@@ -633,7 +640,7 @@ final class AtlasHeadless {
     final filePath = p.join(rootPath, path);
 
     return hash == AtlasContentHash.tryHashFile(filePath) ||
-        hash == AtlasSourceHash.tryHashFile(filePath);
+        hash == _paths.sourceHash.tryHashFile(filePath);
   }
 
   // The git cat-file batch mode answers each object with a header line,
@@ -681,12 +688,14 @@ final class AtlasHeadless {
     return contents;
   }
 
-  static bool _isRecordedContent(List<int> content, String hash) {
+  static bool _isRecordedContent(
+    AtlasSourceHash sourceHash,
+    List<int> content,
+    String hash,
+  ) {
     return hash == AtlasContentHash.hashBytes(content) ||
         hash ==
-            AtlasSourceHash.hashSource(
-              utf8.decode(content, allowMalformed: true),
-            );
+            sourceHash.hashSource(utf8.decode(content, allowMalformed: true));
   }
 
   Future<void> _runAtCommit(

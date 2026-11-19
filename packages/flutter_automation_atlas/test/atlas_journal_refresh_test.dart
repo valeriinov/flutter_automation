@@ -8,7 +8,6 @@ import 'package:flutter_automation_atlas/src/atlas_journal_refresh.dart';
 import 'package:flutter_automation_atlas/src/atlas_mock_replay.dart';
 import 'package:flutter_automation_atlas/src/atlas_snapshot.dart';
 import 'package:flutter_automation_atlas/src/atlas_snapshot_store.dart';
-import 'package:flutter_automation_atlas/src/atlas_source_hash.dart';
 import 'package:flutter_automation_atlas/src/atlas_stale_check.dart';
 
 import 'test_utils/add_test_headless_hashes.dart';
@@ -396,7 +395,7 @@ void _writeVariantWalkedAlikeOnChangedMain(
       flow: _flow,
       variant: _variant,
       defHash: variant.defHash,
-      manifest: {_mainPath: AtlasSourceHash.hashSource(_recordedMainSource)},
+      manifest: {_mainPath: testSourceHash.hashSource(_recordedMainSource)},
       stages: stages,
     ),
   );
@@ -421,7 +420,7 @@ void _writeReport(
     error: null,
     sourceHashes: isBaseline
         ? null
-        : {_mainPath: AtlasSourceHash.hashSource(_changedMainSource)},
+        : {_mainPath: testSourceHash.hashSource(_changedMainSource)},
     commit: isBaseline ? _snapshotCommit : null,
   );
 

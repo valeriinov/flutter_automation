@@ -4,6 +4,7 @@ import 'package:flutter_automation_atlas/src/atlas_project.dart';
 import 'package:flutter_automation_runner/flutter_automation_runner.dart';
 import 'package:path/path.dart' as p;
 import 'package:flutter_automation_atlas/src/atlas_declarations.dart';
+import 'package:flutter_automation_atlas/src/atlas_source_hash.dart';
 
 /// {@category Utils}
 ///
@@ -19,6 +20,7 @@ import 'package:flutter_automation_atlas/src/atlas_declarations.dart';
 final class AtlasLocations {
   static final _configs = Expando<AutomationRunnerConfig>();
   static final _pageConfigs = Expando<AtlasPageConfig>();
+  static final _sourceHashes = Expando<AtlasSourceHash>();
 
   static const _pubspecPath = 'pubspec.yaml';
   static const _dataDirectory = 'data';
@@ -60,6 +62,12 @@ final class AtlasLocations {
   /// root, read once per instance.
   AtlasPageConfig get pageConfig {
     return _pageConfigs[this] ??= AtlasPageConfig.read(resolve(_pubspecPath));
+  }
+
+  /// The hash a source file of the project is compared by, built once per
+  /// instance from [AtlasProject.staleSettings].
+  AtlasSourceHash get sourceHash {
+    return _sourceHashes[this] ??= AtlasSourceHash(project.staleSettings);
   }
 
   /// The locale a capture runs in when none is named, and whose series every
