@@ -1,4 +1,5 @@
 import 'package:flutter_automation_mock/src/contract/mock_api_failure.dart';
+import 'package:flutter_automation_mock/src/contract/mock_api_request.dart';
 import 'package:flutter_automation_mock/src/transport/mock_api_endpoint_resolver.dart';
 import 'package:flutter_automation_mock/src/transport/mock_latency.dart';
 import 'package:flutter_automation_mock/src/transport/mock_latency_profile.dart';
@@ -24,6 +25,12 @@ abstract interface class MockBackend {
   /// Failures answered in place of the payload, keyed by path.
   Map<String, MockApiFailure> get failures;
 
-  /// Builds the body of the answer that carries [failure].
-  Map<String, Object?> buildFailureBody(MockApiFailure failure);
+  /// Builds the body of the answer that carries [failure] to [request].
+  ///
+  /// The [request] parameter lets the body follow the request, such as a
+  /// message in the language the request asks for.
+  Map<String, Object?> buildFailureBody(
+    MockApiFailure failure,
+    MockApiRequest request,
+  );
 }

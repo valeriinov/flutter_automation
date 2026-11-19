@@ -8,6 +8,7 @@ import 'package:flutter_automation_driver/flutter_automation_driver.dart';
 import 'package:flutter_automation_mock/mock_section.dart';
 import 'package:flutter_driver/flutter_driver.dart';
 import 'package:image/image.dart' as image;
+import 'package:meta/meta.dart' show visibleForTesting;
 
 import 'package:flutter_automation_runner/src/automation_block_library.dart';
 import 'package:flutter_automation_runner/src/automation_capture.dart';
@@ -35,6 +36,12 @@ import 'package:flutter_automation_runner/src/recording/automation_recording_fil
 /// A step of a capture run: its 1-based [number] in the variant and the [stage]
 /// that the next user action opens. A step that is no user action belongs to
 /// the stage before it.
+typedef _FrameDefect = ({
+  String kind,
+  int count,
+  List<Map<String, Object?>> items,
+});
+
 typedef _CapturedStep = ({AutomationStep step, int number, int stage});
 
 typedef _KeyboardScreenshot = ({
@@ -96,6 +103,8 @@ final class AutomationRunner {
   static const _relaunchPollInterval = Duration(milliseconds: 500);
   static const _serviceRegistrationTimeout = Duration(seconds: 5);
   static const _stillFrameTimeout = Duration(seconds: 3);
+  static const _defaultFrameReadyGrace = Duration(seconds: 3);
+  static const _frameReadyPollInterval = Duration(milliseconds: 200);
   static const _driverExtension = 'ext.flutter.driver';
   static const _uriOption = '--uri';
   static const _timelineOutOption = '--timeline-out';
@@ -117,6 +126,8 @@ final class AutomationRunner {
   static const _screenReadCommand = AutomationProtocol.screenReadCommand;
   static const _journalReadCommand = MockCommands.journalRead;
   static const _keyboardReadCommand = AutomationProtocol.keyboardReadCommand;
+  static const _endStepName = 'end';
+  static const _frameReadCommand = AutomationProtocol.frameReadCommand;
   static const _keyboardScreenshotAttempts = 3;
 
   final List<String> args;
@@ -132,6 +143,12 @@ final class AutomationRunner {
   final String? _timelineOutPath;
 
   final List<MockSection<Object?>> _sections;
+
+  final Future<FlutterDriver> Function(String uri)? _driverConnector;
+
+  final Duration _frameReadyGrace;
+
+  bool _showsLoading = false;
 
   AutomationDevice? _device;
   Map<String, Object?>? _frames;
@@ -149,9 +166,14 @@ final class AutomationRunner {
     required Map<String, Object?> flows,
     required Map<String, Object?> blocks,
     List<MockSection<Object?>> sections = const [],
+    @visibleForTesting
+    Future<FlutterDriver> Function(String uri)? driverConnector,
+    @visibleForTesting Duration frameReadyGrace = _defaultFrameReadyGrace,
   }) : _flows = flows,
        _blocks = blocks,
        _sections = sections,
+       _driverConnector = driverConnector,
+       _frameReadyGrace = frameReadyGrace,
        _stages = AutomationCaptureStages.fromArgs(args),
        _timelineOutPath = _tryReadTimelineOutPath(args);
 
@@ -169,11 +191,16 @@ final class AutomationRunner {
     required AutomationRunnerConfig config,
     required List<AutomationFlowDefinition> flows,
     List<MockSection<Object?>> sections = const [],
+    @visibleForTesting
+    Future<FlutterDriver> Function(String uri)? driverConnector,
+    @visibleForTesting Duration frameReadyGrace = _defaultFrameReadyGrace,
   }) {
     return AutomationRunner(
       args,
       config: config,
       sections: sections,
+      driverConnector: driverConnector,
+      frameReadyGrace: frameReadyGrace,
       flows: _indexByName(
         flows.map((flow) => (name: flow.name, json: flow.toJson())),
         'flow',
@@ -349,6 +376,8 @@ final class AutomationRunner {
     int stage = 0;
     bool isCut = false;
 
+    _showsLoading = false;
+
     for (int index = 0; index < flow.steps.length; index += 1) {
       final step = flow.steps[index];
 
@@ -376,6 +405,8 @@ final class AutomationRunner {
 
       steps.addAll(results);
 
+      _showsLoading = step.showsLoading;
+
       if (step.isUserAction) {
         stage += 1;
       }
@@ -387,12 +418,17 @@ final class AutomationRunner {
 
     total.stop();
 
+    final frameDefect = _findFrameDefect(steps);
+
     final runEnd = await _captureRunEnd(
       driver,
       capture,
       isCut: isCut,
       isRecording: isRecording,
+      hasFrameDefect: frameDefect != null,
     );
+
+    final endFrameDefect = runEnd['frameDefect'];
 
     await driver.close();
 
@@ -401,7 +437,7 @@ final class AutomationRunner {
     final report = {
       'flow': flow.name,
       'variant': flow.variant,
-      'ok': steps.every((step) => step['ok'] == true),
+      'ok': steps.every((step) => step['ok'] == true) && endFrameDefect == null,
       'commandMs': command.elapsedMilliseconds,
       'setupMs': setupMs,
       'totalMs': total.elapsedMilliseconds,
@@ -410,6 +446,7 @@ final class AutomationRunner {
       // compared against has to stand beside it.
       'frames': ?_frames,
       ...runEnd,
+      'frameDefect': ?(frameDefect ?? endFrameDefect),
       'launch': ?launch,
       if (isCut) 'until': _stages.lastStage,
       'steps': steps,
@@ -718,6 +755,12 @@ final class AutomationRunner {
   }
 
   Future<FlutterDriver> _connect(String uri, {int? isolateNumber}) async {
+    final driverConnector = _driverConnector;
+
+    if (driverConnector != null) {
+      return driverConnector(uri);
+    }
+
     try {
       final driver = await FlutterDriver.connect(
         dartVmServiceUrl: uri,
@@ -1148,7 +1191,11 @@ final class AutomationRunner {
   ) async {
     final (:step, :number, :stage) = capturedStep;
 
-    await _waitForStillFrame(driver);
+    final check = await _checkFrame(driver, step: number, label: step.label);
+
+    if (check != null) {
+      return check;
+    }
 
     final screenshot = await _captureScreenshot(driver, capture, step, number);
 
@@ -1318,12 +1365,23 @@ final class AutomationRunner {
     }
   }
 
+  Object? _findFrameDefect(List<Map<String, Object?>> steps) {
+    return steps
+        .map((step) => step['frameDefect'])
+        .firstWhereOrNull((defect) => defect != null);
+  }
+
   Future<Map<String, Object?>> _captureRunEnd(
     FlutterDriver driver,
     AutomationCapture? capture, {
     required bool isCut,
     required bool isRecording,
+    required bool hasFrameDefect,
   }) async {
+    if (capture != null && hasFrameDefect) {
+      return const {};
+    }
+
     if (capture == null) {
       return isRecording ? _recordEndJournal(driver) : const {};
     }
@@ -1332,8 +1390,14 @@ final class AutomationRunner {
       return _readManifest(driver);
     }
 
+    final screenshot = await _captureEndScreenshot(driver, capture);
+
+    if (screenshot['ok'] == false) {
+      return screenshot;
+    }
+
     return {
-      ...await _captureEndScreenshot(driver, capture),
+      ...screenshot,
       ...await _captureEndJournal(driver),
       ...await _readManifest(driver),
     };
@@ -1343,7 +1407,11 @@ final class AutomationRunner {
     FlutterDriver driver,
     AutomationCapture capture,
   ) async {
-    await _waitForStillFrame(driver);
+    final check = await _checkFrame(driver, step: _endStepName);
+
+    if (check != null) {
+      return check;
+    }
 
     try {
       return {
@@ -1358,12 +1426,170 @@ final class AutomationRunner {
     }
   }
 
-  /// An animation that loops, such as a loader, never lets the wait pass, so
-  /// after its timeout the run takes the screenshot mid-animation.
-  Future<void> _waitForStillFrame(FlutterDriver driver) async {
+  /// Waits until the frame is still, then reads whether it is ready. It answers
+  /// `null` for a frame that is ready or that the flow declares a loading
+  /// state. Otherwise it answers a failed step entry that holds the
+  /// `frameDefect`: its `step`, its `kind` and its `count`.
+  ///
+  /// The [step] parameter is the number of the step the frame precedes, or the
+  /// name of the end frame. A frame that is not still within the timeout has
+  /// the kind `animating`. A frame that is still but has an image that no
+  /// decoded frame fills, or an empty text, keeps being read until it is
+  /// ready or the grace has passed. It then has the kind `loadingImage` or
+  /// `emptyText`.
+  Future<Map<String, Object?>?> _checkFrame(
+    FlutterDriver driver, {
+    required Object step,
+    String? label,
+  }) async {
+    final isAnimating = await _isAnimating(driver);
+
+    if (_showsLoading) {
+      return null;
+    }
+
+    try {
+      final _FrameDefect? defect = isAnimating
+          ? (kind: 'animating', count: 0, items: <Map<String, Object?>>[])
+          : await _pollFrameDefect(driver);
+
+      return defect == null ? null : _describeFrameDefect(step, label, defect);
+    } on Object catch (error) {
+      stderr.writeln('fail capture  frame of step $step');
+
+      return {
+        'ok': false,
+        'error':
+            'Could not read the frame before step $step: $error\n'
+            'A capture run needs an app that answers '
+            '$_frameReadCommand$_launchClause.',
+      };
+    }
+  }
+
+  Future<_FrameDefect?> _pollFrameDefect(FlutterDriver driver) async {
+    final deadline = Stopwatch()..start();
+
+    while (true) {
+      final defect = await _readFrameDefect(driver);
+
+      if (defect == null || deadline.elapsed >= _frameReadyGrace) {
+        return defect;
+      }
+
+      await Future<void>.delayed(_frameReadyPollInterval);
+    }
+  }
+
+  Future<_FrameDefect?> _readFrameDefect(FlutterDriver driver) async {
+    final response = await driver.requestData(
+      jsonEncode({'command': _frameReadCommand}),
+    );
+
+    final answer = jsonDecode(response);
+
+    if (answer is! Map<String, Object?>) {
+      throw StateError('$_frameReadCommand did not return an object.');
+    }
+
+    final loadingImages = answer[AutomationProtocol.loadingImagesKey];
+    final emptyTexts = answer[AutomationProtocol.emptyTextsKey];
+
+    if (loadingImages is! int || emptyTexts is! int) {
+      throw StateError(
+        '$_frameReadCommand did not return the "loadingImages" and the '
+        '"emptyTexts" counts.',
+      );
+    }
+
+    if (loadingImages > 0) {
+      return (
+        kind: 'loadingImage',
+        count: loadingImages,
+        items: _readItems(answer[AutomationProtocol.loadingImageItemsKey]),
+      );
+    }
+
+    return emptyTexts > 0
+        ? (
+            kind: 'emptyText',
+            count: emptyTexts,
+            items: _readItems(answer[AutomationProtocol.emptyTextItemsKey]),
+          )
+        : null;
+  }
+
+  List<Map<String, Object?>> _readItems(Object? items) {
+    if (items is! List<Object?>) {
+      return const [];
+    }
+
+    return [
+      for (final item in items)
+        if (item is Map<String, Object?>)
+          {
+            AutomationProtocol.rectKey: item[AutomationProtocol.rectKey],
+            AutomationProtocol.targetKey: item[AutomationProtocol.targetKey],
+          },
+    ];
+  }
+
+  String _describeItem(Map<String, Object?> item) {
+    final target = item[AutomationProtocol.targetKey];
+    final rect = item[AutomationProtocol.rectKey];
+
+    return 'first at $rect, inside ${target ?? 'no marked widget'}';
+  }
+
+  Map<String, Object?> _describeFrameDefect(
+    Object step,
+    String? label,
+    _FrameDefect defect,
+  ) {
+    final reason = switch (defect.kind) {
+      'animating' =>
+        'the frame was still animating after ${_stillFrameTimeout.inSeconds}s',
+      'loadingImage' => '${defect.count} image(s) had no frame yet',
+      _ => '${defect.count} text(s) were empty',
+    };
+    final where = label == null ? 'the end frame' : 'the frame before $label';
+
+    stderr.writeln('fail frame    step $step  ${defect.kind}');
+
+    final firstItem = defect.items.firstOrNull;
+    final itemClause = firstItem == null
+        ? ''
+        : ' (${_describeItem(firstItem)})';
+
+    return {
+      'ok': false,
+      'screenshot': null,
+      'frameDefect': {
+        'step': step,
+        'kind': defect.kind,
+        if (defect.count > 0) 'count': defect.count,
+        if (defect.items.isNotEmpty) 'items': defect.items,
+      },
+      'error':
+          'Frame defect at step $step: $where is not ready: $reason'
+          '$itemClause.',
+    };
+  }
+
+  Future<bool> _isAnimating(FlutterDriver driver) async {
     try {
       await driver.waitUntilNoTransientCallbacks(timeout: _stillFrameTimeout);
+
+      return false;
     } on DriverError {
+      return true;
+    }
+  }
+
+  /// A stage that is not shot has no frame to judge, so the run waits for the
+  /// frame to settle and goes on.
+  Future<void> _waitForStillFrame(FlutterDriver driver) async {
+    if (await _isAnimating(driver)) {
       stderr.writeln(
         '     still animating after ${_stillFrameTimeout.inSeconds}s',
       );

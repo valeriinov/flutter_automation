@@ -152,9 +152,13 @@ void _mockScenarioBackend_should_buildTheFailureBodyWithTheProject() {
         buildApis: () => const [],
       );
 
-      expect(sut.buildFailureBody(const MockApiFailure(statusCode: 418)), {
-        'status': 418,
-      });
+      expect(
+        sut.buildFailureBody(
+          const MockApiFailure(statusCode: 418),
+          const MockApiRequest(path: '/teapot', body: {}, acceptLanguage: 'en'),
+        ),
+        {'status': 418, 'language': 'en'},
+      );
     },
   );
 }
@@ -166,7 +170,10 @@ MockScenarioBackend _createBackend({
   return MockScenarioBackend(
     readScenario: readScenario,
     buildApis: buildApis,
-    buildFailureBody: (failure) => {'status': failure.statusCode},
+    buildFailureBody: (failure, request) => {
+      'status': failure.statusCode,
+      'language': request.acceptLanguage,
+    },
   );
 }
 

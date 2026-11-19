@@ -162,7 +162,7 @@ class MockApiTransport {
 
     return MockApiResponse(
       statusCode: failure.statusCode,
-      body: _backend.buildFailureBody(failure),
+      body: _backend.buildFailureBody(failure, request),
     );
   }
 

@@ -4,6 +4,7 @@ import 'dart:ui';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_automation/flutter_automation.dart';
+import 'package:flutter_automation_driver/src/automation_frame_readiness.dart';
 import 'package:flutter_automation_driver/src/automation_frame_texts.dart';
 import 'package:flutter_automation_driver/src/automation_frame_widgets.dart';
 import 'package:flutter_automation_driver/src/automation_launch_locale_file.dart';
@@ -20,7 +21,12 @@ import 'package:flutter_automation_driver/src/automation_screen_reader.dart';
 /// adds the texts and the widget types of the frame when the request sets
 /// `"texts"` and `"widgets"` to true. `locale.apply` takes
 /// `{"locale": <language code>}`, runs the locale applier and answers
-/// `{"locale": <language code>}`. `locale.save` takes the same request, saves
+/// `{"locale": <language code>}`. `frame.read` answers the counts
+/// `loadingImages` and `emptyTexts`: the shown images with no decoded frame
+/// and the shown texts with no visible character. Its lists
+/// `loadingImageItems` and `emptyTextItems` hold up to 5 items of each kind,
+/// each `{"rect": [l, t, w, h], "target": <id or null>}`.
+/// `locale.save` takes the same request, saves
 /// the language for the next launch of the app and answers the same way.
 abstract final class AutomationDeviceCommands {
   /// Registers the commands in [AutomationCommandRegistry].
@@ -42,6 +48,10 @@ abstract final class AutomationDeviceCommands {
       AutomationProtocol.screenReadCommand,
       (payload) async => jsonEncode(_readScreen(screenReader, payload)),
     );
+    AutomationCommandRegistry.register(
+      AutomationProtocol.frameReadCommand,
+      (_) async => jsonEncode(_readFrameReadiness()),
+    );
 
     if (localeApplier == null) {
       return;
@@ -59,6 +69,31 @@ abstract final class AutomationDeviceCommands {
 
   static Map<String, Object?> _readKeyboard() {
     return {AutomationProtocol.keyboardInsetKey: _readKeyboardInset()};
+  }
+
+  static Map<String, Object?> _readFrameReadiness() {
+    final view = _readView();
+    final rootElement = WidgetsBinding.instance.rootElement;
+
+    if (view == null || rootElement == null) {
+      throw StateError('The app shows no frame yet.');
+    }
+
+    final readiness = AutomationFrameReadiness.read(
+      rootElement,
+      Offset.zero & _readLogicalSizeOf(view),
+    );
+
+    return {
+      AutomationProtocol.loadingImagesKey: readiness.loadingImages,
+      AutomationProtocol.emptyTextsKey: readiness.emptyTexts,
+      AutomationProtocol.loadingImageItemsKey: [
+        for (final item in readiness.loadingImageItems) item.toJson(),
+      ],
+      AutomationProtocol.emptyTextItemsKey: [
+        for (final item in readiness.emptyTextItems) item.toJson(),
+      ],
+    };
   }
 
   static Map<String, Object?> _readScreen(

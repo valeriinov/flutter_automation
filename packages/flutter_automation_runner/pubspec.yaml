@@ -34,6 +34,7 @@ dependencies:
       ref: 0.11.0
       path: packages/flutter_automation_driver
   image: ^4.10.1
+  meta: ^1.19.0
   vm_service: ^15.3.0
   yaml: ^3.1.3
 

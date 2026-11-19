@@ -1,5 +1,20 @@
 # Changelog
 
+## 0.11.1
+
+- A capture run fails on a frame that is not ready before a screenshot: a frame
+  that still animates after 3 s, an image that still loads or an empty text.
+  The report holds `frameDefect` with the `step` and the `kind`, the run exits
+  with code 1, and it writes no screenshot of that frame, no end screenshot and
+  no recording. The run asks the new `frame.read` command of the driver, so the
+  app needs `flutter_automation_driver` 0.11.1.
+- `frameDefect.items` holds up to 5 elements of the defect, each with its `rect`
+  and `target`. The step `error` names the first one.
+- The runner depends on `meta` for `@visibleForTesting`. A test fails when a
+  library file imports `package:flutter/`.
+- `FlowStep.showsLoading` declares the frame after a step as a loading state.
+  A capture takes no frame defect from that frame.
+
 ## 0.11.0
 
 - Version bump with `flutter_automation_atlas` 0.11.0.

@@ -95,7 +95,7 @@ void _mockApiTransport_should_answerADeclaredFailure() {
     );
 
     expect(response.statusCode, HttpStatus.serviceUnavailable);
-    expect(response.body, {'failed': true});
+    expect(response.body, {'failed': true, 'path': _failingPath});
   });
 }
 
@@ -235,7 +235,10 @@ final class _TestBackend implements MockBackend {
   });
 
   @override
-  Map<String, Object?> buildFailureBody(MockApiFailure failure) {
-    return {'failed': true};
+  Map<String, Object?> buildFailureBody(
+    MockApiFailure failure,
+    MockApiRequest request,
+  ) {
+    return {'failed': true, 'path': request.path};
   }
 }

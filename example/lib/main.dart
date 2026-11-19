@@ -61,7 +61,7 @@ Future<void> main() async {
       final scenarioBackend = MockScenarioBackend(
         readScenario: () => mock.scenario,
         buildApis: () => [MockCatalogApi(mock)],
-        buildFailureBody: (failure) => {
+        buildFailureBody: (failure, request) => {
           'code': failure.errorCode,
           'message': failure.message,
         },

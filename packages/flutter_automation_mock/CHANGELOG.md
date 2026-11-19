@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.11.1
+
+- `MockBackend.buildFailureBody` and the `buildFailureBody` callback of
+  `MockScenarioBackend` take the `MockApiRequest` the failure answers, so the
+  body can follow the request, such as a message in its language. Migration:
+  add the request parameter to the callback.
+
 ## 0.11.0
 
 - Version bump with `flutter_automation_atlas` 0.11.0.

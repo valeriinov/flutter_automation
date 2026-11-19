@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.11.1
+
+- New `frame.read` command (`AutomationProtocol.frameReadCommand`). It answers
+  `loadingImages`, the count of shown images with no decoded frame, and
+  `emptyTexts`, the count of shown texts with no visible character. It also answers `loadingImageItems` and
+  `emptyTextItems`: up to 5 items of each kind, `{rect: [l, t, w, h], target}`,
+  with the global rect in rounded logical pixels and the id of the nearest
+  ancestor that the marking keys, or null.
+
 ## 0.11.0
 
 - Version bump with `flutter_automation_atlas` 0.11.0.

@@ -1,5 +1,6 @@
 import 'package:flutter_automation_mock/src/contract/mock_api.dart';
 import 'package:flutter_automation_mock/src/contract/mock_api_failure.dart';
+import 'package:flutter_automation_mock/src/contract/mock_api_request.dart';
 import 'package:flutter_automation_mock/src/scenario/mock_scenario.dart';
 import 'package:flutter_automation_mock/src/scenario/mock_scenario_reader.dart';
 import 'package:flutter_automation_mock/src/transport/mock_api_endpoint_resolver.dart';
@@ -22,7 +23,11 @@ import 'package:flutter_automation_mock/src/transport/mock_backend.dart';
 final class MockScenarioBackend implements MockBackend {
   final MockScenario Function() _readScenario;
   final List<MockApi> Function() _buildApis;
-  final Map<String, Object?> Function(MockApiFailure failure) _buildFailureBody;
+  final Map<String, Object?> Function(
+    MockApiFailure failure,
+    MockApiRequest request,
+  )
+  _buildFailureBody;
 
   late MockApiEndpointResolver _endpointResolver;
   late MockLatency _latency;
@@ -32,11 +37,14 @@ final class MockScenarioBackend implements MockBackend {
   /// The [readScenario] parameter gives the scenario of the run.
   /// The [buildApis] parameter builds the apis that answer the requests.
   /// The [buildFailureBody] parameter builds the body of an answer that carries
-  /// a failure.
+  /// a failure to a request.
   MockScenarioBackend({
     required MockScenario Function() readScenario,
     required List<MockApi> Function() buildApis,
-    required Map<String, Object?> Function(MockApiFailure failure)
+    required Map<String, Object?> Function(
+      MockApiFailure failure,
+      MockApiRequest request,
+    )
     buildFailureBody,
   }) : _readScenario = readScenario,
        _buildApis = buildApis,
@@ -61,8 +69,11 @@ final class MockScenarioBackend implements MockBackend {
   }
 
   @override
-  Map<String, Object?> buildFailureBody(MockApiFailure failure) {
-    return _buildFailureBody(failure);
+  Map<String, Object?> buildFailureBody(
+    MockApiFailure failure,
+    MockApiRequest request,
+  ) {
+    return _buildFailureBody(failure, request);
   }
 
   /// Builds the endpoints and the latency again from the current scenario.

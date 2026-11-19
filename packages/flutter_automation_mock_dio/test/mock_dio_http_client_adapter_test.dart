@@ -490,7 +490,10 @@ final class _TestMockBackend implements MockBackend {
   }) : latency = MockLatency(profile: latencyProfile, seed: _latencySeed);
 
   @override
-  Map<String, Object?> buildFailureBody(MockApiFailure failure) {
+  Map<String, Object?> buildFailureBody(
+    MockApiFailure failure,
+    MockApiRequest request,
+  ) {
     return {
       _failureCodeKey: failure.errorCode,
       _failureTextKey: failure.message,

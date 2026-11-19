@@ -311,7 +311,7 @@ code. Skip a part that exists: a second run adds nothing to `main`.
        final scenarioBackend = MockScenarioBackend(
          readScenario: () => mock.scenario,
          buildApis: () => [MockCatalogApi(mock)],
-         buildFailureBody: (failure) => {
+         buildFailureBody: (failure, request) => {
            'code': failure.errorCode,
            'message': failure.message,
          },

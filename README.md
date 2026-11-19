@@ -43,13 +43,15 @@ flowchart LR
   end
 
   runner <-->|"VM service, ext.flutter.driver"| ext
-  runner -.->|"scenario.apply, journal.read, screen.read, keyboard.read, locale.apply, locale.save"| cmds
+  runner -.->|"scenario.apply, journal.read, screen.read, keyboard.read, frame.read, locale.apply, locale.save"| cmds
 ```
 
 The runner never links to the app. It talks to the driver extension through
 the VM service. `scenario.apply` carries the scenario of the flow, and
 `journal.read` brings back what the app requested. `screen.read` reads the
-screen, the texts and the widgets of a frame. `locale.apply` sets the language.
+screen, the texts and the widgets of a frame. `frame.read` tells whether the
+frame is ready: no image still loads and no text is empty. `locale.apply` sets
+the language.
 The last two belong to the driver, so `--locale` works on an app without a
 mock.
 

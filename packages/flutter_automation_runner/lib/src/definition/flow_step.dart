@@ -22,7 +22,17 @@ abstract class FlowStep implements FlowItem {
   /// runner's default.
   final Duration? timeout;
 
-  const FlowStep({this.label, this.title, this.timeout});
+  /// Whether the frame the app shows once this step ends is a loading state,
+  /// where a loader, an image still loading or an empty text is the point of
+  /// the frame. The run takes no frame defect from such a frame.
+  final bool showsLoading;
+
+  const FlowStep({
+    this.label,
+    this.title,
+    this.timeout,
+    this.showsLoading = false,
+  });
 
   /// The `action` of the JSON form.
   String get action;
@@ -33,6 +43,7 @@ abstract class FlowStep implements FlowItem {
     'label': ?label,
     'title': ?title?.toJson(),
     'timeoutMs': ?timeout?.inMilliseconds,
+    if (showsLoading) 'showsLoading': true,
   };
 }
 
@@ -43,7 +54,13 @@ abstract class FlowFinderStep extends FlowStep {
   /// Finder of the element the step acts on.
   final FlowFinder finder;
 
-  const FlowFinderStep(this.finder, {super.label, super.title, super.timeout});
+  const FlowFinderStep(
+    this.finder, {
+    super.label,
+    super.title,
+    super.timeout,
+    super.showsLoading,
+  });
 
   @override
   Map<String, Object?> toJson() => {
@@ -56,7 +73,13 @@ abstract class FlowFinderStep extends FlowStep {
 ///
 /// Taps the element.
 final class Tap extends FlowFinderStep {
-  const Tap(super.finder, {super.label, super.title, super.timeout});
+  const Tap(
+    super.finder, {
+    super.label,
+    super.title,
+    super.timeout,
+    super.showsLoading,
+  });
 
   @override
   String get action => 'tap';
@@ -66,7 +89,13 @@ final class Tap extends FlowFinderStep {
 ///
 /// Waits until the element is in the tree.
 final class WaitFor extends FlowFinderStep {
-  const WaitFor(super.finder, {super.label, super.title, super.timeout});
+  const WaitFor(
+    super.finder, {
+    super.label,
+    super.title,
+    super.timeout,
+    super.showsLoading,
+  });
 
   @override
   String get action => 'waitFor';
@@ -76,7 +105,13 @@ final class WaitFor extends FlowFinderStep {
 ///
 /// Waits until the element leaves the tree.
 final class WaitForAbsent extends FlowFinderStep {
-  const WaitForAbsent(super.finder, {super.label, super.title, super.timeout});
+  const WaitForAbsent(
+    super.finder, {
+    super.label,
+    super.title,
+    super.timeout,
+    super.showsLoading,
+  });
 
   @override
   String get action => 'waitForAbsent';
@@ -91,6 +126,7 @@ final class WaitForTappable extends FlowFinderStep {
     super.label,
     super.title,
     super.timeout,
+    super.showsLoading,
   });
 
   @override
@@ -101,7 +137,13 @@ final class WaitForTappable extends FlowFinderStep {
 ///
 /// Scrolls the nearest scrollable until the element is on screen.
 final class ScrollIntoView extends FlowFinderStep {
-  const ScrollIntoView(super.finder, {super.label, super.title, super.timeout});
+  const ScrollIntoView(
+    super.finder, {
+    super.label,
+    super.title,
+    super.timeout,
+    super.showsLoading,
+  });
 
   @override
   String get action => 'scrollIntoView';
@@ -111,7 +153,13 @@ final class ScrollIntoView extends FlowFinderStep {
 ///
 /// Reads the centre of the element and puts it into the report.
 final class ProbeCenter extends FlowFinderStep {
-  const ProbeCenter(super.finder, {super.label, super.title, super.timeout});
+  const ProbeCenter(
+    super.finder, {
+    super.label,
+    super.title,
+    super.timeout,
+    super.showsLoading,
+  });
 
   @override
   String get action => FlowActionNames.probeCenter;
@@ -143,6 +191,7 @@ final class Scroll extends FlowFinderStep {
     super.label,
     super.title,
     super.timeout,
+    super.showsLoading,
   });
 
   @override
@@ -165,7 +214,13 @@ final class EnterText extends FlowStep {
   /// Text the step writes.
   final String text;
 
-  const EnterText(this.text, {super.label, super.title, super.timeout});
+  const EnterText(
+    this.text, {
+    super.label,
+    super.title,
+    super.timeout,
+    super.showsLoading,
+  });
 
   @override
   String get action => 'enterText';
@@ -190,6 +245,7 @@ final class DriverCommand extends FlowStep {
     super.label,
     super.title,
     super.timeout,
+    super.showsLoading,
   });
 
   @override
@@ -211,7 +267,13 @@ final class TraceStart extends FlowStep {
   /// wait.
   final Duration? duration;
 
-  const TraceStart({this.duration, super.label, super.title, super.timeout});
+  const TraceStart({
+    this.duration,
+    super.label,
+    super.title,
+    super.timeout,
+    super.showsLoading,
+  });
 
   @override
   String get action => FlowActionNames.traceStart;
@@ -235,6 +297,7 @@ final class TraceStop extends FlowStep {
     super.label,
     super.title,
     super.timeout,
+    super.showsLoading,
   });
 
   @override
@@ -286,6 +349,7 @@ final class ProbeSeries extends FlowStep {
     super.label,
     super.title,
     super.timeout,
+    super.showsLoading,
   });
 
   @override

@@ -386,6 +386,9 @@ final class AutomationStep {
   /// Block that declared the step, missing for an inline step.
   final String? block;
 
+  /// Whether the frame the app shows once the step ends is a loading state.
+  final bool showsLoading;
+
   const AutomationStep({
     required this.action,
     required this.label,
@@ -402,6 +405,7 @@ final class AutomationStep {
     required this.command,
     required this.target,
     required this.block,
+    this.showsLoading = false,
   });
 
   /// Reads a step out of one expanded item of a variant's `items` list.
@@ -458,6 +462,7 @@ final class AutomationStep {
       command: command is String ? command : null,
       target: target,
       block: block,
+      showsLoading: json['showsLoading'] == true,
     );
   }
 
@@ -490,6 +495,7 @@ final class AutomationStep {
       'block': ?block,
       'target': ?target,
       'timeoutMs': timeout.inMilliseconds,
+      if (showsLoading) 'showsLoading': true,
       if (text != null) 'text': text,
       if (dx != 0 || dy != 0) 'dx': dx,
       if (dx != 0 || dy != 0) 'dy': dy,

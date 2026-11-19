@@ -15,6 +15,11 @@ abstract final class AutomationProtocol {
   /// flags it also answers what the frame shows.
   static const String screenReadCommand = 'screen.read';
 
+  /// Command that answers what the frame still lacks: the images with no
+  /// decoded frame and the empty texts. The answer holds [loadingImagesKey],
+  /// [emptyTextsKey], [loadingImageItemsKey] and [emptyTextItemsKey].
+  static const String frameReadCommand = 'frame.read';
+
   /// Command that applies a language to the app.
   static const String localeApplyCommand = 'locale.apply';
 
@@ -69,6 +74,31 @@ abstract final class AutomationProtocol {
   /// Key of the widget types the frame shows: a request flag of
   /// [screenReadCommand] and a key of its answer.
   static const String widgetsKey = 'widgets';
+
+  /// Key of the count of shown images with no decoded frame in the answer of
+  /// [frameReadCommand].
+  static const String loadingImagesKey = 'loadingImages';
+
+  /// Key of the count of shown texts with no visible character in the answer
+  /// of [frameReadCommand].
+  static const String emptyTextsKey = 'emptyTexts';
+
+  /// Key of the items of the shown images with no decoded frame in the answer
+  /// of [frameReadCommand]: up to 5, each with [rectKey] and [targetKey].
+  static const String loadingImageItemsKey = 'loadingImageItems';
+
+  /// Key of the items of the shown texts with no visible character in the
+  /// answer of [frameReadCommand]: up to 5, each with [rectKey] and
+  /// [targetKey].
+  static const String emptyTextItemsKey = 'emptyTextItems';
+
+  /// Key of the global rect `[left, top, width, height]`, in rounded logical
+  /// pixels, of an item of [frameReadCommand].
+  static const String rectKey = 'rect';
+
+  /// Key of the id of the nearest marked ancestor of an item of
+  /// [frameReadCommand], null when there is none.
+  static const String targetKey = 'target';
 
   /// Key of the language code in the requests and the answers of
   /// [localeApplyCommand] and [localeSaveCommand].

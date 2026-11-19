@@ -26,6 +26,7 @@ void main() {
     _automationDeviceCommands_should_readNoFrameWithoutFlags();
     _automationDeviceCommands_should_readTheTextsOfTheFrameOnRequest();
     _automationDeviceCommands_should_readTheWidgetsOfTheFrameOnRequest();
+    _automationDeviceCommands_should_readTheFrameReadiness();
     _automationDeviceCommands_should_applyTheLocaleWithTheApplier();
     _automationDeviceCommands_should_rejectALocaleWithoutLanguageCode();
     _automationDeviceCommands_should_saveTheLocaleForTheNextLaunch();
@@ -174,6 +175,40 @@ void _automationDeviceCommands_should_readTheWidgetsOfTheFrameOnRequest() {
 
     expect(answer[AutomationProtocol.widgetsKey], contains('Text'));
     expect(answer.containsKey(AutomationProtocol.textsKey), isFalse);
+  });
+}
+
+void _automationDeviceCommands_should_readTheFrameReadiness() {
+  testWidgets('AutomationDeviceCommands should read the frame readiness', (
+    tester,
+  ) async {
+    _setUpView(tester);
+
+    await tester.pumpWidget(_buildApp());
+
+    final readyAnswer = await _ask(AutomationProtocol.frameReadCommand);
+
+    await tester.pumpWidget(
+      const Directionality(textDirection: TextDirection.ltr, child: Text('')),
+    );
+
+    final emptyAnswer = await _ask(AutomationProtocol.frameReadCommand);
+
+    expect(readyAnswer, {
+      AutomationProtocol.loadingImagesKey: 0,
+      AutomationProtocol.emptyTextsKey: 0,
+      AutomationProtocol.loadingImageItemsKey: <Object?>[],
+      AutomationProtocol.emptyTextItemsKey: <Object?>[],
+    });
+    expect(emptyAnswer[AutomationProtocol.loadingImagesKey], 0);
+    expect(emptyAnswer[AutomationProtocol.emptyTextsKey], 1);
+    expect(emptyAnswer[AutomationProtocol.loadingImageItemsKey], isEmpty);
+    expect(emptyAnswer[AutomationProtocol.emptyTextItemsKey], [
+      {
+        AutomationProtocol.rectKey: [0, 0, 400, 800],
+        AutomationProtocol.targetKey: null,
+      },
+    ]);
   });
 }
 
