@@ -77,29 +77,29 @@ dependencies:
     git:
       url: https://github.com/valeriinov/flutter_automation.git
       path: packages/flutter_automation
-      ref: 0.13.2
+      ref: 0.13.3
   flutter_automation_driver:
     git:
       url: https://github.com/valeriinov/flutter_automation.git
       path: packages/flutter_automation_driver
-      ref: 0.13.2
+      ref: 0.13.3
   flutter_automation_mock:
     git:
       url: https://github.com/valeriinov/flutter_automation.git
       path: packages/flutter_automation_mock
-      ref: 0.13.2
+      ref: 0.13.3
   # Only for an app that uses Dio.
   flutter_automation_mock_dio:
     git:
       url: https://github.com/valeriinov/flutter_automation.git
       path: packages/flutter_automation_mock_dio
-      ref: 0.13.2
+      ref: 0.13.3
   # Only with the mock, for the QA panel.
   flutter_automation_panel:
     git:
       url: https://github.com/valeriinov/flutter_automation.git
       path: packages/flutter_automation_panel
-      ref: 0.13.2
+      ref: 0.13.3
 
 dev_dependencies:
   # Only for the atlas of the flows.
@@ -107,12 +107,12 @@ dev_dependencies:
     git:
       url: https://github.com/valeriinov/flutter_automation.git
       path: packages/flutter_automation_atlas
-      ref: 0.13.2
+      ref: 0.13.3
   flutter_automation_runner:
     git:
       url: https://github.com/valeriinov/flutter_automation.git
       path: packages/flutter_automation_runner
-      ref: 0.13.2
+      ref: 0.13.3
 ```
 
 Skip `flutter_automation_mock`, `flutter_automation_mock_dio` and

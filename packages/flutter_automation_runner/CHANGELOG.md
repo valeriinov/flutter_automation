@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.13.3
+
+- Version bump with `flutter_automation_atlas` 0.13.3.
+
 ## 0.13.2
 
 - A capture writes each screenshot 720 pixels wide, up from 360, and

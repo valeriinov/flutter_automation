@@ -28,6 +28,10 @@ abstract interface class AtlasStoreReader {
   /// The directory that the paths of the repository files start from.
   String get rootPath;
 
+  /// The folder of the store: the output folder of the project, or the one a
+  /// `--store` option names.
+  String get storePath;
+
   /// Whether the store is the output folder of the project, not one a
   /// `--store` option names.
   bool get isDefaultStore;
@@ -54,6 +58,9 @@ final class AtlasLocationsStore implements AtlasStoreReader {
 
   @override
   String get rootPath => _paths.rootPath;
+
+  @override
+  String get storePath => _paths.storePath;
 
   @override
   bool get isDefaultStore {

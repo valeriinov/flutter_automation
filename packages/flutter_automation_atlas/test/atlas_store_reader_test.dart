@@ -104,6 +104,7 @@ void _atlasStoreReader_should_tellStoreOfOptionFromDefault() {
       );
 
       expect(store.isDefaultStore, isFalse);
+      expect(store.storePath, '${root.directory.path}/shared');
     });
   });
 }

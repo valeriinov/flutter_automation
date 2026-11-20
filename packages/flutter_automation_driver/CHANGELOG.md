@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.13.3
+
+- Version bump with `flutter_automation_atlas` 0.13.3.
+
 ## 0.13.2
 
 - Version bump with `flutter_automation_runner` 0.13.2.

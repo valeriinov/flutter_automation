@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.13.3
+
+- `AtlasStoreReader.storePath`: the folder of the store, the output folder
+  of the project or the one a `--store` option names.
+
 ## 0.13.2
 
 - Version bump with `flutter_automation_runner` 0.13.2.
