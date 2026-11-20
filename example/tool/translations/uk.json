@@ -1,0 +1,9 @@
+{
+  "welcomeTitle": "Ласкаво просимо",
+  "signInButton": "Увійти",
+  "mockModeTooltip": "Режим мока",
+  "catalogTitle": "Каталог",
+  "catalogEmpty": "Каталог порожній",
+  "catalogLoadFailed": "Не вдалося завантажити каталог",
+  "legacyBanner": "З поверненням"
+}

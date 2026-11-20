@@ -1,8 +1,8 @@
 # Changelog
 
-## 0.12.1
+## 0.13.0
 
-- Version bump with `flutter_automation_mock` 0.12.1.
+- Version bump with `flutter_automation_mock` 0.13.0.
 - The README shows the failure body built through `MockApiFailure.resolveMessage`.
 
 ## 0.12.0

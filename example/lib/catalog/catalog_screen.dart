@@ -4,6 +4,7 @@ import 'package:flutter_automation/flutter_automation.dart';
 import 'package:example/automation/example_target.dart';
 import 'package:example/catalog/catalog_api.dart';
 import 'package:example/catalog/catalog_item.dart';
+import 'package:example/example_translations.dart';
 
 /// Second screen: the items the catalog answers with.
 class CatalogScreen extends StatefulWidget {
@@ -23,14 +24,14 @@ class _CatalogScreenState extends State<CatalogScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Catalog')),
+      appBar: AppBar(title: Text(tr(context, 'catalogTitle'))),
       body: FutureBuilder<List<CatalogItem>>(
         future: _items,
         builder: (context, snapshot) {
           final items = snapshot.data;
 
           if (snapshot.hasError) {
-            return const Center(child: Text('Could not load the catalog'));
+            return Center(child: Text(tr(context, 'catalogLoadFailed')));
           }
 
           if (items == null) {
@@ -39,8 +40,8 @@ class _CatalogScreenState extends State<CatalogScreen> {
 
           if (items.isEmpty) {
             return Center(
-              child: const Text(
-                'The catalog is empty',
+              child: Text(
+                tr(context, 'catalogEmpty'),
               ).automationTarget(ExampleTarget.catalogEmpty),
             );
           }

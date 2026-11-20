@@ -1,7 +1,7 @@
 ---
 name: atlas
 description: Maintain the atlas of the flows of a Flutter app. Capture the variants on a simulator or headless, name what is stale, render the page, bundle the Full or Lite edition and publish the screenshots and the page by the fields of the project. Use for "capture the atlas", "what is stale in the atlas", "render the atlas", "bundle the atlas", "publish the atlas", "обнови атлас", "что устарело в атласе", "опубликуй атлас", "зніми атлас", "що застаріло в атласі".
-argument-hint: "[capture | stale | headless | render | bundle | publish] [flow]"
+argument-hint: "[capture | stale | headless | check | render | bundle | publish] [flow]"
 allowed-tools: Bash, Read, Write, Edit, Grep, Glob
 ---
 
@@ -36,6 +36,7 @@ The menu of the page and the groups of the QA panel follow
 | a fresh atlas after a code change | `capture --stale` (section 3) |
 | one flow or variant | `capture <flow> [<variant>...]` (section 3) |
 | a check with no device | `headless` (section 4) |
+| page, published variants, snapshots and keys agree | `check` (section 4) |
 | a page | `render`, then `bundle` (sections 5 and 6) |
 | a publication | section 7 |
 
@@ -111,6 +112,17 @@ ATLAS headless --record
 device. `stale --published` and `capture --stale --published` use it to save
 device walks. `--record` writes the frame and journal hashes into the fresh
 snapshots. A stage whose frame and journal did not change stays fresh.
+
+```bash
+ATLAS check [--store <folder>]
+```
+
+`check` reads no device. It runs the four checks of `AtlasChecks`: `page` (the
+committed page against its sources), `publishedVariants` (the list against the
+flow files and the snapshots), `snapshots` (the published snapshots against the
+variants) and `localeKeyCoverage` (the translation keys against the frames and
+the uncovered keys file). It prints one line per check and exits with code 1
+when a check fails.
 
 ## 5. Render the page
 

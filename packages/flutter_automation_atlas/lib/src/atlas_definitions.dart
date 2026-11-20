@@ -1,7 +1,6 @@
 import 'package:collection/collection.dart';
 import 'package:flutter_automation_runner/flutter_automation_runner.dart';
 
-import 'package:flutter_automation_atlas/src/atlas_runner_catalogue.dart';
 import 'package:flutter_automation_atlas/src/atlas_content_hash.dart';
 import 'package:flutter_automation_atlas/src/atlas_exception.dart';
 import 'package:flutter_automation_atlas/src/atlas_json.dart';
@@ -9,7 +8,7 @@ import 'package:flutter_automation_atlas/src/atlas_locations.dart';
 
 /// {@category Utils}
 ///
-/// Every flow of the automation runner, read in the order of their names.
+/// Each flow of the automation runner, read in the order of their names.
 ///
 /// A flow that holds a `probeSeries` step measures motion and walks no
 /// journey ([AtlasDefinition.holdsProbeSeries]). The definitions leave it
@@ -27,21 +26,17 @@ final class AtlasDefinitions {
   /// Reads the flows of the runner catalogue of [paths] but the probe
   /// series, in the order of their names.
   factory AtlasDefinitions.read(AtlasLocations paths) {
-    final finders = paths.config.finderRegistry;
-    final catalogue = AtlasRunnerCatalogue.read(paths);
-    final blocks = AutomationBlockLibrary.fromJson(catalogue.blocks);
+    final catalogue = AutomationFlowCatalogue.read(
+      paths.rootPath,
+      paths.runnerEntryPath,
+      commandPrefix: paths.project.launchSettings.commandPrefix,
+    );
     final names = catalogue.flows.keys.sorted(
       (first, second) => first.compareTo(second),
     );
     final flows = [
       for (final name in names)
-        AtlasDefinition.fromJson(
-          name,
-          catalogue.flows[name],
-          blocks,
-          finders,
-          paths,
-        ),
+        AtlasDefinition.fromCatalogue(name, catalogue, paths),
     ];
 
     return AtlasDefinitions(
@@ -50,7 +45,7 @@ final class AtlasDefinitions {
     );
   }
 
-  /// Every variant of every flow, in catalogue order.
+  /// Each variant of each flow, in catalogue order.
   List<AtlasVariantDefinition> get variants {
     return flows.expand((flow) => flow.variants).toList();
   }
@@ -90,39 +85,33 @@ final class AtlasDefinition {
     this.groupName,
   });
 
-  /// Reads the flow [name] out of its catalogue object [flowJson]. It builds
-  /// each variant from [blocks] and parses its finders with [finders].
+  /// Reads the flow [name] out of the [catalogue]. It resolves each variant
+  /// in the default locale of [paths].
   ///
   /// Throws a [AtlasException] when the flow declares a `group` without
   /// a string `name`, or when a flow without a probe series lacks a text in
   /// a page locale.
-  factory AtlasDefinition.fromJson(
+  factory AtlasDefinition.fromCatalogue(
     String name,
-    Object? flowJson,
-    AutomationBlockLibrary blocks,
-    AutomationFinderRegistry finders,
+    AutomationFlowCatalogue catalogue,
     AtlasLocations paths,
   ) {
-    final json = AtlasJson.readObject(flowJson, 'The flow "$name"');
-    final variants = AtlasJson.tryReadObject(json, 'variants') ?? {};
-    final defaultVariant = AutomationFlow.resolveDefaultVariant(
-      json['defaultVariant'],
-      variants,
+    final json = AtlasJson.readObject(
+      catalogue.flows[name],
+      'The flow "$name"',
     );
+    final variants = AtlasJson.tryReadObject(json, 'variants') ?? {};
     final definition = AtlasDefinition(
       name: name,
       groupName: _readGroupName(name, json['group']),
       variants: [
         for (final variant in variants.keys)
           AtlasVariantDefinition(
-            isDefault: variant == defaultVariant,
+            isDefault: catalogue.isDefaultVariant(name, variant),
             isInQaCatalogue: json['isInQaCatalogue'] == true,
-            automationFlow: AutomationFlow.fromJson(
-              name: name,
-              variant: variant,
-              json: json,
-              blocks: blocks,
-              finders: finders,
+            automationFlow: catalogue.resolveFlow(
+              name,
+              variant,
               locale: paths.defaultLocale,
             ),
           ),
@@ -272,7 +261,7 @@ final class AtlasVariantDefinition {
   /// The overrides the variant applies to the mock, empty when it has none.
   Map<String, Object?> get scenario => automationFlow.scenarioJson ?? const {};
 
-  /// Hash of what a capture of the variant walks: every resolved step and the
+  /// Hash of what a capture of the variant walks: each resolved step and the
   /// scenario.
   String get defHash => _hashSteps(automationFlow.steps);
 
@@ -281,7 +270,7 @@ final class AtlasVariantDefinition {
   List<String> get stageStepHashes => _hashStages(_hashSteps);
 
   /// Hash of the resolved steps a capture walks up to the end of each stage,
-  /// one per user action, leaving the scenario out.
+  /// one per user action. It does not include the scenario.
   List<String> get stageStepOnlyHashes => _hashStages(_hashStepsOnly);
 
   /// The run this variant names, the way a report and a stale line name it.

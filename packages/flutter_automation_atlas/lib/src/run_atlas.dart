@@ -4,6 +4,7 @@ import 'package:collection/collection.dart';
 import 'package:flutter_automation_runner/flutter_automation_runner.dart';
 
 import 'package:flutter_automation_atlas/src/atlas_capture.dart';
+import 'package:flutter_automation_atlas/src/atlas_checks.dart';
 import 'package:flutter_automation_atlas/src/atlas_definitions.dart';
 import 'package:flutter_automation_atlas/src/atlas_exception.dart';
 import 'package:flutter_automation_atlas/src/atlas_headless.dart';
@@ -19,12 +20,13 @@ import 'package:flutter_automation_atlas/src/atlas_published_variants.dart';
 import 'package:flutter_automation_atlas/src/atlas_shot_encoder.dart';
 import 'package:flutter_automation_atlas/src/atlas_shot_source.dart';
 import 'package:flutter_automation_atlas/src/atlas_stale_check.dart';
+import 'package:flutter_automation_atlas/src/atlas_store_reader.dart';
 
 /// {@category Utils}
 ///
-/// Keeps the atlas of a project — a snapshot of every automation flow
-/// variant, one screenshot, journal and design link per stage — in step with
-/// the app.
+/// Keeps the atlas of a project in step with the app. The atlas holds a
+/// snapshot of each automation flow variant, and one screenshot, journal and
+/// design link per stage.
 ///
 /// A project calls it from its own file:
 ///
@@ -34,85 +36,103 @@ import 'package:flutter_automation_atlas/src/atlas_stale_check.dart';
 /// }
 /// ```
 ///
-/// - `capture <flow> [<variant>...]` walks the named variants in the order
-///   given, or every variant of the flow when none is named, on the one booted
-///   iOS simulator and writes their snapshots and shots. Every name is
-///   resolved before the app is launched, so a misspelt one fails first. A
-///   full walk of a variant whose flow is in the QA catalogue, in the default
-///   locale, also writes its recording.
+/// - `capture <flow> [<variant>...]` walks the named variants in order.
+///   When the command names no variant, it walks each variant of the
+///   flow. It uses the one booted iOS simulator and writes the snapshots and
+///   shots. The command resolves each name before the app launches, so a
+///   misspelt name fails first. A full walk of a variant writes the answer
+///   records of the variant when the flow is in the QA catalogue and the
+///   locale is the default locale.
 /// - `capture <flow> <variant> --stages <i,…>` walks the one variant up to
-///   the last of the stage indexes, shoots only them — the last stage shoots
-///   the end too — and keeps every other stage with its hashes, the way
-///   `capture --stale` captures stale stages without rebasing any; a variant
-///   with no snapshot is walked whole.
-/// - `capture --stale` captures exactly what `stale` names: every
-///   `stage journal` stage first takes the journal of the current headless
-///   report without a device, a variant stale as a whole or in every other
-///   stage is walked whole, a variant with other stale stages is walked up to
-///   the last of them, shoots only them and keeps every other stage, each
-///   stage `stale` found fresh taking the hashes of the current files.
-/// - `stale [<flow>]` prints one line per variant: `fresh`, `new`,
-///   `definition`, `failed`, `manifest` or `code` with the changed paths for
-///   the variant as a whole, or `stage definition`, `stage code`,
-///   `stage mock`, `stage journal`, `stage analytics` and `locale` with the
-///   stale stage indexes, the changed paths, the changed keys, the request the
-///   mock answers differently and the journal the baseline walk does not
-///   reproduce. With `--published`, before it prints, it walks headless in
-///   one run the variants whose frames it did not compare
-///   ([AtlasHeadlessSelection]) and checks them again;
-///   `capture --stale --published` does the same, and `--no-walk` keeps both
-///   to the reports already written.
-/// - `headless [--baseline] [<flow> [<variant>...]]` walks the published
-///   variants, the variants of the flow or the named ones in the app under
-///   `flutter test`, on the in-app mock and without a device, and writes the
-///   hash and the PNG of the frame and the journal of every stage and of the
-///   end to the headless folder under the build folder of the project; with
-///   `--baseline` it walks each variant on the commit its snapshot was
-///   written in and writes to the baseline folder. `stale` compares the
-///   current report with the hashes a snapshot holds, or with the baseline
-///   one.
-/// - `headless --record [<flow> [<variant>...]]` walks the same variants,
-///   checks them as `stale --no-walk` does and writes the frame and journal
-///   hashes of the current reports into the snapshots of the fresh ones
-///   ([AtlasHeadlessRecord]), naming every variant it leaves.
-/// - `normalize-manifests` rewrites the manifest hashes every stored snapshot
-///   took of the raw content of a file into the hashes `stale` compares, and
-///   prints the hashes no version of the file in git history matches.
-/// - `source-commit --snapshot <file>` prints the commit `stale` takes as the
-///   baseline of the snapshot file, or `not found`.
+///   the last of the stage indexes. It shoots only these stages; the last
+///   stage shoots the end too. It keeps each other stage with its hashes,
+///   the way `capture --stale` captures stale stages without a rebase. It
+///   walks a variant with no snapshot whole.
+/// - `capture --stale` captures exactly what `stale` names:
+///   - Each `stage journal` stage takes the journal of the current headless
+///     report without a device.
+///   - A variant that is stale as a whole, or in each other stage, gets a
+///     whole walk.
+///   - A variant with other stale stages gets a walk up to the last of them.
+///     The walk shoots only these stages and keeps each other stage. Each
+///     stage that `stale` found fresh takes the hashes of the current files.
+/// - `stale [<flow>]` prints one line per variant. For the variant as a
+///   whole, the line is one of these words: `fresh`, `new`, `definition`,
+///   `failed`, `manifest` or `code`, with the changed paths. For stages, the
+///   line is `stage definition`, `stage code`, `stage mock`, `stage journal`,
+///   `stage analytics` or `locale`. It lists the stale stage indexes, the
+///   changed paths, the changed keys, the request that the mock answers
+///   differently and the journal that the baseline walk does not reproduce.
+///   With `--published`, before it prints, it walks headless the variants whose
+///   frames it did not compare ([AtlasHeadlessSelection]). It does this in one
+///   run, and it checks them again. `capture --stale --published` does the
+///   same. `--no-walk` keeps both to the reports on disk.
+/// - `headless [--baseline] [<flow> [<variant>...]]` walks variants in the
+///   app under `flutter test`. It walks the published variants, the variants
+///   of the flow or the named ones. It uses the in-app mock and no device. It
+///   writes the hash and the PNG of the frame, and the journal of each stage
+///   and of the end, to the headless folder under the build folder of the
+///   project. With `--baseline` it walks each variant on the commit of its
+///   snapshot and writes to the baseline folder. `stale` compares the current
+///   report with the hashes of a snapshot, or with the baseline report.
+/// - `headless --record [<flow> [<variant>...]]` walks the same variants and
+///   checks them as `stale --no-walk` does. It writes the frame and journal
+///   hashes of the current reports into the snapshots of the fresh variants
+///   ([AtlasHeadlessRecord]). It names each variant that it leaves.
+/// - `normalize-manifests` rewrites the manifest hashes that each stored
+///   snapshot took of the raw content of a file. The new hashes are the ones
+///   that `stale` compares. It prints the hashes that no version of the file
+///   in git history matches.
+/// - `source-commit --snapshot <file>` prints the commit that `stale` takes
+///   as the baseline of the snapshot file, or `not found`.
 /// - `stale --published` and `capture --stale --published` keep to the
-///   variants the published variants list of the project names.
-/// - `render [--edition <name>]` writes the page of the edition, `full` when
-///   absent, to `index.html` in the store folder, its shots read from
-///   `shots/<hash>.png` beside it, deletes the shots and the declarations no
-///   stored snapshot names and writes the reports of the project
-///   ([AtlasProject.writeReports]).
+///   variants that the published variants list of the project names.
+/// - `render [--edition <name>]` writes the page of the edition to
+///   `index.html` in the store folder. The default edition is `full`. The
+///   page reads its shots from `shots/<hash>.png` beside it. The command
+///   removes the shots and the declarations that no stored snapshot names.
+///   It writes the reports of the project ([AtlasProject.writeReports]).
 /// - `bundle --edition <name> --shots <source> [--locale <code|all>]` writes
 ///   the page of the edition as `index.html` in its own folder under the
 ///   build folder, one folder per edition and locale. The source is `files`,
-///   `inline`, `sheets` or `urls`. The bundle first deletes every file and
-///   folder in `shots/` beside the page. `files` copies the shots to
-///   `shots/`. `inline` embeds them as WebP sheets. `sheets` writes the WebP
-///   sheets as `shots/<sheet hash>.webp`, named by the hash of the sheet
-///   bytes. `urls` takes their links from [AtlasProject.shotPublisher].
-///   `--locale` names the one series the page shows; `all`, or none, shows
-///   every page locale in one file. The command prints the bytes of the
-///   page, the bytes and the files of the whole bundle and its images. The
-///   bundle stops with its size when the page passes the `maxBundleBytes` or
-///   the images pass the `maxBundleImages` limit of
-///   `flutter_automation: atlas:`. `maxBundleImages` counts the inline
+///   `inline`, `sheets` or `urls`. The bundle first deletes each file and
+///   folder in `shots/` beside the page.
+///   - `files` copies the shots to `shots/`.
+///   - `inline` embeds them as WebP sheets.
+///   - `sheets` writes the WebP sheets as `shots/<sheet hash>.webp`. The hash
+///     of the sheet bytes names each file.
+///   - `urls` takes their links from [AtlasProject.shotPublisher].
+///
+///   `--locale` names the one series that the page shows. `all`, or no
+///   option, shows all page locales in one file. The command prints the bytes
+///   of the page, the bytes and the files of the whole bundle, and its
+///   images. The bundle stops with its size when the page passes the
+///   `maxBundleBytes` limit or the images pass the `maxBundleImages` limit
+///   of `flutter_automation: atlas:`. `maxBundleImages` counts the inline
 ///   sheets, the sheet files or the shot files. The bundle also stops with
 ///   the message of a publisher that fails.
+/// - `check` runs the four checks of [AtlasChecks]. It prints one line per
+///   check, with the lines of each problem under it:
+///   - `page` holds the committed page against its sources.
+///   - `publishedVariants` holds the published variants list against the flow
+///     files and the snapshots.
+///   - `snapshots` holds the published snapshots against the variants. A
+///     stale variant warns.
+///   - `localeKeyCoverage` holds the translation keys against the frames and
+///     the uncovered keys list.
 ///
-/// `capture` and `stale` take `--locale <code>`, the first locale of the
-/// project when absent: the app runs in that locale and its values come from
-/// the translations of the project. Every command takes `--store <folder>`,
-/// the folder of the snapshots, the declarations, the shots and the page, the
-/// output folder of the project when absent, and `--source-label <text>`, the
-/// label of the source the page footer shows.
+///   The command exits with code 1 when a check fails.
 ///
-/// `headless` with `--published` or `--no-walk`, and `capture` with
-/// `--no-walk` but without `--stale`, fail with the usage.
+/// `capture` and `stale` take `--locale <code>`. The default is the first
+/// locale of the project. The app runs in that locale, and its values come
+/// from the translations of the project. Each command takes
+/// `--store <folder>`, the folder of the snapshots, the declarations, the
+/// shots and the page. The default is the output folder of the project. Each
+/// command also takes `--source-label <text>`, the label of the source that
+/// the page footer shows.
+///
+/// `headless` with `--published` or `--no-walk` fails with the usage. So does
+/// `capture` with `--no-walk` but without `--stale`.
 ///
 /// A capture or a headless walk that did not pass exits with code 1.
 Future<void> runAtlas(List<String> args, AtlasProject project) async {
@@ -138,6 +158,7 @@ final class AtlasRun {
   static const _sourceCommitCommand = 'source-commit';
   static const _renderCommand = 'render';
   static const _bundleCommand = 'bundle';
+  static const _checkCommand = 'check';
   static const _staleFlag = '--stale';
   static const _baselineFlag = '--baseline';
   static const _recordFlag = '--record';
@@ -169,6 +190,7 @@ final class AtlasRun {
       '$_normalizeManifestsCommand | '
       '$_sourceCommitCommand $_snapshotOption <file> | '
       '$_renderCommand [$_editionOption <name>] | '
+      '$_checkCommand | '
       '$_bundleCommand $_editionOption <name> '
       '$_shotsOption <files|inline|sheets|urls> '
       '[$_localeOption <code|$_allLocales>] '
@@ -185,12 +207,13 @@ final class AtlasRun {
   final AtlasHeadlessPass? _headlessPass;
   final AtlasShotEncoder? _shotEncoder;
 
-  /// The [rootPath] parameter names the repository the commands read and
-  /// write; the [readStalenesses] parameter tells the staleness of each of
-  /// the variants in their order, [AtlasStaleCheck] when absent; the
-  /// [headlessPass] parameter walks variants headless, on the working tree
-  /// when absent; the [shotEncoder] parameter turns shots into the sheets a
-  /// bundle inlines or writes as files, WebP sheets when absent.
+  /// The [rootPath] parameter names the repository that the commands read and
+  /// write. The [readStalenesses] parameter tells the staleness of each of
+  /// the variants in their order. It is [AtlasStaleCheck] by default. The
+  /// [headlessPass] parameter walks variants headless. It walks the current
+  /// tree by default. The [shotEncoder] parameter turns shots into the sheets
+  /// that a bundle inlines or writes as files. It makes WebP sheets by
+  /// default.
   AtlasRun(
     this.args,
     this._project, {
@@ -207,7 +230,8 @@ final class AtlasRun {
        _headlessPass = headlessPass,
        _shotEncoder = shotEncoder;
 
-  /// The label of the source the page shows, absent when none is given.
+  /// The label of the source that the page shows; `null` when the command
+  /// gives none.
   String? get sourceLabel => _tryReadOption(args, _sourceLabelOption);
 
   String get _locale {
@@ -278,6 +302,8 @@ final class AtlasRun {
         await _render();
       case _bundleCommand:
         await _bundle();
+      case _checkCommand:
+        await _check();
       case _:
         throw const AtlasException(_usage);
     }
@@ -286,7 +312,7 @@ final class AtlasRun {
   /// Writes the reports of the project that read the atlas, from the store
   /// folder the command names.
   void writeReports() {
-    _project.writeReports(locations.storePath);
+    _project.writeReports(AtlasLocationsStore(locations));
   }
 
   static String? _tryReadOption(List<String> args, String option) {
@@ -436,6 +462,32 @@ final class AtlasRun {
 
     if (overLimit != null) {
       throw AtlasException(overLimit);
+    }
+  }
+
+  Future<void> _check() async {
+    final checks = AtlasChecks(
+      _project,
+      rootPath: locations.rootPath,
+      store: _tryReadOption(args, _storeOption),
+      sourceLabel: sourceLabel,
+    );
+    final outcomes = {
+      'page': await checks.page(),
+      'publishedVariants': await checks.publishedVariants(),
+      'snapshots': await AtlasSnapshotsCheck(
+        locations,
+        readStalenesses: _readStalenesses,
+      ).run(),
+      'localeKeyCoverage': await checks.localeKeyCoverage(),
+    };
+
+    for (final MapEntry(key: name, value: outcome) in outcomes.entries) {
+      outcome.describe(name).forEach(stdout.writeln);
+    }
+
+    if (outcomes.values.any((outcome) => outcome.isFailure)) {
+      exitCode = _failureExitCode;
     }
   }
 

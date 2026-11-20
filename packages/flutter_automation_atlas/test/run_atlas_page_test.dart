@@ -76,8 +76,11 @@ void _atlasRun_should_renderThePageAndHandStoreToProjectReports() {
 
         await _runIn(root, ['render']);
 
+        final store = root.project.reportedStores.single;
+
         expect(File(root.paths.pagePath).existsSync(), isTrue);
-        expect(root.project.reportedStores, [root.paths.storePath]);
+        expect(store.isDefaultStore, isTrue);
+        expect(store.rootPath, root.paths.rootPath);
       });
     },
   );

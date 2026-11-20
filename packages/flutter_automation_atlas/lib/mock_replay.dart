@@ -6,4 +6,6 @@
 /// `flutter_automation_atlas.dart`, which runs in the Dart VM.
 library;
 
-export 'package:flutter_automation_atlas/src/run_atlas_mock_replay.dart';
+export 'package:flutter_automation_atlas/src/atlas_mock_session.dart';
+export 'package:flutter_automation_atlas/src/run_atlas_mock_replay.dart'
+    show AtlasMockApisBuilder, isAtlasMockReplayRun, runAtlasMockReplay;

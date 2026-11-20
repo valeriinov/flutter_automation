@@ -77,29 +77,29 @@ dependencies:
     git:
       url: https://github.com/valeriinov/flutter_automation.git
       path: packages/flutter_automation
-      ref: 0.12.1
+      ref: 0.13.0
   flutter_automation_driver:
     git:
       url: https://github.com/valeriinov/flutter_automation.git
       path: packages/flutter_automation_driver
-      ref: 0.12.1
+      ref: 0.13.0
   flutter_automation_mock:
     git:
       url: https://github.com/valeriinov/flutter_automation.git
       path: packages/flutter_automation_mock
-      ref: 0.12.1
+      ref: 0.13.0
   # Only for an app that uses Dio.
   flutter_automation_mock_dio:
     git:
       url: https://github.com/valeriinov/flutter_automation.git
       path: packages/flutter_automation_mock_dio
-      ref: 0.12.1
+      ref: 0.13.0
   # Only with the mock, for the QA panel.
   flutter_automation_panel:
     git:
       url: https://github.com/valeriinov/flutter_automation.git
       path: packages/flutter_automation_panel
-      ref: 0.12.1
+      ref: 0.13.0
 
 dev_dependencies:
   # Only for the atlas of the flows.
@@ -107,12 +107,12 @@ dev_dependencies:
     git:
       url: https://github.com/valeriinov/flutter_automation.git
       path: packages/flutter_automation_atlas
-      ref: 0.12.1
+      ref: 0.13.0
   flutter_automation_runner:
     git:
       url: https://github.com/valeriinov/flutter_automation.git
       path: packages/flutter_automation_runner
-      ref: 0.12.1
+      ref: 0.13.0
 ```
 
 Skip `flutter_automation_mock`, `flutter_automation_mock_dio` and
@@ -238,7 +238,7 @@ own facts (commands, folders, defaults) in an `## Automation` section of its
 | `mock-app` | Run the app on the in-memory mock, choose scenarios and profiles, tune a `MockSection`, add a mock api | — |
 | `add-automation-targets` | Declare target enums and mark widgets with `automationTarget()` so a flow addresses ids, not text | — |
 | `setup-qa-panel` | Add the QA panel to a project that has the mock: panel dependency, mode bootstrap, panel file, restart screen, mode tile in the debug menu, catalogue asset, QA build, and the `--check` of the QA catalogue | — |
-| `atlas` | Keep the atlas of the flows in step with the app: `stale`, `capture` on a simulator, `headless`, `render`, `bundle` of the Full and Lite editions, publish by the fields of the project. Its `references/flow-groups.md` sets the menu of the atlas and the groups of the QA panel | — |
+| `atlas` | Keep the atlas of the flows in step with the app: `stale`, `capture` on a simulator, `headless`, `check`, `render`, `bundle` of the Full and Lite editions, publish by the fields of the project. Its `references/flow-groups.md` sets the menu of the atlas and the groups of the QA panel | — |
 | `setup-atlas` | Add the atlas to a project that has flows: dependency, `AtlasProject` file, `atlas:` section of `pubspec.yaml`, the three atlas fields of `## Automation`, a first capture and page | — |
 | `setup-automation` | Set a project up from `flutter create`: dependencies at the tag, `flutter_automation:` section, `## Automation` in `AGENTS.md`, driver in `main`, `run_flows.dart` and a first flow, optionally the mock | — |
 

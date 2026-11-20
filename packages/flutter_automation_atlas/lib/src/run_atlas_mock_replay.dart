@@ -7,6 +7,8 @@ import 'package:flutter_automation_atlas/src/atlas_journal_schema.dart';
 import 'package:flutter_automation_atlas/src/atlas_mock_answer_comparison.dart';
 import 'package:flutter_automation_atlas/src/atlas_mock_replay.dart';
 import 'package:flutter_automation_atlas/src/atlas_mock_replayer.dart';
+import 'package:flutter_automation_atlas/src/atlas_mock_session.dart';
+import 'package:flutter_automation_atlas/src/atlas_mock_session_run.dart';
 
 /// {@category Utils}
 ///
@@ -26,34 +28,64 @@ const _outputPath = String.fromEnvironment(AtlasMockReplayProcess.outputDefine);
 
 /// {@category Utils}
 ///
-/// The body of the `flutter test` file that [AtlasMockReplayProcess] runs:
-/// asks the mock of the app again for every answer a snapshot recorded.
+/// The body of the `flutter test` file that [AtlasMockReplayProcess] runs.
+/// It asks the mock of the app again for each answer that a snapshot
+/// recorded.
 ///
-/// Reads the snapshots from the file of [AtlasMockReplayProcess.inputDefine].
-/// For each one it starts a mock with the [sections] parameter and the
-/// scenario of the snapshot, and asks the apis that the [apis] parameter
-/// builds for every recorded request. The [schema] parameter is the journal
-/// schema of the project, which [AtlasMockAnswerComparison] compares the
-/// answers by. It writes one [AtlasMockReplayOutcome] for each snapshot to the
-/// file of [AtlasMockReplayProcess.outputDefine].
+/// It reads the snapshots from the file of
+/// [AtlasMockReplayProcess.inputDefine]. Each snapshot replays through an
+/// [AtlasMockSession] that the [session] parameter builds. The replay walks
+/// it in a `FakeAsync` zone. Without [session], the replay starts a mock with
+/// the [sections] parameter and the scenario of the snapshot. It asks the
+/// apis that the [apis] parameter builds for each recorded request. The
+/// [schema] parameter is the journal schema of the project.
+/// [AtlasMockAnswerComparison] compares the answers with it. It writes one
+/// [AtlasMockReplayOutcome] for each snapshot to the file of
+/// [AtlasMockReplayProcess.outputDefine].
 Future<void> runAtlasMockReplay({
-  required List<MockSection<Object?>> sections,
-  required AtlasMockApisBuilder apis,
   required AtlasJournalSchema schema,
-}) async {
-  final replay = _MockReplay(
+  AtlasMockSessionFactory? session,
+  List<MockSection<Object?>> sections = const [],
+  AtlasMockApisBuilder? apis,
+}) {
+  return runAtlasMockReplayFiles(
+    inputPath: _inputPath,
+    outputPath: _outputPath,
+    schema: schema,
+    session: session,
     sections: sections,
     apis: apis,
-    comparison: AtlasMockAnswerComparison(schema),
+  );
+}
+
+/// {@category Utils}
+///
+/// [runAtlasMockReplay] with the paths of the input and the output file given
+/// instead of read from the defines.
+Future<void> runAtlasMockReplayFiles({
+  required String inputPath,
+  required String outputPath,
+  required AtlasJournalSchema schema,
+  AtlasMockSessionFactory? session,
+  List<MockSection<Object?>> sections = const [],
+  AtlasMockApisBuilder? apis,
+}) async {
+  assert((session == null) != (apis == null), 'Pass either session or apis.');
+
+  final replay = _MockReplay(
+    schema: schema,
+    session: session,
+    sections: sections,
+    apis: apis,
   );
   final inputs = AtlasMockReplayInput.readAll(
-    File(_inputPath).readAsStringSync(),
+    File(inputPath).readAsStringSync(),
   );
   final outcomes = {
     for (final input in inputs) input.id: await replay.run(input),
   };
 
-  File(_outputPath).writeAsStringSync(
+  File(outputPath).writeAsStringSync(
     jsonEncode({
       for (final MapEntry(:key, :value) in outcomes.entries)
         key: value.toJson(),
@@ -64,17 +96,25 @@ Future<void> runAtlasMockReplay({
 final class _MockReplay {
   static const _directoryPrefix = 'atlas_replay';
 
+  final AtlasJournalSchema schema;
+  final AtlasMockSessionFactory? session;
   final List<MockSection<Object?>> sections;
-  final AtlasMockApisBuilder apis;
-  final AtlasMockAnswerComparison comparison;
+  final AtlasMockApisBuilder? apis;
 
   const _MockReplay({
+    required this.schema,
+    required this.session,
     required this.sections,
     required this.apis,
-    required this.comparison,
   });
 
   Future<AtlasMockReplayOutcome> run(AtlasMockReplayInput input) async {
+    final sessionFactory = session;
+
+    if (sessionFactory != null) {
+      return _replay(input, sessionFactory);
+    }
+
     final directory = Directory.systemTemp.createTempSync(_directoryPrefix);
 
     try {
@@ -86,20 +126,37 @@ final class _MockReplay {
 
       await mock.updateScenario(MockScenario.fromJson(input.scenario));
 
-      final endpoints = MockApiEndpointResolver(apis(mock));
+      final endpoints = MockApiEndpointResolver(apis?.call(mock) ?? const []);
       final responses = [
         for (final answer in input.answers)
-          await _respond(endpoints, answer.record),
+          await _tryRespond(endpoints, answer.record),
       ];
 
-      return AtlasMockReplayer(input, (input, timing) {
-        return [
-          for (final (index, answer) in input.answers.indexed)
-            _describeAnswer(answer, responses[index], timing),
-        ];
-      }).replay();
+      return _replay(input, (_) => _MockApiSession(responses));
     } finally {
       directory.deleteSync(recursive: true);
+    }
+  }
+
+  AtlasMockReplayOutcome _replay(
+    AtlasMockReplayInput input,
+    AtlasMockSessionFactory sessionFactory,
+  ) {
+    return AtlasMockReplayer(
+      input,
+      (input, timing) =>
+          AtlasMockSessionRun(input, timing, sessionFactory, schema).run(),
+    ).replay();
+  }
+
+  Future<_MockApiAnswer> _tryRespond(
+    MockApiEndpointResolver endpoints,
+    Map<String, Object?> recorded,
+  ) async {
+    try {
+      return _MockApiAnswer(response: await _respond(endpoints, recorded));
+    } on Object catch (error, stackTrace) {
+      return _MockApiAnswer(error: error, stackTrace: stackTrace);
     }
   }
 
@@ -120,32 +177,75 @@ final class _MockReplay {
         );
   }
 
-  AtlasReplayedAnswer _describeAnswer(
-    AtlasRecordedAnswer answer,
-    MockApiResponse? response,
-    AtlasReplayTiming timing,
-  ) {
-    final recorded = answer.record;
-
-    return AtlasReplayedAnswer(
-      stage: answer.stage,
-      request: '${recorded['method']} ${recorded['path']}',
-      difference: comparison.compare(
-        recorded: recorded,
-        replayed: {
-          'kind': recorded['kind'],
-          'status': response?.statusCode,
-          'response': response?.body,
-        },
-        hasKnownMoments: timing.launchedAt != null,
-      ),
-    );
-  }
-
   Map<String, Object?> _readBody(Object? body) {
     return switch (body) {
       final Map<String, Object?> map => map,
       _ => const {},
     };
   }
+}
+
+/// What an endpoint gave for one recorded request: a response, or the error
+/// that its responder threw.
+final class _MockApiAnswer {
+  final MockApiResponse? response;
+  final Object? error;
+  final StackTrace? stackTrace;
+
+  const _MockApiAnswer({this.response, this.error, this.stackTrace});
+}
+
+/// Serves the responses that the endpoints gave once, in real time, to each
+/// asked record in the order of the snapshot, so every timing replays the same
+/// answers.
+final class _MockApiSession extends AtlasMockSession {
+  final List<_MockApiAnswer> _answers;
+
+  int _asked = 0;
+  MockApiResponse? _response;
+
+  _MockApiSession(this._answers);
+
+  @override
+  Future<Object?> ask(Map<String, Object?> record) async {
+    final answer = _answers.elementAtOrNull(_asked++);
+    final error = answer?.error;
+
+    _response = answer?.response;
+
+    if (error != null) {
+      Error.throwWithStackTrace(error, answer?.stackTrace ?? StackTrace.empty);
+    }
+
+    return _response;
+  }
+
+  @override
+  List<Map<String, Object?>> takeJournal() => const [];
+
+  @override
+  Map<String, Object?>? findReplayed(
+    Map<String, Object?> record,
+    List<Map<String, Object?>> journal,
+  ) {
+    final response = _response;
+
+    if (response == null) {
+      return null;
+    }
+
+    return {
+      'kind': record['kind'],
+      'status': response.statusCode,
+      'response': response.body,
+    };
+  }
+
+  @override
+  String describe(Map<String, Object?> record) {
+    return '${record['method']} ${record['path']}';
+  }
+
+  @override
+  Future<void> close() async {}
 }

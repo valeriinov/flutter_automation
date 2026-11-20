@@ -1,7 +1,9 @@
 # Changelog
 
-## 0.12.1
+## 0.13.0
 
+- A text or locale key finder reads a `RichText` that no `Text` builds, as the
+  driver finder does. A `Text` matches once.
 - The response sheet keeps the `messageKey` of the failure it edits only while
   the error code and the message stay those of that failure.
 

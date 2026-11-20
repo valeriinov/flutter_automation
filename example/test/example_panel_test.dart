@@ -109,7 +109,7 @@ void _exampleApp_should_showTheRestartScreenAfterAModeSwitch() {
           modeController: modeController,
         ),
       );
-      await tester.tap(find.byTooltip('Mock mode'));
+      await tester.tap(find.byIcon(Icons.settings));
       await tester.pumpAndSettle();
       await tester.tap(find.byType(Switch));
       await tester.pumpAndSettle();

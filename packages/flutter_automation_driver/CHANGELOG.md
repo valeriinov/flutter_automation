@@ -1,7 +1,10 @@
 # Changelog
 
-## 0.12.1
+## 0.13.0
 
+- `UnmarkedTextFinder.text()` and `LocaleKeyFinder.text()` match a `RichText`
+  by its plain text. They skip a `RichText` that a `Text` builds, so one
+  `Text` matches once.
 - The texts and widgets of `screen.read` count a box with a zero size inside
   the clip when its top left corner stands inside it, as `frame.read` does.
 - `frame.read` and the texts and widgets of `screen.read` leave out a subtree

@@ -23,6 +23,10 @@ void main() {
     _automationPlayerFinder_should_writeADeclaredDateKey();
     _automationFlowPlayer_should_readTheDatesOfTheCatalogue();
   });
+  group('AutomationPlayerFinder Text Tests', () {
+    _automationPlayerFinder_should_findRichTextByItsSpans();
+    _automationPlayerFinder_should_matchTextOnce();
+  });
 }
 
 Future<void> _pumpDays(WidgetTester tester, {VoidCallback? onTap}) {
@@ -144,5 +148,40 @@ void _automationFlowPlayer_should_readTheDatesOfTheCatalogue() {
     await future;
 
     expect(taps, 1);
+  });
+}
+
+void _automationPlayerFinder_should_findRichTextByItsSpans() {
+  testWidgets('AutomationPlayerFinder should find rich text by its spans', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      Directionality(
+        textDirection: TextDirection.ltr,
+        child: RichText(
+          text: const TextSpan(
+            children: [
+              TextSpan(text: 'Hel'),
+              TextSpan(text: 'lo'),
+            ],
+          ),
+        ),
+      ),
+    );
+
+    expect(_finder({'by': 'text', 'value': 'Hello'}).findAll(), hasLength(1));
+  });
+}
+
+void _automationPlayerFinder_should_matchTextOnce() {
+  testWidgets('AutomationPlayerFinder should match text once', (tester) async {
+    await tester.pumpWidget(
+      const Directionality(
+        textDirection: TextDirection.ltr,
+        child: Text('Hello'),
+      ),
+    );
+
+    expect(_finder({'by': 'text', 'value': 'Hello'}).findAll(), hasLength(1));
   });
 }

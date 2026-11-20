@@ -165,13 +165,15 @@ final fakeAtlasGroups = [
 final class FakeAtlasProject implements AtlasProject {
   final Set<String> acceptedEvents = {};
   final Map<String, Map<String, Object?>> translationsByLocale = {};
-  final List<String> reportedStores = [];
+  final List<AtlasStoreReader> reportedStores = [];
   final List<AtlasTable> tablesToReturn = [];
   final Map<String, Map<String, String>> descriptions = {};
   final Map<String, String> designLinks = {};
   AtlasShotPublisher? publisher;
   final List<String> commandPrefix;
   final AtlasStaleSettings? staleSettingsOverride;
+  final AtlasPaths? pathsOverride;
+  RegExp? usagePattern;
 
   @override
   final List<String> locales;
@@ -184,17 +186,21 @@ final class FakeAtlasProject implements AtlasProject {
     List<AutomationFlowGroup>? groupOrder,
     List<String>? commandPrefix,
     this.staleSettingsOverride,
+    this.pathsOverride,
   }) : groupOrder = groupOrder ?? fakeAtlasGroups,
        commandPrefix = commandPrefix ?? [fakeFlutterCommand];
 
   @override
-  AtlasPaths get paths => const AtlasPaths(
-    runnerEntry: 'tool/run_flows.dart',
-    output: 'atlas_store',
-    build: 'build/atlas',
-    recordings: 'assets/recordings',
-    publishedVariants: 'scripts/published_variants.json',
-  );
+  AtlasPaths get paths {
+    return pathsOverride ??
+        const AtlasPaths(
+          runnerEntry: 'tool/run_flows.dart',
+          output: 'atlas_store',
+          build: 'build/atlas',
+          recordings: 'assets/recordings',
+          publishedVariants: 'scripts/published_variants.json',
+        );
+  }
 
   @override
   AtlasLaunchSettings get launchSettings => AtlasLaunchSettings(
@@ -222,12 +228,15 @@ final class FakeAtlasProject implements AtlasProject {
   String get designScreenKey => 'designScreenName';
 
   @override
-  List<AtlasTable> tables(String store) => tablesToReturn;
+  List<AtlasTable> tables(AtlasStoreReader store) => tablesToReturn;
 
   @override
   Map<String, Object?> translations(String locale) {
     return translationsByLocale[locale] ?? const {};
   }
+
+  @override
+  RegExp? get localeKeyUsagePattern => usagePattern;
 
   @override
   Map<String, Map<String, String>> get screenDescriptions => descriptions;
@@ -245,7 +254,7 @@ final class FakeAtlasProject implements AtlasProject {
   List<String> get sourceDirtyIgnores => const ['local.env'];
 
   @override
-  void writeReports(String store) {
+  void writeReports(AtlasStoreReader store) {
     reportedStores.add(store);
   }
 

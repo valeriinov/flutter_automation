@@ -76,34 +76,48 @@ abstract final class AutomationWidgetTesterFinders {
 
   static Finder _findUnmarkedText(
     String text,
-    String? Function(Widget) readText,
+    String? Function(Element) readText,
   ) {
     return find.byElementPredicate((element) {
-      final shown = readText(element.widget);
+      final shown = readText(element);
 
       return shown != null && LocaleKeyMarker.strip(shown) == text;
     }, description: 'unmarked text "$text"');
   }
 
-  static Finder _findLocaleKey(String key, String? Function(Widget) readText) {
+  static Finder _findLocaleKey(String key, String? Function(Element) readText) {
     return find.byElementPredicate((element) {
-      final shown = readText(element.widget);
+      final shown = readText(element);
 
       return shown != null && LocaleKeyMarker.readKeys(shown).contains(key);
     }, description: 'locale key "$key"');
   }
 
-  static String? _readText(Widget widget) {
-    return switch (widget) {
+  static String? _readText(Element element) {
+    return switch (element.widget) {
       Text(:final data?) => data,
       Text(:final textSpan?) => textSpan.toPlainText(),
       EditableText(:final controller) => controller.text,
+      final RichText richText when !_isBuiltByText(element) =>
+        richText.text.toPlainText(),
       _ => null,
     };
   }
 
-  static String? _readTooltipMessage(Widget widget) {
-    return switch (widget) {
+  static bool _isBuiltByText(Element element) {
+    bool isBuilt = false;
+
+    element.visitAncestorElements((ancestor) {
+      isBuilt = ancestor.widget is Text;
+
+      return !isBuilt;
+    });
+
+    return isBuilt;
+  }
+
+  static String? _readTooltipMessage(Element element) {
+    return switch (element.widget) {
       Tooltip(:final message?) => message,
       _ => null,
     };

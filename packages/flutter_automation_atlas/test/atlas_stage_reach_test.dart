@@ -1,7 +1,11 @@
 import 'dart:async';
+import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
+import 'package:path/path.dart' as p;
 
+import 'package:flutter_automation_atlas/src/atlas_exception.dart';
+import 'package:flutter_automation_atlas/src/atlas_locations.dart';
 import 'package:flutter_automation_atlas/src/atlas_stage_reach.dart';
 import 'package:flutter_automation_atlas/src/atlas_stale_settings.dart';
 
@@ -303,6 +307,8 @@ void main() {
   group('AtlasStageReach Tests', () {
     _atlasStageReach_should_reachOwnStateAndItsMentions();
     _atlasStageReach_should_readEveryFileWithoutExcludedSuffix();
+    _atlasStageReach_should_readPackageConfigOfWorkspaceRoot();
+    _atlasStageReach_should_rejectProjectWithoutPackageConfig();
     _atlasStageReach_should_notEnterOtherWidget();
     _atlasStageReach_should_reachThemeFieldOnlyByItsName();
     _atlasStageReach_should_reachThemeFieldOnlyFromWidgetReadingIt();
@@ -529,6 +535,67 @@ void _atlasStageReach_should_readEveryFileWithoutExcludedSuffix() {
       );
     },
     timeout: _analysisTimeout,
+  );
+}
+
+void _atlasStageReach_should_readPackageConfigOfWorkspaceRoot() {
+  test(
+    'AtlasStageReach should read package config of workspace root',
+    () async {
+      final directory = Directory.systemTemp.createTempSync('reach-');
+
+      try {
+        final appPath = p.join(directory.path, 'app');
+
+        _samplePackageSources.forEach((path, content) {
+          File(p.join(appPath, path))
+            ..createSync(recursive: true)
+            ..writeAsStringSync(content);
+        });
+
+        File(p.join(directory.path, _packageConfigPath))
+          ..createSync(recursive: true)
+          ..writeAsStringSync(
+            readTestPackageConfig(
+              'sample',
+            ).replaceFirst('"rootUri":"../"', '"rootUri":"../app"'),
+          );
+
+        final reach = await AtlasStageReach.read(
+          AtlasLocations(appPath, FakeAtlasProject()),
+        );
+
+        expect(
+          reach.reachFrom('HomeView').ids,
+          contains(AtlasStageReach.idOf(_homeViewPath, 'HomeView')),
+        );
+      } finally {
+        directory.deleteSync(recursive: true);
+      }
+    },
+    timeout: _analysisTimeout,
+  );
+}
+
+void _atlasStageReach_should_rejectProjectWithoutPackageConfig() {
+  test(
+    'AtlasStageReach should reject project without package config',
+    () async {
+      final directory = Directory.systemTemp.createTempSync('reach-');
+
+      try {
+        Directory(p.join(directory.path, 'lib')).createSync();
+
+        await expectLater(
+          AtlasStageReach.read(
+            AtlasLocations(directory.path, FakeAtlasProject()),
+          ),
+          throwsA(isA<AtlasException>()),
+        );
+      } finally {
+        directory.deleteSync(recursive: true);
+      }
+    },
   );
 }
 

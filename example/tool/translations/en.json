@@ -1,0 +1,9 @@
+{
+  "welcomeTitle": "Welcome",
+  "signInButton": "Sign in",
+  "mockModeTooltip": "Mock mode",
+  "catalogTitle": "Catalog",
+  "catalogEmpty": "The catalog is empty",
+  "catalogLoadFailed": "Could not load the catalog",
+  "legacyBanner": "Welcome back"
+}

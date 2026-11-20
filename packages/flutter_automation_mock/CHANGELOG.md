@@ -1,6 +1,6 @@
 # Changelog
 
-## 0.12.1
+## 0.13.0
 
 - New `MockApiFailure.resolveMessage`: the text of a failure, in this order:
   `message`, the text of `messageKey` in the language of the request, the text

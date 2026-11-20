@@ -6,7 +6,7 @@ import 'package:path/path.dart' as p;
 
 import 'package:flutter_automation_atlas/src/atlas_headless.dart';
 import 'package:flutter_automation_atlas/src/atlas_locations.dart';
-import 'package:flutter_automation_atlas/src/atlas_runner_catalogue.dart';
+import 'package:flutter_automation_runner/flutter_automation_runner.dart';
 
 import 'fake_atlas_project.dart';
 import 'test_automation_pubspec.dart';
@@ -23,10 +23,7 @@ final class TestAtlasRoot {
   TestAtlasRoot(this.directory, this.project, {String? store})
     : paths = AtlasLocations(directory.path, project, store: store) {
     writeText(paths.resolve('pubspec.yaml'), testAutomationPubspec);
-    AtlasRunnerCatalogue.seed(
-      directory.path,
-      AtlasRunnerCatalogue(flows: _flows, blocks: _blocks),
-    );
+    _seedCatalogue();
   }
 
   static Future<void> run(FutureOr<void> Function(TestAtlasRoot root) body) {
@@ -69,14 +66,30 @@ final class TestAtlasRoot {
 
   void writeFlow(String name, Map<String, Object?> json) {
     _flows[name] = json;
+
+    _seedCatalogue();
   }
 
   void writeFlowGroup(String name, Map<String, Object?> group) {
     _flows[name] = {...?_flows[name] as Map<String, Object?>?, 'group': group};
+
+    _seedCatalogue();
   }
 
   void writeBlock(String name, Map<String, Object?> json) {
     _blocks[name] = json;
+
+    _seedCatalogue();
+  }
+
+  void _seedCatalogue() {
+    AutomationFlowCatalogue.seed(
+      AutomationFlowCatalogue(
+        rootPath: directory.path,
+        flows: _flows,
+        blocks: _blocks,
+      ),
+    );
   }
 
   void writeSource(String path, String content) {

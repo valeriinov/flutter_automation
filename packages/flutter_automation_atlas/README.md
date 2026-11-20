@@ -24,7 +24,11 @@ analytics check have defaults for a project without that data.
 
 The library `flutter_automation_atlas.dart` gives the types a project writes.
 The library `mock_replay.dart` gives `runAtlasMockReplay`, the body of the mock
-replay test.
+replay test, and `AtlasMockSession`, the mock of a project as a replay asks it
+again.
+The library `headless.dart` gives `runAtlasHeadlessSuite`, the body of the
+headless walk, and `AtlasHeadlessApp`, `AtlasHeadlessDevice` and
+`AtlasHeadlessLaunch`, which hold what only the app knows.
 
 ## Commands
 
@@ -34,6 +38,7 @@ replay test.
 | `capture --stale` | Captures what `stale` names. |
 | `stale [<flow>]` | Prints one line per variant: `fresh`, or the reason the snapshot is stale. |
 | `headless [<flow> [<variant>...]]` | Walks the variants under `flutter test`, without a device, and writes the frame hashes. |
+| `check` | Runs the four checks of `AtlasChecks`: the page, the published variants, the snapshots and the translation key coverage. Exits with code 1 when one fails. |
 | `normalize-manifests` | Rewrites the manifest hashes of the stored snapshots. |
 | `source-commit --snapshot <file>` | Prints the commit `stale` takes as the baseline of the snapshot, or `not found`. |
 | `render [--edition <name>]` | Writes `index.html` of the edition (`full` when absent) to the store, with the screenshots in `shots/` beside it. Deletes the screenshots and the declarations that no stored snapshot names, and writes the project reports. A declaration record holds the parts of a source file that a snapshot read. |

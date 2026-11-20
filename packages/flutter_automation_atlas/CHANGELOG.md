@@ -1,7 +1,51 @@
 # Changelog
 
-## 0.12.1
+## 0.13.0
 
+- `mock_replay.dart` exports only `runAtlasMockReplay`, `isAtlasMockReplayRun`,
+  `AtlasMockApisBuilder` and the session types. `runAtlasMockReplayFiles` is
+  not public API.
+- A responder that throws fails only its own answer in the built-in mock
+  replay. The outcome says `failed:` and the replay goes on.
+- Breaking: `AtlasProject.tables` and `AtlasProject.writeReports` take an
+  `AtlasStoreReader` instead of the store path. `AtlasStoreReader.open` opens
+  the store of a project outside `runAtlas`.
+- Breaking: `AtlasRunnerCatalogue` is gone. The atlas reads the flows through
+  `AutomationFlowCatalogue` of `flutter_automation_runner`.
+- New `AtlasProject.localeKeyUsagePattern` and the `AtlasPaths` files
+  `translations`, `screenDescriptions` and `uncoveredLocaleKeys`. A missing
+  `translations` file of the default locale throws an `AtlasException`.
+- New built-in table of the translation keys and its coverage report. The atlas
+  builds the table when `tables` returns none with the id
+  `AtlasTable.localeKeysId`.
+- New `AtlasRequestsTable` and `AtlasDeclaredRequest`, and
+  `AtlasTable.stagesData` for a table of the records of each stage.
+- New `AtlasChecks` and the `check` command of `runAtlas`: the page, the
+  published variants, the snapshots and the translation key coverage.
+  `AtlasChecks` takes a `sourceLabel`, and `check --source-label` gives it.
+- New library `mock_replay.dart` with `runAtlasMockReplay`. The mock replay
+  test of a project calls it with its journal schema and either a `session` or
+  its mock `sections` and `apis`. A `session` is an `AtlasMockSessionFactory`
+  that builds an `AtlasMockSession` from an `AtlasMockSessionContext`. The
+  built-in form asks each endpoint once per input and replays the stored
+  responses. The replay runs the pending microtasks after the factory returns.
+  A synchronous throw of `AtlasMockSession.ask` counts as a failed answer. The
+  package cleans the records of `AtlasMockSession.impliedAnswers` as it cleans
+  the journal.
+- New library `headless.dart` with `runAtlasHeadlessSuite`, `AtlasHeadlessApp`,
+  `AtlasHeadlessDevice` and `AtlasHeadlessLaunch`: the walk of a headless test.
+  The project supplies the app hooks. `AtlasHeadlessLaunch` is not `const`. It
+  has `launchedAt`, which the walk sets at creation and `runMain` sets again
+  right before `main`. The patched `main` calls `AtlasHeadlessLaunch.runApp`
+  in place of `runApp`. The `launch` hook starts `main` with `runMain(tester,
+  main, {afterMain})`, which returns the widget that `main` handed to `runApp`.
+  A project imports or re-exports `AtlasHeadlessLaunch` in the file that
+  `AtlasHeadlessSettings.entryImports` names, because that setting takes
+  relative paths.
+- New dependencies: `fake_async`, `flutter_test` and
+  `flutter_automation_driver`.
+- `stale` finds `package_config.json` in the nearest `.dart_tool` folder at or
+  above the project root, so a workspace member needs no folder of its own.
 - Breaking: `AtlasProject` is an abstract class with defaults. A project
   extends it. `tables`, `translations`, `screenDescriptions`, `designLink`,
   `sourceDirtyIgnores`, `writeReports`, `shotPublisher` and
@@ -9,15 +53,16 @@
 - Breaking: `AtlasProject.launch` is `AtlasProject.launchSettings`.
 - Breaking: `flutter_automation_atlas.dart` exports only the types a project
   writes: `runAtlas`, `AtlasProject`, the settings, the journal schema, the
-  headless input and report, the tables, the page parts and the shot source,
-  publisher and shot. The engine classes stay internal.
-- New library `mock_replay.dart` with `runAtlasMockReplay`. The mock replay
-  test of a project calls it with its mock sections, its mock apis and its
-  journal schema. The package depends on `flutter_automation_mock`.
+  tables, the checks, the store reader, the page parts and the shot source,
+  publisher and shot. The engine classes stay internal. The barrel has no
+  `AtlasHeadless`, `AtlasHeadlessInput` or `AtlasHeadlessReport`.
 - Breaking: `AtlasHeadlessSettings.tryReadRecordedValues` reads any values a
-  walk takes from the journal of a snapshot. The walk finds them in
-  `AtlasHeadlessInput.recordedValues`. `tryReadUploads`,
+  walk takes from the journal of a snapshot. It returns `null` when the
+  records hold none. The `launch` hook finds them in
+  `AtlasHeadlessLaunch.recordedValues`. `tryReadUploads`,
   `AtlasHeadlessUpload` and `AtlasHeadlessUploads` are gone.
+- `AtlasHeadlessSettings.copiedDirectories` and `entryImports` hold paths
+  relative to the project root.
 - Breaking: `AtlasSourceHash` takes `AtlasStaleSettings`. The hash skips the
   imports of `automationDirectory` and `targetsDirectory` of the project. The
   stored manifest hashes of a project change when it imports these folders.

@@ -19,6 +19,10 @@ final class <Project>AtlasProject extends AtlasProject {
     build: 'build/atlas',
     recordings: '<recordings folder of the QA catalogue>',
     publishedVariants: 'tool/atlas_published_variants.json',
+    // Optional files, each read from the project root:
+    // translations: 'assets/{locale}.json', // the texts of one locale
+    // screenDescriptions: 'tool/screen_descriptions.json',
+    // uncoveredLocaleKeys: 'tool/uncovered_locale_keys.json',
   );
 
   @override
@@ -63,8 +67,8 @@ final class <Project>AtlasProject extends AtlasProject {
     stopPaths: ['lib/main.dart'],
   );
 
-  // A stub until the project has a headless harness; see the headless note
-  // of the setup-atlas skill.
+  // A stub until the project has the entry that calls `runAtlasHeadlessSuite`;
+  // see the headless note of the setup-atlas skill.
   @override
   AtlasHeadlessSettings get headlessSettings => const AtlasHeadlessSettings(
     copiedDirectories: ['tool'],
@@ -93,6 +97,10 @@ final class <Project>AtlasProject extends AtlasProject {
 
   @override
   List<String> get locales => const ['en']; // the first one is the default
+
+  // Optional: fills the usages of each translation key. Group 1 is the key.
+  // @override
+  // RegExp get localeKeyUsagePattern => RegExp(r"\btr\('(\w+)'\)");
 }
 ```
 
@@ -136,6 +144,9 @@ void main() {
     return runAtlasMockReplay(
       sections: [<mock sections>],
       apis: (mock) => [<mock apis>(mock)],
+      // An app that starts its mock in its own way passes `session:` in place
+      // of `sections` and `apis`:
+      // session: (context) => <AtlasMockSession>(context),
       schema: const <Project>AtlasProject().journalSchema,
     );
   }, skip: !isAtlasMockReplayRun);

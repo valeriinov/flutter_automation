@@ -37,9 +37,15 @@ final class AtlasJournalStages {
     ];
   }
 
-  /// Every record of [kind] the published variants logged, in the order of
-  /// the snapshot paths, their stages and their journals.
-  List<AtlasJournalRecord> readRecords(String kind) {
+  /// The stage of [snapshot] at [index], which names the `<flow>/<variant>`
+  /// of the snapshot.
+  static AtlasJournalStage stageOf(AtlasSnapshot snapshot, int index) {
+    return (variantId: '${snapshot.flow}/${snapshot.variant}', index: index);
+  }
+
+  /// The stored snapshots of the default locale that belong to the published
+  /// variants, in the order of the snapshot paths.
+  Iterable<AtlasSnapshot> readPublishedSnapshots() {
     final publishedVariants = AtlasPublishedVariants.read(
       _paths,
       AtlasDefinitions.read(_paths),
@@ -47,7 +53,13 @@ final class AtlasJournalStages {
 
     return AtlasSnapshotStore(_paths)
         .readAll(locale: _paths.defaultLocale)
-        .where((snapshot) => publishedVariants.ids.contains(snapshot.id))
+        .where((snapshot) => publishedVariants.ids.contains(snapshot.id));
+  }
+
+  /// Every record of [kind] the published variants logged, in the order of
+  /// the snapshot paths, their stages and their journals.
+  List<AtlasJournalRecord> readRecords(String kind) {
+    return readPublishedSnapshots()
         .expand(_readStageRecords)
         .where((record) => record.record[_kindKey] == kind)
         .toList();
@@ -62,16 +74,14 @@ final class AtlasJournalStages {
   }
 
   Iterable<AtlasJournalRecord> _readStageRecords(AtlasSnapshot snapshot) {
-    final variantId = '${snapshot.flow}/${snapshot.variant}';
-
     return [
       for (final (index, journal) in split(snapshot).indexed) ...[
         for (final record
             in journal.afterAction.whereType<Map<String, Object?>>())
-          (record: record, stage: (variantId: variantId, index: index)),
+          (record: record, stage: stageOf(snapshot, index)),
         for (final record
             in journal.onScreenOpen.whereType<Map<String, Object?>>())
-          (record: record, stage: (variantId: variantId, index: index + 1)),
+          (record: record, stage: stageOf(snapshot, index + 1)),
       ],
     ];
   }

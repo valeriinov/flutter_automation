@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:flutter_automation_atlas/flutter_automation_atlas.dart';
 import 'package:flutter_automation_runner/flutter_automation_runner.dart';
 
@@ -16,6 +18,9 @@ final class ExampleAtlasProject extends AtlasProject {
     build: 'build/atlas',
     recordings: 'tool/recordings',
     publishedVariants: 'tool/atlas_published_variants.json',
+    translations: 'tool/translations/{locale}.json',
+    screenDescriptions: 'tool/screen_descriptions.json',
+    uncoveredLocaleKeys: 'tool/uncovered_locale_keys.json',
   );
 
   @override
@@ -59,11 +64,20 @@ final class ExampleAtlasProject extends AtlasProject {
 
   @override
   AtlasHeadlessSettings get headlessSettings => const AtlasHeadlessSettings(
+    defines: ['ENABLE_AUTOMATION=true', 'ENABLE_MOCK=true'],
     copiedDirectories: ['tool'],
-    entryImports: [],
-    entryMain: 'void main() {}',
+    entryImports: ['tool/example_headless_app.dart'],
+    entryMain: 'void main() => ExampleHeadless.runSuite(_runAppMain);',
     mainPath: 'lib/main.dart',
-    mainPatch: [],
+    mainPatch: [
+      ('Future<void> main() async {', 'Future<void> _runAppMain() async {'),
+      ('AutomationInstaller.maybeInstall(', 'ExampleHeadless.install('),
+      (
+        '  final dio = Dio(',
+        '  ExampleHeadless.captureMock(mock);\n  final dio = Dio(',
+      ),
+      ('  runApp(', '  AtlasHeadlessLaunch.runApp('),
+    ],
   );
 
   @override
@@ -83,4 +97,70 @@ final class ExampleAtlasProject extends AtlasProject {
 
   @override
   List<String> get locales => _locales;
+
+  @override
+  RegExp get localeKeyUsagePattern => RegExp(r"\btr\(context, '(\w+)'\)");
+
+  @override
+  List<AtlasTable> tables(AtlasStoreReader store) {
+    return [
+      AtlasRequestsTable.build(
+        id: 'requests',
+        title: const {'en': 'Requests', 'uk': 'Запити'},
+        journalKind: 'request',
+        store: store,
+        declared: const [
+          AtlasDeclaredRequest(
+            method: 'GET',
+            path: '/catalog/items',
+            names: ['getItems'],
+            usages: ['lib/catalog/catalog_api.dart:13'],
+          ),
+        ],
+      ),
+      _buildStatusesTable(store),
+    ];
+  }
+
+  AtlasTable _buildStatusesTable(AtlasStoreReader store) {
+    final records = store.recordsOf('request');
+    final statuses = {for (final entry in records) _readStatus(entry.record)};
+
+    return AtlasTable(
+      id: 'statuses',
+      title: const {'en': 'Answer statuses', 'uk': 'Статуси відповідей'},
+      columns: const [
+        AtlasTableColumn(key: 'code', title: {'en': 'Code', 'uk': 'Код'}),
+      ],
+      rows: [
+        for (final status in statuses)
+          {
+            'code': status,
+            ...AtlasTable.stagesData([
+              for (final entry in records)
+                if (_readStatus(entry.record) == status) entry.stage,
+            ]),
+          },
+      ],
+      journalKind: 'request',
+    );
+  }
+
+  String _readStatus(Map<String, Object?> record) => '${record['status']}';
+
+  @override
+  void writeReports(AtlasStoreReader store) {
+    if (!store.isDefaultStore) {
+      return;
+    }
+
+    final lines = [
+      for (final MapEntry(:key, :value) in store.walkersByScreen().entries)
+        '$key: ${value.join(', ')}',
+    ];
+
+    File('${store.rootPath}/${paths.build}/screen_walkers.txt')
+      ..createSync(recursive: true)
+      ..writeAsStringSync('${lines.join('\n')}\n');
+  }
 }

@@ -55,6 +55,13 @@ Read `references/atlas-project-stub.md`. It holds the stubs of the files below.
      translations, the screen descriptions, the design links, the reports,
      the shot publisher and the analytics check. It overrides one only when
      the project has that data.
+   - `tables(AtlasStoreReader store)` and `writeReports(AtlasStoreReader
+     store)` read the atlas through the reader. A table of the requests of the
+     app is an `AtlasRequestsTable.build(...)` with its `AtlasDeclaredRequest`
+     list. The atlas builds the table of the translation keys. Set
+     `localeKeyUsagePattern` (group 1 is the key) to fill its usages, and
+     `paths.translations`, `paths.screenDescriptions` and
+     `paths.uncoveredLocaleKeys` to the JSON files of the project.
    - `projectName` is the name the page shows.
    - `groupOrder` and `defaultGroup` follow `references/flow-groups.md` of the
      `atlas` skill. Without a path map, derive the groups from the screens and
@@ -71,22 +78,25 @@ Read `references/atlas-project-stub.md`. It holds the stubs of the files below.
    missing replay test stops `stale` with "The mock replay failed" once a
    snapshot holds a mock answer. The test calls `runAtlasMockReplay` of
    `package:flutter_automation_atlas/mock_replay.dart` with the mock sections,
-   the mock apis and the journal schema of the project.
+   the mock apis and the journal schema of the project. An app that starts its
+   mock in its own way passes `session:`, a factory of an `AtlasMockSession`,
+   instead of `sections` and `apis`.
 
 `staleSettings.routes` is optional. A project whose router generates no routes
 file sets it to `null`. No stage then names route sources. A project with a
 routes file sets `routes` to an `AtlasRouteSettings` with `routesPath`,
 `routerPath` and `routePattern`.
 
-The `headless` command runs a test harness that the project owns.
+The `headless` command runs the entry that calls `runAtlasHeadlessSuite`.
 `headlessSettings` names its files. The test file imports `entryImports`, takes
 the `main` file of the app at `mainPath` with the `mainPatch` replacements as
-its body, and ends with `entryMain`. The harness reads the inputs with
-`AtlasHeadlessInput.readAll` from the file that the `ATLAS_HEADLESS_INPUT`
-define names. It walks the `steps` of each input and writes an
-`AtlasHeadlessReport` to its `reportPath`. Keep the stub while the project has
-no harness. Say in the report that `headless` and `stale --published` need the
-harness first.
+its body, and ends with `entryMain`. The entry calls `runAtlasHeadlessSuite`
+of `package:flutter_automation_atlas/headless.dart` with an `AtlasHeadlessApp`:
+the journal schema, an `AtlasHeadlessDevice` and the hooks that start the app
+from an `AtlasHeadlessLaunch`. The package reads the inputs, walks the `steps`
+of each one and writes a report. Keep the stub while the project has no such
+entry. Say in the report that `headless` and `stale --published` need that entry
+first.
 
 ## 4. Add the pubspec section
 

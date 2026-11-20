@@ -18,11 +18,12 @@ final class AtlasHeadlessSettings {
   final List<String> defines;
 
   /// The folders a baseline worktree takes from the working tree, relative to
-  /// the root of the project: the files that run the walk.
+  /// the root of the project: the files of the app's hooks and the patched
+  /// entry.
   final List<String> copiedDirectories;
 
   /// The Dart files the generated entry imports, relative to the root of the
-  /// project: the helpers that run the walk.
+  /// project: the files that hold the app's hooks for the package's walk.
   final List<String> entryImports;
 
   /// The `main` function of the generated entry, placed after the patched
@@ -40,8 +41,8 @@ final class AtlasHeadlessSettings {
   /// Reads the values a walk takes from the capture out of the journal
   /// records of a snapshot, such as the sizes of the files the capture device
   /// sent; absent when the walk takes none. The function returns `null` when
-  /// the records hold no such value. The walk finds the result in
-  /// [AtlasHeadlessInput.recordedValues].
+  /// the records hold no such value. The package passes the result to the app
+  /// in [AtlasHeadlessLaunch.recordedValues].
   final Map<String, Object?>? Function(List<Object?> records)?
   tryReadRecordedValues;
 

@@ -26,6 +26,8 @@ void main() {
     _unmarkedTextFinder_should_findMarkedTextByItsValue();
     _unmarkedTextFinder_should_findMarkedEditableTextByItsValue();
     _unmarkedTextFinder_should_skipOffstageText();
+    _unmarkedTextFinder_should_findRichTextByItsSpans();
+    _unmarkedTextFinder_should_matchTextOnce();
     _unmarkedTextFinder_should_findMarkedTooltipByItsMessage();
   });
   group('LocaleKeyFinder Tests', () {
@@ -60,6 +62,38 @@ void _unmarkedTextFinder_should_findMarkedTextByItsValue() {
 
     expect(finder, findsOneWidget);
     expect(find.text(_title), findsNothing);
+  });
+}
+
+void _unmarkedTextFinder_should_findRichTextByItsSpans() {
+  testWidgets('UnmarkedTextFinder should find rich text by its spans', (
+    tester,
+  ) async {
+    await _pump(
+      tester,
+      RichText(
+        text: const TextSpan(
+          children: [
+            TextSpan(text: 'Hel'),
+            TextSpan(text: 'lo'),
+          ],
+        ),
+      ),
+    );
+
+    final finder = _resolve(_textFinder, const UnmarkedText(_title));
+
+    expect(finder, findsOneWidget);
+  });
+}
+
+void _unmarkedTextFinder_should_matchTextOnce() {
+  testWidgets('UnmarkedTextFinder should match text once', (tester) async {
+    await _pump(tester, const Text(_title));
+
+    final finder = _resolve(_textFinder, const UnmarkedText(_title));
+
+    expect(finder, findsOneWidget);
   });
 }
 

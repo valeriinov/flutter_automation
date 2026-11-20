@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_automation/flutter_automation.dart';
 
 import 'package:example/automation/example_target.dart';
+import 'package:example/example_translations.dart';
 
 /// First screen: one button that opens the catalog.
 class LoginScreen extends StatelessWidget {
@@ -22,11 +23,11 @@ class LoginScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Welcome'),
+        title: Text(tr(context, 'welcomeTitle')),
         actions: [
           if (onMockModePressed != null)
             IconButton(
-              tooltip: 'Mock mode',
+              tooltip: tr(context, 'mockModeTooltip'),
               onPressed: onMockModePressed,
               icon: const Icon(Icons.settings),
             ),
@@ -35,7 +36,7 @@ class LoginScreen extends StatelessWidget {
       body: Center(
         child: FilledButton(
           onPressed: onSignInPressed,
-          child: const Text('Sign in'),
+          child: Text(tr(context, 'signInButton')),
         ).automationTarget(ExampleTarget.loginButton),
       ),
     ).automationTarget(ExampleTarget.loginScreen);

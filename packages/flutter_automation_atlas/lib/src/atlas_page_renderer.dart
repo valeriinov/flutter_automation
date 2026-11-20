@@ -24,6 +24,8 @@ import 'package:flutter_automation_atlas/src/atlas_shot_source.dart';
 import 'package:flutter_automation_atlas/src/atlas_snapshot.dart';
 import 'package:flutter_automation_atlas/src/atlas_snapshot_store.dart';
 import 'package:flutter_automation_atlas/src/atlas_table.dart';
+import 'package:flutter_automation_atlas/src/atlas_store_reader.dart';
+import 'package:flutter_automation_atlas/src/atlas_locale_keys_table.dart';
 import 'package:flutter_automation_atlas/src/atlas_translations.dart';
 
 typedef _RenderedVariant = ({
@@ -47,61 +49,69 @@ typedef _GatheredPage = ({
 /// Writes the atlas page from the snapshots, the texts of the flow files and
 /// the data of the project.
 ///
-/// A variant is shown when [AtlasPublishedVariants] names it and the shown
-/// locale holds its own snapshot of it, in the order its flow file lists it;
-/// the snapshots of every other variant stay stored with their shots. The page
-/// shows the default locale; a bundle shows the one locale it is written for,
-/// or every page locale when it names none. The variant carries its `entry`
-/// and `stateOf` when its flow file names them, the shown locale series itself
-/// and, on a page of every locale, every other page locale series under
-/// `series`: its own stages, or only the `fallbackLocale` whose stages it
-/// shows.
+/// A page shows a variant when [AtlasPublishedVariants] names it. The shown
+/// locale must hold its own snapshot of the variant. The variants appear in
+/// the order of the flow file. The snapshots of all other variants stay in
+/// the store with their shots. The page shows the default locale. A bundle
+/// shows the one locale that its command names, or all page locales when it
+/// names none. The variant carries its `entry` and `stateOf` when its flow
+/// file names them. It carries the series of the shown locale itself. On a
+/// page of all locales, it carries the series of each other page locale
+/// under `series`. Such a series has its own stages, or only the
+/// `fallbackLocale` whose stages it shows.
 ///
 /// The page data holds only the [AtlasPagePart]s of the [AtlasEdition]:
 ///
 /// - [AtlasPagePart.flowStages]: the `flows`, the `areas` of [AtlasGroups]
 ///   with their `groups`, the `totals`, and on each stage its screenshot, the
 ///   place of the tap, its step `title` and, for a `scroll`, its distances;
-/// - [AtlasPagePart.screenDescriptions]: the `screenDescriptions` of every
-///   design screen a shown stage or end names;
+/// - [AtlasPagePart.screenDescriptions]: the `screenDescriptions` of each
+///   design screen that a shown stage or end names;
 /// - [AtlasPagePart.designLinks]: the `designUrl` of a stage and of an end,
 ///   the [AtlasProject.designLink] of its design screen;
-/// - [AtlasPagePart.tables]: the rows of every [AtlasTable] but the table of
-///   the translation keys, under the `id` of the table;
+/// - [AtlasPagePart.tables]: the rows of each [AtlasTable] except the table
+///   of the translation keys, under the `id` of the table;
 /// - [AtlasPagePart.localeKeys]: the `keys` of a stage and the rows of the
 ///   table [AtlasTable.localeKeysId] as `localeKeys`;
-/// - [AtlasPagePart.translations]: the values of every page locale once, as
+/// - [AtlasPagePart.translations]: the values of each page locale once, as
 ///   `locales`;
 /// - [AtlasPagePart.journalRecords]: the journal of a stage, split by
-///   [AtlasJournalStages.split]: what the action produced stays on the stage
-///   as `afterAction`, what the screen it opened produced goes to the next
+///   [AtlasJournalStages.split]. What the action produced stays on the stage
+///   as `afterAction`. What the screen it opened produced goes to the next
 ///   stage, or to the end, as `onScreenOpen`;
 /// - [AtlasPagePart.mockScenario]: the `scenario` of a variant;
 /// - [AtlasPagePart.recordSearch]: the lowercase texts of the journal
-///   records the page searches.
+///   records that the page searches.
 ///
 /// A second script of the page, `atlas-meta`, holds what the page needs to
-/// draw itself: the project name, the source label, the build time of a
-/// bundle as `builtAt`, the parts, the menu of the tables with their columns,
-/// the locales and the journal kinds. The page data replaces the placeholder
-/// inside the template's JSON script, so every `</` in it is written as `<\/`
-/// to keep a text from closing that script.
+/// draw itself. It holds the project name, the source label and the build
+/// time of a bundle as `builtAt`. It holds the parts, the menu of the tables
+/// with their columns, the locales and the journal kinds. The page data
+/// replaces the placeholder inside the JSON script of the template. The
+/// renderer writes each `</` in the data as `<\/`, so that no text can close
+/// that script.
 ///
-/// Every long string the page data repeats is stored once, as
-/// [CatalogueBlobs] writes it.
+/// The page data repeats some long strings. [CatalogueBlobs] stores each of
+/// them once.
 ///
-/// [build] reads every source and returns the page text, writing nothing;
-/// [render] writes that text and deletes the shots no stored snapshot names;
-/// [renderBundle] writes the page for one shot source outside the repository.
+/// [build] reads each source and returns the page text. It writes nothing.
+/// [render] writes that text and deletes the shots that no stored snapshot
+/// names. [renderBundle] writes the page for one shot source outside the
+/// repository.
+///
 /// The shots script of the template holds `shotSheets`, `shotCells` and
-/// `shotUrls`, empty on the page; with [AtlasShotSource.inline] a bundle
-/// holds the data URI of each sheet of up to 16 shots in `shotSheets` and the
-/// sheet index, left, top, width and height of each shot by its content hash
-/// in `shotCells`; with [AtlasShotSource.urls] it holds the link of each shot
-/// in `shotUrls`; and its page data is one string, the base64 of its gzip.
-/// With [AtlasShotSource.sheets] a bundle writes each sheet as the file
-/// `shots/<sheet hash>.webp` beside the page, named by the hash of the sheet
-/// bytes. It holds that relative path in `shotSheets` instead of a data URI.
+/// `shotUrls`. They are empty on the page. A bundle fills them by the shot
+/// source:
+///
+/// - With [AtlasShotSource.inline], a bundle holds the data URI of each sheet
+///   of up to 16 shots in `shotSheets`. It holds the sheet index, left, top,
+///   width and height of each shot by its content hash in `shotCells`.
+/// - With [AtlasShotSource.urls], a bundle holds the link of each shot in
+///   `shotUrls`. Its page data is one string, the base64 of its gzip.
+/// - With [AtlasShotSource.sheets], a bundle writes each sheet as the file
+///   `shots/<sheet hash>.webp` beside the page. The hash of the sheet bytes
+///   names the file. The bundle holds that relative path in `shotSheets`
+///   instead of a data URI.
 final class AtlasPageRenderer {
   static const _templateUri =
       'package:flutter_automation_atlas/template/index.html';
@@ -141,12 +151,12 @@ final class AtlasPageRenderer {
   final String? _sourceLabel;
   final DateTime Function() _clock;
 
-  /// The [shotEncoder] parameter turns shots into the sheets the bundle
-  /// inlines or writes, an [AtlasShotWebpEncoder] when absent; the [template]
-  /// parameter replaces the page template of the package; the [sourceLabel]
-  /// parameter is the label of the source the page footer shows;
-  /// the [clock] parameter gives the build time of a bundle, which its footer
-  /// shows as a date, [DateTime.now] when absent.
+  /// The [shotEncoder] parameter turns shots into the sheets that the bundle
+  /// inlines or writes. It is an [AtlasShotWebpEncoder] by default. The
+  /// [template] parameter replaces the page template of the package. The
+  /// [sourceLabel] parameter is the label of the source that the page footer
+  /// shows. The [clock] parameter gives the build time of a bundle, which its
+  /// footer shows as a date. It is [DateTime.now] by default.
   AtlasPageRenderer(
     this._paths, {
     AtlasShotEncoder? shotEncoder,
@@ -158,8 +168,8 @@ final class AtlasPageRenderer {
        _sourceLabel = sourceLabel,
        _clock = clock ?? DateTime.now;
 
-  /// Reads every source and returns the page of [edition], the `full` one
-  /// when absent, its snapshots make now.
+  /// Reads each source and returns the page of [edition] that the snapshots
+  /// make now. The default [edition] is `full`.
   Future<AtlasPageRendering> build({AtlasEdition? edition}) async {
     final shownEdition = edition ?? _resolveFullEdition();
     final gathered = _gather(shownEdition);
@@ -180,9 +190,9 @@ final class AtlasPageRenderer {
     );
   }
 
-  /// Writes the page of [edition], the `full` one when absent, to
-  /// [AtlasLocations.pagePath], deletes the shots and the declarations
-  /// records no snapshot names and returns what was written.
+  /// Writes the page of [edition] to [AtlasLocations.pagePath]. The default
+  /// [edition] is `full`. It deletes the shots and the declaration records
+  /// that no snapshot names. It returns what it wrote.
   Future<AtlasPageRendering> render({AtlasEdition? edition}) async {
     final shownEdition = edition ?? _resolveFullEdition();
     final gathered = _gather(shownEdition);
@@ -208,22 +218,23 @@ final class AtlasPageRenderer {
   }
 
   /// Writes the page of [edition] for the shot [source] to
-  /// [AtlasLocations.resolveBundlePagePath], leaving the page and the shots
-  /// of the store in place, over the limits or not, and returns the sizes,
-  /// the file count and the image count of the bundle.
+  /// [AtlasLocations.resolveBundlePagePath]. The page and the shots of the
+  /// store stay in place, over the limits or not. It returns the sizes, the
+  /// file count and the image count of the bundle.
   ///
-  /// The [locale] parameter names the one series the bundle shows; the
-  /// bundle holds every page locale when it is absent. For
-  /// [AtlasShotSource.urls] the shot publisher of the project puts the shots
+  /// The [locale] parameter names the one series that the bundle shows. When
+  /// [locale] is `null`, the bundle holds all page locales. For
+  /// [AtlasShotSource.urls], the shot publisher of the project puts the shots
   /// where a browser reads them. The folder `shots/` beside the page holds
   /// the sheet files of [AtlasShotSource.sheets] or the shot files of
-  /// [AtlasShotSource.files]. [renderBundle] deletes every file and folder in
-  /// it first, for every source.
+  /// [AtlasShotSource.files]. For each source, [renderBundle] first deletes
+  /// each file and folder in it.
   ///
-  /// Throws an [AtlasException] when [locale] is none of
-  /// [AtlasLocations.pageLocales], when [source] is [AtlasShotSource.urls]
-  /// and [AtlasProject.shotPublisher] is absent, or when the publisher fails
-  /// or leaves a shot without a link.
+  /// Throws an [AtlasException] in these cases:
+  /// - [locale] is none of [AtlasLocations.pageLocales].
+  /// - [source] is [AtlasShotSource.urls] and [AtlasProject.shotPublisher] is
+  ///   `null`.
+  /// - The publisher fails or gives a shot no link.
   Future<AtlasBundleRendering> renderBundle({
     required AtlasEdition edition,
     required AtlasShotSource source,
@@ -419,10 +430,11 @@ final class AtlasPageRenderer {
       'shotsBytes': shots.map(_readShotBytes).sum,
     };
     final groups = AtlasGroups(definitions, project);
-    final tables = project.tables(_paths.storePath);
+    final projectTables = project.tables(AtlasLocationsStore(_paths));
 
-    _checkTableIds(tables);
+    _checkTableIds(projectTables);
 
+    final tables = _addLocaleKeysTable(edition, projectTables);
     final data = {
       'flows': [
         for (final flow in flows)
@@ -666,6 +678,24 @@ final class AtlasPageRenderer {
     return file.existsSync() ? file.lengthSync() : 0;
   }
 
+  List<AtlasTable> _addLocaleKeysTable(
+    AtlasEdition edition,
+    List<AtlasTable> tables,
+  ) {
+    if (!edition.has(AtlasPagePart.localeKeys)) {
+      return tables;
+    }
+
+    final localeKeysTable = AtlasLocaleKeysTable(_paths);
+
+    if (tables.any((table) => table.id == AtlasTable.localeKeysId) ||
+        !localeKeysTable.hasKeys) {
+      return tables;
+    }
+
+    return [localeKeysTable.build(), ...tables];
+  }
+
   void _checkTableIds(List<AtlasTable> tables) {
     final reserved = tables
         .map((table) => table.id)
@@ -727,7 +757,7 @@ final class AtlasPageRenderer {
   }
 
   Map<String, Object?> _buildScreenDescriptions(Set<String> designScreens) {
-    final descriptions = _paths.project.screenDescriptions;
+    final descriptions = _paths.readScreenDescriptions();
     final undescribed = designScreens
         .where((screen) => !descriptions.containsKey(screen))
         .toList();
@@ -1099,7 +1129,7 @@ final class AtlasPageRenderer {
 
 /// {@category Utils}
 ///
-/// The atlas page as its sources make it, and what writing it did.
+/// The atlas page as its sources make it, and what the write did.
 final class AtlasPageRendering {
   /// The page text.
   final String page;
@@ -1141,7 +1171,7 @@ final class AtlasBundleRendering {
   /// Bytes of the page.
   final int pageBytes;
 
-  /// Bytes of every file of the bundle: the page and the files in `shots/`.
+  /// Bytes of each file of the bundle: the page and the files in `shots/`.
   final int bundleBytes;
 
   /// Files of the bundle: the page and the files in `shots/`.
@@ -1159,8 +1189,8 @@ final class AtlasBundleRendering {
     required this.images,
   });
 
-  /// What a reader is told for each limit the bundle passes, `null` while it
-  /// fits.
+  /// The text that tells a reader about each limit that the bundle passes.
+  /// It is `null` while the bundle fits.
   String? tryDescribeOverLimit({
     required int maxBytes,
     required int maxImages,

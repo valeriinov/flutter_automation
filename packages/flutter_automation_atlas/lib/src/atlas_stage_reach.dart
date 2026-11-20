@@ -67,8 +67,12 @@ final class AtlasStageReach {
 
   /// Resolves every Dart file under `lib/` of [paths] and builds the map.
   ///
-  /// Fails with [AtlasException] when a file does not resolve or the
-  /// package configuration names no Flutter SDK.
+  /// Reads the package configuration from the nearest `.dart_tool` folder at
+  /// or above the project root, since a workspace member keeps it at the
+  /// workspace root.
+  ///
+  /// Fails with [AtlasException] when no package configuration exists, a file
+  /// does not resolve or the package configuration names no Flutter SDK.
   static Future<AtlasStageReach> read(AtlasLocations paths) async {
     final rootPath = p.normalize(p.absolute(paths.rootPath));
     final sourcePath = p.normalize(
@@ -140,7 +144,7 @@ final class AtlasStageReach {
   }
 
   static String _readSdkPath(String rootPath) {
-    final configFile = File(p.join(rootPath, _packageConfigPath));
+    final configFile = _findPackageConfig(rootPath);
     final config = AtlasJson.decodeObject(
       configFile.readAsStringSync(),
       _packageConfigPath,
@@ -160,6 +164,26 @@ final class AtlasStageReach {
         .toFilePath();
 
     return p.normalize(p.join(flutterPackagePath, '..', '..', _dartSdkPath));
+  }
+
+  static File _findPackageConfig(String rootPath, [String? directory]) {
+    final current = directory ?? rootPath;
+    final file = File(p.join(current, _packageConfigPath));
+
+    if (file.existsSync()) {
+      return file;
+    }
+
+    final parent = p.dirname(current);
+
+    if (parent == current) {
+      throw AtlasException(
+        'No $_packageConfigPath in $rootPath or a folder above it; run '
+        '`pub get`.',
+      );
+    }
+
+    return _findPackageConfig(rootPath, parent);
   }
 
   static Iterable<File> _listSources(

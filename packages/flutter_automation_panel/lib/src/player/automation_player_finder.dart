@@ -271,10 +271,10 @@ class AutomationPlayerFinder {
 
   bool Function(Element element) _matchUnmarkedText(
     List<String> texts,
-    String? Function(Widget widget) read,
+    String? Function(Element element) read,
   ) {
     return (element) {
-      final shown = read(element.widget);
+      final shown = read(element);
 
       return shown != null && texts.contains(LocaleKeyMarker.strip(shown));
     };
@@ -282,10 +282,10 @@ class AutomationPlayerFinder {
 
   bool Function(Element element) _matchLocaleKey(
     List<String> keys,
-    String? Function(Widget widget) read,
+    String? Function(Element element) read,
   ) {
     return (element) {
-      final shown = read(element.widget);
+      final shown = read(element);
 
       return shown != null &&
           LocaleKeyMarker.readKeys(shown).any(keys.contains);
@@ -303,17 +303,31 @@ class AutomationPlayerFinder {
         (widget is Tooltip && widget.message == _backTooltip);
   }
 
-  String? _readText(Widget widget) {
-    return switch (widget) {
+  String? _readText(Element element) {
+    return switch (element.widget) {
       Text(:final data?) => data,
       Text(:final textSpan?) => textSpan.toPlainText(),
       EditableText(:final controller) => controller.text,
+      final RichText richText when !_isBuiltByText(element) =>
+        richText.text.toPlainText(),
       _ => null,
     };
   }
 
-  String? _readTooltip(Widget widget) {
-    return switch (widget) {
+  bool _isBuiltByText(Element element) {
+    bool isBuilt = false;
+
+    element.visitAncestorElements((ancestor) {
+      isBuilt = ancestor.widget is Text;
+
+      return !isBuilt;
+    });
+
+    return isBuilt;
+  }
+
+  String? _readTooltip(Element element) {
+    return switch (element.widget) {
       Tooltip(:final message?) => message,
       _ => null,
     };

@@ -10,8 +10,8 @@ import 'package:flutter_automation_driver/src/automation_protocol.dart';
 /// Flutter Driver finder that matches a widget's text after
 /// [LocaleKeyMarker.strip], so a flow finds a marked string by its value.
 ///
-/// The text variant matches what `find.text` matches, a [Text] or an
-/// [EditableText] that is onstage; the tooltip variant matches a [Tooltip]
+/// The text variant matches a [Text], a [RichText] that no [Text] builds, or
+/// an [EditableText] that is onstage; the tooltip variant matches a [Tooltip]
 /// message. A host addresses them by [finderType] with a `text` parameter.
 final class UnmarkedTextFinder extends FinderExtension {
   static const _textParameter = AutomationProtocol.textParameter;
@@ -19,10 +19,10 @@ final class UnmarkedTextFinder extends FinderExtension {
   @override
   final String finderType;
 
-  final String? Function(Widget widget) _readText;
+  final String? Function(Element element) _readText;
 
-  /// Matches a [Text] or an [EditableText] and answers the `UnmarkedText`
-  /// finder type.
+  /// Matches a [Text], a [RichText] or an [EditableText] and answers the
+  /// `UnmarkedText` finder type.
   UnmarkedTextFinder.text()
     : finderType = AutomationProtocol.unmarkedTextFinderType,
       _readText = _tryReadWidgetText;
@@ -54,13 +54,13 @@ final class UnmarkedTextFinder extends FinderExtension {
     final text = (finder as _UnmarkedTextQuery).text;
 
     return find.byElementPredicate(
-      (element) => _matches(element.widget, text),
+      (element) => _matches(element, text),
       description: '$finderType "$text"',
     );
   }
 
-  bool _matches(Widget widget, String text) {
-    final widgetText = _readText(widget);
+  bool _matches(Element element, String text) {
+    final widgetText = _readText(element);
 
     if (widgetText == null) {
       return false;
@@ -77,20 +77,19 @@ final class UnmarkedTextFinder extends FinderExtension {
 /// by its key in each locale.
 ///
 /// The mark is in the text of a build launched with
-/// `ENABLE_AUTOMATION_LOCALE_KEYS`. The text variant matches an onstage [Text]
-/// or [EditableText]; the tooltip variant matches a [Tooltip] message. A host
-/// addresses them by [finderType]
-/// with a `key` parameter.
+/// `ENABLE_AUTOMATION_LOCALE_KEYS`. The text variant matches an onstage [Text],
+/// [RichText] or [EditableText]; the tooltip variant matches a [Tooltip]
+/// message. A host addresses them by [finderType] with a `key` parameter.
 final class LocaleKeyFinder extends FinderExtension {
   static const _keyParameter = AutomationProtocol.keyParameter;
 
   @override
   final String finderType;
 
-  final String? Function(Widget widget) _readText;
+  final String? Function(Element element) _readText;
 
-  /// Matches a [Text] or an [EditableText] and answers the `LocaleKeyText`
-  /// finder type.
+  /// Matches a [Text], a [RichText] or an [EditableText] and answers the
+  /// `LocaleKeyText` finder type.
   LocaleKeyFinder.text()
     : finderType = AutomationProtocol.localeKeyTextFinderType,
       _readText = _tryReadWidgetText;
@@ -123,13 +122,13 @@ final class LocaleKeyFinder extends FinderExtension {
     final key = (finder as _LocaleKeyQuery).key;
 
     return find.byElementPredicate(
-      (element) => _matches(element.widget, key),
+      (element) => _matches(element, key),
       description: '$finderType "$key"',
     );
   }
 
-  bool _matches(Widget widget, String key) {
-    final widgetText = _readText(widget);
+  bool _matches(Element element, String key) {
+    final widgetText = _readText(element);
 
     if (widgetText == null) {
       return false;
@@ -157,17 +156,31 @@ class _LocaleKeyQuery extends SerializableFinder {
   const _LocaleKeyQuery({required this.finderType, required this.key});
 }
 
-String? _tryReadWidgetText(Widget widget) {
-  return switch (widget) {
+String? _tryReadWidgetText(Element element) {
+  return switch (element.widget) {
     Text(:final data?) => data,
     Text(:final textSpan?) => textSpan.toPlainText(),
     EditableText(:final controller) => controller.text,
+    final RichText richText when !_isBuiltByText(element) =>
+      richText.text.toPlainText(),
     _ => null,
   };
 }
 
-String? _tryReadTooltipMessage(Widget widget) {
-  return switch (widget) {
+bool _isBuiltByText(Element element) {
+  bool isBuilt = false;
+
+  element.visitAncestorElements((ancestor) {
+    isBuilt = ancestor.widget is Text;
+
+    return !isBuilt;
+  });
+
+  return isBuilt;
+}
+
+String? _tryReadTooltipMessage(Element element) {
+  return switch (element.widget) {
     Tooltip(:final message?) => message,
     _ => null,
   };

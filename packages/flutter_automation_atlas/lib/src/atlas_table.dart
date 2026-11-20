@@ -1,3 +1,7 @@
+import 'package:collection/collection.dart';
+
+import 'package:flutter_automation_atlas/src/atlas_journal_stages.dart';
+
 /// {@category Utils}
 ///
 /// A table of project data the page shows beside the flows, such as the
@@ -8,10 +12,10 @@ final class AtlasTable {
 
   /// The name the page menu and the page data refer to the table by.
   ///
-  /// The table named [localeKeysId] holds the translation keys: its rows feed
-  /// the keys of a stage, the search over them and the page of the keys, and
-  /// belong to the `localeKeys` page part. Every other table belongs to the
-  /// `tables` part. A row may hold the `status` the page filters by, the
+  /// The table named [localeKeysId] holds the translation keys. Its rows feed
+  /// the keys of a stage, the search over them and the page of the keys. They
+  /// belong to the `localeKeys` page part. All other tables belong to the
+  /// `tables` part. A row may hold the `status` that the page filters by, the
   /// `usages` it lists and the `stages` it appears on, by variant.
   final String id;
 
@@ -25,9 +29,9 @@ final class AtlasTable {
   /// value.
   final List<Map<String, Object?>> rows;
 
-  /// The journal kind the rows come from, such as the kind of the records of
-  /// a request; absent when the rows come from no journal record. A row link
-  /// opens the stage on that kind.
+  /// The journal kind that the rows come from, such as the kind of the
+  /// records of a request. It is `null` when the rows come from no journal
+  /// record. A row link opens the stage on that kind.
   final String? journalKind;
 
   const AtlasTable({
@@ -37,6 +41,25 @@ final class AtlasTable {
     required this.rows,
     this.journalKind,
   });
+
+  /// The `stages` entry of a row that appears on [stages]: the stage indexes by
+  /// `<flow>/<variant>`. It is empty when [stages] is empty.
+  static Map<String, Object?> stagesData(List<AtlasJournalStage> stages) {
+    if (stages.isEmpty) {
+      return const {};
+    }
+
+    return {
+      'stages': stages
+          .groupListsBy((stage) => stage.variantId)
+          .map(
+            (variantId, variantStages) => MapEntry(
+              variantId,
+              variantStages.map((stage) => stage.index).toList(),
+            ),
+          ),
+    };
+  }
 }
 
 /// {@category Utils}

@@ -8,6 +8,7 @@ import 'package:path/path.dart' as p;
 import 'package:flutter_automation_atlas/src/atlas_declarations_store.dart';
 import 'package:flutter_automation_atlas/src/atlas_exception.dart';
 import 'package:flutter_automation_atlas/src/atlas_page_part.dart';
+import 'package:flutter_automation_atlas/src/atlas_paths.dart';
 import 'package:flutter_automation_atlas/src/atlas_page_renderer.dart';
 import 'package:flutter_automation_atlas/src/atlas_shot.dart';
 import 'package:flutter_automation_atlas/src/atlas_shot_encoder.dart';
@@ -246,6 +247,7 @@ void main() {
   group('AtlasPageRenderer Edition Tests', () {
     _atlasPageRenderer_should_keepFullDataOfTheProject();
     _atlasPageRenderer_should_leaveFullOnlyDataOutOfLite();
+    _atlasPageRenderer_should_skipUncoveredListForEditionWithoutLocaleKeys();
     _atlasPageRenderer_should_leaveFullOnlyDataOutOfLiteBundle();
     _atlasPageRenderer_should_showDesignLinksWhenLiteListsThePart();
     _atlasPageRenderer_should_hideSectionsOfPartsOutsideTheEdition();
@@ -1173,6 +1175,38 @@ void _atlasPageRenderer_should_leaveFullOnlyDataOutOfLite() {
       expect(data.containsKey(AtlasTable.localeKeysId), isFalse);
       expect(_readMeta(page)['tables'], isEmpty);
     });
+  });
+}
+
+void _atlasPageRenderer_should_skipUncoveredListForEditionWithoutLocaleKeys() {
+  test('AtlasPageRenderer should skip uncovered list for edition without '
+      'locale keys', () async {
+    await TestAtlasRoot.runWith(
+      project: FakeAtlasProject(
+        pathsOverride: const AtlasPaths(
+          runnerEntry: 'tool/run_flows.dart',
+          output: 'atlas_store',
+          build: 'build/atlas',
+          recordings: 'assets/recordings',
+          publishedVariants: 'scripts/published_variants.json',
+          uncoveredLocaleKeys: 'docs/missing_uncovered_keys.json',
+        ),
+      ),
+      (root) async {
+        _writeFullOnlyCatalogue(root);
+        root.project.tablesToReturn.clear();
+        root.writeTranslations(root.paths.defaultLocale, {'title': 'Shop'});
+
+        final rendering = await AtlasPageRenderer(root.paths).build(
+          edition: root.paths.pageConfig.resolveEdition(AtlasEdition.liteName),
+        );
+
+        expect(
+          _readData(rendering.page).containsKey(AtlasTable.localeKeysId),
+          isFalse,
+        );
+      },
+    );
   });
 }
 

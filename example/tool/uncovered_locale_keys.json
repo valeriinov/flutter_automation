@@ -1,0 +1,13 @@
+{
+  "welcomeTitle": "pending",
+  "signInButton": "pending",
+  "mockModeTooltip": "pending",
+  "catalogTitle": "pending",
+  "catalogEmpty": "pending",
+  "catalogLoadFailed": "pending",
+  "legacyBanner": {
+    "reason": "unused",
+    "place": "login",
+    "widget": "LoginScreen"
+  }
+}

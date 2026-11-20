@@ -1,8 +1,8 @@
 # Changelog
 
-## 0.12.1
+## 0.13.0
 
-- Version bump with `flutter_automation_runner` 0.12.1.
+- Version bump with `flutter_automation_runner` 0.13.0.
 
 ## 0.12.0
 

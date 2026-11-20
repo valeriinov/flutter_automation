@@ -1,7 +1,9 @@
+import 'dart:convert';
+
 import 'package:flutter_test/flutter_test.dart';
 import 'package:path/path.dart' as p;
 
-import 'package:flutter_automation_atlas/src/atlas_exception.dart';
+import 'package:flutter_automation_atlas/flutter_automation_atlas.dart';
 import 'package:flutter_automation_atlas/src/atlas_locations.dart';
 
 import 'test_utils/fake_atlas_project.dart';
@@ -23,6 +25,12 @@ void main() {
     _atlasLocations_should_keepHeadlessReportsUnderBuild();
     _atlasLocations_should_readPackagePrefixFromPubspecOfItsRoot();
     _atlasLocations_should_takeLocalesFromProject();
+    _atlasLocations_should_readTranslationsOfLocaleFromPathsTemplate();
+    _atlasLocations_should_readNoTranslationsWithoutFile();
+    _atlasLocations_should_preferProjectTranslationsOverFile();
+    _atlasLocations_should_readScreenDescriptionsFromPathsFile();
+    _atlasLocations_should_rejectMissingTranslationsFileOfDefaultLocale();
+    _atlasLocations_should_rejectMissingScreenDescriptionsFile();
   });
 }
 
@@ -171,4 +179,115 @@ void _atlasLocations_should_takeLocalesFromProject() {
     expect(locations.defaultLocale, 'de');
     expect(locations.pageLocales, ['de', 'fr']);
   });
+}
+
+const _pathsWithFiles = AtlasPaths(
+  runnerEntry: 'tool/run_flows.dart',
+  output: 'atlas_store',
+  build: 'build/atlas',
+  recordings: 'assets/recordings',
+  publishedVariants: 'scripts/published_variants.json',
+  translations: 'assets/{locale}.json',
+  screenDescriptions: 'docs/screens.json',
+);
+
+void _atlasLocations_should_readTranslationsOfLocaleFromPathsTemplate() {
+  test(
+    'AtlasLocations should read translations of locale from paths template',
+    () async {
+      await TestAtlasRoot.runWith(
+        project: FakeAtlasProject(pathsOverride: _pathsWithFiles),
+        (root) {
+          root.writeSource('assets/en.json', jsonEncode({'title': 'Shop'}));
+
+          final translations = root.paths.readTranslations('en');
+
+          expect(translations, {'title': 'Shop'});
+        },
+      );
+    },
+  );
+}
+
+void _atlasLocations_should_readNoTranslationsWithoutFile() {
+  test('AtlasLocations should read no translations without file', () async {
+    await TestAtlasRoot.runWith(
+      project: FakeAtlasProject(pathsOverride: _pathsWithFiles),
+      (root) {
+        expect(root.paths.readTranslations('en'), isEmpty);
+      },
+    );
+  });
+}
+
+void _atlasLocations_should_rejectMissingTranslationsFileOfDefaultLocale() {
+  test('AtlasLocations should reject missing translations file of default '
+      'locale', () async {
+    await TestAtlasRoot.runWith(
+      project: FakeAtlasProject(pathsOverride: _pathsWithFiles),
+      (root) {
+        expect(
+          () => root.paths.readTranslations(root.paths.defaultLocale),
+          throwsA(isA<AtlasException>()),
+        );
+      },
+    );
+  });
+}
+
+void _atlasLocations_should_preferProjectTranslationsOverFile() {
+  test('AtlasLocations should prefer project translations over file', () async {
+    await TestAtlasRoot.runWith(
+      project: FakeAtlasProject(pathsOverride: _pathsWithFiles),
+      (root) {
+        root
+          ..writeSource('assets/en.json', jsonEncode({'title': 'Shop'}))
+          ..writeTranslations('en', {'title': 'Store'});
+
+        expect(root.paths.readTranslations('en'), {'title': 'Store'});
+      },
+    );
+  });
+}
+
+void _atlasLocations_should_readScreenDescriptionsFromPathsFile() {
+  test(
+    'AtlasLocations should read screen descriptions from paths file',
+    () async {
+      await TestAtlasRoot.runWith(
+        project: FakeAtlasProject(pathsOverride: _pathsWithFiles),
+        (root) {
+          root.writeSource(
+            'docs/screens.json',
+            jsonEncode({
+              'Home': {'en': 'The home screen', 'uk': 'Головний екран'},
+            }),
+          );
+
+          final descriptions = root.paths.readScreenDescriptions();
+
+          expect(descriptions, {
+            'Home': {'en': 'The home screen', 'uk': 'Головний екран'},
+          });
+        },
+      );
+    },
+  );
+}
+
+void _atlasLocations_should_rejectMissingScreenDescriptionsFile() {
+  test(
+    'AtlasLocations should reject missing screen descriptions file',
+    () async {
+      await TestAtlasRoot.runWith(
+        project: FakeAtlasProject(pathsOverride: _pathsWithFiles),
+        (root) {
+          expect(
+            root.paths.readScreenDescriptions,
+            throwsA(isA<AtlasException>()),
+          );
+        },
+      );
+    },
+  );
 }

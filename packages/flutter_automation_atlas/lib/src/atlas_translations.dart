@@ -12,10 +12,10 @@ final class AtlasTranslations {
 
   /// Reads the translations of [locale] from the project of [paths].
   factory AtlasTranslations.read(AtlasLocations paths, String locale) {
-    return AtlasTranslations(paths.project.translations(locale));
+    return AtlasTranslations(paths.readTranslations(locale));
   }
 
-  /// The value of every key, as the translations file holds it.
+  /// The value of each key, as the translations file holds it.
   Map<String, Object?> get values => _values;
 
   /// Each of [keys] the translations hold, mapped to the hash of its value.

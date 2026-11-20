@@ -1,5 +1,6 @@
+import 'dart:io';
+
 import 'package:flutter_test/flutter_test.dart';
-import 'package:path/path.dart' as p;
 
 import 'package:flutter_automation_atlas/src/atlas_definitions.dart';
 import 'package:flutter_automation_atlas/src/atlas_exception.dart';
@@ -13,6 +14,7 @@ import 'test_utils/create_atlas_snapshot.dart';
 import 'test_utils/fake_atlas_project.dart';
 import 'test_utils/recording_stdout.dart';
 import 'test_utils/test_atlas_root.dart';
+import 'test_utils/write_published_journals.dart';
 
 const _capture = ['capture', 'shop_flow', 'shopFromSearch'];
 const _flow = 'settings_atlas';
@@ -47,6 +49,7 @@ void main() {
     _atlasRun_should_rejectSourceLabelWithoutAValue();
     _atlasRun_should_rejectSourceCommitWithoutSnapshot();
     _atlasRun_should_takeLocalesFromProject();
+    _atlasRun_should_printTheChecksAndFailTheExitCodeOnAFailure();
   });
 }
 
@@ -376,12 +379,12 @@ AtlasStaleness _createStaleness(AtlasVariantDefinition variant) {
 }
 
 void _atlasRun_should_handStorePathToProjectReports() {
-  test('AtlasRun should hand store path to project reports', () {
+  test('AtlasRun should hand store reader of option to project reports', () {
     final project = FakeAtlasProject();
     final run = AtlasRun(['stale', '--store', 'shared/atlas'], project);
 
     run.writeReports();
-    expect(project.reportedStores, [p.absolute('shared/atlas')]);
+    expect(project.reportedStores.single.isDefaultStore, isFalse);
   });
 }
 
@@ -429,5 +432,34 @@ void _atlasRun_should_takeLocalesFromProject() {
 
     expect(run.locations.defaultLocale, 'de');
     expect(run.locations.pageLocales, ['de', 'fr']);
+  });
+}
+
+void _atlasRun_should_printTheChecksAndFailTheExitCodeOnAFailure() {
+  test('AtlasRun should print the checks and fail the exit code', () async {
+    await TestAtlasRoot.run((root) async {
+      writePublishedJournals(root, journals: const []);
+
+      final lines = await RecordingStdout.captureLines(
+        () => AtlasRun(
+          ['check'],
+          root.project,
+          rootPath: root.directory.path,
+          readStalenesses: (variants) async => const [],
+        ).run(),
+      );
+
+      expect(lines.map((line) => line.split(' ').first), [
+        'FAIL',
+        '',
+        'note',
+        'ok',
+        'skip',
+      ]);
+      expect(lines.first, startsWith('FAIL  page'));
+      expect(exitCode, 1);
+
+      exitCode = 0;
+    });
   });
 }

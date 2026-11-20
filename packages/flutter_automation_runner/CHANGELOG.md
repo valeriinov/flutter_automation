@@ -1,7 +1,17 @@
 # Changelog
 
-## 0.12.1
+## 0.13.0
 
+- A text or locale key finder reads a `RichText` that no `Text` builds, as the
+  driver finder does. A `Text` matches once.
+- New `AutomationFlowCatalogue`: every flow and block of a project, read once
+  from the `--catalogue` command of its runner. It replaces the catalogue
+  reader of `flutter_automation_atlas`. `flows` and `blocks` are read-only
+  copies of the maps that the constructor received. `resolveFlows` throws an
+  `AutomationRunnerException` for a flow without a `variants` map.
+  `defaultLocale` and `finders` give the default locale and the finder
+  registry of the project. `isDefaultVariant(flow, variant)` tells whether a
+  run that names no variant walks that variant.
 - A capture run does not check the end frame after a failed step. The report
   keeps the end screenshot, the end journal and `manifest` of that run.
 - An end frame defect keeps `endJournal`, `endTexts`, `endWidgets` and

@@ -9,6 +9,7 @@ export 'package:flutter_automation_runner/src/automation_device.dart';
 export 'package:flutter_automation_runner/src/automation_finder_kind.dart';
 export 'package:flutter_automation_runner/src/automation_finder_spec.dart';
 export 'package:flutter_automation_runner/src/automation_flow.dart';
+export 'package:flutter_automation_runner/src/automation_flow_catalogue.dart';
 export 'package:flutter_automation_runner/src/automation_host_finders.dart';
 export 'package:flutter_automation_runner/src/automation_ios_simulator.dart';
 export 'package:flutter_automation_runner/src/automation_runner.dart';
