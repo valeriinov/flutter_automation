@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.13.1
+
+- The text finders read through `AutomationTextReader` of `flutter_automation`.
+  They find the `RichText` of a `WidgetSpan` child by its own text.
+
 ## 0.13.0
 
 - A text or locale key finder reads a `RichText` that no `Text` builds, as the

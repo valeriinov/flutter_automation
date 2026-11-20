@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.13.1
+
+- Version bump with `flutter_automation_mock` 0.13.1.
+
 ## 0.13.0
 
 - Version bump with `flutter_automation_mock` 0.13.0.

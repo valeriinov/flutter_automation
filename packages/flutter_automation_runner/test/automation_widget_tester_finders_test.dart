@@ -9,6 +9,7 @@ void main() {
   group('AutomationWidgetTesterFinders Tests', () {
     _automationWidgetTesterFinders_should_findRichTextByItsSpans();
     _automationWidgetTesterFinders_should_matchTextOnce();
+    _automationWidgetTesterFinders_should_findRichTextOfAWidgetSpan();
   });
 }
 
@@ -49,5 +50,31 @@ void _automationWidgetTesterFinders_should_matchTextOnce() {
     );
 
     expect(_findText(), findsOneWidget);
+  });
+}
+
+void _automationWidgetTesterFinders_should_findRichTextOfAWidgetSpan() {
+  testWidgets('AutomationWidgetTesterFinders should find rich text of a '
+      'widget span', (tester) async {
+    await tester.pumpWidget(
+      Directionality(
+        textDirection: TextDirection.ltr,
+        child: Text.rich(
+          TextSpan(
+            children: [
+              const TextSpan(text: 'Total '),
+              WidgetSpan(
+                child: RichText(text: const TextSpan(text: '42')),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+
+    expect(
+      AutomationWidgetTesterFinders.build(const AutomationTextSpec('42')),
+      findsOneWidget,
+    );
   });
 }

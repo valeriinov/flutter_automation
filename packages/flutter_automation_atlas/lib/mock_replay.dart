@@ -8,4 +8,8 @@ library;
 
 export 'package:flutter_automation_atlas/src/atlas_mock_session.dart';
 export 'package:flutter_automation_atlas/src/run_atlas_mock_replay.dart'
-    show AtlasMockApisBuilder, isAtlasMockReplayRun, runAtlasMockReplay;
+    show
+        AtlasMockApisBuilder,
+        isAtlasMockReplayRun,
+        runAtlasMockReplay,
+        runAtlasMockReplayFiles;

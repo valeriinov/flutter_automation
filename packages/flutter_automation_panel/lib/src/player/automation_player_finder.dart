@@ -162,13 +162,21 @@ class AutomationPlayerFinder {
 
     return switch (by) {
       'valueKey' => _matchValueKey(_readValue(finder)),
-      'text' => _matchUnmarkedText(_readTexts(finder), _readText),
+      'text' => _matchUnmarkedText(
+        _readTexts(finder),
+        AutomationTextReader.tryRead,
+      ),
       'tooltip' => _matchUnmarkedText(_readTexts(finder), _readTooltip),
-      'localeKey' => _matchLocaleKey(_readTexts(finder), _readText),
+      'localeKey' => _matchLocaleKey(
+        _readTexts(finder),
+        AutomationTextReader.tryRead,
+      ),
       'localeKeyTooltip' => _matchLocaleKey(_readTexts(finder), _readTooltip),
       'type' => _matchType(_readTexts(finder)),
       'pageBack' => _matchPageBack,
-      'dateText' => _matchUnmarkedText([_readDateText(finder)], _readText),
+      'dateText' => _matchUnmarkedText([
+        _readDateText(finder),
+      ], AutomationTextReader.tryRead),
       final String kind when dateValueKeys.containsKey(kind) => _matchValueKey(
         _readDateKey(kind, finder),
       ),
@@ -301,29 +309,6 @@ class AutomationPlayerFinder {
 
     return widget is CupertinoNavigationBarBackButton ||
         (widget is Tooltip && widget.message == _backTooltip);
-  }
-
-  String? _readText(Element element) {
-    return switch (element.widget) {
-      Text(:final data?) => data,
-      Text(:final textSpan?) => textSpan.toPlainText(),
-      EditableText(:final controller) => controller.text,
-      final RichText richText when !_isBuiltByText(element) =>
-        richText.text.toPlainText(),
-      _ => null,
-    };
-  }
-
-  bool _isBuiltByText(Element element) {
-    bool isBuilt = false;
-
-    element.visitAncestorElements((ancestor) {
-      isBuilt = ancestor.widget is Text;
-
-      return !isBuilt;
-    });
-
-    return isBuilt;
   }
 
   String? _readTooltip(Element element) {

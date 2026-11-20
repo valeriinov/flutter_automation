@@ -155,8 +155,8 @@ final class _MockReplay {
   ) async {
     try {
       return _MockApiAnswer(response: await _respond(endpoints, recorded));
-    } on Object catch (error, stackTrace) {
-      return _MockApiAnswer(error: error, stackTrace: stackTrace);
+    } on Object catch (error) {
+      return _MockApiAnswer(error: error);
     }
   }
 
@@ -185,19 +185,13 @@ final class _MockReplay {
   }
 }
 
-/// What an endpoint gave for one recorded request: a response, or the error
-/// that its responder threw.
 final class _MockApiAnswer {
   final MockApiResponse? response;
   final Object? error;
-  final StackTrace? stackTrace;
 
-  const _MockApiAnswer({this.response, this.error, this.stackTrace});
+  const _MockApiAnswer({this.response, this.error});
 }
 
-/// Serves the responses that the endpoints gave once, in real time, to each
-/// asked record in the order of the snapshot, so every timing replays the same
-/// answers.
 final class _MockApiSession extends AtlasMockSession {
   final List<_MockApiAnswer> _answers;
 
@@ -214,7 +208,7 @@ final class _MockApiSession extends AtlasMockSession {
     _response = answer?.response;
 
     if (error != null) {
-      Error.throwWithStackTrace(error, answer?.stackTrace ?? StackTrace.empty);
+      throw error;
     }
 
     return _response;

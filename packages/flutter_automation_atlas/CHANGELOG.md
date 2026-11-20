@@ -1,12 +1,13 @@
 # Changelog
 
+## 0.13.1
+
+- `mock_replay.dart` exports `runAtlasMockReplayFiles`: the replay with the
+  paths of the input and the output file, for a test.
+- `AtlasDefinition.holdsProbeSeries` reads `AutomationFlow.holdsProbeSeries`.
+
 ## 0.13.0
 
-- `mock_replay.dart` exports only `runAtlasMockReplay`, `isAtlasMockReplayRun`,
-  `AtlasMockApisBuilder` and the session types. `runAtlasMockReplayFiles` is
-  not public API.
-- A responder that throws fails only its own answer in the built-in mock
-  replay. The outcome says `failed:` and the replay goes on.
 - Breaking: `AtlasProject.tables` and `AtlasProject.writeReports` take an
   `AtlasStoreReader` instead of the store path. `AtlasStoreReader.open` opens
   the store of a project outside `runAtlas`.
@@ -23,15 +24,17 @@
 - New `AtlasChecks` and the `check` command of `runAtlas`: the page, the
   published variants, the snapshots and the translation key coverage.
   `AtlasChecks` takes a `sourceLabel`, and `check --source-label` gives it.
-- New library `mock_replay.dart` with `runAtlasMockReplay`. The mock replay
-  test of a project calls it with its journal schema and either a `session` or
-  its mock `sections` and `apis`. A `session` is an `AtlasMockSessionFactory`
-  that builds an `AtlasMockSession` from an `AtlasMockSessionContext`. The
-  built-in form asks each endpoint once per input and replays the stored
-  responses. The replay runs the pending microtasks after the factory returns.
-  A synchronous throw of `AtlasMockSession.ask` counts as a failed answer. The
-  package cleans the records of `AtlasMockSession.impliedAnswers` as it cleans
-  the journal.
+- New library `mock_replay.dart` with `runAtlasMockReplay`,
+  `isAtlasMockReplayRun`, `AtlasMockApisBuilder` and the session types. The mock
+  replay test of a project calls it with its journal schema and either a
+  `session` or its mock `sections` and `apis`. A `session` is an
+  `AtlasMockSessionFactory` that builds an `AtlasMockSession` from an
+  `AtlasMockSessionContext`. The built-in form asks each endpoint once per input
+  and replays the stored responses. A responder that throws fails only its own
+  answer: the outcome says `failed:` and the replay goes on. The replay runs the
+  pending microtasks after the factory returns. A synchronous throw of
+  `AtlasMockSession.ask` counts as a failed answer. The package cleans the
+  records of `AtlasMockSession.impliedAnswers` as it cleans the journal.
 - New library `headless.dart` with `runAtlasHeadlessSuite`, `AtlasHeadlessApp`,
   `AtlasHeadlessDevice` and `AtlasHeadlessLaunch`: the walk of a headless test.
   The project supplies the app hooks. `AtlasHeadlessLaunch` is not `const`. It

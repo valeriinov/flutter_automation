@@ -172,6 +172,10 @@ final class AutomationFlow {
   /// The run this flow file resolved to, the way a report names it.
   String get id => '$name $variant';
 
+  /// Whether the variant holds a probe series rather than a journey. A variant
+  /// holds one when it has a `probeSeries` step.
+  bool get holdsProbeSeries => steps.any((step) => step.probes.isNotEmpty);
+
   /// The variant a run walks when it names none: the declared
   /// `defaultVariant`, else the only variant, else `null`.
   ///

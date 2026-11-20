@@ -28,6 +28,7 @@ void main() {
     _unmarkedTextFinder_should_skipOffstageText();
     _unmarkedTextFinder_should_findRichTextByItsSpans();
     _unmarkedTextFinder_should_matchTextOnce();
+    _unmarkedTextFinder_should_findRichTextOfAWidgetSpan();
     _unmarkedTextFinder_should_findMarkedTooltipByItsMessage();
   });
   group('LocaleKeyFinder Tests', () {
@@ -92,6 +93,30 @@ void _unmarkedTextFinder_should_matchTextOnce() {
     await _pump(tester, const Text(_title));
 
     final finder = _resolve(_textFinder, const UnmarkedText(_title));
+
+    expect(finder, findsOneWidget);
+  });
+}
+
+void _unmarkedTextFinder_should_findRichTextOfAWidgetSpan() {
+  testWidgets('UnmarkedTextFinder should find rich text of a widget span', (
+    tester,
+  ) async {
+    await _pump(
+      tester,
+      Text.rich(
+        TextSpan(
+          children: [
+            const TextSpan(text: 'Total '),
+            WidgetSpan(
+              child: RichText(text: const TextSpan(text: '42')),
+            ),
+          ],
+        ),
+      ),
+    );
+
+    final finder = _resolve(_textFinder, const UnmarkedText('42'));
 
     expect(finder, findsOneWidget);
   });

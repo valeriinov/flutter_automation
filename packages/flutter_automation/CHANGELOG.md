@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.13.1
+
+- New `AutomationTextReader.tryRead`: the text that a widget shows, for the
+  text finders of the driver, the runner and the QA panel. The `RichText` of a
+  `WidgetSpan` child gives its own text.
+
 ## 0.13.0
 
 - Version bump with `flutter_automation_runner` 0.13.0.

@@ -184,6 +184,11 @@ void _automationFlowCatalogue_should_resolveEveryVariantWithProbeSeries() {
         'login refused',
         'motion main',
       ]);
+      expect(catalogue.resolveFlows().map((flow) => flow.holdsProbeSeries), [
+        false,
+        false,
+        true,
+      ]);
     } finally {
       directory.deleteSync(recursive: true);
     }

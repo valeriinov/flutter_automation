@@ -20,12 +20,18 @@ abstract final class AutomationWidgetTesterFinders {
   static Finder build(AutomationFinderSpec spec) {
     return switch (spec) {
       AutomationValueKeySpec(:final key) => find.byKey(_toKey(key)),
-      AutomationTextSpec(:final text) => _findUnmarkedText(text, _readText),
+      AutomationTextSpec(:final text) => _findUnmarkedText(
+        text,
+        AutomationTextReader.tryRead,
+      ),
       AutomationTooltipSpec(:final text) => _findUnmarkedText(
         text,
         _readTooltipMessage,
       ),
-      AutomationLocaleKeySpec(:final key) => _findLocaleKey(key, _readText),
+      AutomationLocaleKeySpec(:final key) => _findLocaleKey(
+        key,
+        AutomationTextReader.tryRead,
+      ),
       AutomationLocaleKeyTooltipSpec(:final key) => _findLocaleKey(
         key,
         _readTooltipMessage,
@@ -91,29 +97,6 @@ abstract final class AutomationWidgetTesterFinders {
 
       return shown != null && LocaleKeyMarker.readKeys(shown).contains(key);
     }, description: 'locale key "$key"');
-  }
-
-  static String? _readText(Element element) {
-    return switch (element.widget) {
-      Text(:final data?) => data,
-      Text(:final textSpan?) => textSpan.toPlainText(),
-      EditableText(:final controller) => controller.text,
-      final RichText richText when !_isBuiltByText(element) =>
-        richText.text.toPlainText(),
-      _ => null,
-    };
-  }
-
-  static bool _isBuiltByText(Element element) {
-    bool isBuilt = false;
-
-    element.visitAncestorElements((ancestor) {
-      isBuilt = ancestor.widget is Text;
-
-      return !isBuilt;
-    });
-
-    return isBuilt;
   }
 
   static String? _readTooltipMessage(Element element) {

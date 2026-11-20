@@ -89,37 +89,85 @@ void _runAtlasMockReplayFiles_should_tellRequestNoEndpointAnswered() {
 void _runAtlasMockReplayFiles_should_failOnlyTheAnswerWhoseResponderThrew() {
   test('runAtlasMockReplayFiles should fail only the answer whose responder '
       'threw', () async {
-    final outcome = await _replay(
-      const AtlasMockReplayInput(
-        id: 'shop_flow/shopFromSearch',
-        scenario: {},
-        locale: 'uk',
-        answers: [
-          AtlasRecordedAnswer(
-            stage: 0,
-            record: {
-              'kind': 'request',
-              'method': 'GET',
-              'path': '/broken',
-              'status': 200,
-              'response': {'count': 1},
-            },
-          ),
-        ],
-      ),
+    const brokenInput = AtlasMockReplayInput(
+      id: 'shop_flow/shopFromSearch',
+      scenario: {},
+      locale: 'uk',
+      stageMoments: [
+        (anchor: '2026-10-06T09:00:00.000Z', launchedAt: null),
+        (anchor: '2026-10-07T09:00:00.000Z', launchedAt: null),
+      ],
+      answers: [
+        AtlasRecordedAnswer(
+          stage: 0,
+          record: {
+            'kind': 'request',
+            'method': 'POST',
+            'path': '/items',
+            'status': 200,
+            'response': {'count': 1},
+          },
+        ),
+        AtlasRecordedAnswer(
+          stage: 1,
+          record: {
+            'kind': 'request',
+            'method': 'GET',
+            'path': '/broken',
+            'status': 200,
+            'response': {'count': 1},
+          },
+        ),
+      ],
+    );
+    const passingInput = AtlasMockReplayInput(
+      id: 'shop_flow/shopFromHome',
+      scenario: {},
+      locale: 'uk',
+      answers: [
+        AtlasRecordedAnswer(
+          stage: 0,
+          record: {
+            'kind': 'request',
+            'method': 'POST',
+            'path': '/items',
+            'status': 200,
+            'response': {'count': 1},
+          },
+        ),
+      ],
     );
 
-    expect(outcome.difference, contains('failed:'));
+    final outcomes = await _replayAll([brokenInput, passingInput]);
+
+    final brokenOutcome = outcomes[brokenInput.id];
+    final passingOutcome = outcomes[passingInput.id];
+
+    expect(brokenOutcome?.stage, 1);
+    expect(brokenOutcome?.difference, contains('failed:'));
+    expect(brokenOutcome?.difference, contains('broken responder'));
+    expect(passingOutcome?.stage, isNull);
+    expect(passingOutcome?.difference, isNull);
   });
 }
 
 Future<AtlasMockReplayOutcome> _replay(AtlasMockReplayInput input) async {
+  final outcomes = await _replayAll([input]);
+
+  return outcomes[input.id]!;
+}
+
+Future<Map<String, AtlasMockReplayOutcome>> _replayAll(
+  List<AtlasMockReplayInput> inputs,
+) async {
   final directory = Directory.systemTemp.createTempSync('run_replay_test');
 
   addTearDown(() => directory.deleteSync(recursive: true));
 
   final inputFile = File('${directory.path}/input.json')
-    ..writeAsStringSync(jsonEncode([input.toJson()]));
+    ..writeAsStringSync(
+      jsonEncode([for (final input in inputs) input.toJson()]),
+    );
   final outputFile = File('${directory.path}/output.json');
 
   await runAtlasMockReplayFiles(
@@ -129,9 +177,7 @@ Future<AtlasMockReplayOutcome> _replay(AtlasMockReplayInput input) async {
     apis: (_) => [_ItemsApi()],
   );
 
-  return AtlasMockReplayOutcome.readAll(
-    outputFile.readAsStringSync(),
-  )[input.id]!;
+  return AtlasMockReplayOutcome.readAll(outputFile.readAsStringSync());
 }
 
 final class _ItemsApi implements MockApi {

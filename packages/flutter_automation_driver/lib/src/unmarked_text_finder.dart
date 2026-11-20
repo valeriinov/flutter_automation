@@ -21,11 +21,11 @@ final class UnmarkedTextFinder extends FinderExtension {
 
   final String? Function(Element element) _readText;
 
-  /// Matches a [Text], a [RichText] or an [EditableText] and answers the
-  /// `UnmarkedText` finder type.
+  /// Matches a [Text], a [RichText] that no [Text] builds, or an
+  /// [EditableText] and answers the `UnmarkedText` finder type.
   UnmarkedTextFinder.text()
     : finderType = AutomationProtocol.unmarkedTextFinderType,
-      _readText = _tryReadWidgetText;
+      _readText = AutomationTextReader.tryRead;
 
   /// Matches a [Tooltip] message and answers the `UnmarkedTooltip` finder type.
   UnmarkedTextFinder.tooltip()
@@ -78,8 +78,9 @@ final class UnmarkedTextFinder extends FinderExtension {
 ///
 /// The mark is in the text of a build launched with
 /// `ENABLE_AUTOMATION_LOCALE_KEYS`. The text variant matches an onstage [Text],
-/// [RichText] or [EditableText]; the tooltip variant matches a [Tooltip]
-/// message. A host addresses them by [finderType] with a `key` parameter.
+/// [RichText] that no [Text] builds, or [EditableText]; the tooltip variant
+/// matches a [Tooltip] message. A host addresses them by [finderType] with a
+/// `key` parameter.
 final class LocaleKeyFinder extends FinderExtension {
   static const _keyParameter = AutomationProtocol.keyParameter;
 
@@ -88,11 +89,11 @@ final class LocaleKeyFinder extends FinderExtension {
 
   final String? Function(Element element) _readText;
 
-  /// Matches a [Text], a [RichText] or an [EditableText] and answers the
-  /// `LocaleKeyText` finder type.
+  /// Matches a [Text], a [RichText] that no [Text] builds, or an
+  /// [EditableText] and answers the `LocaleKeyText` finder type.
   LocaleKeyFinder.text()
     : finderType = AutomationProtocol.localeKeyTextFinderType,
-      _readText = _tryReadWidgetText;
+      _readText = AutomationTextReader.tryRead;
 
   /// Matches a [Tooltip] message and answers the `LocaleKeyTooltip` finder
   /// type.
@@ -154,29 +155,6 @@ class _LocaleKeyQuery extends SerializableFinder {
   final String key;
 
   const _LocaleKeyQuery({required this.finderType, required this.key});
-}
-
-String? _tryReadWidgetText(Element element) {
-  return switch (element.widget) {
-    Text(:final data?) => data,
-    Text(:final textSpan?) => textSpan.toPlainText(),
-    EditableText(:final controller) => controller.text,
-    final RichText richText when !_isBuiltByText(element) =>
-      richText.text.toPlainText(),
-    _ => null,
-  };
-}
-
-bool _isBuiltByText(Element element) {
-  bool isBuilt = false;
-
-  element.visitAncestorElements((ancestor) {
-    isBuilt = ancestor.widget is Text;
-
-    return !isBuilt;
-  });
-
-  return isBuilt;
 }
 
 String? _tryReadTooltipMessage(Element element) {

@@ -26,6 +26,7 @@ void main() {
   group('AutomationPlayerFinder Text Tests', () {
     _automationPlayerFinder_should_findRichTextByItsSpans();
     _automationPlayerFinder_should_matchTextOnce();
+    _automationPlayerFinder_should_findRichTextOfAWidgetSpan();
   });
 }
 
@@ -183,5 +184,28 @@ void _automationPlayerFinder_should_matchTextOnce() {
     );
 
     expect(_finder({'by': 'text', 'value': 'Hello'}).findAll(), hasLength(1));
+  });
+}
+
+void _automationPlayerFinder_should_findRichTextOfAWidgetSpan() {
+  testWidgets('AutomationPlayerFinder should find rich text of a widget '
+      'span', (tester) async {
+    await tester.pumpWidget(
+      Directionality(
+        textDirection: TextDirection.ltr,
+        child: Text.rich(
+          TextSpan(
+            children: [
+              const TextSpan(text: 'Total '),
+              WidgetSpan(
+                child: RichText(text: const TextSpan(text: '42')),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+
+    expect(_finder({'by': 'text', 'value': '42'}).findAll(), hasLength(1));
   });
 }

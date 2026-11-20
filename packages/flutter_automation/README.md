@@ -8,7 +8,7 @@ and the build switches. Every other package builds on it.
 | Import | Host-safe | Holds |
 | --- | --- | --- |
 | `package:flutter_automation/automation_target.dart` | Yes, no Flutter import | `AutomationTarget`, `AutomationTargetType`, `AutomationIdComposer`, `AutomationTargetWithKey`, `AutomationTimelineLabel`. |
-| `package:flutter_automation/flutter_automation.dart` | No, imports Flutter | Everything above, plus `automationTarget()`, `AutomationSettings`, `AutomationCommandRegistry`, `AutomationCommandHandler`, `AutomationTimeline`, `LocaleKeyMarker`. |
+| `package:flutter_automation/flutter_automation.dart` | No, imports Flutter | Everything above, plus `automationTarget()`, `AutomationSettings`, `AutomationCommandRegistry`, `AutomationCommandHandler`, `AutomationTimeline`, `LocaleKeyMarker`, `AutomationTextReader`. |
 
 | `package:flutter_automation/automation_date_pattern.dart` | Yes | `AutomationDatePattern`: writes a date by a pattern of `yyyy`, `MM` and `dd`. |
 | `package:flutter_automation/locale_key_marker.dart` | Yes, no Flutter import | `LocaleKeyMarker`: the invisible mark of a locale key in a translation string. |

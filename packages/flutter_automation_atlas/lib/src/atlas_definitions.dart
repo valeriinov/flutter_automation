@@ -134,10 +134,7 @@ final class AtlasDefinition {
   /// Whether the flow holds a probe series rather than a journey: a variant
   /// has a `probeSeries` step, the one step that reads probes.
   bool get holdsProbeSeries {
-    return variants.any(
-      (variant) =>
-          variant.automationFlow.steps.any((step) => step.probes.isNotEmpty),
-    );
+    return variants.any((variant) => variant.automationFlow.holdsProbeSeries);
   }
 
   /// What the journey is about in one sentence, null when the flow names

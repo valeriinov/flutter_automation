@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.13.1
+
+- Version bump with `flutter_automation` 0.13.1.
+
 ## 0.13.0
 
 - New `MockApiFailure.resolveMessage`: the text of a failure, in this order:

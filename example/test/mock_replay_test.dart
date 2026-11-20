@@ -2,8 +2,6 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter_automation_atlas/mock_replay.dart';
-import 'package:flutter_automation_atlas/src/run_atlas_mock_replay.dart'
-    show runAtlasMockReplayFiles;
 import 'package:flutter_automation_mock/flutter_automation_mock.dart';
 import 'package:flutter_test/flutter_test.dart';
 
