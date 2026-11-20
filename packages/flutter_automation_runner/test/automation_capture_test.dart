@@ -8,11 +8,10 @@ import 'package:image/image.dart' as image;
 
 import 'package:flutter_automation_runner/src/automation_capture.dart';
 
-const _sourceWidth = 720;
-const _sourceHeight = 1280;
-const _targetWidth = 360;
-const _largeImageSize = 400;
-const _maxScreenshotBytes = 100 * 1024;
+const _sourceWidth = 1440;
+const _sourceHeight = 2560;
+const _targetWidth = 720;
+const _maxScreenshotBytes = 512 * 1024;
 const _pixelChannelModulo = 256;
 const _randomSeed = 1701;
 const _stripeStep = _sourceWidth ~/ _targetWidth;
@@ -131,7 +130,7 @@ image.Image _createStripedImage() {
 }
 
 image.Image _createNoiseImage() {
-  final source = image.Image(width: _largeImageSize, height: _largeImageSize);
+  final source = image.Image(width: _sourceWidth, height: _sourceHeight);
   final random = Random(_randomSeed);
 
   for (final pixel in source) {

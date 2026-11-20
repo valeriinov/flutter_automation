@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.13.2
+
+- Version bump with `flutter_automation_runner` 0.13.2.
+
 ## 0.13.1
 
 - `mock_replay.dart` exports `runAtlasMockReplayFiles`: the replay with the

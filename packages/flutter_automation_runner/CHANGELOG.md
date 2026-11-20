@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.13.2
+
+- A capture writes each screenshot 720 pixels wide, up from 360, and
+  accepts a file up to 512 KB, up from 100 KB.
+
 ## 0.13.1
 
 - The text finders read through `AutomationTextReader` of `flutter_automation`.

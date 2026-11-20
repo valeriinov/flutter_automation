@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.13.2
+
+- Version bump with `flutter_automation_runner` 0.13.2.
+
 ## 0.13.1
 
 - The text finders read through `AutomationTextReader` of `flutter_automation`.

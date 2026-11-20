@@ -9,8 +9,8 @@ import 'package:image/image.dart' as image;
 /// writes a compact PNG of the screen before each user action and after the
 /// last step. It also writes the report of the run in `reports.jsonl`.
 final class AutomationCapture {
-  static const _screenshotWidth = 360;
-  static const _maxScreenshotBytes = 100 * 1024;
+  static const _screenshotWidth = 720;
+  static const _maxScreenshotBytes = 512 * 1024;
   static const _pngCompressionLevel = 9;
   static const _pngExtension = '.png';
   static const _endScreenshotName = 'end';

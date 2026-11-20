@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.13.2
+
+- Version bump with `flutter_automation_runner` 0.13.2.
+
 ## 0.13.1
 
 - New `AutomationTextReader.tryRead`: the text that a widget shows, for the
