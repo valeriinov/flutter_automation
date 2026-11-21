@@ -46,6 +46,9 @@ void main() {
     _atlasRun_should_failTheExitCodeOfStaleWithRequireFreshOnAStaleVariant();
     _atlasRun_should_keepTheExitCodeOfStaleWithRequireFreshWhenEachIsFresh();
     _atlasRun_should_keepTheExitCodeOfStaleWithoutRequireFresh();
+    _atlasRun_should_readRequireFreshAfterTheWalkOfPublished();
+    _atlasRun_should_rejectRequireFreshOnCapture();
+    _atlasRun_should_rejectRequireFreshOnHeadless();
     _atlasCatalogue_should_recordHashesOfVariantsCheckedAfterTheWalk();
     _atlasRun_should_handStorePathToProjectReports();
     _atlasRun_should_keepSourceLabelOnRunOptions();
@@ -227,6 +230,8 @@ void _atlasCatalogue_should_walkNothingWithoutPublished() {
 void _atlasRun_should_failTheExitCodeOfStaleWithRequireFreshOnAStaleVariant() {
   test('AtlasRun should fail the exit code of stale with require fresh on a '
       'stale variant', () async {
+    addTearDown(() => exitCode = 0);
+
     await TestAtlasRoot.run((root) async {
       _writeVariants(root);
 
@@ -245,8 +250,6 @@ void _atlasRun_should_failTheExitCodeOfStaleWithRequireFreshOnAStaleVariant() {
         '$_flow $_freshVariant fresh',
       ]);
       expect(exitCode, 1);
-
-      exitCode = 0;
     });
   });
 }
@@ -297,6 +300,93 @@ void _atlasRun_should_keepTheExitCodeOfStaleWithoutRequireFresh() {
       });
     },
   );
+}
+
+void _atlasRun_should_readRequireFreshAfterTheWalkOfPublished() {
+  test(
+    'AtlasRun should read require fresh after the walk of published',
+    () async {
+      addTearDown(() => exitCode = 0);
+
+      await TestAtlasRoot.run((root) async {
+        final walks = <List<String>>[];
+        int checkCount = 0;
+
+        _writeVariants(root);
+
+        final lines = await RecordingStdout.captureLines(
+          AtlasRun(
+            const ['stale', '--published', '--require-fresh'],
+            root.project,
+            rootPath: root.directory.path,
+            readStalenesses: (variants) async {
+              checkCount++;
+
+              return [
+                for (final variant in variants)
+                  _isStaleBeforeTheWalk(variant, checkCount)
+                      ? _createStaleness(variant)
+                      : _createFresh(variant),
+              ];
+            },
+            headlessPass: (variants) async {
+              walks.add([for (final variant in variants) variant.id]);
+
+              return true;
+            },
+          ).run,
+        );
+
+        expect(walks, [
+          ['$_flow $_unwalkedVariant'],
+        ]);
+        expect(lines, [
+          '$_flow $_unwalkedVariant fresh',
+          '$_flow $_walkedVariant fresh',
+          '$_flow $_freshVariant fresh',
+        ]);
+        expect(exitCode, 0);
+      });
+    },
+  );
+}
+
+bool _isStaleBeforeTheWalk(AtlasVariantDefinition variant, int checkCount) {
+  return checkCount == 1 && variant.id == '$_flow $_unwalkedVariant';
+}
+
+void _atlasRun_should_rejectRequireFreshOnCapture() {
+  test('AtlasRun should reject require fresh on capture', () async {
+    await TestAtlasRoot.run((root) async {
+      _writeVariants(root);
+
+      final catalogue = _createCatalogue(
+        root,
+        const ['capture', '--stale', '--require-fresh'],
+        [],
+        [],
+      );
+
+      await expectLater(catalogue.run, throwsA(isA<AtlasException>()));
+    });
+  });
+}
+
+void _atlasRun_should_rejectRequireFreshOnHeadless() {
+  test('AtlasRun should reject require fresh on headless', () async {
+    await TestAtlasRoot.run((root) async {
+      _writeVariants(root);
+
+      final catalogue = _createCatalogue(
+        root,
+        const ['headless', '--require-fresh'],
+        [],
+        [],
+      );
+
+      await expectLater(catalogue.run, throwsA(isA<AtlasException>()));
+    });
+  });
 }
 
 void _atlasCatalogue_should_recordHashesOfVariantsCheckedAfterTheWalk() {
@@ -515,6 +605,8 @@ void _atlasRun_should_takeLocalesFromProject() {
 
 void _atlasRun_should_printTheChecksAndFailTheExitCodeOnAFailure() {
   test('AtlasRun should print the checks and fail the exit code', () async {
+    addTearDown(() => exitCode = 0);
+
     await TestAtlasRoot.run((root) async {
       writePublishedJournals(root, journals: const []);
 
@@ -541,8 +633,6 @@ void _atlasRun_should_printTheChecksAndFailTheExitCodeOnAFailure() {
       expect(lines[3], startsWith('note  storedVariants'));
       expect(lines.last, startsWith('ok    shots'));
       expect(exitCode, 1);
-
-      exitCode = 0;
     });
   });
 }

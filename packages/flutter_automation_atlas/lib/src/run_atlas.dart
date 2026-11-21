@@ -195,7 +195,8 @@ import 'package:flutter_automation_atlas/src/atlas_versions.dart';
 /// the page footer shows.
 ///
 /// `headless` with `--published` or `--no-walk` fails with the usage. So does
-/// `capture` with `--no-walk` but without `--stale`.
+/// `capture` with `--no-walk` but without `--stale`, and `capture` or
+/// `headless` with `--require-fresh`.
 ///
 /// A capture or a headless walk that did not pass exits with code 1. So does
 /// `stale --require-fresh` when a variant is not fresh.
@@ -352,6 +353,10 @@ final class AtlasRun {
 
   bool get _isFreshRequired => args.contains(_requireFreshFlag);
 
+  bool get _isHeadlessRefused {
+    return _isPublishedOnly || args.contains(_noWalkFlag) || _isFreshRequired;
+  }
+
   List<String> get _positionalArguments {
     const options = {
       _localeOption,
@@ -450,6 +455,10 @@ final class AtlasRun {
   }
 
   Future<void> _capture(String locale) async {
+    if (_isFreshRequired) {
+      throw const AtlasException(_usage);
+    }
+
     final stages = _stages;
     final isOk = switch (_positionalArguments.elementAtOrNull(1)) {
       _staleFlag when stages == null => await _captureStale(locale),
@@ -490,7 +499,7 @@ final class AtlasRun {
   }
 
   Future<void> _walkHeadless() async {
-    if (_isPublishedOnly || args.contains(_noWalkFlag)) {
+    if (_isHeadlessRefused) {
       throw const AtlasException(_usage);
     }
 

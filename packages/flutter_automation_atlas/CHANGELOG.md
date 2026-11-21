@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.16.3
+
+- `capture` and `headless` with `--require-fresh` fail with the usage.
+
 ## 0.16.2
 
 - `stale` takes `--require-fresh`. After it prints its lines, the command
