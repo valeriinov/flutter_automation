@@ -1,5 +1,27 @@
 # Changelog
 
+## 0.16.1
+
+- The `tag-versions` command puts on `origin` the git tag of each row of
+  `versions.json` whose folder the branch `origin/main` holds.
+  `versionTagTemplate` of `atlas-config.json` gives the name of the tag. The
+  tag names the commit that last added the `data.json.gz` file of the
+  version. The command skips a tag that `origin` holds, and it creates no tag
+  in the repository. The command refuses a shallow clone: it needs the full
+  history of `origin/main`.
+- The library exports `AtlasVersions`, `AtlasVersion` and
+  `AtlasVersionTagTemplate`.
+  `AtlasVersions.keepsPosition(position)` tells whether a version with that
+  position is inside the retention of the site folder.
+  `readKeptVersions()`, `hasVersionTagTemplate`, `resolveVersionTag(label)`,
+  `tryReadTaggedLabel(tag)` and `tryReadVersionTagTemplate()` read the
+  retention fields of `atlas-config.json`.
+- Breaking: a class that implements `AtlasStoreReader` implements
+  `snapshots()`.
+- `AtlasStoreReader.snapshots()` returns each snapshot of the store folder,
+  in every locale, in the order of flow, variant and locale. The library
+  exports `AtlasSnapshot`, `AtlasStage` and `AtlasEnd`.
+
 ## 0.16.0
 
 - Breaking: `AtlasShotStorage.list()` returns each file that the storage

@@ -42,6 +42,7 @@ void main() {
     _atlasRun_should_rejectOpenWithoutSite();
     _atlasRun_should_pruneOnlyWithApply();
     _atlasRun_should_rejectPruneOfBothSingleParts();
+    _atlasRun_should_tagVersionsOfTheMainBranch();
   });
 }
 
@@ -299,6 +300,38 @@ void _atlasRun_should_rejectPruneOfBothSingleParts() {
       );
 
       expect(storage.deletions, isEmpty);
+    });
+  });
+}
+
+void _atlasRun_should_tagVersionsOfTheMainBranch() {
+  test('AtlasRun should tag versions of the main branch', () async {
+    await _runInRepository((root, storage) async {
+      final path = root.directory.path;
+
+      root.writeText(
+        p.join(_resolveSitePath(root), AtlasVersions.configFileName),
+        jsonEncode({'versionTagTemplate': 'atlas-{version}'}),
+      );
+
+      await _publish(root, _firstLabel, position: '10');
+
+      final commit = commitTestGit(path, 'version');
+
+      pushTestGit(path, 'main');
+
+      final lines = await RecordingStdout.captureLines(
+        () => _runIn(root, ['tag-versions', '--site', _resolveSitePath(root)]),
+      );
+
+      expect(lines, [
+        'Tagged atlas-$_firstLabel at $commit',
+        'Tagged 1 versions',
+      ]);
+      expect(
+        runTestGit(path, ['ls-remote', '--tags', 'origin']),
+        '$commit\trefs/tags/atlas-$_firstLabel',
+      );
     });
   });
 }

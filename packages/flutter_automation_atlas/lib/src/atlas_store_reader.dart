@@ -1,3 +1,4 @@
+import 'package:collection/collection.dart';
 import 'package:path/path.dart' as p;
 
 import 'package:flutter_automation_atlas/src/atlas_journal_stages.dart';
@@ -46,6 +47,10 @@ abstract interface class AtlasStoreReader {
   /// The `<flow> <variant>` of each snapshot in the default locale that
   /// walks a screen, by screen name.
   Map<String, List<String>> walkersByScreen();
+
+  /// Each snapshot of the store folder, in every locale. The order is by
+  /// flow, then by variant, then by locale.
+  List<AtlasSnapshot> snapshots();
 }
 
 /// {@category Utils}
@@ -90,10 +95,27 @@ final class AtlasLocationsStore implements AtlasStoreReader {
     return walkersByScreen;
   }
 
+  @override
+  List<AtlasSnapshot> snapshots() {
+    return AtlasSnapshotStore(_paths).readEveryLocale().sorted(_compare);
+  }
+
   Iterable<String> _readWalkedScreens(AtlasSnapshot snapshot) {
     return <String?>{
       ...snapshot.stages.map((stage) => stage.screen),
       snapshot.end.screen,
     }.nonNulls;
+  }
+
+  int _compare(AtlasSnapshot first, AtlasSnapshot second) {
+    final keys = [
+      (first.flow, second.flow),
+      (first.variant, second.variant),
+      (first.locale, second.locale),
+    ];
+
+    return keys
+        .map((key) => key.$1.compareTo(key.$2))
+        .firstWhere((order) => order != 0, orElse: () => 0);
   }
 }

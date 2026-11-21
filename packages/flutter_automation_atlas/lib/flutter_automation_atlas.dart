@@ -13,8 +13,12 @@ export 'package:flutter_automation_atlas/src/atlas_shot.dart';
 export 'package:flutter_automation_atlas/src/atlas_shot_id.dart';
 export 'package:flutter_automation_atlas/src/atlas_shot_source.dart';
 export 'package:flutter_automation_atlas/src/atlas_shot_storage.dart';
+export 'package:flutter_automation_atlas/src/atlas_snapshot.dart'
+    show AtlasEnd, AtlasSnapshot, AtlasStage;
 export 'package:flutter_automation_atlas/src/atlas_stale_settings.dart';
 export 'package:flutter_automation_atlas/src/atlas_store_reader.dart'
     show AtlasStoreReader;
 export 'package:flutter_automation_atlas/src/atlas_table.dart';
+export 'package:flutter_automation_atlas/src/atlas_versions.dart'
+    show AtlasVersion, AtlasVersionTagTemplate, AtlasVersions;
 export 'package:flutter_automation_atlas/src/run_atlas.dart' show runAtlas;

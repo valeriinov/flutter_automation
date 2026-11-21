@@ -1,8 +1,5 @@
-import 'dart:convert';
 import 'dart:io';
 import 'dart:math';
-
-import 'package:path/path.dart' as p;
 
 import 'package:flutter_automation_atlas/src/atlas_exception.dart';
 import 'package:flutter_automation_atlas/src/atlas_locations.dart';
@@ -10,6 +7,7 @@ import 'package:flutter_automation_atlas/src/atlas_remote_shots.dart';
 import 'package:flutter_automation_atlas/src/atlas_shot_id.dart';
 import 'package:flutter_automation_atlas/src/atlas_shot_references.dart';
 import 'package:flutter_automation_atlas/src/atlas_shot_storage.dart';
+import 'package:flutter_automation_atlas/src/atlas_site_repository.dart';
 import 'package:flutter_automation_atlas/src/atlas_versions.dart';
 
 /// {@category Utils}
@@ -48,10 +46,11 @@ enum AtlasPruneScope {
 /// of a site folder gives the retention in two fields:
 ///
 /// - `keptVersions`, the count of the latest versions by position that
-///   stay. Without the field, each version stays.
+///   stay ([AtlasVersions.readKeptVersions]). Without the field, each
+///   version stays.
 /// - `versionTagTemplate`, the name of the git tag of a version, with
-///   `{version}` in place of the label. Without the field, the prune leaves
-///   the tags.
+///   `{version}` in place of the label ([AtlasVersions.resolveVersionTag]).
+///   Without the field, the prune leaves the tags.
 ///
 /// The part deletes, in the working tree, the folder and the `versions.json`
 /// row of each version past the retention.
@@ -72,14 +71,6 @@ enum AtlasPruneScope {
 /// not name and that the storage took more than 7 days ago. A project
 /// without a shot storage has no storage part.
 final class AtlasPrune {
-  static const _keptVersionsKey = 'keptVersions';
-  static const _versionTagTemplateKey = 'versionTagTemplate';
-  static const _versionPlaceholder = '{version}';
-  static const _siteDirectory = 'site';
-  static const _remote = 'origin';
-  static const _branchRefspec = '+refs/heads/*:refs/remotes/$_remote/*';
-  static const _mainBranchRef = 'refs/remotes/$_remote/main';
-  static const _tagRefPrefix = 'refs/tags/';
   static const _storageGracePeriod = Duration(days: 7);
   static const _ExpiredTags _noExpiredTags = (all: [], local: [], origin: []);
 
@@ -113,18 +104,13 @@ final class AtlasPrune {
     AtlasPruneScope scope = AtlasPruneScope.all,
     bool isApplied = false,
   }) async {
-    final root = _readRepositoryRoot();
-
-    _runGit(root, ['fetch', '--prune', '--no-tags', _remote]);
-    _runGit(root, ['fetch', '--no-tags', _remote, _branchRefspec]);
-    _requireMainBranch(root);
-
-    final sites = _resolveSites(root);
+    final repository = AtlasSiteRepository.fetch(_paths, reader: 'the prune');
+    final sites = repository.resolveSites(_sites);
     final expiredSites = scope.hasRepository
         ? [for (final site in sites) _findExpired(site)]
         : const <_ExpiredSite>[];
     final expiredTags = scope.hasRepository
-        ? _findExpiredTags(root, sites)
+        ? _findExpiredTags(repository, sites)
         : _noExpiredTags;
     final remoteShots = scope.hasStorage
         ? AtlasRemoteShots.tryCreate(_paths)
@@ -134,7 +120,7 @@ final class AtlasPrune {
         : await _findStrandedShots(remoteShots);
 
     if (isApplied) {
-      _deleteExpired(root, expiredSites, expiredTags);
+      _deleteExpired(repository, expiredSites, expiredTags);
 
       await remoteShots?.delete(strandedShots);
     }
@@ -152,76 +138,9 @@ final class AtlasPrune {
     );
   }
 
-  String _readRepositoryRoot() {
-    final store = _paths.storePath;
-
-    if (!Directory(store).existsSync()) {
-      throw AtlasException('No store folder at $store.');
-    }
-
-    return _runGit(store, ['rev-parse', '--show-toplevel']);
-  }
-
-  void _requireMainBranch(String root) {
-    final result = Process.runSync('git', [
-      'rev-parse',
-      '--verify',
-      '--quiet',
-      '$_mainBranchRef^{commit}',
-    ], workingDirectory: root);
-
-    if (result.exitCode != 0) {
-      throw AtlasException(
-        'The repository $root holds no branch $_remote/main; the prune '
-        'cannot tell a published version.',
-      );
-    }
-  }
-
-  List<AtlasVersions> _resolveSites(String root) {
-    final paths = _sites.isEmpty ? _findSites(root) : _sites;
-
-    return [for (final path in paths) _readSite(root, path)];
-  }
-
-  List<String> _findSites(String root) {
-    final directory = Directory(p.join(root, _siteDirectory));
-
-    if (!directory.existsSync()) {
-      return const [];
-    }
-
-    return [
-      for (final folder in directory.listSync().whereType<Directory>())
-        if (File(
-          p.join(folder.path, AtlasVersions.configFileName),
-        ).existsSync())
-          folder.path,
-    ]..sort();
-  }
-
-  AtlasVersions _readSite(String root, String path) {
-    final directory = Directory(path);
-
-    if (!directory.existsSync()) {
-      throw AtlasException('No site folder at $path.');
-    }
-
-    final site = AtlasVersions(directory.resolveSymbolicLinksSync());
-
-    if (!p.isWithin(root, site.sitePath)) {
-      throw AtlasException(
-        'The site folder $path is outside the repository $root of the store '
-        'folder.',
-      );
-    }
-
-    return site;
-  }
-
   _ExpiredSite _findExpired(AtlasVersions site) {
     final versions = site.read();
-    final keptVersions = _readKeptVersions(site) ?? versions.length;
+    final keptVersions = site.readKeptVersions() ?? versions.length;
 
     return (
       versions: site,
@@ -234,37 +153,23 @@ final class AtlasPrune {
     );
   }
 
-  int? _readKeptVersions(AtlasVersions site) {
-    final keptVersions = site.readConfig()[_keptVersionsKey];
-
-    if (keptVersions == null) {
-      return null;
-    }
-
-    if (keptVersions is int && keptVersions > 0) {
-      return keptVersions;
-    }
-
-    throw AtlasException(
-      '"$_keptVersionsKey" of ${site.sitePath} is not a whole number above '
-      'zero.',
-    );
-  }
-
-  _ExpiredTags _findExpiredTags(String root, List<AtlasVersions> sites) {
+  _ExpiredTags _findExpiredTags(
+    AtlasSiteRepository repository,
+    List<AtlasVersions> sites,
+  ) {
     final taggedSites = [
       for (final site in sites)
-        if (_tryReadTagPattern(site) case final pattern?)
-          (versions: site, pattern: pattern),
+        if (site.tryReadVersionTagTemplate() case final template?)
+          (site: site, template: template),
     ];
 
     if (taggedSites.isEmpty) {
       return _noExpiredTags;
     }
 
-    final localTags = _readLines(root, ['tag', '--list']).toSet();
-    final originTags = _readOriginTags(root);
-    final holders = _readHolders(root, sites);
+    final localTags = repository.readLines(['tag', '--list']).toSet();
+    final originTags = repository.readOriginTags();
+    final holders = _readHolders(repository, sites);
     final expired = {
       ...localTags,
       ...originTags,
@@ -277,49 +182,16 @@ final class AtlasPrune {
     );
   }
 
-  RegExp? _tryReadTagPattern(AtlasVersions site) {
-    final tagTemplate = site.readConfig()[_versionTagTemplateKey];
-
-    if (tagTemplate == null) {
-      return null;
-    }
-
-    if (tagTemplate is! String || !tagTemplate.contains(_versionPlaceholder)) {
-      throw AtlasException(
-        '"$_versionTagTemplateKey" of ${site.sitePath} is not a text with '
-        '$_versionPlaceholder.',
-      );
-    }
-
-    final labelPattern = tagTemplate
-        .split(_versionPlaceholder)
-        .map(RegExp.escape)
-        .join('(.+)');
-
-    return RegExp('^$labelPattern\$');
-  }
-
-  Set<String> _readOriginTags(String root) {
-    final refs = _readLines(root, ['ls-remote', '--tags', '--refs', _remote]);
-
-    return {
-      for (final ref in refs)
-        if (ref.contains(_tagRefPrefix))
-          ref.substring(ref.indexOf(_tagRefPrefix) + _tagRefPrefix.length),
-    };
-  }
-
-  List<AtlasVersions> _readHolders(String root, List<AtlasVersions> sites) {
-    final found = [for (final path in _findSites(root)) _readSite(root, path)];
+  List<AtlasVersions> _readHolders(
+    AtlasSiteRepository repository,
+    List<AtlasVersions> sites,
+  ) {
     final holders = {
-      for (final site in [...sites, ...found]) site.sitePath: site,
+      for (final site in [...sites, ...repository.resolveSites(const [])])
+        site.sitePath: site,
     };
 
     return holders.values.toList();
-  }
-
-  List<String> _readLines(String root, List<String> arguments) {
-    return const LineSplitter().convert(_runGit(root, arguments));
   }
 
   bool _isExpiredTag(
@@ -328,19 +200,13 @@ final class AtlasPrune {
     List<AtlasVersions> sites,
   ) {
     final versions = [
-      for (final site in taggedSites)
-        if (_tryReadLabel(site.pattern, tag) case final label?)
-          (site: site.versions, label: label),
+      for (final tagged in taggedSites)
+        if (tagged.template.tryResolveLabel(tag) case final label?)
+          (site: tagged.site, label: label),
     ];
 
     return versions.any(_wasPublished) &&
         !versions.any((version) => _isLabelHeld(sites, version.label));
-  }
-
-  String? _tryReadLabel(RegExp pattern, String tag) {
-    final label = pattern.firstMatch(tag)?.group(1);
-
-    return label != null && AtlasVersions.isLabel(label) ? label : null;
   }
 
   bool _wasPublished(_SiteVersion version) {
@@ -379,43 +245,27 @@ final class AtlasPrune {
   }
 
   void _deleteExpired(
-    String root,
+    AtlasSiteRepository repository,
     List<_ExpiredSite> sites,
     _ExpiredTags tags,
   ) {
     if (tags.origin.isNotEmpty) {
-      _runGit(root, [
+      repository.runGit([
         'push',
-        _remote,
+        AtlasSiteRepository.remote,
         '--delete',
-        for (final tag in tags.origin) '$_tagRefPrefix$tag',
+        for (final tag in tags.origin)
+          '${AtlasSiteRepository.tagRefPrefix}$tag',
       ]);
     }
 
     if (tags.local.isNotEmpty) {
-      _runGit(root, ['tag', '--delete', ...tags.local]);
+      repository.runGit(['tag', '--delete', ...tags.local]);
     }
 
     for (final site in sites) {
       site.versions.remove(site.labels);
     }
-  }
-
-  String _runGit(String directory, List<String> arguments) {
-    final result = Process.runSync(
-      'git',
-      arguments,
-      workingDirectory: directory,
-      stdoutEncoding: utf8,
-    );
-
-    if (result.exitCode != 0) {
-      throw AtlasException(
-        'git ${arguments.join(' ')} failed in $directory: ${result.stderr}',
-      );
-    }
-
-    return '${result.stdout}'.trim();
   }
 }
 
@@ -427,7 +277,7 @@ typedef _ExpiredTags = ({
   List<String> origin,
 });
 
-typedef _TaggedSite = ({AtlasVersions versions, RegExp pattern});
+typedef _TaggedSite = ({AtlasVersions site, AtlasVersionTagTemplate template});
 
 typedef _SiteVersion = ({AtlasVersions site, String label});
 

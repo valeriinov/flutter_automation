@@ -1,7 +1,7 @@
 ---
 name: atlas
 description: Maintain the atlas of the flows of a Flutter app. Capture the variants on a simulator or headless, name what is stale, render the page, bundle the Full or Lite edition and publish the screenshots and the page by the fields of the project. Use for "capture the atlas", "what is stale in the atlas", "render the atlas", "bundle the atlas", "publish the atlas", "обнови атлас", "что устарело в атласе", "опубликуй атлас", "зніми атлас", "що застаріло в атласі".
-argument-hint: "[capture | stale | headless | check | render | bundle | publish | publish-version | open | prune] [flow]"
+argument-hint: "[capture | stale | headless | check | render | bundle | publish | publish-version | open | prune | tag-versions] [flow]"
 allowed-tools: Bash, Read, Write, Edit, Grep, Glob
 ---
 
@@ -41,6 +41,7 @@ The menu of the page and the groups of the QA panel follow
 | a publication | section 7 |
 | a version of the atlas in a site folder | `publish-version`, then `open` (section 7) |
 | a clean repository and shot storage | `prune` (section 7) |
+| a git tag per published version | `tag-versions` (section 7) |
 
 A capture needs one booted iOS simulator. Load the `drive-device` skill before
 you touch the device.
@@ -304,6 +305,32 @@ ATLAS prune [--site <folder>...] [--repo-only | --storage-only] --apply
   ago. The needed set includes the working tree, each remote branch and the
   `data.json.gz` file of each version folder. In folder mode the command has
   no storage part, and the report says so.
+
+### Tag versions
+
+```bash
+ATLAS tag-versions [--site <folder>...]
+```
+
+- The command puts on `origin` the git tag of each row of `versions.json`
+  whose folder the branch `origin/main` holds. It works on each site folder
+  whose `atlas-config.json` holds `versionTagTemplate`.
+- The command fetches the branches of `origin` and takes the site folders as
+  `prune` does.
+- The tag names the commit of `origin/main` that last added the
+  `data.json.gz` file of the version folder.
+- The command skips a tag that `origin` holds. Two site folders with the same
+  template and label give one tag.
+- The command refuses a shallow clone: it needs the full history of
+  `origin/main`.
+- The command creates no tag in the repository. It prints one line
+  `Tagged <tag> at <commit>` per tag and a last line `Tagged <n> versions`.
+- The command pushes to `origin`. Run it only when the user or the publish
+  procedure of the project asks for it.
+
+A script of the project reads the retention through `AtlasVersions` of the
+library. `AtlasVersions(<site>).keepsPosition(<position>)` tells whether a
+version with that position is inside the latest `keptVersions` versions.
 
 ## 8. After the work
 

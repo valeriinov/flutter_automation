@@ -139,7 +139,9 @@ empty, missing or `none` where the project has a real value.
   `<site>/<version>/index.html` and `data.json.gz`. It also writes
   `<site>/versions.json`, `<site>/atlas-config.json` and `<site>/index.html`.
   `prune` reads the retention from the fields `keptVersions` and
-  `versionTagTemplate` of `atlas-config.json`.
+  `versionTagTemplate` of `atlas-config.json`. `tag-versions` puts on
+  `origin` the git tag that `versionTagTemplate` names for each row of
+  `versions.json` whose folder the branch `origin/main` holds.
 
 ## 6. Group the flows
 

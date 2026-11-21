@@ -49,6 +49,7 @@ headless walk, and `AtlasHeadlessApp`, `AtlasHeadlessDevice` and
 | `publish-version --site <folder> --version <label> --position <number> --edition <name> [--locale <code\|all>]` | Writes the folder of a version into the site folder, and updates `versions.json`, `atlas-config.json` and the `index.html` of the site folder. It needs a remote shot storage. |
 | `open --site <folder> [--version <label>]` | Serves the site folder on `127.0.0.1` at a free port. It prints the address and opens the page of the version in the browser, or the `index.html` of the site folder. It runs until Ctrl+C. |
 | `prune [--site <folder>...] [--repo-only \| --storage-only] [--apply]` | Prints what the repository of the store folder and the shot storage hold past their use. With `--apply`, it deletes that. |
+| `tag-versions [--site <folder>...]` | Puts on `origin` the git tag of each row of `versions.json` whose folder the branch `origin/main` holds. The field `versionTagTemplate` of `atlas-config.json` gives the name of the tag. |
 
 Every command takes `--store <folder>` and `--source-label <text>`.
 `capture` and `stale` take `--locale <code>`.
@@ -205,3 +206,52 @@ snapshots, the pages and the `data.json.gz` file of each version folder. The
 part deletes each file of `AtlasShotStorage.list()` outside the set that the
 storage took more than 7 days ago. A project in folder mode has no storage
 part, and the report says so.
+
+## Version tags
+
+`tag-versions` puts on `origin` the git tag of each row of `versions.json`
+whose folder the branch `origin/main` holds. It works on each site folder
+whose `atlas-config.json` holds `versionTagTemplate`. The command fetches the
+branches of `origin` and takes the site folders as `prune` does.
+
+- The tag of a version names the commit of `origin/main` that last added the
+  `data.json.gz` file of the version folder.
+- The command skips a version whose folder `origin/main` does not hold.
+- The command skips a tag that `origin` holds.
+- Two site folders with the same template and label give one tag.
+- One `git push --atomic` puts the tags on `origin`. The command creates no
+  tag in the repository.
+- The command refuses a shallow clone: it needs the full history of
+  `origin/main`.
+
+The command prints one line `Tagged <tag> at <commit>` per tag and a last line
+`Tagged <n> versions`.
+
+## Read the atlas in code
+
+The library exports `AtlasVersions` and `AtlasStoreReader` for a script of the
+project.
+
+`AtlasVersions(<site folder>)` reads a site folder:
+
+| Member | Gives |
+| --- | --- |
+| `read()` | The rows of `versions.json` in the order of the positions, each an `AtlasVersion`. |
+| `readKeptVersions()` | The value of `keptVersions`, or `null` without the field. |
+| `keepsPosition(position)` | Whether a version with that position is inside the retention of the site folder after its publication. It is `true` without `keptVersions`. With the field, it is `true` when fewer than `keptVersions` rows of `versions.json` have a larger position. |
+| `hasVersionTagTemplate` | Whether `atlas-config.json` holds `versionTagTemplate`. |
+| `resolveVersionTag(label)` | The name of the git tag of the version, or `null` without `versionTagTemplate`. |
+| `tryReadTaggedLabel(tag)` | The label of the version that the tag names, or `null` when the template does not give the tag. |
+| `tryReadVersionTagTemplate()` | The field `versionTagTemplate` as an `AtlasVersionTagTemplate`, or `null` without the field. Its `tryResolveLabel(tag)` gives the label of each tag from one read of the file. |
+
+A malformed retention field stops each of these members with an
+`AtlasException`.
+
+`AtlasStoreReader.open(project, {rootPath, store})` reads a store folder:
+
+| Member | Gives |
+| --- | --- |
+| `snapshots()` | Each snapshot of the store folder, in every locale, in the order of flow, variant and locale. An `AtlasSnapshot` holds its `flow`, `variant`, `locale` and `sourceDirty`, its `stages` (`AtlasStage`) and its `end` (`AtlasEnd`). A stage and the end hold the `texts` of their frame. |
+| `recordsOf(kind)` | Each journal record of that kind that a published variant logged, in the default locale, with its stage. |
+| `walkersByScreen()` | The `<flow> <variant>` of each snapshot in the default locale that walks a screen, by screen name. |
+| `rootPath`, `storePath`, `isDefaultStore` | The root of the project, the folder of the store, and whether the store is the output folder of the project. |

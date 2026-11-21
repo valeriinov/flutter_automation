@@ -6,7 +6,6 @@ import 'package:path/path.dart' as p;
 import 'package:flutter_automation_atlas/flutter_automation_atlas.dart';
 import 'package:flutter_automation_atlas/src/atlas_locale_keys_table.dart';
 import 'package:flutter_automation_atlas/src/atlas_page_renderer.dart';
-import 'package:flutter_automation_atlas/src/atlas_snapshot.dart';
 import 'package:flutter_automation_atlas/src/atlas_snapshot_store.dart';
 
 import 'test_utils/create_atlas_snapshot.dart';

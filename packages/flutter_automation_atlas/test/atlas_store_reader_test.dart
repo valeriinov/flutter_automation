@@ -1,7 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:flutter_automation_atlas/flutter_automation_atlas.dart';
-import 'package:flutter_automation_atlas/src/atlas_snapshot.dart';
 import 'package:flutter_automation_atlas/src/atlas_snapshot_store.dart';
 
 import 'test_utils/create_atlas_snapshot.dart';
@@ -10,12 +9,22 @@ import 'test_utils/write_published_journals.dart';
 
 const _itemsRequest = {'kind': 'request', 'method': 'GET', 'path': '/items'};
 
+const _storedSnapshots = [
+  ('item_search', 'found', 'en'),
+  ('item_search', 'found', 'uk'),
+  ('item_search', 'found-twice', 'en'),
+  ('login', 'signedIn', 'en'),
+  ('login', 'signedIn', 'uk'),
+];
+
 void main() {
   group('AtlasStoreReader Tests', () {
     _atlasStoreReader_should_openStoreOfTemporaryRoot();
     _atlasStoreReader_should_readRecordsOfPublishedVariants();
     _atlasStoreReader_should_listWalkersByScreen();
     _atlasStoreReader_should_tellStoreOfOptionFromDefault();
+    _atlasStoreReader_should_readSnapshotsByFlowVariantAndLocale();
+    _atlasStoreReader_should_readNoSnapshotOfEmptyStore();
   });
 }
 
@@ -105,6 +114,46 @@ void _atlasStoreReader_should_tellStoreOfOptionFromDefault() {
 
       expect(store.isDefaultStore, isFalse);
       expect(store.storePath, '${root.directory.path}/shared');
+    });
+  });
+}
+
+void _atlasStoreReader_should_readSnapshotsByFlowVariantAndLocale() {
+  test(
+    'AtlasStoreReader should read snapshots by flow variant and locale',
+    () async {
+      await TestAtlasRoot.run((root) {
+        final store = AtlasSnapshotStore(root.paths);
+
+        for (final (flow, variant, locale) in _storedSnapshots.reversed) {
+          store.write(
+            createAtlasSnapshot(flow: flow, variant: variant, locale: locale),
+          );
+        }
+
+        final snapshots = AtlasStoreReader.open(
+          root.project,
+          rootPath: root.directory.path,
+        ).snapshots();
+
+        expect([
+          for (final snapshot in snapshots)
+            (snapshot.flow, snapshot.variant, snapshot.locale),
+        ], _storedSnapshots);
+      });
+    },
+  );
+}
+
+void _atlasStoreReader_should_readNoSnapshotOfEmptyStore() {
+  test('AtlasStoreReader should read no snapshot of empty store', () async {
+    await TestAtlasRoot.run((root) {
+      final snapshots = AtlasStoreReader.open(
+        root.project,
+        rootPath: root.directory.path,
+      ).snapshots();
+
+      expect(snapshots, isEmpty);
     });
   });
 }

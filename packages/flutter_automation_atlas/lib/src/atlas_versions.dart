@@ -25,6 +25,15 @@ import 'package:flutter_automation_atlas/src/atlas_page_renderer.dart';
 /// does not change. [publish] refuses such a folder. It first fetches the
 /// branch when the repository has a remote `origin` with a branch `main`.
 /// Each other member reads the branch as the repository has it.
+///
+/// The `atlas-config.json` of a site folder gives the retention in two
+/// fields:
+///
+/// - `keptVersions`, the count of the latest versions by position that
+///   stay. Without the field, each version stays.
+/// - `versionTagTemplate`, the name of the git tag of a version, with
+///   `{version}` in place of the label. Without the field, a version has no
+///   tag.
 final class AtlasVersions {
   /// The settings file of a site folder, by its name.
   static const configFileName = 'atlas-config.json';
@@ -35,6 +44,9 @@ final class AtlasVersions {
   static const _versionsFileName = 'versions.json';
   static const _pageFileName = 'index.html';
   static const _shotUrlTemplateKey = 'shotUrlTemplate';
+  static const _keptVersionsKey = 'keptVersions';
+  static const _versionTagTemplateKey = 'versionTagTemplate';
+  static const _versionPlaceholder = '{version}';
   static const _gitDirectory = '.git';
   static const _remote = 'origin';
   static const _mainBranchHead = 'refs/heads/main';
@@ -81,6 +93,12 @@ final class AtlasVersions {
     };
   }
 
+  /// Whether `atlas-config.json` holds the field `versionTagTemplate`.
+  ///
+  /// Throws an [AtlasException] when the field is not a text with
+  /// `{version}`.
+  bool get hasVersionTagTemplate => _tryReadTagTemplate() != null;
+
   /// The rows of `versions.json` in the order of the positions. The list is
   /// empty when the site folder holds no such file.
   ///
@@ -114,6 +132,83 @@ final class AtlasVersions {
     }
 
     return AtlasJson.decodeObject(file.readAsStringSync(), file.path);
+  }
+
+  /// The count of the latest versions by position that stay, from the field
+  /// `keptVersions` of `atlas-config.json`. It is `null` without the field.
+  ///
+  /// Throws an [AtlasException] when the field is not a whole number above
+  /// zero.
+  int? readKeptVersions() {
+    final keptVersions = readConfig()[_keptVersionsKey];
+
+    if (keptVersions == null) {
+      return null;
+    }
+
+    if (keptVersions is int && keptVersions > 0) {
+      return keptVersions;
+    }
+
+    throw AtlasException(
+      '"$_keptVersionsKey" of $sitePath is not a whole number above zero.',
+    );
+  }
+
+  /// Whether a version with the [position] is inside the retention of the
+  /// site folder after its publication.
+  ///
+  /// It is `true` without the field `keptVersions`. With the field, it is
+  /// `true` when fewer than `keptVersions` rows of `versions.json` have a
+  /// larger position.
+  ///
+  /// Throws an [AtlasException] when the field or `versions.json` is
+  /// malformed.
+  bool keepsPosition(int position) {
+    final keptVersions = readKeptVersions();
+
+    if (keptVersions == null) {
+      return true;
+    }
+
+    final laterVersions = read().where(
+      (version) => version.position > position,
+    );
+
+    return laterVersions.length < keptVersions;
+  }
+
+  /// The name of the git tag of the version with the [label], by the field
+  /// `versionTagTemplate` of `atlas-config.json`. It is `null` without the
+  /// field.
+  ///
+  /// Throws an [AtlasException] when the field is not a text with
+  /// `{version}`.
+  String? resolveVersionTag(String label) {
+    return _tryReadTagTemplate()?.replaceAll(_versionPlaceholder, label);
+  }
+
+  /// The field `versionTagTemplate` of `atlas-config.json` as the file holds
+  /// it at the call. It is `null` without the field.
+  ///
+  /// Throws an [AtlasException] when the field is not a text with
+  /// `{version}`.
+  AtlasVersionTagTemplate? tryReadVersionTagTemplate() {
+    final tagTemplate = _tryReadTagTemplate();
+
+    return tagTemplate == null ? null : AtlasVersionTagTemplate._(tagTemplate);
+  }
+
+  /// The label of the version that the [tag] names by the field
+  /// `versionTagTemplate` of `atlas-config.json`.
+  ///
+  /// It is `null` without the field, for a tag that the template does not
+  /// give, and for a tag whose label is not a folder name ([isLabel]).
+  ///
+  /// Throws an [AtlasException] when the field is not a text with
+  /// `{version}`.
+  String? tryReadTaggedLabel(String tag) {
+    return tryReadVersionTagTemplate()?.tryResolveLabel(tag);
   }
 
   /// Whether [label] can name a version folder: one path segment of
@@ -258,6 +353,23 @@ final class AtlasVersions {
     } on FormatException {
       return null;
     }
+  }
+
+  String? _tryReadTagTemplate() {
+    final tagTemplate = readConfig()[_versionTagTemplateKey];
+
+    if (tagTemplate == null) {
+      return null;
+    }
+
+    if (tagTemplate is! String || !tagTemplate.contains(_versionPlaceholder)) {
+      throw AtlasException(
+        '"$_versionTagTemplateKey" of $sitePath is not a text with '
+        '$_versionPlaceholder.',
+      );
+    }
+
+    return tagTemplate;
   }
 
   String? _tryRunGit(
@@ -445,6 +557,34 @@ final class AtlasVersions {
     File(path)
       ..createSync(recursive: true)
       ..writeAsBytesSync(bytes);
+  }
+}
+
+/// {@category Utils}
+///
+/// The field `versionTagTemplate` of an `atlas-config.json`, read once.
+final class AtlasVersionTagTemplate {
+  final RegExp _tagPattern;
+
+  AtlasVersionTagTemplate._(String tagTemplate)
+    : _tagPattern = _createTagPattern(tagTemplate);
+
+  /// The label of the version that the [tag] names. It is `null` for a tag
+  /// that the template does not give, and for a tag whose label is not a
+  /// folder name ([AtlasVersions.isLabel]).
+  String? tryResolveLabel(String tag) {
+    final label = _tagPattern.firstMatch(tag)?.group(1);
+
+    return label != null && AtlasVersions.isLabel(label) ? label : null;
+  }
+
+  static RegExp _createTagPattern(String tagTemplate) {
+    final labelPattern = tagTemplate
+        .split(AtlasVersions._versionPlaceholder)
+        .map(RegExp.escape)
+        .join('(.+)');
+
+    return RegExp('^$labelPattern\$');
   }
 }
 

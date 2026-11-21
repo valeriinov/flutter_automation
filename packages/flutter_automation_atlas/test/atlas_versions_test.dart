@@ -14,6 +14,9 @@ const _firstLabel = 'v1.0.0b10_TEST';
 const _secondLabel = 'v1.0.0b20_TEST';
 const _firstPosition = 10;
 const _secondPosition = 20;
+const _earlierPosition = 5;
+const _middlePosition = 15;
+const _tagTemplate = 'atlas/{version}-site';
 const _builtAt = '2026-11-21T10:00:00.000Z';
 const _page = '<html>page</html>';
 const _firstData = [0x1f, 0x8b, 1];
@@ -40,6 +43,14 @@ void main() {
     _atlasVersions_should_publishInRepositoryWithoutOrigin();
     _atlasVersions_should_publishWhenOriginHoldsNoMainBranch();
     _atlasVersions_should_stopWhenGitFailsOnTheMainBranch();
+    _atlasVersions_should_keepEachPositionWithoutKeptVersions();
+    _atlasVersions_should_keepPositionInsideTheLatestKeptVersions();
+    _atlasVersions_should_notKeepPositionOutsideTheLatestKeptVersions();
+    _atlasVersions_should_notCountRowOfTheSamePositionAsLater();
+    _atlasVersions_should_stopOnMalformedKeptVersions();
+    _atlasVersions_should_resolveTagOfAVersionByTheTemplate();
+    _atlasVersions_should_readLabelOnlyOfATagOfTheTemplate();
+    _atlasVersions_should_stopOnMalformedVersionTagTemplate();
   });
 }
 
@@ -330,6 +341,180 @@ void _atlasVersions_should_stopWhenGitFailsOnTheMainBranch() {
     expect(() => versions.hasMainBranch, throwsA(isA<AtlasException>()));
     expect(Directory(versions.sitePath).existsSync(), isFalse);
   });
+}
+
+void _atlasVersions_should_keepEachPositionWithoutKeptVersions() {
+  test('AtlasVersions should keep each position without kept versions', () {
+    _runInRepository((root, versions) {
+      _publishTwoVersions(versions);
+
+      final keepsPosition = versions.keepsPosition(_earlierPosition);
+
+      expect(versions.readKeptVersions(), isNull);
+      expect(keepsPosition, isTrue);
+    });
+  });
+}
+
+void _atlasVersions_should_keepPositionInsideTheLatestKeptVersions() {
+  test(
+    'AtlasVersions should keep position inside the latest kept versions',
+    () {
+      _runInRepository((root, versions) {
+        _publishTwoVersions(versions);
+        _writeConfig(versions, const {'keptVersions': 2});
+
+        final keepsPosition = versions.keepsPosition(_middlePosition);
+
+        expect(versions.readKeptVersions(), 2);
+        expect(keepsPosition, isTrue);
+      });
+    },
+  );
+}
+
+void _atlasVersions_should_notKeepPositionOutsideTheLatestKeptVersions() {
+  test(
+    'AtlasVersions should not keep position outside the latest kept versions',
+    () {
+      _runInRepository((root, versions) {
+        _publishTwoVersions(versions);
+        _writeConfig(versions, const {'keptVersions': 2});
+
+        final keepsPosition = versions.keepsPosition(_earlierPosition);
+
+        expect(keepsPosition, isFalse);
+      });
+    },
+  );
+}
+
+void _atlasVersions_should_notCountRowOfTheSamePositionAsLater() {
+  test('AtlasVersions should not count row of the same position as later', () {
+    _runInRepository((root, versions) {
+      _publishTwoVersions(versions);
+      _writeConfig(versions, const {'keptVersions': 1});
+
+      final keepsLatest = versions.keepsPosition(_secondPosition);
+      final keepsFirst = versions.keepsPosition(_firstPosition);
+
+      expect(keepsLatest, isTrue);
+      expect(keepsFirst, isFalse);
+    });
+  });
+}
+
+void _atlasVersions_should_stopOnMalformedKeptVersions() {
+  test('AtlasVersions should stop on malformed kept versions', () {
+    _runInRepository((root, versions) {
+      for (final keptVersions in [0, -1, '2', 1.5]) {
+        _writeConfig(versions, {'keptVersions': keptVersions});
+        expect(
+          versions.readKeptVersions,
+          throwsA(
+            isA<AtlasException>().having(
+              (error) => error.message,
+              'message',
+              '"keptVersions" of ${versions.sitePath} is not a whole number '
+                  'above zero.',
+            ),
+          ),
+          reason: '$keptVersions',
+        );
+        expect(
+          () => versions.keepsPosition(_firstPosition),
+          throwsA(isA<AtlasException>()),
+          reason: '$keptVersions',
+        );
+      }
+    });
+  });
+}
+
+void _atlasVersions_should_resolveTagOfAVersionByTheTemplate() {
+  test('AtlasVersions should resolve tag of a version by the template', () {
+    _runInRepository((root, versions) {
+      final untagged = versions.resolveVersionTag(_firstLabel);
+
+      _writeConfig(versions, const {'versionTagTemplate': _tagTemplate});
+
+      final tag = versions.resolveVersionTag(_firstLabel);
+
+      expect(untagged, isNull);
+      expect(tag, 'atlas/$_firstLabel-site');
+      expect(versions.hasVersionTagTemplate, isTrue);
+    });
+  });
+}
+
+void _atlasVersions_should_readLabelOnlyOfATagOfTheTemplate() {
+  test('AtlasVersions should read label only of a tag of the template', () {
+    _runInRepository((root, versions) {
+      final untagged = versions.tryReadTaggedLabel('atlas/$_firstLabel-site');
+
+      _writeConfig(versions, const {'versionTagTemplate': _tagTemplate});
+
+      final label = versions.tryReadTaggedLabel('atlas/$_firstLabel-site');
+      final otherLabel = versions.tryReadTaggedLabel('other/$_firstLabel-site');
+      final wholeTagLabel = versions.tryReadTaggedLabel(
+        'xatlas/$_firstLabel-site',
+      );
+      final folderLabel = versions.tryReadTaggedLabel('atlas/a/b-site');
+
+      expect(untagged, isNull);
+      expect(versions.hasVersionTagTemplate, isTrue);
+      expect(label, _firstLabel);
+      expect(otherLabel, isNull);
+      expect(wholeTagLabel, isNull);
+      expect(folderLabel, isNull);
+    });
+  });
+}
+
+void _atlasVersions_should_stopOnMalformedVersionTagTemplate() {
+  test('AtlasVersions should stop on malformed version tag template', () {
+    _runInRepository((root, versions) {
+      for (final tagTemplate in ['atlas-version', 1]) {
+        _writeConfig(versions, {'versionTagTemplate': tagTemplate});
+
+        final matcher = throwsA(
+          isA<AtlasException>().having(
+            (error) => error.message,
+            'message',
+            '"versionTagTemplate" of ${versions.sitePath} is not a text with '
+                '{version}.',
+          ),
+        );
+
+        expect(
+          () => versions.resolveVersionTag(_firstLabel),
+          matcher,
+          reason: '$tagTemplate',
+        );
+        expect(
+          () => versions.tryReadTaggedLabel(_firstLabel),
+          matcher,
+          reason: '$tagTemplate',
+        );
+        expect(
+          () => versions.hasVersionTagTemplate,
+          matcher,
+          reason: '$tagTemplate',
+        );
+      }
+    });
+  });
+}
+
+void _publishTwoVersions(AtlasVersions versions) {
+  versions.publish(_createVersion(_firstLabel, _firstPosition), _rendering);
+  versions.publish(_createVersion(_secondLabel, _secondPosition), _rendering);
+}
+
+void _writeConfig(AtlasVersions versions, Map<String, Object?> config) {
+  File(p.join(versions.sitePath, AtlasVersions.configFileName))
+    ..createSync(recursive: true)
+    ..writeAsStringSync(jsonEncode(config));
 }
 
 void _runInRepository(

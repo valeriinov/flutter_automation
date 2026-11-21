@@ -28,6 +28,7 @@ import 'package:flutter_automation_atlas/src/atlas_shot_source.dart';
 import 'package:flutter_automation_atlas/src/atlas_site_server.dart';
 import 'package:flutter_automation_atlas/src/atlas_stale_check.dart';
 import 'package:flutter_automation_atlas/src/atlas_store_reader.dart';
+import 'package:flutter_automation_atlas/src/atlas_version_tags.dart';
 import 'package:flutter_automation_atlas/src/atlas_versions.dart';
 
 /// {@category Utils}
@@ -170,6 +171,12 @@ import 'package:flutter_automation_atlas/src/atlas_versions.dart';
 ///   hold past their use ([AtlasPrune]). With `--apply`, it deletes that.
 ///   Without `--site`, it takes each folder `site/<name>/` of the repository
 ///   that holds an `atlas-config.json`.
+/// - `tag-versions [--site <folder>...]` puts on `origin` the git tag of
+///   each row of `versions.json` whose folder the branch `origin/main` holds
+///   ([AtlasVersionTags]). The field `versionTagTemplate` of
+///   `atlas-config.json` gives the name of the tag. The tag names the commit
+///   that last added the `data.json.gz` file of the version. The command
+///   takes the site folders as `prune` does.
 ///
 /// A project with a remote shot storage ([AtlasProject.shotStorage]) keeps no
 /// screenshot in the store folder. The commands read and write the files in
@@ -218,6 +225,7 @@ final class AtlasRun {
   static const _publishVersionCommand = 'publish-version';
   static const _openCommand = 'open';
   static const _pruneCommand = 'prune';
+  static const _tagVersionsCommand = 'tag-versions';
   static const _staleFlag = '--stale';
   static const _baselineFlag = '--baseline';
   static const _recordFlag = '--record';
@@ -266,6 +274,7 @@ final class AtlasRun {
       '$_openCommand $_siteOption <folder> [$_versionOption <label>] | '
       '$_pruneCommand [$_siteOption <folder>...] '
       '[$_repoOnlyFlag | $_storageOnlyFlag] [$_applyFlag] | '
+      '$_tagVersionsCommand [$_siteOption <folder>...] | '
       '$_bundleCommand $_editionOption <name> '
       '$_shotsOption <files|inline|sheets|urls> '
       '[$_localeOption <code|$_allLocales>] '
@@ -391,6 +400,8 @@ final class AtlasRun {
         await _open();
       case _pruneCommand:
         await _prune();
+      case _tagVersionsCommand:
+        _tagVersions();
       case _:
         throw const AtlasException(_usage);
     }
@@ -693,6 +704,16 @@ final class AtlasRun {
     ).run(scope: _readPruneScope(), isApplied: args.contains(_applyFlag));
 
     report.describe().forEach(stdout.writeln);
+  }
+
+  void _tagVersions() {
+    final tags = AtlasVersionTags(locations, sites: _readSites()).run();
+
+    for (final tag in tags) {
+      stdout.writeln('Tagged ${tag.name} at ${tag.commit}');
+    }
+
+    stdout.writeln('Tagged ${tags.length} versions');
   }
 
   String _readOption(String option) {
