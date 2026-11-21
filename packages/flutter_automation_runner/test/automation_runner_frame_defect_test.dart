@@ -12,6 +12,8 @@ import 'package:flutter_automation_runner/src/automation_runner_config.dart';
 
 const _config = AutomationRunnerConfig(packagePrefix: 'package:sample_app/');
 const _grace = Duration(seconds: 1);
+const _textsEvent = 'texts';
+const _shotEvent = 'shot';
 const _readyFrame = _FakeFrame(loadingImages: 0, emptyTexts: 0);
 const _loadingImageFrame = _FakeFrame(
   loadingImages: 2,
@@ -51,6 +53,7 @@ void main() {
     _automationRunner_should_failOnAFrameThatStartsAnimatingInTheGrace();
     _automationRunner_should_failWhenTheDriverCannotReadTheFrame();
     _automationRunner_should_failWhenTheDriverCannotReadTheEndFrame();
+    _automationRunner_should_readTheTextsOfEachFrameBeforeItsScreenshot();
   });
 }
 
@@ -336,6 +339,27 @@ void _expectFailedAtStepTwo(_Run run, String kind) {
   expect(exitCode, 1);
 }
 
+void _automationRunner_should_readTheTextsOfEachFrameBeforeItsScreenshot() {
+  test('AutomationRunner should read the texts of each frame before its '
+      'screenshot', () async {
+    final run = await _run(_twoTaps());
+
+    expect(run.report['ok'], isTrue);
+    expect(_eventsBeforeShots(run.driverEvents), [
+      _textsEvent,
+      _textsEvent,
+      _textsEvent,
+    ]);
+  });
+}
+
+List<String?> _eventsBeforeShots(List<String> events) {
+  return [
+    for (final (index, event) in events.indexed)
+      if (event == _shotEvent) events.elementAtOrNull(index - 1),
+  ];
+}
+
 Future<_Run> _run(
   List<FlowStep> steps, {
   _FakeFrame Function(int shots)? frameAfterShots,
@@ -390,6 +414,7 @@ Future<_Run> _run(
     report: jsonDecode(lines.single) as Map<String, Object?>,
     endScreenshot: File('${directory.path}/capture/demo_main_end.png'),
     recording: File('${directory.path}/recordings/demo/main.json'),
+    driverEvents: driver.events,
   );
 }
 
@@ -397,11 +422,13 @@ final class _Run {
   final Map<String, Object?> report;
   final File endScreenshot;
   final File recording;
+  final List<String> driverEvents;
 
   const _Run({
     required this.report,
     required this.endScreenshot,
     required this.recording,
+    required this.driverEvents,
   });
 }
 
@@ -426,6 +453,7 @@ final class _FakeDriver implements FlutterDriver {
   final bool Function(int waits) isAnimatingOnWait;
   final bool Function(int shots) frameReadFailsAfterShots;
   final int? failingTap;
+  final List<String> events = [];
   int loadingReadsBeforeReady;
   int _shots = 0;
   int _waits = 0;
@@ -442,7 +470,12 @@ final class _FakeDriver implements FlutterDriver {
 
   @override
   Future<String> requestData(String? message, {Duration? timeout}) async {
-    final command = (jsonDecode(message!) as Map<String, Object?>)['command'];
+    final request = jsonDecode(message!) as Map<String, Object?>;
+    final command = request['command'];
+
+    if (request['texts'] == true) {
+      events.add(_textsEvent);
+    }
 
     return jsonEncode(switch (command) {
       'frame.read' => _answerFrame(),
@@ -486,6 +519,8 @@ final class _FakeDriver implements FlutterDriver {
     ScreenshotFormat format = ScreenshotFormat.png,
   }) async {
     _shots += 1;
+
+    events.add(_shotEvent);
 
     return image.encodePng(image.Image(width: 8, height: 8));
   }

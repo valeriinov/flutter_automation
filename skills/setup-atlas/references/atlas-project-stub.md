@@ -19,10 +19,11 @@ final class <Project>AtlasProject extends AtlasProject {
     build: 'build/atlas',
     recordings: '<recordings folder of the QA catalogue>',
     publishedVariants: 'tool/atlas_published_variants.json',
-    // Optional files, each read from the project root:
+    // Optional files, read from the project root:
     // translations: 'assets/{locale}.json', // the texts of one locale
     // screenDescriptions: 'tool/screen_descriptions.json',
-    // uncoveredLocaleKeys: 'tool/uncovered_locale_keys.json',
+    // Read from the store folder, one list per store:
+    // uncoveredLocaleKeys: 'uncovered_locale_keys.json',
   );
 
   @override

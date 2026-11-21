@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:flutter_test/flutter_test.dart';
+import 'package:path/path.dart' as p;
 
 import 'package:flutter_automation_atlas/flutter_automation_atlas.dart';
 import 'package:flutter_automation_atlas/src/atlas_locale_keys_table.dart';
@@ -42,7 +43,7 @@ void _atlasLocaleKeysTable_should_listEveryTranslationKeyWithItsStatus() {
     await TestAtlasRoot.runWith(project: _createProject(), (root) {
       _writeStore(root);
       root.writeText(
-        root.paths.resolve(_listPath),
+        p.join(root.paths.storePath, _listPath),
         jsonEncode({
           'shared': 'codeOnly',
           'legacy': {'reason': 'unused', 'place': 'Cart', 'widget': 'Badge'},
@@ -96,7 +97,7 @@ void _atlasLocaleKeysTable_should_listUsagesByPatternInSortedFiles() {
         ..writeSource('lib/gen/texts.g.dart', 'final d = Texts.title;')
         ..writeSource('lib/notes.txt', 'Texts.title')
         ..writeSource('test/other.dart', 'final e = Texts.title;')
-        ..writeText(root.paths.resolve(_listPath), '{}');
+        ..writeText(p.join(root.paths.storePath, _listPath), '{}');
 
       final table = AtlasLocaleKeysTable(root.paths).build();
 
@@ -115,7 +116,7 @@ void _atlasLocaleKeysTable_should_listStagesOfUnpublishedSnapshotsToo() {
   test('AtlasLocaleKeysTable should list stages of unpublished too', () async {
     await TestAtlasRoot.runWith(project: _createProject(), (root) {
       _writeStore(root);
-      root.writeText(root.paths.resolve(_listPath), '{}');
+      root.writeText(p.join(root.paths.storePath, _listPath), '{}');
       AtlasSnapshotStore(root.paths).write(
         createAtlasSnapshot(
           flow: 'item_search',
@@ -144,7 +145,7 @@ void _atlasLocaleKeysTable_should_listNoUsagesWithoutPattern() {
 
       root
         ..writeSource('lib/b.dart', 'final a = Texts.title;')
-        ..writeText(root.paths.resolve(_listPath), '{}');
+        ..writeText(p.join(root.paths.storePath, _listPath), '{}');
 
       root.project.usagePattern = null;
 
@@ -191,7 +192,7 @@ void _atlasPageRenderer_should_addTableOfProjectWithoutLocaleKeysTable() {
   test('AtlasPageRenderer should add the built-in keys table', () async {
     await TestAtlasRoot.runWith(project: _createProject(), (root) async {
       _writeStore(root);
-      root.writeText(root.paths.resolve(_listPath), '{}');
+      root.writeText(p.join(root.paths.storePath, _listPath), '{}');
 
       final rendering = await AtlasPageRenderer(root.paths).build();
 

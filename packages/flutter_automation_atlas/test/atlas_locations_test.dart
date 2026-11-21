@@ -4,6 +4,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:path/path.dart' as p;
 
 import 'package:flutter_automation_atlas/flutter_automation_atlas.dart';
+import 'package:flutter_automation_atlas/src/atlas_locale_key_coverage.dart';
 import 'package:flutter_automation_atlas/src/atlas_locations.dart';
 
 import 'test_utils/fake_atlas_project.dart';
@@ -20,6 +21,7 @@ void main() {
     _atlasLocations_should_rejectSnapshotPathWithoutLocale();
     _atlasLocations_should_keepStoreFilesUnderStoreFolder();
     _atlasLocations_should_preferStoreFolderOverProjectOutput();
+    _atlasLocations_should_readTheUncoveredKeysListOfTheStoreFolder();
     _atlasLocations_should_keepBundlePageUnderBuild();
     _atlasLocations_should_keepBaselineWorktreeOfCommitUnderItsDirectory();
     _atlasLocations_should_keepHeadlessReportsUnderBuild();
@@ -103,6 +105,36 @@ void _atlasLocations_should_preferStoreFolderOverProjectOutput() {
     expect(locations.dataPath, '/shared/atlas/data');
     expect(locations.pagePath, '/shared/atlas/index.html');
   });
+}
+
+void _atlasLocations_should_readTheUncoveredKeysListOfTheStoreFolder() {
+  test(
+    'AtlasLocations should read the uncovered keys list of the store folder',
+    () {
+      final project = FakeAtlasProject(
+        pathsOverride: const AtlasPaths(
+          runnerEntry: 'tool/run_flows.dart',
+          output: 'atlas_store',
+          build: 'build/atlas',
+          recordings: 'assets/recordings',
+          publishedVariants: 'scripts/published_variants.json',
+          uncoveredLocaleKeys: 'uncovered_locale_keys.json',
+        ),
+      );
+      final defaultReport = AtlasLocaleKeyCoverageReport(
+        AtlasLocations(_rootPath, project),
+      );
+      final storeReport = AtlasLocaleKeyCoverageReport(
+        AtlasLocations(_rootPath, project, store: '/shared/atlas'),
+      );
+
+      expect(
+        defaultReport.listPath,
+        '/repo/atlas_store/uncovered_locale_keys.json',
+      );
+      expect(storeReport.listPath, '/shared/atlas/uncovered_locale_keys.json');
+    },
+  );
 }
 
 void _atlasLocations_should_keepBundlePageUnderBuild() {

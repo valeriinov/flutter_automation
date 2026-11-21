@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
+import 'package:path/path.dart' as p;
 
 import 'package:flutter_automation_atlas/flutter_automation_atlas.dart';
 import 'package:flutter_automation_atlas/src/atlas_checks.dart';
@@ -385,7 +386,7 @@ void _writeKeyStore(TestAtlasRoot root, {required Map<String, Object?> list}) {
 
   root
     ..writeTranslations('uk', {'title': 'T', 'hint': 'H', 'later': 'L'})
-    ..writeText(root.paths.resolve(_listPath), jsonEncode(list));
+    ..writeText(p.join(root.paths.storePath, _listPath), jsonEncode(list));
 
   AtlasSnapshotStore(root.paths).write(
     createAtlasSnapshot(

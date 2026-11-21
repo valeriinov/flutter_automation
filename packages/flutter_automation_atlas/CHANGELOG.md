@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.14.0
+
+- Breaking: `AtlasPaths.uncoveredLocaleKeys` is a path relative to the store
+  folder, not to the project root. Each store keeps the list of its own
+  snapshots, and a `--store` option reads the list of that store. Move the
+  list into the store folder and give its path from there.
+
 ## 0.13.3
 
 - `AtlasStoreReader.storePath`: the folder of the store, the output folder

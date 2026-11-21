@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.14.0
+
+- A capture reads the texts of a frame before it takes the screenshot of the
+  frame. The texts of a toast that leaves the screen while the capture writes
+  the PNG stay in the snapshot.
+
 ## 0.13.3
 
 - Version bump with `flutter_automation_atlas` 0.13.3.

@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:collection/collection.dart';
+import 'package:path/path.dart' as p;
 
 import 'package:flutter_automation_atlas/src/atlas_exception.dart';
 import 'package:flutter_automation_atlas/src/atlas_journal_stages.dart';
@@ -32,7 +33,7 @@ final class AtlasLocaleKeyCoverageReport {
   String? get listPath {
     final path = _paths.project.paths.uncoveredLocaleKeys;
 
-    return path == null ? null : _paths.resolve(path);
+    return path == null ? null : p.join(_paths.storePath, path);
   }
 
   /// What the translations, the published snapshots and the list say about

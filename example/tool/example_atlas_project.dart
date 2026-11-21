@@ -20,7 +20,7 @@ final class ExampleAtlasProject extends AtlasProject {
     publishedVariants: 'tool/atlas_published_variants.json',
     translations: 'tool/translations/{locale}.json',
     screenDescriptions: 'tool/screen_descriptions.json',
-    uncoveredLocaleKeys: 'tool/uncovered_locale_keys.json',
+    uncoveredLocaleKeys: 'uncovered_locale_keys.json',
   );
 
   @override

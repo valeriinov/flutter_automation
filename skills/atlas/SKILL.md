@@ -121,7 +121,7 @@ ATLAS check [--store <folder>]
 committed page against its sources), `publishedVariants` (the list against the
 flow files and the snapshots), `snapshots` (the published snapshots against the
 variants) and `localeKeyCoverage` (the translation keys against the frames and
-the uncovered keys file). It prints one line per check and exits with code 1
+the uncovered keys file of the store). It prints one line per check and exits with code 1
 when a check fails.
 
 ## 5. Render the page

@@ -1194,6 +1194,8 @@ final class AutomationRunner {
     );
   }
 
+  /// The run reads the texts of the frame before its screenshot: a toast can
+  /// leave the screen while the run encodes the PNG.
   Future<Map<String, Object?>> _captureScreenBeforeAction(
     FlutterDriver driver,
     AutomationCapture capture,
@@ -1207,20 +1209,20 @@ final class AutomationRunner {
       return check;
     }
 
-    final screenshot = await _captureScreenshot(driver, capture, step, number);
+    final journal = await _captureJournalBeforeAction(
+      driver,
+      step,
+      shouldKeepRecords: _stages.shoots(stage - 1),
+      shouldMeasureTarget: true,
+    );
 
-    if (screenshot['ok'] == false) {
-      return screenshot;
+    if (journal['ok'] == false) {
+      return journal;
     }
 
     return {
-      ...screenshot,
-      ...await _captureJournalBeforeAction(
-        driver,
-        step,
-        shouldKeepRecords: _stages.shoots(stage - 1),
-        shouldMeasureTarget: true,
-      ),
+      ...await _captureScreenshot(driver, capture, step, number),
+      ...journal,
     };
   }
 
@@ -1420,8 +1422,10 @@ final class AutomationRunner {
 
     return (
       fields: {
-        ...await _captureEndScreenshot(driver, capture),
+        // The texts come first: a toast can leave the screen while the run
+        // encodes the PNG.
         ...await _captureEndJournal(driver),
+        ...await _captureEndScreenshot(driver, capture),
         ...await _readManifest(driver),
       },
       failedFrame: null,

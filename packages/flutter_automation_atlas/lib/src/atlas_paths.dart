@@ -36,8 +36,9 @@ final class AtlasPaths {
   final String? screenDescriptions;
 
   /// The JSON file that maps each translation key that no stage shows to the
-  /// reason. It is `null` when the project keeps no list; the key coverage
-  /// check then skips.
+  /// reason, relative to the store folder: each store keeps the list of its
+  /// own snapshots. It is `null` when the project keeps no list; the key
+  /// coverage check then skips.
   final String? uncoveredLocaleKeys;
 
   const AtlasPaths({
