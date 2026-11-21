@@ -1,5 +1,29 @@
 # Changelog
 
+## 0.16.0
+
+- Breaking: `AtlasShotStorage.list()` returns each file that the storage
+  holds as an `AtlasStoredShot`, with its identifier and its upload time. A
+  project implements it.
+- The `publish-version` command writes a version of the atlas into a site
+  folder: the page without data, `<site>/<version>/index.html`, and its data,
+  `<site>/<version>/data.json.gz`. It writes the row of the version into
+  `<site>/versions.json` by its position and `shotUrlTemplate` into
+  `<site>/atlas-config.json`. It points `<site>/index.html` at the version
+  with the largest position. It stops when the branch `origin/main` holds the
+  folder of the version.
+- The page of a version reads its data, the link template of
+  `atlas-config.json` and the rows of `versions.json` with `fetch`. It shows a
+  version switch.
+- The `open` command serves a site folder on `127.0.0.1` and opens the page
+  of a version in the browser.
+- The `prune` command reports what the repository of the store folder and
+  the shot storage hold past their use; `--apply` deletes that. It deletes
+  the version folders past `keptVersions` of `atlas-config.json`, the git
+  tags that `versionTagTemplate` names, and the stored screenshots that no
+  file of the repository names and that are more than 7 days old.
+- `AtlasShotReferences` reads the `data.json.gz` file of each version folder.
+
 ## 0.15.1
 
 - Breaking: `AtlasChecks.publishedVariants` holds the published variants

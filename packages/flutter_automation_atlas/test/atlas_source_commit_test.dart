@@ -20,6 +20,7 @@ import 'test_utils/fake_atlas_project.dart';
 import 'test_utils/recording_stdout.dart';
 import 'test_utils/test_atlas_root.dart';
 import 'test_utils/test_automation_pubspec.dart';
+import 'test_utils/test_git.dart';
 
 const _flow = 'shop_flow';
 const _firstVariant = 'shopFromExistingItem';
@@ -445,7 +446,7 @@ Future<void> _runInRepo(
 }
 
 void _initRepository(TestAtlasRoot root) {
-  _runGit(root, ['init', '--quiet']);
+  initTestGit(root.paths.rootPath);
 }
 
 String _commit(TestAtlasRoot root, String message) {
@@ -488,41 +489,18 @@ List<String> _rebuildBranch(TestAtlasRoot root, {required int count}) {
 }
 
 bool _isAncestor(TestAtlasRoot root, String commit) {
-  final result = _git(root, ['merge-base', '--is-ancestor', commit, 'HEAD']);
+  final result = tryRunTestGit(root.paths.rootPath, [
+    'merge-base',
+    '--is-ancestor',
+    commit,
+    'HEAD',
+  ]);
 
   return result.exitCode == 0;
 }
 
 String _runGit(TestAtlasRoot root, List<String> arguments) {
-  final result = _git(root, arguments);
-
-  expect(result.exitCode, 0, reason: '${result.stderr}');
-
-  return '${result.stdout}'.trim();
-}
-
-ProcessResult _git(TestAtlasRoot root, List<String> arguments) {
-  return Process.runSync(
-    'git',
-    [
-      '-c',
-      'user.name=test',
-      '-c',
-      'user.email=test@example.com',
-      '-c',
-      'commit.gpgsign=false',
-      '-c',
-      'core.hooksPath=/dev/null',
-      '-c',
-      'init.defaultBranch=main',
-      ...arguments,
-    ],
-    workingDirectory: root.paths.rootPath,
-    environment: {
-      'GIT_CONFIG_GLOBAL': '/dev/null',
-      'GIT_CONFIG_SYSTEM': '/dev/null',
-    },
-  );
+  return runTestGit(root.paths.rootPath, arguments);
 }
 
 void _writeSnapshot(

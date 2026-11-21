@@ -15,6 +15,8 @@ final class FakeAtlasShotStorage implements AtlasShotStorage {
   final List<String> requestedShots = [];
   final HttpServer _server;
   final List<String> uploadFailures = [];
+  final Map<String, DateTime> uploadTimes = {};
+  int listCalls = 0;
   int? answeredStatus;
   bool isRedirecting = false;
 
@@ -52,6 +54,19 @@ final class FakeAtlasShotStorage implements AtlasShotStorage {
   Future<void> delete(List<String> shots) async {
     deletions.add(shots);
     shots.forEach(files.remove);
+  }
+
+  @override
+  Future<List<AtlasStoredShot>> list() async {
+    listCalls++;
+
+    return [
+      for (final shot in files.keys)
+        AtlasStoredShot(
+          shot: shot,
+          uploadedAt: uploadTimes[shot] ?? DateTime.now(),
+        ),
+    ];
   }
 
   Future<void> stop() => _server.close(force: true);

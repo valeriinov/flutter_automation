@@ -1,7 +1,7 @@
 ---
 name: atlas
 description: Maintain the atlas of the flows of a Flutter app. Capture the variants on a simulator or headless, name what is stale, render the page, bundle the Full or Lite edition and publish the screenshots and the page by the fields of the project. Use for "capture the atlas", "what is stale in the atlas", "render the atlas", "bundle the atlas", "publish the atlas", "обнови атлас", "что устарело в атласе", "опубликуй атлас", "зніми атлас", "що застаріло в атласі".
-argument-hint: "[capture | stale | headless | check | render | bundle | publish] [flow]"
+argument-hint: "[capture | stale | headless | check | render | bundle | publish | publish-version | open | prune] [flow]"
 allowed-tools: Bash, Read, Write, Edit, Grep, Glob
 ---
 
@@ -39,6 +39,8 @@ The menu of the page and the groups of the QA panel follow
 | page, published variants, snapshots and keys agree | `check` (section 4) |
 | a page | `render`, then `bundle` (sections 5 and 6) |
 | a publication | section 7 |
+| a version of the atlas in a site folder | `publish-version`, then `open` (section 7) |
+| a clean repository and shot storage | `prune` (section 7) |
 
 A capture needs one booted iOS simulator. Load the `drive-device` skill before
 you touch the device.
@@ -220,6 +222,11 @@ ATLAS delete-shots <id>...
 - `delete-shots` removes the named screenshots from the storage. It removes
   nothing when a file of the store repository names one of them.
 
+A project implements the four members of `AtlasShotStorage`: `urlTemplate`,
+`upload`, `delete` and `list`. `list()` returns each file that the storage
+holds as an `AtlasStoredShot`, with the identifier in `shot` and the upload time
+in `uploadedAt`. `prune` reads it.
+
 ## 7. Publish
 
 1. Read **Atlas publish**.
@@ -231,6 +238,72 @@ ATLAS delete-shots <id>...
 4. Publish only after `stale` prints `fresh` for every line the procedure
    gates. A publication of a stale page is a defect.
 5. Name each command and its result in the report.
+
+### Versions
+
+```bash
+ATLAS publish-version --site <folder> --version <label> --position <number> --edition <name> [--locale <code|all>]
+ATLAS open --site <folder> [--version <label>]
+```
+
+`publish-version` writes one version of the atlas into a site folder. It needs
+a remote shot storage. A site folder holds these files:
+
+| Path | Holds |
+| --- | --- |
+| `<site>/<version>/index.html` | the page without data |
+| `<site>/<version>/data.json.gz` | the data of the edition, the page meta and the link template of the shot storage |
+| `<site>/versions.json` | one row per version in the order of the positions |
+| `<site>/atlas-config.json` | `shotUrlTemplate`, `keptVersions` and `versionTagTemplate` |
+| `<site>/index.html` | a page that sends the reader to the version with the largest position |
+
+- `--version` is one path segment of letters, digits and the characters `.`,
+  `_`, `+` and `-`. `--position` is a whole number. The version with the
+  largest position is the latest one.
+- The command replaces a folder and a row with the same label. It stops when
+  the branch `origin/main` holds the folder of the version. Never change a
+  version folder that `origin/main` holds: publish a new label.
+- The command writes `shotUrlTemplate` into `atlas-config.json` and keeps each
+  other field. The page of a version takes the link template from this file.
+- The page of a version reads its files with `fetch`, and a browser blocks
+  `fetch` for a page opened from disk. Run `open` to see the page: it serves
+  the site folder on `127.0.0.1`, prints the address, opens the browser and
+  runs until Ctrl+C. Without `--version`, it opens the `index.html` of the
+  site folder.
+
+### Prune
+
+```bash
+ATLAS prune [--site <folder>...] [--repo-only | --storage-only]
+ATLAS prune [--site <folder>...] [--repo-only | --storage-only] --apply
+```
+
+1. Run `prune` without `--apply`. It prints one `To delete:` line per item
+   and a last line with the counts. Show the report to the user.
+2. Run `prune --apply` only after the user agrees. It deletes what the report
+   names.
+
+- The command first runs `git fetch --prune --no-tags origin` in the
+  repository of the store folder. It then fetches the refspec
+  `+refs/heads/*:refs/remotes/origin/*`. A failed fetch stops it. So does a
+  repository with no branch `origin/main`. The storage part stops when no file
+  of the repository names a screenshot.
+- Without `--site`, the command takes each folder `site/<name>/` of the
+  repository that holds an `atlas-config.json`.
+- The repository part keeps the latest `keptVersions` versions by position.
+  It deletes, in the working tree, the folder and the `versions.json` row of
+  each other version. Without `keptVersions`, each version stays. The commit
+  of that change follows the procedure of the project.
+- The repository part deletes the git tag that `versionTagTemplate` names for
+  a version, on `origin` and in the repository. It does this when
+  `origin/main` held the folder once, and no site folder of the repository holds it
+  on the branch or in the working tree. Without `versionTagTemplate`, each tag
+  stays.
+- The storage part deletes each file of `AtlasShotStorage.list()` that no
+  file of the repository names and that the storage took more than 7 days
+  ago. The needed set includes the working tree, each remote branch and the
+  `data.json.gz` file of each version folder. In folder mode the command has
+  no storage part, and the report says so.
 
 ## 8. After the work
 

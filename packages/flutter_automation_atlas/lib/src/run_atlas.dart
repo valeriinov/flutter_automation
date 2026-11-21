@@ -17,6 +17,7 @@ import 'package:flutter_automation_atlas/src/atlas_page_part.dart';
 import 'package:flutter_automation_atlas/src/atlas_manifest_normalization.dart';
 import 'package:flutter_automation_atlas/src/atlas_page_renderer.dart';
 import 'package:flutter_automation_atlas/src/atlas_project.dart';
+import 'package:flutter_automation_atlas/src/atlas_prune.dart';
 import 'package:flutter_automation_atlas/src/atlas_published_variants.dart';
 import 'package:flutter_automation_atlas/src/atlas_remote_shots.dart';
 import 'package:flutter_automation_atlas/src/atlas_shot_encoder.dart';
@@ -24,8 +25,10 @@ import 'package:flutter_automation_atlas/src/atlas_shot_id.dart';
 import 'package:flutter_automation_atlas/src/atlas_shot_migration.dart';
 import 'package:flutter_automation_atlas/src/atlas_shot_references.dart';
 import 'package:flutter_automation_atlas/src/atlas_shot_source.dart';
+import 'package:flutter_automation_atlas/src/atlas_site_server.dart';
 import 'package:flutter_automation_atlas/src/atlas_stale_check.dart';
 import 'package:flutter_automation_atlas/src/atlas_store_reader.dart';
+import 'package:flutter_automation_atlas/src/atlas_versions.dart';
 
 /// {@category Utils}
 ///
@@ -147,6 +150,26 @@ import 'package:flutter_automation_atlas/src/atlas_store_reader.dart';
 /// - `delete-shots <id>...` removes the named screenshots from the remote
 ///   shot storage. It removes nothing when a file of the repository of the
 ///   store names one of them ([AtlasShotReferences]).
+/// - `publish-version --site <folder> --version <label>` writes the folder
+///   of a version into the site folder ([AtlasVersions]). It needs also
+///   `--position <number>` and `--edition <name>`, and it takes
+///   `--locale <code|all>` as a bundle does. The folder holds the page
+///   without data, `index.html`, and the data that the page reads,
+///   `data.json.gz`. The command writes the row of the version into
+///   `versions.json` by its position. It writes the link template of the
+///   shot storage into `atlas-config.json`. It points the `index.html` of
+///   the site folder at the version with the largest position. It stops when
+///   the branch `origin/main` holds the folder of the version. The command
+///   needs a remote shot storage.
+/// - `open --site <folder> [--version <label>]` serves the site folder on
+///   `127.0.0.1` ([AtlasSiteServer]). It prints the address and opens the
+///   page of the version in the browser, or the `index.html` of the site
+///   folder. It runs until Ctrl+C.
+/// - `prune [--site <folder>...] [--repo-only | --storage-only] [--apply]`
+///   reports what the repository of the store folder and the shot storage
+///   hold past their use ([AtlasPrune]). With `--apply`, it deletes that.
+///   Without `--site`, it takes each folder `site/<name>/` of the repository
+///   that holds an `atlas-config.json`.
 ///
 /// A project with a remote shot storage ([AtlasProject.shotStorage]) keeps no
 /// screenshot in the store folder. The commands read and write the files in
@@ -192,11 +215,17 @@ final class AtlasRun {
   static const _migrateShotsCommand = 'migrate-shots';
   static const _uploadShotsCommand = 'upload-shots';
   static const _deleteShotsCommand = 'delete-shots';
+  static const _publishVersionCommand = 'publish-version';
+  static const _openCommand = 'open';
+  static const _pruneCommand = 'prune';
   static const _staleFlag = '--stale';
   static const _baselineFlag = '--baseline';
   static const _recordFlag = '--record';
   static const _noWalkFlag = '--no-walk';
   static const _publishedFlag = '--published';
+  static const _repoOnlyFlag = '--repo-only';
+  static const _storageOnlyFlag = '--storage-only';
+  static const _applyFlag = '--apply';
   static const _localeOption = '--locale';
   static const _stagesOption = '--stages';
   static const _storeOption = '--store';
@@ -205,9 +234,11 @@ final class AtlasRun {
   static const _editionOption = '--edition';
   static const _shotsOption = '--shots';
   static const _shotsCacheOption = '--shots-cache';
+  static const _siteOption = '--site';
+  static const _versionOption = '--version';
+  static const _positionOption = '--position';
   static const _pngExtension = '.png';
   static const _allLocales = 'all';
-  static const _optionArgumentCount = 2;
   static const _failureExitCode = 1;
   static const _firstVariantArgumentIndex = 2;
   static const _noSourceCommit = 'not found';
@@ -229,6 +260,12 @@ final class AtlasRun {
       '$_migrateShotsCommand | '
       '$_uploadShotsCommand | '
       '$_deleteShotsCommand <id>... | '
+      '$_publishVersionCommand $_siteOption <folder> $_versionOption <label> '
+      '$_positionOption <number> $_editionOption <name> '
+      '[$_localeOption <code|$_allLocales>] | '
+      '$_openCommand $_siteOption <folder> [$_versionOption <label>] | '
+      '$_pruneCommand [$_siteOption <folder>...] '
+      '[$_repoOnlyFlag | $_storageOnlyFlag] [$_applyFlag] | '
       '$_bundleCommand $_editionOption <name> '
       '$_shotsOption <files|inline|sheets|urls> '
       '[$_localeOption <code|$_allLocales>] '
@@ -300,26 +337,23 @@ final class AtlasRun {
   bool get _isWalked => _isPublishedOnly && !args.contains(_noWalkFlag);
 
   List<String> get _positionalArguments {
-    final optionIndexes =
-        [
-              _localeOption,
-              _stagesOption,
-              _storeOption,
-              _sourceLabelOption,
-              _snapshotOption,
-              _editionOption,
-              _shotsOption,
-              _shotsCacheOption,
-            ]
-            .map(args.indexOf)
-            .where((index) => index >= 0)
-            .expand(
-              (index) => List.generate(
-                _optionArgumentCount,
-                (offset) => index + offset,
-              ),
-            )
-            .toSet();
+    const options = {
+      _localeOption,
+      _stagesOption,
+      _storeOption,
+      _sourceLabelOption,
+      _snapshotOption,
+      _editionOption,
+      _shotsOption,
+      _shotsCacheOption,
+      _siteOption,
+      _versionOption,
+      _positionOption,
+    };
+    final optionIndexes = {
+      for (final (index, arg) in args.indexed)
+        if (options.contains(arg)) ...[index, index + 1],
+    };
 
     return [
       for (final (index, arg) in args.indexed)
@@ -351,6 +385,12 @@ final class AtlasRun {
         await _uploadShots();
       case _deleteShotsCommand:
         await _deleteShots();
+      case _publishVersionCommand:
+        await _publishVersion();
+      case _openCommand:
+        await _open();
+      case _pruneCommand:
+        await _prune();
       case _:
         throw const AtlasException(_usage);
     }
@@ -384,6 +424,9 @@ final class AtlasRun {
       _baselineFlag,
       _recordFlag,
       _noWalkFlag,
+      _repoOnlyFlag,
+      _storageOnlyFlag,
+      _applyFlag,
     }.contains(arg);
   }
 
@@ -592,6 +635,96 @@ final class AtlasRun {
     await remoteShots.delete(shots);
 
     stdout.writeln('Deleted ${shots.length} shots');
+  }
+
+  Future<void> _publishVersion() async {
+    final versions = AtlasVersions(_readOption(_siteOption));
+    final label = _readOption(_versionOption);
+    final position = int.tryParse(_readOption(_positionOption));
+    final editionName = _readOption(_editionOption);
+    final localeName = _tryReadOption(args, _localeOption);
+
+    if (position == null) {
+      throw const AtlasException(_usage);
+    }
+
+    final rendering = await _createRenderer().buildVersion(
+      edition: locations.pageConfig.resolveEdition(editionName),
+      version: label,
+      locale: localeName == _allLocales ? null : localeName,
+    );
+
+    versions.publish(
+      AtlasVersion(
+        label: label,
+        position: position,
+        builtAt: rendering.builtAt.toIso8601String(),
+        sourceLabel: sourceLabel,
+      ),
+      rendering,
+    );
+    stdout.writeln(
+      'Wrote ${versions.resolveVersionPath(label)}: '
+      '${rendering.page.length} page characters, ${rendering.data.length} '
+      'data bytes',
+    );
+  }
+
+  Future<void> _open() async {
+    final sitePath = _readOption(_siteOption);
+
+    final server = await AtlasSiteServer.start(sitePath);
+
+    final address = server.resolvePageAddress(
+      _tryReadOption(args, _versionOption),
+    );
+
+    stdout.writeln('Serving $sitePath at $address until Ctrl+C');
+
+    await AtlasSiteServer.openInBrowser(address);
+    await ProcessSignal.sigint.watch().first;
+    await server.stop();
+  }
+
+  Future<void> _prune() async {
+    final report = await AtlasPrune(
+      locations,
+      sites: _readSites(),
+    ).run(scope: _readPruneScope(), isApplied: args.contains(_applyFlag));
+
+    report.describe().forEach(stdout.writeln);
+  }
+
+  String _readOption(String option) {
+    return _tryReadOption(args, option) ?? (throw const AtlasException(_usage));
+  }
+
+  List<String> _readSites() {
+    final sites = [
+      for (final (index, arg) in args.indexed)
+        if (arg == _siteOption) args.elementAtOrNull(index + 1),
+    ];
+
+    if (sites.any((site) => site == null || site.startsWith('-'))) {
+      throw const AtlasException(_usage);
+    }
+
+    return sites.nonNulls.toList();
+  }
+
+  AtlasPruneScope _readPruneScope() {
+    final isRepositoryOnly = args.contains(_repoOnlyFlag);
+    final isStorageOnly = args.contains(_storageOnlyFlag);
+
+    if (isRepositoryOnly && isStorageOnly) {
+      throw const AtlasException(_usage);
+    }
+
+    if (isRepositoryOnly) {
+      return AtlasPruneScope.repository;
+    }
+
+    return isStorageOnly ? AtlasPruneScope.storage : AtlasPruneScope.all;
   }
 
   AtlasPageRenderer _createRenderer() {

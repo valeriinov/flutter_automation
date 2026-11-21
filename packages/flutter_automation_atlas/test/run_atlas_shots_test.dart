@@ -235,12 +235,7 @@ Future<void> _runInRepository(
   return TestAtlasRoot.run((root) async {
     final storage = await startFakeAtlasShotStorage(root);
 
-    runTestGit(root.directory.path, [
-      'init',
-      '--quiet',
-      '--initial-branch',
-      'main',
-    ]);
+    initTestGit(root.directory.path);
     AtlasSnapshotStore(
       root.paths,
     ).write(createShotSnapshot(stageShot: _storeShot, endShot: null));

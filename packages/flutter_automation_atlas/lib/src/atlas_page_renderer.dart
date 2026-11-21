@@ -97,7 +97,8 @@ typedef _GatheredPage = ({
 /// [build] reads each source and returns the page text. It writes nothing.
 /// [render] writes that text and deletes the shots that no stored snapshot
 /// names. [renderBundle] writes the page for one shot source outside the
-/// repository.
+/// repository. [buildVersion] returns the two files of a version folder of a
+/// site: the page without data and the data file that the page reads.
 ///
 /// The shots script of the template holds `shotSheets`, `shotCells` and
 /// `shotUrlTemplate`. The first two are empty on the page. With a remote
@@ -131,6 +132,7 @@ final class AtlasPageRenderer {
   static const _dataPlaceholder = '/*ATLAS_DATA*/';
   static const _shotsPlaceholder = '/*ATLAS_SHOTS*/';
   static const _metaPlaceholder = '/*ATLAS_META*/';
+  static const _noValue = 'null';
   static const _reservedTableIds = {
     'flows',
     'areas',
@@ -253,12 +255,7 @@ final class AtlasPageRenderer {
     required AtlasShotSource source,
     String? locale,
   }) async {
-    if (locale != null && !_paths.pageLocales.contains(locale)) {
-      throw AtlasException(
-        'The page shows no $locale series: a bundle is written for '
-        '${_paths.pageLocales.join(', ')}.',
-      );
-    }
+    _checkShownLocale(locale);
 
     final gathered = _gather(edition, bundleLocale: locale, builtAt: _clock());
     final shots = gathered.shots.whereNot(_isShotMissing).toList();
@@ -298,6 +295,77 @@ final class AtlasPageRenderer {
       files: bundleFiles.length,
       images: images,
     );
+  }
+
+  /// Reads each source and returns the files of the folder of [version]: the
+  /// page of [edition] without data, and the data that the page reads from
+  /// `data.json.gz` beside it. It writes nothing.
+  ///
+  /// The page is the template with `null` in place of the data, the shots
+  /// and the meta, so each version of one template holds the same bytes. The
+  /// data file is the gzip of a JSON object with these fields: `version`,
+  /// `meta`, `shotUrlTemplate` and `data`.
+  ///
+  /// The [locale] parameter names the one series that the page shows. When
+  /// [locale] is `null`, the page holds all page locales.
+  ///
+  /// Throws an [AtlasException] when [locale] is none of
+  /// [AtlasLocations.pageLocales], or [AtlasProject.shotStorage] is `null`.
+  Future<AtlasVersionRendering> buildVersion({
+    required AtlasEdition edition,
+    required String version,
+    String? locale,
+  }) async {
+    _checkShownLocale(locale);
+
+    final remoteShots = _remoteShots;
+
+    if (remoteShots == null) {
+      throw const AtlasException(
+        'A version page needs AtlasProject.shotStorage, and the project '
+        'returns none.',
+      );
+    }
+
+    final builtAt = _clock().toUtc();
+    final gathered = _gather(edition, bundleLocale: locale, builtAt: builtAt);
+    final shotUrlTemplate = remoteShots.urlTemplate;
+
+    final template = await _readTemplate();
+
+    return AtlasVersionRendering(
+      page: _buildDataFreePage(template),
+      data: GZipCodec(level: 9).encode(
+        utf8.encode(
+          jsonEncode({
+            'version': version,
+            'meta': gathered.meta,
+            'shotUrlTemplate': shotUrlTemplate,
+            'data': CatalogueBlobs.extract(gathered.data),
+          }),
+        ),
+      ),
+      shotUrlTemplate: shotUrlTemplate,
+      builtAt: builtAt,
+    );
+  }
+
+  void _checkShownLocale(String? locale) {
+    if (locale == null || _paths.pageLocales.contains(locale)) {
+      return;
+    }
+
+    throw AtlasException(
+      'The page shows no $locale series: a bundle is written for '
+      '${_paths.pageLocales.join(', ')}.',
+    );
+  }
+
+  String _buildDataFreePage(String template) {
+    return template
+        .replaceFirst(_dataPlaceholder, _noValue)
+        .replaceFirst(_shotsPlaceholder, _noValue)
+        .replaceFirst(_metaPlaceholder, _noValue);
   }
 
   AtlasEdition _resolveFullEdition() {
@@ -1140,6 +1208,30 @@ final class AtlasPageRendering {
     required this.deletedDeclarations,
     required this.unlistedSnapshots,
     required this.missingShots,
+  });
+}
+
+/// {@category Utils}
+///
+/// The files of a version folder that [AtlasPageRenderer.buildVersion] made.
+final class AtlasVersionRendering {
+  /// The page without data, `index.html`.
+  final String page;
+
+  /// The bytes of the data file, `data.json.gz`.
+  final List<int> data;
+
+  /// The link template of the shot storage that the data file holds.
+  final String shotUrlTemplate;
+
+  /// The build time that the data file holds.
+  final DateTime builtAt;
+
+  const AtlasVersionRendering({
+    required this.page,
+    required this.data,
+    required this.shotUrlTemplate,
+    required this.builtAt,
   });
 }
 

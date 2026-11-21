@@ -192,6 +192,9 @@ final class AtlasRemoteShots {
     _confirmedShots.removeAll(shots);
   }
 
+  /// Each file that the storage holds, with the time of its upload.
+  Future<List<AtlasStoredShot>> list() => _guardStorage(_storage.list);
+
   Future<bool> _tryDownload(HttpClient client, String shot) async {
     final bytes = await _guardRequest(shot, (uri) async {
       final request = await client.getUrl(uri);
@@ -277,9 +280,9 @@ final class AtlasRemoteShots {
     return HttpClient()..connectionTimeout = _connectionTimeout;
   }
 
-  Future<void> _guardStorage(Future<void> Function() call) async {
+  Future<T> _guardStorage<T>(Future<T> Function() call) async {
     try {
-      await call();
+      return await call();
     } on AtlasException {
       rethrow;
     } on Object catch (error) {

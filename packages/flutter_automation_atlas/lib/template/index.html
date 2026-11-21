@@ -974,6 +974,8 @@
   }
 
   footer p { margin: 0; overflow-wrap: anywhere; }
+  footer select { max-width: 100%; margin: 0 0 10px; padding: 6px 10px; border: 1px solid var(--line-strong); border-radius: 6px; background: var(--surface); color: var(--ink); font: inherit; }
+  footer select[hidden] { display: none; }
   footer[hidden] { display: none; }
 
   @media (prefers-reduced-motion: reduce) {
@@ -1705,6 +1707,7 @@
 
 <footer>
   <div class="wrap">
+    <select id="version-switch" aria-label="Version" hidden></select>
     <p id="page-footer"></p>
   </div>
 </footer>
@@ -1722,6 +1725,8 @@
 <script type="application/json" id="atlas-meta">/*ATLAS_META*/</script>
 
 <script>
+var atlasVersions = { current: '', list: [], isFailed: false };
+
 function readAtlasPageData() {
   'use strict';
 
@@ -1739,6 +1744,7 @@ function readAtlasPageData() {
   function readPackedData() {
     return Promise.resolve().then(function () {
       var parsed = JSON.parse(document.getElementById('atlas-data').textContent);
+      if (parsed === null) { return readVersionData(); }
       if (typeof parsed !== 'string') { return parsed; }
       return inflate(parsed).then(JSON.parse);
     });
@@ -1748,7 +1754,60 @@ function readAtlasPageData() {
     var binary = atob(base64);
     var bytes = new Uint8Array(binary.length);
     for (var i = 0; i < binary.length; i++) { bytes[i] = binary.charCodeAt(i); }
+    return inflateBytes(bytes);
+  }
+
+  function inflateBytes(bytes) {
     return new Response(new Blob([bytes]).stream().pipeThrough(new DecompressionStream('gzip'))).text();
+  }
+
+  /* A page with null data is the page of a version folder: its data, its meta and its link template come over HTTP. */
+  function readVersionData() {
+    var versionsRead = fetchJson('../versions.json').then(function (rows) {
+      atlasVersions.list = Array.isArray(rows) ? rows : [];
+    });
+    atlasVersions.current = readVersionFolder();
+    return fetchVersionFile().then(function (file) {
+      if (!file || !file.data) { throw new Error('No data in the version file'); }
+      return Promise.all([fetchJson('../atlas-config.json'), versionsRead]).then(function (answers) {
+        var config = answers[0] && typeof answers[0] === 'object' ? answers[0] : {};
+        var shotUrlTemplate = typeof config.shotUrlTemplate === 'string' && config.shotUrlTemplate ? config.shotUrlTemplate : file.shotUrlTemplate;
+        document.getElementById('atlas-meta').textContent = JSON.stringify(file.meta || {});
+        document.getElementById('atlas-shots').textContent = JSON.stringify({ shotSheets: [], shotCells: {}, shotUrlTemplate: shotUrlTemplate || '' });
+        if (typeof file.version === 'string') { atlasVersions.current = file.version; }
+        return file.data;
+      });
+    }).catch(function (error) {
+      atlasVersions.isFailed = true;
+      return versionsRead.then(function () { throw error; });
+    });
+  }
+
+  /* The folder of a version page carries the label of the version. */
+  function readVersionFolder() {
+    var folders = window.location.pathname.split('/').filter(function (part) { return part && part !== 'index.html'; });
+    try {
+      return decodeURIComponent(folders[folders.length - 1] || '');
+    } catch (error) {
+      return '';
+    }
+  }
+
+  function fetchVersionFile() {
+    return fetch('./data.json.gz').then(function (response) {
+      if (!response.ok) { throw new Error('No version data: ' + response.status); }
+      return response.arrayBuffer();
+    }).then(function (buffer) {
+      var bytes = new Uint8Array(buffer);
+      if (bytes.length < 2 || bytes[0] !== 0x1f || bytes[1] !== 0x8b) { throw new Error('The version data is not gzip'); }
+      return inflateBytes(bytes);
+    }).then(JSON.parse);
+  }
+
+  function fetchJson(url) {
+    return fetch(url, { cache: 'no-cache' }).then(function (response) {
+      return response.ok ? response.json() : null;
+    }).catch(function () { return null; });
   }
 
   function resolveBlobs(value, blobs) {
@@ -1868,7 +1927,8 @@ readAtlasPageData().then(function (data) {
       next: 'Next step (→)',
       countTitle: function (kind, n) { return COPY.en['kind_' + kind] + ': ' + n; },
       close: 'close',
-      empty: 'No flow has been captured yet.'
+      empty: 'No flow has been captured yet.',
+      loadFailed: 'The data of this version did not load. Reload the page or open another version.'
     },
     uk: {
       eyebrow: 'атлас автоматизації',
@@ -1925,7 +1985,8 @@ readAtlasPageData().then(function (data) {
       next: 'Наступний крок (→)',
       countTitle: function (kind, n) { return COPY.uk['kind_' + kind] + ': ' + n; },
       close: 'закрити',
-      empty: 'Жодного флоу ще не знято.'
+      empty: 'Жодного флоу ще не знято.',
+      loadFailed: 'Дані цієї версії не завантажилися. Оновіть сторінку або відкрийте іншу версію.'
     }
   };
 
@@ -2210,7 +2271,23 @@ readAtlasPageData().then(function (data) {
     var text = [meta.sourceLabel, date].filter(Boolean).join(' · ');
     var footer = document.getElementById('page-footer');
     footer.textContent = text;
-    footer.closest('footer').hidden = !text;
+    footer.closest('footer').hidden = !text && document.getElementById('version-switch').hidden;
+  }
+
+  function renderVersionSwitch() {
+    var box = document.getElementById('version-switch');
+    var versions = atlasVersions.list.filter(function (entry) { return entry && typeof entry.version === 'string' && entry.version; });
+    if (versions.length < 2) { return; }
+    versions.slice().reverse().forEach(function (entry) {
+      var option = el('option', null, [entry.version, entry.sourceLabel].filter(Boolean).join(' · '));
+      option.value = entry.version;
+      option.selected = entry.version === atlasVersions.current;
+      box.appendChild(option);
+    });
+    box.hidden = false;
+    box.addEventListener('change', function () {
+      window.location.href = '../' + encodeURIComponent(box.value) + '/';
+    });
   }
 
   function switchLang(value) {
@@ -2565,7 +2642,7 @@ readAtlasPageData().then(function (data) {
     toolbar.textContent = '';
     inspector.setAttribute('hidden', '');
     canvas.textContent = '';
-    canvas.appendChild(copyNode('p', 'empty', 'empty'));
+    canvas.appendChild(copyNode('p', 'empty', atlasVersions.isFailed ? 'loadFailed' : 'empty'));
   }
 
   /* ---------- flow tabs ---------- */
@@ -6519,6 +6596,7 @@ readAtlasPageData().then(function (data) {
   ['side-logo', 'head-logo'].forEach(function (id) { document.getElementById(id).textContent = brandLetter; });
   document.getElementById('side-name').textContent = (meta.projectName || '') + ' · Atlas';
   document.getElementById('head-project').textContent = meta.projectName || '';
+  renderVersionSwitch();
   applyLang(readStoredLang() || 'en');
   renderStats();
   if (flows.length) {

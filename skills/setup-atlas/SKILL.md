@@ -55,6 +55,11 @@ Read `references/atlas-project-stub.md`. It holds the stubs of the files below.
      translations, the screen descriptions, the design links, the reports,
      the shot storage and the analytics check. It overrides one only when
      the project has that data.
+   - A project with a remote shot storage returns an `AtlasShotStorage` from
+     `shotStorage`. The class implements four members: `urlTemplate`,
+     `upload`, `delete` and `list`. `list()` returns each stored file as an
+     `AtlasStoredShot` with its upload time. The `prune` command of the
+     `atlas` skill reads it to clean the storage.
    - `tables(AtlasStoreReader store)` and `writeReports(AtlasStoreReader
      store)` read the atlas through the reader. A table of the requests of the
      app is an `AtlasRequestsTable.build(...)` with its `AtlasDeclaredRequest`
@@ -129,7 +134,12 @@ empty, missing or `none` where the project has a real value.
   screenshots and the page, for example `docs/atlas`. A declaration record holds
   the parts of a source file that a snapshot read. Ask the user where it goes.
 - **Atlas publish**: the project document that holds the publish procedure, or
-  `none`.
+  `none`. A project that keeps versions of the atlas names its site folder
+  there. `publish-version --site <folder>` writes a version into the folder as
+  `<site>/<version>/index.html` and `data.json.gz`. It also writes
+  `<site>/versions.json`, `<site>/atlas-config.json` and `<site>/index.html`.
+  `prune` reads the retention from the fields `keptVersions` and
+  `versionTagTemplate` of `atlas-config.json`.
 
 ## 6. Group the flows
 

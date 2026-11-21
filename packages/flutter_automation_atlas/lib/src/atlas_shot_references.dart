@@ -5,6 +5,7 @@ import 'dart:typed_data';
 import 'package:path/path.dart' as p;
 
 import 'package:flutter_automation_atlas/src/atlas_exception.dart';
+import 'package:flutter_automation_atlas/src/atlas_versions.dart';
 
 /// {@category Utils}
 ///
@@ -18,11 +19,14 @@ import 'package:flutter_automation_atlas/src/atlas_exception.dart';
 /// - a `shot` field of a JSON file, such as a snapshot of any store folder;
 /// - the `atlas-data` script of a page, plain or packed, in its `shot`
 ///   fields;
-/// - the `atlas-shots` script of a page, in the links of `shotUrls`.
+/// - the `atlas-shots` script of a page, in the links of `shotUrls`;
+/// - the `shot` fields of a `data.json.gz` file, the data of a version
+///   folder of a site.
 ///
 /// A folder with no `.git` entry above it is outside a git repository, and
 /// the read takes only the files under the folder. A git failure inside a
-/// repository stops the read.
+/// repository stops the read. So does a `data.json.gz` file that is not a
+/// gzip of text, or that names no screenshot.
 final class AtlasShotReferences {
   static const _jsonExtension = '.json';
   static const _htmlExtension = '.html';
@@ -65,7 +69,14 @@ final class AtlasShotReferences {
   }
 
   /// The identifiers that a file with the [path] and the [bytes] names.
+  ///
+  /// Throws an [AtlasException] when the file is the data of a version
+  /// folder and names no screenshot.
   Set<String> readFile(String path, List<int> bytes) {
+    if (p.basename(path) == AtlasVersions.dataFileName) {
+      return _readVersionData(path, bytes);
+    }
+
     return switch (p.extension(path)) {
       _jsonExtension => _readShotFields(_decode(bytes)),
       _htmlExtension => _readPage(_decode(bytes)),
@@ -248,10 +259,36 @@ final class AtlasShotReferences {
   }
 
   bool _isRead(String path) {
+    return _hasReadExtension(path) && !p.split(path).contains(_gitDirectory);
+  }
+
+  bool _hasReadExtension(String path) {
     final extension = p.extension(path);
 
-    return (extension == _jsonExtension || extension == _htmlExtension) &&
-        !p.split(path).contains(_gitDirectory);
+    return extension == _jsonExtension ||
+        extension == _htmlExtension ||
+        p.basename(path) == AtlasVersions.dataFileName;
+  }
+
+  Set<String> _readVersionData(String path, List<int> bytes) {
+    final shots = _readShotFields(_tryInflate(bytes) ?? '');
+
+    if (shots.isEmpty) {
+      throw AtlasException(
+        'The version data $path names no screenshot; the needed set of '
+        'screenshots is not known.',
+      );
+    }
+
+    return shots;
+  }
+
+  String? _tryInflate(List<int> bytes) {
+    try {
+      return _decode(gzip.decode(bytes));
+    } on FormatException {
+      return null;
+    }
   }
 
   String _decode(List<int> bytes) => utf8.decode(bytes, allowMalformed: true);

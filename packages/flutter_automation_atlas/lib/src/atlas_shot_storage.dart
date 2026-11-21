@@ -8,7 +8,8 @@ import 'package:flutter_automation_atlas/src/atlas_shot.dart';
 /// The atlas does not know where the files live. A project implements this
 /// interface for its own storage. The atlas itself reads a screenshot and
 /// asks whether the storage holds it with a public `GET` of the link that
-/// [urlTemplate] gives.
+/// [urlTemplate] gives. The `prune` command reads [list] to find the files
+/// that no file of the atlas repository names.
 abstract interface class AtlasShotStorage {
   /// The text that [urlTemplate] holds in place of the screenshot identifier.
   static const shotPlaceholder = '{shot}';
@@ -30,4 +31,23 @@ abstract interface class AtlasShotStorage {
   /// Throws when the storage does not remove a shot. The command stops with
   /// the message.
   Future<void> delete(List<String> shots);
+
+  /// Each file that the storage holds, with the time of its upload.
+  ///
+  /// Throws when the storage does not answer with the whole list. The
+  /// command stops with the message.
+  Future<List<AtlasStoredShot>> list();
+}
+
+/// {@category Utils}
+///
+/// One file of an [AtlasShotStorage].
+final class AtlasStoredShot {
+  /// The identifier of the screenshot, as `AtlasShotId` gives it.
+  final String shot;
+
+  /// The time when the storage took the file.
+  final DateTime uploadedAt;
+
+  const AtlasStoredShot({required this.shot, required this.uploadedAt});
 }

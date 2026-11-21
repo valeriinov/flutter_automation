@@ -1,5 +1,4 @@
 import 'dart:convert';
-import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
 
@@ -11,6 +10,7 @@ import 'package:flutter_automation_atlas/src/atlas_snapshot_store.dart';
 import 'test_utils/create_atlas_snapshot.dart';
 import 'test_utils/fake_atlas_project.dart';
 import 'test_utils/test_atlas_root.dart';
+import 'test_utils/test_git.dart';
 
 const _flow = 'item_create';
 const _variant = 'ownRoutePublished';
@@ -140,22 +140,8 @@ void _writeCommittedSources(TestAtlasRoot root) {
     ..writeSource(_viewPath, _committedViewSource)
     ..writeSource(_ownerPath, _ownerSource);
 
-  for (final args in [
-    ['init', '--quiet'],
-    ['add', '.'],
-    [
-      '-c',
-      'user.name=Test',
-      '-c',
-      'user.email=test@example.com',
-      'commit',
-      '--quiet',
-      '-m',
-      'sources',
-    ],
-  ]) {
-    Process.runSync('git', args, workingDirectory: root.directory.path);
-  }
+  initTestGit(root.directory.path);
+  commitTestGit(root.directory.path, 'sources');
 }
 
 void _writeSnapshot(TestAtlasRoot root, Map<String, String> manifest) {

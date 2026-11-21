@@ -15,6 +15,7 @@ import 'test_utils/add_test_headless_hashes.dart';
 import 'test_utils/create_atlas_snapshot.dart';
 import 'test_utils/fake_atlas_project.dart';
 import 'test_utils/test_atlas_root.dart';
+import 'test_utils/test_git.dart';
 
 const _flow = 'settings_atlas';
 const _variant = 'profileEdited';
@@ -595,7 +596,7 @@ void _atlasHeadless_should_readShotCommitPastJournalRewrites() {
         locale: _uk,
       );
 
-      _runGit(root, ['init', '--quiet']);
+      initTestGit(root.paths.rootPath);
       _writeJournaledSnapshot(root, journal: const [], shot: 'a.png');
 
       final shotCommit = _commit(root, 'capture');
@@ -636,7 +637,7 @@ void _atlasHeadless_should_readShotCommitPastHeadlessHashRewrites() {
       await TestAtlasRoot.run((root) {
         final store = AtlasSnapshotStore(root.paths);
 
-        _runGit(root, ['init', '--quiet']);
+        initTestGit(root.paths.rootPath);
         _writeJournaledSnapshot(root, journal: const [], shot: 'a.png');
 
         final shotCommit = _commit(root, 'capture');
@@ -707,7 +708,7 @@ void _atlasHeadless_should_readNewestAncestorHoldingRecordedSources() {
     'AtlasHeadless should read newest ancestor holding recorded sources',
     () async {
       await TestAtlasRoot.run((root) {
-        _runGit(root, ['init', '--quiet']);
+        initTestGit(root.paths.rootPath);
         root.writeSource(_sourcePath, _recordedSource);
         _commit(root, 'add the view');
         root.writeSource(_otherSourcePath, _recordedSource);
@@ -740,7 +741,7 @@ void _atlasHeadless_should_keepShotCommitWhenNoAncestorHoldsSources() {
     'AtlasHeadless should keep shot commit when no ancestor holds sources',
     () async {
       await TestAtlasRoot.run((root) {
-        _runGit(root, ['init', '--quiet']);
+        initTestGit(root.paths.rootPath);
         root.writeSource(_sourcePath, _changedSource);
         _commit(root, 'add the view');
         _writeJournaledSnapshot(
@@ -906,32 +907,7 @@ void _writeJournaledSnapshot(
 }
 
 String _commit(TestAtlasRoot root, String message) {
-  _runGit(root, ['add', '--all']);
-  _runGit(root, [
-    '-c',
-    'user.name=test',
-    '-c',
-    'user.email=test@example.com',
-    'commit',
-    '--quiet',
-    '--no-verify',
-    '-m',
-    message,
-  ]);
-
-  return _runGit(root, ['rev-parse', 'HEAD']);
-}
-
-String _runGit(TestAtlasRoot root, List<String> arguments) {
-  final result = Process.runSync(
-    'git',
-    arguments,
-    workingDirectory: root.paths.rootPath,
-  );
-
-  expect(result.exitCode, 0, reason: '${result.stderr}');
-
-  return '${result.stdout}'.trim();
+  return commitTestGit(root.paths.rootPath, message);
 }
 
 void _atlasHeadless_should_handWalkTextsSnapshotRecorded() {

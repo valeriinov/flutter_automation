@@ -46,6 +46,9 @@ headless walk, and `AtlasHeadlessApp`, `AtlasHeadlessDevice` and
 | `migrate-shots` | Renames each file of the shots folder of the store to the SHA-256 of its bytes and rewrites the `shot` fields of the snapshots. With a remote shot storage, it also puts the files into the storage. |
 | `upload-shots` | Puts into the remote shot storage each screenshot file of the shots folder and of the cache folder that the storage does not hold. |
 | `delete-shots <id>...` | Removes the named screenshots from the remote shot storage. It removes nothing when a file of the store repository names one of them. |
+| `publish-version --site <folder> --version <label> --position <number> --edition <name> [--locale <code\|all>]` | Writes the folder of a version into the site folder, and updates `versions.json`, `atlas-config.json` and the `index.html` of the site folder. It needs a remote shot storage. |
+| `open --site <folder> [--version <label>]` | Serves the site folder on `127.0.0.1` at a free port. It prints the address and opens the page of the version in the browser, or the `index.html` of the site folder. It runs until Ctrl+C. |
+| `prune [--site <folder>...] [--repo-only \| --storage-only] [--apply]` | Prints what the repository of the store folder and the shot storage hold past their use. With `--apply`, it deletes that. |
 
 Every command takes `--store <folder>` and `--source-label <text>`.
 `capture` and `stale` take `--locale <code>`.
@@ -107,12 +110,15 @@ digits. The identifier names the PNG file and the `shot` field of a snapshot.
 | Folder | `null` (the default) | `<store>/shots/<identifier>.png`, the shots folder of the store. |
 | Remote | an `AtlasShotStorage` | The remote storage only. The snapshots name the identifiers. |
 
-`AtlasShotStorage` has three members:
+`AtlasShotStorage` has four members:
 
 - `urlTemplate` is the public link of a screenshot. It holds `{shot}` in place
   of the identifier.
 - `upload(List<AtlasShot>)` puts the shots into the storage.
 - `delete(List<String>)` removes the shots that the identifiers name.
+- `list()` returns each file that the storage holds as an `AtlasStoredShot`:
+  the identifier in `shot` and the upload time in `uploadedAt`. `prune` reads
+  it.
 
 In remote mode `capture` puts each new screenshot into the storage before it
 writes the snapshot. A failed upload fails that variant and keeps its previous
@@ -126,3 +132,76 @@ The commands keep the screenshots that they read and shoot in the cache folder
 `shots/` under the build folder. `--shots-cache <folder>` names another cache
 folder. With a remote storage, `files`, `inline` and `sheets` read the cache
 folder, and read each missing file from the storage.
+
+## Versions
+
+A site folder holds the versions of the atlas. A version is one page of an
+edition under a label, such as a release number. `publish-version` writes it.
+
+| Path | Holds |
+| --- | --- |
+| `<site>/<version>/index.html` | The page without data. Each version from one template has the same bytes. |
+| `<site>/<version>/data.json.gz` | The data of the edition, the page meta, the label and the link template of the shot storage, as a gzip of JSON. It names each screenshot by its identifier. |
+| `<site>/versions.json` | One row per version in the order of the positions: `version`, `position`, `builtAt` and `sourceLabel`. |
+| `<site>/atlas-config.json` | The settings that each version page reads: `shotUrlTemplate`, `keptVersions` and `versionTagTemplate`. |
+| `<site>/index.html` | A page that sends the reader to the version with the largest position. |
+
+`publish-version` takes these options:
+
+- `--version <label>` names the version folder. A label is one path segment of
+  letters, digits and the characters `.`, `_`, `+` and `-`.
+- `--position <number>` is a whole number. It sets the place of the version in
+  `versions.json`. The version with the largest position is the latest one.
+- `--edition <name>` and `--locale <code|all>` work as they do for `bundle`.
+- `--source-label <text>` goes into the row of the version.
+
+The command replaces a folder and a row with the same label. It stops when the
+branch `origin/main` of the repository holds the folder of the version: a
+published version keeps its bytes. It writes `shotUrlTemplate` into
+`atlas-config.json` and keeps each other field of the file.
+
+The page of a version reads `./data.json.gz`, `../atlas-config.json` and
+`../versions.json` with `fetch`. It takes the link template from
+`atlas-config.json`, so a new `shotUrlTemplate` moves the screenshots of every
+version to another host. Without that file, the page takes the template from
+`data.json.gz`. The version switch of the page lists the rows of
+`versions.json`. A failed read of the data shows an error state.
+
+A browser blocks `fetch` for a page opened from disk. `open` serves the site
+folder over HTTP, so the page of a version opens on the computer of the reader.
+A page for a reader with no server is a `bundle`.
+
+## Prune
+
+`prune` prints a report. With `--apply`, it deletes what the report names. The
+command first runs `git fetch --prune --no-tags origin` in the repository of
+the store folder. It then fetches the refspec
+`+refs/heads/*:refs/remotes/origin/*`. It stops when a fetch fails or when the
+repository has no branch `origin/main`. The storage part stops when no file of
+the repository names a screenshot.
+
+`--site <folder>` names a site folder, and the option repeats. Without it, the
+command takes each folder `site/<name>/` of the repository that holds an
+`atlas-config.json`. `--repo-only` keeps to the repository part, and
+`--storage-only` keeps to the storage part.
+
+The repository part reads the retention from the `atlas-config.json` of each
+site folder:
+
+| Field | Meaning | Without the field |
+| --- | --- | --- |
+| `keptVersions` | The count of the latest versions by position that stay. A whole number above zero. | Each version stays. |
+| `versionTagTemplate` | The name of the git tag of a version, with `{version}` in place of the label. | Each tag stays. |
+
+- The part deletes, in the working tree, the folder and the `versions.json` row
+  of each version past the retention. The project commits that change.
+- The part deletes the tag of a version on `origin` and in the repository.
+  It does this when `origin/main` held the folder once, and no site folder of
+  the repository holds it on the branch or in the working tree.
+
+The storage part reads the needed set of `AtlasShotReferences`: each identifier
+that a file of the working tree or of a remote branch names. The set covers the
+snapshots, the pages and the `data.json.gz` file of each version folder. The
+part deletes each file of `AtlasShotStorage.list()` outside the set that the
+storage took more than 7 days ago. A project in folder mode has no storage
+part, and the report says so.

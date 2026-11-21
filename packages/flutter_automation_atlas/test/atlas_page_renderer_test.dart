@@ -41,6 +41,7 @@ const _stageShot =
 const _endShot =
     '9f64a747e1b97f131fabb6b447296c9b6f0201e79fb3c5356e6c77e89b6a806a';
 const _sourceLabel = '1.2.0 (test)';
+const _versionLabel = 'v1.2.0b7_TEST';
 const _storedShot = 'cccccccccccc';
 const _strandedShot =
     'eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee';
@@ -252,6 +253,9 @@ void main() {
     _atlasPageRenderer_should_leaveFullOnlyDataOutOfLite();
     _atlasPageRenderer_should_skipUncoveredListForEditionWithoutLocaleKeys();
     _atlasPageRenderer_should_leaveFullOnlyDataOutOfLiteBundle();
+    _atlasPageRenderer_should_leaveFullOnlyDataOutOfLiteVersionData();
+    _atlasPageRenderer_should_keepDataAndMetaOutOfTheVersionPage();
+    _atlasPageRenderer_should_rejectVersionWithoutStorage();
     _atlasPageRenderer_should_showDesignLinksWhenLiteListsThePart();
     _atlasPageRenderer_should_hideSectionsOfPartsOutsideTheEdition();
   });
@@ -1232,6 +1236,90 @@ void _atlasPageRenderer_should_leaveFullOnlyDataOutOfLiteBundle() {
       });
     },
   );
+}
+
+void _atlasPageRenderer_should_leaveFullOnlyDataOutOfLiteVersionData() {
+  test(
+    'AtlasPageRenderer should leave full only data out of lite version data',
+    () async {
+      await TestAtlasRoot.run((root) async {
+        await startFakeAtlasShotStorage(root);
+
+        _writeFullOnlyCatalogue(root);
+
+        final rendering = await AtlasPageRenderer(root.paths).buildVersion(
+          edition: root.paths.pageConfig.resolveEdition(AtlasEdition.liteName),
+          version: _versionLabel,
+        );
+
+        final decoded = utf8.decode(gzip.decode(rendering.data));
+
+        _expectNoFullOnlyText(decoded);
+        expect(decoded, contains('Signs in with an email.'));
+        expect(decoded, contains(_stageShot));
+      });
+    },
+  );
+}
+
+void _atlasPageRenderer_should_keepDataAndMetaOutOfTheVersionPage() {
+  test(
+    'AtlasPageRenderer should keep data and meta out of the version page',
+    () async {
+      await TestAtlasRoot.run((root) async {
+        final storage = await startFakeAtlasShotStorage(root);
+
+        _writeCatalogue(root);
+
+        final rendering = await AtlasPageRenderer(
+          root.paths,
+          sourceLabel: _sourceLabel,
+          clock: () => DateTime.utc(2026, 11, 21, 10),
+        ).buildVersion(edition: _fullEdition(root), version: _versionLabel);
+
+        final file =
+            jsonDecode(utf8.decode(gzip.decode(rendering.data)))
+                as Map<String, Object?>;
+        final meta = file['meta'] as Map<String, Object?>;
+        final data = file['data'] as Map<String, Object?>;
+
+        expect(_readScript(rendering.page, _dataPattern), 'null');
+        expect(_readScript(rendering.page, _shotsPattern), 'null');
+        expect(_readScript(rendering.page, _metaPattern), 'null');
+        expect(rendering.page, isNot(contains(_stageShot)));
+        expect(rendering.page, isNot(contains(_sourceLabel)));
+        expect(file['version'], _versionLabel);
+        expect(file['shotUrlTemplate'], storage.urlTemplate);
+        expect(meta['sourceLabel'], _sourceLabel);
+        expect(meta['builtAt'], '2026-11-21T10:00:00.000Z');
+        expect(data['flows'], hasLength(_renderedFlowCount));
+        expect(data.containsKey('shotUrls'), isFalse);
+        expect(storage.uploads, isEmpty);
+        expect(storage.requestedShots, isEmpty);
+      });
+    },
+  );
+}
+
+void _atlasPageRenderer_should_rejectVersionWithoutStorage() {
+  test('AtlasPageRenderer should reject version without storage', () async {
+    await TestAtlasRoot.run((root) async {
+      _writeCatalogue(root);
+
+      await expectLater(
+        AtlasPageRenderer(
+          root.paths,
+        ).buildVersion(edition: _fullEdition(root), version: _versionLabel),
+        throwsA(
+          isA<AtlasException>().having(
+            (error) => error.message,
+            'message',
+            contains('shotStorage'),
+          ),
+        ),
+      );
+    });
+  });
 }
 
 void _atlasPageRenderer_should_showDesignLinksWhenLiteListsThePart() {

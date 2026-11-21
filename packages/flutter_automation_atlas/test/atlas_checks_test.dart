@@ -561,4 +561,7 @@ final class _NoLinkStorage implements AtlasShotStorage {
 
   @override
   Future<void> delete(List<String> shots) => Future.value();
+
+  @override
+  Future<List<AtlasStoredShot>> list() => Future.value(const []);
 }

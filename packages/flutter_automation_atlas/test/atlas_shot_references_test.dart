@@ -21,7 +21,10 @@ const _packedShot =
     '5555555555555555555555555555555555555555555555555555555555555555';
 const _plainShot =
     '6666666666666666666666666666666666666666666666666666666666666666';
+const _versionShot =
+    '7777777777777777777777777777777777777777777777777777777777777777';
 const _shortShot = '0123456789ab';
+const _versionDataPath = 'site/test/v1/data.json.gz';
 
 void main() {
   group('AtlasShotReferences Tests', () {
@@ -29,6 +32,8 @@ void main() {
     _atlasShotReferences_should_readFilesOfARemoteBranch();
     _atlasShotReferences_should_readLinksAndPackedDataOfAPage();
     _atlasShotReferences_should_readPlainDataOfAPage();
+    _atlasShotReferences_should_readVersionDataOfARemoteBranch();
+    _atlasShotReferences_should_stopOnVersionDataNamingNoShot();
     _atlasShotReferences_should_stopOnRepositoryNamingNoShot();
     _atlasShotReferences_should_readFolderOutsideARepository();
     _atlasShotReferences_should_stopOnRepositoryThatGitDoesNotRead();
@@ -119,6 +124,63 @@ void _atlasShotReferences_should_readPlainDataOfAPage() {
   });
 }
 
+void _atlasShotReferences_should_readVersionDataOfARemoteBranch() {
+  test(
+    'AtlasShotReferences should read version data of a remote branch',
+    () async {
+      await _runInRepository((root) async {
+        _writeSnapshot(root, 'test/data/flow/a.uk.json', _testShot);
+        commitTestGit(root, 'main');
+        _writeBytes(
+          root,
+          _versionDataPath,
+          gzip.encode(utf8.encode(_encodeFlows(_versionShot))),
+        );
+        runTestGit(root, [
+          'update-ref',
+          'refs/remotes/origin/main',
+          commitTestGit(root, 'version'),
+        ]);
+        runTestGit(root, ['reset', '--quiet', '--hard', 'HEAD~1']);
+
+        final shots = await AtlasShotReferences(root).read();
+
+        expect(File(p.join(root, _versionDataPath)).existsSync(), isFalse);
+        expect(shots, {_testShot, _versionShot});
+      });
+    },
+  );
+}
+
+void _atlasShotReferences_should_stopOnVersionDataNamingNoShot() {
+  test(
+    'AtlasShotReferences should stop on version data naming no shot',
+    () async {
+      await _runInRepository((root) async {
+        _writeSnapshot(root, 'test/data/flow/a.uk.json', _testShot);
+
+        for (final bytes in [
+          gzip.encode(utf8.encode(_encodeFlows(_shortShot))),
+          utf8.encode('<html>sign in</html>'),
+        ]) {
+          _writeBytes(root, _versionDataPath, bytes);
+
+          await expectLater(
+            AtlasShotReferences(root).read(),
+            throwsA(
+              isA<AtlasException>().having(
+                (error) => error.message,
+                'message',
+                contains(_versionDataPath),
+              ),
+            ),
+          );
+        }
+      });
+    },
+  );
+}
+
 void _atlasShotReferences_should_stopOnRepositoryNamingNoShot() {
   test(
     'AtlasShotReferences should stop on repository naming no shot',
@@ -170,7 +232,7 @@ Future<void> _runInRepository(Future<void> Function(String root) body) async {
   final directory = await Directory.systemTemp.createTemp('atlas-shots-');
 
   try {
-    runTestGit(directory.path, ['init', '--quiet', '--initial-branch', 'main']);
+    initTestGit(directory.path);
 
     await body(directory.resolveSymbolicLinksSync());
   } finally {
@@ -195,6 +257,12 @@ void _writeFile(String root, String path, String content) {
   File(p.join(root, path))
     ..createSync(recursive: true)
     ..writeAsStringSync(content);
+}
+
+void _writeBytes(String root, String path, List<int> bytes) {
+  File(p.join(root, path))
+    ..createSync(recursive: true)
+    ..writeAsBytesSync(bytes);
 }
 
 String _encodeFlows(String shot) {
