@@ -2,7 +2,7 @@
   "flow": "catalog",
   "variant": "empty",
   "ok": true,
-  "totalMs": 2844,
+  "totalMs": 2930,
   "steps": [
     {
       "label": "waitFor example.screen.loginScreen",
@@ -17,7 +17,7 @@
           "value": "example.screen.loginScreen"
         }
       },
-      "ms": 8,
+      "ms": 9,
       "ok": true,
       "requests": []
     },
@@ -34,7 +34,7 @@
           "value": "example.button.loginButton"
         }
       },
-      "ms": 35,
+      "ms": 51,
       "ok": true,
       "requests": []
     },
@@ -51,7 +51,7 @@
           "value": "example.screen.catalogScreen"
         }
       },
-      "ms": 536,
+      "ms": 544,
       "ok": true,
       "requests": [
         {
@@ -76,7 +76,7 @@
           "value": "example.label.catalogEmpty"
         }
       },
-      "ms": 0,
+      "ms": 1,
       "ok": true,
       "requests": []
     }

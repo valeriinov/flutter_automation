@@ -26,11 +26,13 @@ void main() {
     expect(outcome.lines, isEmpty);
     expect(outcome.isFailure, isFalse);
   });
+  // The check replays the mock in a nested `flutter test`, which compiles the
+  // app first.
   test('The snapshots do not fail the check', () async {
     final outcome = await checks.snapshots();
 
     expect(outcome.isFailure, isFalse);
-  });
+  }, timeout: const Timeout(Duration(minutes: 5)));
   test('Every translation key is on a frame or listed with a reason', () async {
     final outcome = await checks.localeKeyCoverage();
 

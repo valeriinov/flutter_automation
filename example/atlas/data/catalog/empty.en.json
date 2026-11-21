@@ -9,10 +9,11 @@
     "lib/automation/example_target.dart": "4785ad7cc4df",
     "lib/automation/screen_name_observer.dart": "51aee595aa09",
     "lib/catalog/catalog_api.dart": "7c0fea9e446d",
-    "lib/catalog/catalog_screen.dart": "21aa04f1eeb7",
-    "lib/example_app.dart": "0992e47935ce",
-    "lib/login_screen.dart": "deffe3d17153",
-    "lib/main.dart": "5b3d9a093f07",
+    "lib/catalog/catalog_screen.dart": "9f60dd5e45e8",
+    "lib/example_app.dart": "a2093c69a199",
+    "lib/example_translations.dart": "2de157fc8c79",
+    "lib/login_screen.dart": "45c3c84dad71",
+    "lib/main.dart": "73352ec7060b",
     "lib/panel/example_panel.dart": "d33f5e39ba19"
   },
   "stages": [
@@ -32,7 +33,7 @@
       },
       "screen": "login",
       "designScreen": null,
-      "shot": "93048c84de2489243c229e1b27d421fd09da438374340c55c8f221af03028d56",
+      "shot": "96a2f25ec0b88a209f46d188b5dca6ed9df351dae28988bc608eef58a3b2bbd1",
       "journal": [
         {
           "kind": "request",
@@ -46,6 +47,8 @@
       ],
       "ok": true,
       "stepHash": "31cad1846c87",
+      "headlessFrameHash": "a065a4b938b8",
+      "headlessJournalHash": "dea8604a30fd",
       "texts": [
         "Sign in",
         "Welcome",
@@ -198,7 +201,8 @@
   "end": {
     "screen": "catalog",
     "designScreen": null,
-    "shot": "9603f93751ec7df8fa33e80611c9203b724a9cac81f0aef68de4b31d4ca198aa",
+    "shot": "a435e15e6b1fd041ad1402c3fcbd34b9211102bbd39ee266376565b8923eae91",
+    "headlessFrameHash": "c8e11a630f5f",
     "texts": [
       "The catalog is empty",
       "",
@@ -362,6 +366,6 @@
     ]
   },
   "headlessRenderer": "Flutter 3.47.5 · macos_arm64",
-  "sourceCommit": "51d4356699b2435d6ffc6081e59f06229d6b6406",
+  "sourceCommit": "c0c9b90a8bfca3c5d55162c71d58cf6580439b7a",
   "sourceDirty": false
 }
