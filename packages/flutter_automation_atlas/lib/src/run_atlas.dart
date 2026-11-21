@@ -122,7 +122,7 @@ import 'package:flutter_automation_atlas/src/atlas_store_reader.dart';
 ///   `maxBundleBytes` limit or the images pass the `maxBundleImages` limit
 ///   of `flutter_automation: atlas:`. `maxBundleImages` counts the inline
 ///   sheets, the sheet files or the shot files.
-/// - `check` runs the five checks of [AtlasChecks]. It prints one line per
+/// - `check` runs the six checks of [AtlasChecks]. It prints one line per
 ///   check, with the lines of each problem under it:
 ///   - `page` holds the committed page against its sources.
 ///   - `publishedVariants` holds the published variants list against the flow
@@ -523,6 +523,7 @@ final class AtlasRun {
     final outcomes = {
       'page': await checks.page(),
       'publishedVariants': await checks.publishedVariants(),
+      'storedVariants': await checks.storedVariants(),
       'snapshots': await AtlasSnapshotsCheck(
         locations,
         readStalenesses: _readStalenesses,

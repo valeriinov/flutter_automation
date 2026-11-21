@@ -38,7 +38,7 @@ headless walk, and `AtlasHeadlessApp`, `AtlasHeadlessDevice` and
 | `capture --stale` | Captures what `stale` names. |
 | `stale [<flow>]` | Prints one line per variant: `fresh`, or the reason the snapshot is stale. |
 | `headless [<flow> [<variant>...]]` | Walks the variants under `flutter test`, without a device, and writes the frame hashes. |
-| `check` | Runs the five checks of `AtlasChecks`: the page, the published variants, the snapshots, the translation key coverage and the shots. Exits with code 1 when one fails. |
+| `check` | Runs the six checks of `AtlasChecks`: the page, the published variants, the stored variants, the snapshots, the translation key coverage and the shots. Exits with code 1 when one fails. |
 | `normalize-manifests` | Rewrites the manifest hashes of the stored snapshots. |
 | `source-commit --snapshot <file>` | Prints the commit `stale` takes as the baseline of the snapshot, or `not found`. |
 | `render [--edition <name>]` | Writes `index.html` of the edition (`full` when absent) to the store, with the screenshots in `shots/` beside it. Deletes the screenshots and the declarations that no stored snapshot names, and writes the project reports. A declaration record holds the parts of a source file that a snapshot read. With a remote shot storage, the page reads its screenshots by the link template of the storage, and `render` deletes no screenshot. |

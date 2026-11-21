@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.15.1
+
+- Breaking: `AtlasChecks.publishedVariants` holds the published variants
+  list against the flow files only and reads no store. The new
+  `AtlasChecks.storedVariants` holds the stored snapshots against the flow
+  files and the list. The `check` command runs both and prints six checks.
+
 ## 0.15.0
 
 - Breaking: a screenshot identifier is the SHA-256 of the file, 64 lowercase

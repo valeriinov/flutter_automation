@@ -452,12 +452,15 @@ void _atlasRun_should_printTheChecksAndFailTheExitCodeOnAFailure() {
       expect(lines.map((line) => line.split(' ').first), [
         'FAIL',
         '',
+        'ok',
         'note',
         'ok',
         'skip',
         'ok',
       ]);
       expect(lines.first, startsWith('FAIL  page'));
+      expect(lines[2], startsWith('ok    publishedVariants'));
+      expect(lines[3], startsWith('note  storedVariants'));
       expect(lines.last, startsWith('ok    shots'));
       expect(exitCode, 1);
 

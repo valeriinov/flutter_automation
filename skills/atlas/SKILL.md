@@ -117,9 +117,10 @@ snapshots. A stage whose frame and journal did not change stays fresh.
 ATLAS check [--store <folder>]
 ```
 
-`check` reads no device. It runs the five checks of `AtlasChecks`: `page` (the
+`check` reads no device. It runs the six checks of `AtlasChecks`: `page` (the
 committed page against its sources), `publishedVariants` (the list against the
-flow files and the snapshots), `snapshots` (the published snapshots against the
+flow files), `storedVariants` (the stored snapshots against the flow files and
+the list), `snapshots` (the published snapshots against the
 variants), `localeKeyCoverage` (the translation keys against the frames and
 the uncovered keys file of the store) and `shots` (each screenshot identifier
 of the snapshots is the SHA-256 of its file, and a remote shot storage holds

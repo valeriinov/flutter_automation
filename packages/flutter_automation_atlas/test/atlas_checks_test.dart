@@ -36,6 +36,7 @@ void main() {
     _atlasChecks_should_passPublishedVariantsInStep();
     _atlasChecks_should_reportSnapshotOfUnpublishedVariant();
     _atlasChecks_should_failPublishedVariantNoFlowHolds();
+    _atlasChecks_should_passPublishedVariantsOverStrandedSnapshot();
     _atlasChecks_should_failStrandedSnapshotAndDirectory();
     _atlasChecks_should_failPublishedVariantsWithoutList();
     _atlasSnapshotsCheck_should_passFreshVariants();
@@ -145,7 +146,7 @@ void _atlasChecks_should_reportSnapshotOfUnpublishedVariant() {
     await TestAtlasRoot.run((root) async {
       writePublishedJournals(root, journals: const []);
 
-      final outcome = await _checks(root).publishedVariants();
+      final outcome = await _checks(root).storedVariants();
 
       expect(outcome.status, AtlasCheckStatus.reported);
       expect(
@@ -179,6 +180,24 @@ void _atlasChecks_should_failPublishedVariantNoFlowHolds() {
   });
 }
 
+void _atlasChecks_should_passPublishedVariantsOverStrandedSnapshot() {
+  test(
+    'AtlasChecks should pass published variants over a stranded snapshot',
+    () async {
+      await TestAtlasRoot.run((root) async {
+        writePublishedJournals(root, journals: const []);
+        AtlasSnapshotStore(
+          root.paths,
+        ).write(createAtlasSnapshot(flow: 'item_search', variant: 'dropped'));
+        expect(
+          (await _checks(root).publishedVariants()).status,
+          AtlasCheckStatus.passed,
+        );
+      });
+    },
+  );
+}
+
 void _atlasChecks_should_failStrandedSnapshotAndDirectory() {
   test('AtlasChecks should fail a stranded snapshot and directory', () async {
     await TestAtlasRoot.run((root) async {
@@ -188,7 +207,7 @@ void _atlasChecks_should_failStrandedSnapshotAndDirectory() {
         ..write(createAtlasSnapshot(flow: 'item_search', variant: 'dropped'))
         ..write(createAtlasSnapshot(flow: 'removed_flow', variant: 'any'));
 
-      final outcome = await _checks(root).publishedVariants();
+      final outcome = await _checks(root).storedVariants();
 
       expect(outcome.status, AtlasCheckStatus.failed);
       expect(outcome.lines, hasLength(2));

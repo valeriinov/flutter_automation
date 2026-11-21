@@ -3,7 +3,7 @@ import 'package:flutter_test/flutter_test.dart';
 
 import '../tool/example_atlas_project.dart';
 
-/// The five checks of `fvm dart run tool/atlas.dart check`. A stale snapshot
+/// The six checks of `fvm dart run tool/atlas.dart check`. A stale snapshot
 /// warns; only a failure breaks the run.
 void main() {
   final checks = AtlasChecks(const ExampleAtlasProject());
@@ -14,8 +14,14 @@ void main() {
     expect(outcome.lines, isEmpty);
     expect(outcome.status, AtlasCheckStatus.passed);
   });
-  test('The published variants match the flows and the snapshots', () async {
+  test('The published variants match the flows', () async {
     final outcome = await checks.publishedVariants();
+
+    expect(outcome.lines, isEmpty);
+    expect(outcome.status, AtlasCheckStatus.passed);
+  });
+  test('The stored variants match the flows', () async {
+    final outcome = await checks.storedVariants();
 
     expect(outcome.lines, isEmpty);
     expect(outcome.isFailure, isFalse);

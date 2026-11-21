@@ -118,7 +118,7 @@ final class AtlasCheckOutcome {
 ///
 /// The checks that the stored atlas of a project agrees with the project, for
 /// a gate that runs outside `runAtlas`, such as a documentation check. The
-/// `check` command of `runAtlas` runs the same five.
+/// `check` command of `runAtlas` runs the same six.
 ///
 /// Each check only reads files and does not depend on the others. A check
 /// that cannot read its sources ends `failed` with the cause. [snapshots]
@@ -159,17 +159,26 @@ final class AtlasChecks {
     return _guard(_checkPage);
   }
 
-  /// Holds the published variants list, the flow files and the stored
-  /// snapshots naming the same variants.
+  /// Holds the published variants list against the flow files. A listed
+  /// name that no flow file holds fails.
   ///
-  /// A listed name that no flow file holds fails. A snapshot of a variant
-  /// that its flow file dropped fails also. A captured variant that the list
+  /// The check reads no store. It starts the runner of the project to read
+  /// the flows.
+  Future<AtlasCheckOutcome> publishedVariants() {
+    return _guard(() => _PublishedVariantsCheck(_paths).run());
+  }
+
+  /// Holds the stored snapshots against the flow files and the published
+  /// variants list.
+  ///
+  /// A snapshot of a variant that its flow file dropped fails. A snapshot
+  /// folder of no flow file fails also. A captured variant that the list
   /// leaves out gets a note, not a failure: the list keeps the bundle inside
   /// its size limit.
   ///
   /// The check starts the runner of the project to read the flows.
-  Future<AtlasCheckOutcome> publishedVariants() {
-    return _guard(() => _PublishedVariantsCheck(_paths).run());
+  Future<AtlasCheckOutcome> storedVariants() {
+    return _guard(() => _StoredVariantsCheck(_paths).run());
   }
 
   /// Holds the stored snapshots of the published variants in the default
@@ -317,41 +326,21 @@ typedef _ListedVariant = ({String flow, String variant});
 
 typedef _StoredSnapshot = ({String flow, String variant, String path});
 
-final class _PublishedVariantsCheck {
-  static const _jsonExtension = '.json';
+final class _VariantSources {
+  static const jsonExtension = '.json';
 
   final AtlasLocations _paths;
 
-  const _PublishedVariantsCheck(this._paths);
+  const _VariantSources(this._paths);
 
-  AtlasCheckOutcome run() {
-    final listName = p.basename(_paths.publishedVariantsPath);
-    final variantsByFlow = _readVariantsByFlow();
-    final published = _readPublishedNames();
-    final directories = _readDataDirectories();
-    final snapshots = directories.expand(_readStoredSnapshots).toList();
-    final problems = [
-      ..._describeMissingFlows(listName, published, variantsByFlow),
-      ..._describeMissingVariants(listName, published, variantsByFlow),
-      ..._describeStrandedSnapshots(snapshots, variantsByFlow),
-      ..._describeStrandedDirectories(directories, variantsByFlow),
-    ];
-
-    if (problems.isNotEmpty) {
-      return AtlasCheckOutcome.failed(problems);
-    }
-
-    return _reportUnpublishedSnapshots(snapshots, published);
-  }
-
-  Map<String, Set<String>> _readVariantsByFlow() {
+  Map<String, Set<String>> readVariantsByFlow() {
     return {
       for (final flow in AtlasDefinitions.read(_paths).flows)
         flow.name: flow.variants.map((variant) => variant.name).toSet(),
     };
   }
 
-  Map<String, List<String>> _readPublishedNames() {
+  Map<String, List<String>> readPublishedNames() {
     final file = File(_paths.publishedVariantsPath);
 
     if (!file.existsSync()) {
@@ -369,35 +358,43 @@ final class _PublishedVariantsCheck {
     };
   }
 
-  List<Directory> _readDataDirectories() {
-    final directory = Directory(_paths.dataPath);
+  bool isDroppedVariant(
+    Map<String, Set<String>> variantsByFlow,
+    String flow,
+    String variant,
+  ) {
+    final held = variantsByFlow[flow];
 
-    if (!directory.existsSync()) {
-      return const [];
-    }
-
-    return directory.listSync().whereType<Directory>().toList()
-      ..sort((first, second) => first.path.compareTo(second.path));
+    return held != null && !held.contains(variant);
   }
 
-  List<_StoredSnapshot> _readStoredSnapshots(Directory directory) {
-    final flow = p.basename(directory.path);
-    final files =
-        directory
-            .listSync()
-            .whereType<File>()
-            .where((file) => p.extension(file.path) == _jsonExtension)
-            .toList()
-          ..sort((first, second) => first.path.compareTo(second.path));
+  List<String> _readVariantNames(Object? variantNames) {
+    if (variantNames case final List<Object?> names) {
+      return names.whereType<String>().toList();
+    }
 
-    return [
-      for (final file in files)
-        (
-          flow: flow,
-          variant: _paths.resolveSnapshotVariant(file.path),
-          path: file.path,
-        ),
+    return const [];
+  }
+}
+
+final class _PublishedVariantsCheck {
+  final AtlasLocations _paths;
+  final _VariantSources _sources;
+
+  _PublishedVariantsCheck(this._paths) : _sources = _VariantSources(_paths);
+
+  AtlasCheckOutcome run() {
+    final listName = p.basename(_paths.publishedVariantsPath);
+    final variantsByFlow = _sources.readVariantsByFlow();
+    final published = _sources.readPublishedNames();
+    final problems = [
+      ..._describeMissingFlows(listName, published, variantsByFlow),
+      ..._describeMissingVariants(listName, published, variantsByFlow),
     ];
+
+    return problems.isEmpty
+        ? const AtlasCheckOutcome.passed()
+        : AtlasCheckOutcome.failed(problems);
   }
 
   Iterable<String> _describeMissingFlows(
@@ -417,14 +414,84 @@ final class _PublishedVariantsCheck {
   ) {
     return _readListedVariants(published)
         .where(
-          (listed) =>
-              _isDroppedVariant(variantsByFlow, listed.flow, listed.variant),
+          (listed) => _sources.isDroppedVariant(
+            variantsByFlow,
+            listed.flow,
+            listed.variant,
+          ),
         )
         .map(
           (listed) =>
               '$listName names "${listed.flow}" "${listed.variant}", '
-              'which ${listed.flow}$_jsonExtension does not hold.',
+              'which ${listed.flow}${_VariantSources.jsonExtension} does not '
+              'hold.',
         );
+  }
+
+  List<_ListedVariant> _readListedVariants(
+    Map<String, List<String>> published,
+  ) {
+    return [
+      for (final MapEntry(key: flow, value: variants) in published.entries)
+        for (final variant in variants) (flow: flow, variant: variant),
+    ];
+  }
+}
+
+final class _StoredVariantsCheck {
+  final AtlasLocations _paths;
+  final _VariantSources _sources;
+
+  _StoredVariantsCheck(this._paths) : _sources = _VariantSources(_paths);
+
+  AtlasCheckOutcome run() {
+    final variantsByFlow = _sources.readVariantsByFlow();
+    final published = _sources.readPublishedNames();
+    final directories = _readDataDirectories();
+    final snapshots = directories.expand(_readStoredSnapshots).toList();
+    final problems = [
+      ..._describeStrandedSnapshots(snapshots, variantsByFlow),
+      ..._describeStrandedDirectories(directories, variantsByFlow),
+    ];
+
+    if (problems.isNotEmpty) {
+      return AtlasCheckOutcome.failed(problems);
+    }
+
+    return _reportUnpublishedSnapshots(snapshots, published);
+  }
+
+  List<Directory> _readDataDirectories() {
+    final directory = Directory(_paths.dataPath);
+
+    if (!directory.existsSync()) {
+      return const [];
+    }
+
+    return directory.listSync().whereType<Directory>().toList()
+      ..sort((first, second) => first.path.compareTo(second.path));
+  }
+
+  List<_StoredSnapshot> _readStoredSnapshots(Directory directory) {
+    final flow = p.basename(directory.path);
+    final files =
+        directory
+            .listSync()
+            .whereType<File>()
+            .where(
+              (file) => p.extension(file.path) == _VariantSources.jsonExtension,
+            )
+            .toList()
+          ..sort((first, second) => first.path.compareTo(second.path));
+
+    return [
+      for (final file in files)
+        (
+          flow: flow,
+          variant: _paths.resolveSnapshotVariant(file.path),
+          path: file.path,
+        ),
+    ];
   }
 
   Iterable<String> _describeStrandedSnapshots(
@@ -433,7 +500,7 @@ final class _PublishedVariantsCheck {
   ) {
     return snapshots
         .where(
-          (snapshot) => _isDroppedVariant(
+          (snapshot) => _sources.isDroppedVariant(
             variantsByFlow,
             snapshot.flow,
             snapshot.variant,
@@ -442,8 +509,8 @@ final class _PublishedVariantsCheck {
         .map(
           (snapshot) =>
               '${snapshot.path} describes a variant '
-              '${snapshot.flow}$_jsonExtension no longer holds. '
-              'Delete it or restore the variant.',
+              '${snapshot.flow}${_VariantSources.jsonExtension} no longer '
+              'holds. Delete it or restore the variant.',
         );
   }
 
@@ -484,33 +551,6 @@ final class _PublishedVariantsCheck {
       '${_describeUnpublishedCount(unpublished.length)}: '
       '${unpublished.join(', ')}',
     );
-  }
-
-  List<String> _readVariantNames(Object? variantNames) {
-    if (variantNames case final List<Object?> names) {
-      return names.whereType<String>().toList();
-    }
-
-    return const [];
-  }
-
-  List<_ListedVariant> _readListedVariants(
-    Map<String, List<String>> published,
-  ) {
-    return [
-      for (final MapEntry(key: flow, value: variants) in published.entries)
-        for (final variant in variants) (flow: flow, variant: variant),
-    ];
-  }
-
-  bool _isDroppedVariant(
-    Map<String, Set<String>> variantsByFlow,
-    String flow,
-    String variant,
-  ) {
-    final held = variantsByFlow[flow];
-
-    return held != null && !held.contains(variant);
   }
 
   bool _isPublished(
