@@ -1497,16 +1497,17 @@
 
 
   /* ---------- area switch + flow tabs ---------- */
-  .flows-bar { display: flex; align-items: center; gap: 16px; border-bottom: 1px solid var(--line); }
-  .flows-bar .flow-tabs { flex: 1 1 auto; min-width: 0; border-bottom: 0; }
-  .area-switch { flex: none; }
-  .area-seg { width: auto; }
+  .flows-bar { display: flex; flex-direction: column; align-items: stretch; gap: 8px; border-bottom: 1px solid var(--line); }
+  .flows-bar .flow-tabs { min-width: 0; border-bottom: 0; }
+  .area-switch { min-width: 0; overflow-x: auto; scrollbar-width: none; }
+  .area-switch::-webkit-scrollbar { display: none; }
+  .area-seg { width: max-content; }
   .area-seg button { flex: none; min-height: 36px; padding: 0 14px; display: inline-flex; align-items: center; justify-content: center; gap: 6px; white-space: nowrap; }
   .area-fail { font-size: 11px; font-weight: 700; color: var(--danger); }
   .area-seg button.is-search-miss { opacity: .5; }
   @media (max-width: 899px) {
-    .flows-bar { flex-direction: column; align-items: stretch; gap: 8px; }
-    .area-seg button { flex: 1; padding: 0 8px; }
+    .area-seg { min-width: 100%; }
+    .area-seg button { flex: 1 0 auto; padding: 0 8px; }
   }
 
 

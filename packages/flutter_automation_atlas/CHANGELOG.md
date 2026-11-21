@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.16.4
+
+- The page shows the area tabs and the flow strip in two rows. Each row
+  scrolls sideways alone, so the two cannot overlap at any width.
+
 ## 0.16.3
 
 - `capture` and `headless` with `--require-fresh` fail with the usage.
