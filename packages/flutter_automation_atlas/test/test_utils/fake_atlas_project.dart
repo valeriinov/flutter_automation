@@ -2,7 +2,6 @@ import 'dart:io';
 
 import 'package:collection/collection.dart';
 import 'package:flutter_automation_atlas/flutter_automation_atlas.dart';
-import 'package:flutter_automation_atlas/src/atlas_journal_cleaner.dart';
 import 'package:flutter_automation_atlas/src/atlas_journal_comparison.dart';
 import 'package:flutter_automation_atlas/src/atlas_journal_split.dart';
 import 'package:flutter_automation_atlas/src/atlas_mock_answer_comparison.dart';

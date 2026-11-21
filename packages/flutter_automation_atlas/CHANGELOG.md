@@ -1,5 +1,18 @@
 # Changelog
 
+## 0.16.2
+
+- `stale` takes `--require-fresh`. After it prints its lines, the command
+  exits with code 1 when a line names another reason than `fresh`. A variant
+  with stale stages counts as not fresh. Without the flag, the lines do not
+  change the exit code. `capture --stale` does not take the flag.
+- The library exports `AtlasJournalStage` and `AtlasJournalRecord`, the types
+  of `AtlasStoreReader.recordsOf(kind)` and `AtlasTable.stagesData(stages)`.
+- The library exports `AtlasJournalCleaner`. `clean(records)` returns journal
+  records without their sequence numbers and without the volatile keys of
+  the journal schema. `tryDescribeLaunch(launch)` and
+  `AtlasJournalCleaner.withoutMoments(launch)` clean a launch record.
+
 ## 0.16.1
 
 - The `tag-versions` command puts on `origin` the git tag of each row of

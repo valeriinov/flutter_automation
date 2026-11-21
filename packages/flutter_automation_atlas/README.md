@@ -36,7 +36,7 @@ headless walk, and `AtlasHeadlessApp`, `AtlasHeadlessDevice` and
 | --- | --- |
 | `capture <flow> [<variant>...]` | Walks the variants on the booted iOS simulator and writes their snapshots and screenshots. |
 | `capture --stale` | Captures what `stale` names. |
-| `stale [<flow>]` | Prints one line per variant: `fresh`, or the reason the snapshot is stale. |
+| `stale [<flow>] [--require-fresh]` | Prints one line per variant: `fresh`, or the reason the snapshot is stale. With `--require-fresh`, it exits with code 1 when a line names another reason than `fresh`. |
 | `headless [<flow> [<variant>...]]` | Walks the variants under `flutter test`, without a device, and writes the frame hashes. |
 | `check` | Runs the six checks of `AtlasChecks`: the page, the published variants, the stored variants, the snapshots, the translation key coverage and the shots. Exits with code 1 when one fails. |
 | `normalize-manifests` | Rewrites the manifest hashes of the stored snapshots. |
@@ -229,8 +229,8 @@ The command prints one line `Tagged <tag> at <commit>` per tag and a last line
 
 ## Read the atlas in code
 
-The library exports `AtlasVersions` and `AtlasStoreReader` for a script of the
-project.
+The library exports `AtlasVersions`, `AtlasStoreReader` and
+`AtlasJournalCleaner` for a script of the project.
 
 `AtlasVersions(<site folder>)` reads a site folder:
 
@@ -252,6 +252,15 @@ A malformed retention field stops each of these members with an
 | Member | Gives |
 | --- | --- |
 | `snapshots()` | Each snapshot of the store folder, in every locale, in the order of flow, variant and locale. An `AtlasSnapshot` holds its `flow`, `variant`, `locale` and `sourceDirty`, its `stages` (`AtlasStage`) and its `end` (`AtlasEnd`). A stage and the end hold the `texts` of their frame. |
-| `recordsOf(kind)` | Each journal record of that kind that a published variant logged, in the default locale, with its stage. |
+| `recordsOf(kind)` | Each journal record of that kind that a published variant logged, in the default locale, with its stage. An `AtlasJournalRecord` holds the `record` and its `stage`. An `AtlasJournalStage` holds the `variantId`, `<flow>/<variant>`, and the zero-based `index` of the stage. The end of a snapshot takes the index after its last stage. |
 | `walkersByScreen()` | The `<flow> <variant>` of each snapshot in the default locale that walks a screen, by screen name. |
 | `rootPath`, `storePath`, `isDefaultStore` | The root of the project, the folder of the store, and whether the store is the output folder of the project. |
+
+`AtlasJournalCleaner(project.journalSchema)` strips journal records of what
+differs between two runs of the same walk:
+
+| Member | Gives |
+| --- | --- |
+| `clean(records)` | The records in their order, each without its sequence number `seq` and without the volatile keys of the journal schema, at every depth. |
+| `tryDescribeLaunch(launch)` | The launch record that a snapshot opens its first stage with: cleaned, and without its moments. It is `null` without a launch record. |
+| `AtlasJournalCleaner.withoutMoments(launch)` | The launch record without its `anchor` and `launchedAt` moments. |

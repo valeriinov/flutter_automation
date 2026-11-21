@@ -49,7 +49,7 @@ you touch the device.
 ## 2. Read what is stale
 
 ```bash
-ATLAS stale [<flow>] [--locale <code>] [--store <folder>]
+ATLAS stale [<flow>] [--require-fresh] [--locale <code>] [--store <folder>]
 ```
 
 Each line names a variant and one reason, or `fresh`. The reasons:
@@ -70,6 +70,10 @@ of `HEAD`, the baseline is the commit that git history holds for the stage
 sources.
 `stale --published` keeps to the published variants of the project.
 `stale --no-walk` reads the headless reports that exist and walks nothing.
+`stale --require-fresh` prints the same lines. It then exits with code 1 when
+a line names another reason than `fresh`. Use it as a gate in a script or in
+CI. Without the flag, the lines do not change the exit code.
+`capture --stale` does not take the flag.
 
 ## 3. Capture
 

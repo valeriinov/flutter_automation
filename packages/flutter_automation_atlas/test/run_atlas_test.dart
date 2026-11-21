@@ -43,6 +43,9 @@ void main() {
     _atlasCatalogue_should_walkStaleVariantsWithoutCurrentReport();
     _atlasCatalogue_should_walkNothingWithNoWalk();
     _atlasCatalogue_should_walkNothingWithoutPublished();
+    _atlasRun_should_failTheExitCodeOfStaleWithRequireFreshOnAStaleVariant();
+    _atlasRun_should_keepTheExitCodeOfStaleWithRequireFreshWhenEachIsFresh();
+    _atlasRun_should_keepTheExitCodeOfStaleWithoutRequireFresh();
     _atlasCatalogue_should_recordHashesOfVariantsCheckedAfterTheWalk();
     _atlasRun_should_handStorePathToProjectReports();
     _atlasRun_should_keepSourceLabelOnRunOptions();
@@ -219,6 +222,81 @@ void _atlasCatalogue_should_walkNothingWithoutPublished() {
       expect(checks, hasLength(1));
     });
   });
+}
+
+void _atlasRun_should_failTheExitCodeOfStaleWithRequireFreshOnAStaleVariant() {
+  test('AtlasRun should fail the exit code of stale with require fresh on a '
+      'stale variant', () async {
+    await TestAtlasRoot.run((root) async {
+      _writeVariants(root);
+
+      final lines = await RecordingStdout.captureLines(
+        _createCatalogue(
+          root,
+          const ['stale', '--require-fresh', _flow],
+          [],
+          [],
+        ).run,
+      );
+
+      expect(lines, [
+        '$_flow $_unwalkedVariant stage code 0 $_mainPath',
+        '$_flow $_walkedVariant stage code 0 $_mainPath',
+        '$_flow $_freshVariant fresh',
+      ]);
+      expect(exitCode, 1);
+
+      exitCode = 0;
+    });
+  });
+}
+
+void _atlasRun_should_keepTheExitCodeOfStaleWithRequireFreshWhenEachIsFresh() {
+  test('AtlasRun should keep the exit code of stale with require fresh when '
+      'each is fresh', () async {
+    await TestAtlasRoot.run((root) async {
+      _writeVariants(root);
+
+      final lines = await RecordingStdout.captureLines(
+        AtlasRun(
+          const ['stale', '--require-fresh'],
+          root.project,
+          rootPath: root.directory.path,
+          readStalenesses: (variants) async {
+            return variants.map(_createFresh).toList();
+          },
+        ).run,
+      );
+
+      expect(lines, [
+        '$_flow $_unwalkedVariant fresh',
+        '$_flow $_walkedVariant fresh',
+        '$_flow $_freshVariant fresh',
+      ]);
+      expect(exitCode, 0);
+    });
+  });
+}
+
+void _atlasRun_should_keepTheExitCodeOfStaleWithoutRequireFresh() {
+  test(
+    'AtlasRun should keep the exit code of stale without require fresh',
+    () async {
+      await TestAtlasRoot.run((root) async {
+        _writeVariants(root);
+
+        final lines = await RecordingStdout.captureLines(
+          _createCatalogue(root, const ['stale'], [], []).run,
+        );
+
+        expect(
+          lines,
+          contains('$_flow $_walkedVariant stage code 0 $_mainPath'),
+        );
+        expect(exitCode, 0);
+      });
+    },
+  );
 }
 
 void _atlasCatalogue_should_recordHashesOfVariantsCheckedAfterTheWalk() {

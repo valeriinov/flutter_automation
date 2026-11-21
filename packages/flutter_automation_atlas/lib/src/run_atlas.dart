@@ -75,7 +75,10 @@ import 'package:flutter_automation_atlas/src/atlas_versions.dart';
 ///   With `--published`, before it prints, it walks headless the variants whose
 ///   frames it did not compare ([AtlasHeadlessSelection]). It does this in one
 ///   run, and it checks them again. `capture --stale --published` does the
-///   same. `--no-walk` keeps both to the reports on disk.
+///   same. `--no-walk` keeps both to the reports on disk. With
+///   `--require-fresh`, after it prints the lines, `stale` exits with code 1
+///   when a line names another reason than `fresh`. `capture --stale` does
+///   not take that flag.
 /// - `headless [--baseline] [<flow> [<variant>...]]` walks variants in the
 ///   app under `flutter test`. It walks the published variants, the variants
 ///   of the flow or the named ones. It uses the in-app mock and no device. It
@@ -194,7 +197,8 @@ import 'package:flutter_automation_atlas/src/atlas_versions.dart';
 /// `headless` with `--published` or `--no-walk` fails with the usage. So does
 /// `capture` with `--no-walk` but without `--stale`.
 ///
-/// A capture or a headless walk that did not pass exits with code 1.
+/// A capture or a headless walk that did not pass exits with code 1. So does
+/// `stale --require-fresh` when a variant is not fresh.
 Future<void> runAtlas(List<String> args, AtlasProject project) async {
   try {
     await AtlasRun(args, project).run();
@@ -231,6 +235,7 @@ final class AtlasRun {
   static const _recordFlag = '--record';
   static const _noWalkFlag = '--no-walk';
   static const _publishedFlag = '--published';
+  static const _requireFreshFlag = '--require-fresh';
   static const _repoOnlyFlag = '--repo-only';
   static const _storageOnlyFlag = '--storage-only';
   static const _applyFlag = '--apply';
@@ -257,7 +262,7 @@ final class AtlasRun {
       '[$_localeOption <code>] | '
       '$_captureCommand $_staleFlag [$_publishedFlag] [$_noWalkFlag] '
       '[$_localeOption <code>] | '
-      '$_staleCommand [$_publishedFlag] [$_noWalkFlag] '
+      '$_staleCommand [$_publishedFlag] [$_noWalkFlag] [$_requireFreshFlag] '
       '[$_localeOption <code>] [<flow>] | '
       '$_headlessCommand [$_baselineFlag | $_recordFlag] '
       '[<flow> [<variant>...]] | '
@@ -344,6 +349,8 @@ final class AtlasRun {
   bool get _isPublishedOnly => args.contains(_publishedFlag);
 
   bool get _isWalked => _isPublishedOnly && !args.contains(_noWalkFlag);
+
+  bool get _isFreshRequired => args.contains(_requireFreshFlag);
 
   List<String> get _positionalArguments {
     const options = {
@@ -432,6 +439,7 @@ final class AtlasRun {
   bool _isFlag(String arg) {
     return const {
       _publishedFlag,
+      _requireFreshFlag,
       _baselineFlag,
       _recordFlag,
       _noWalkFlag,
@@ -467,11 +475,17 @@ final class AtlasRun {
         ? definitions.variants
         : definitions.findFlow(flowName).variants;
 
-    for (final staleness in await _checkStale(
+    final stalenesses = await _checkStale(
       locale,
       _readCheckedVariants(variants),
-    )) {
+    );
+
+    for (final staleness in stalenesses) {
       stdout.writeln(staleness.describe());
+    }
+
+    if (_isFreshRequired && stalenesses.any((staleness) => staleness.isStale)) {
+      exitCode = _failureExitCode;
     }
   }
 

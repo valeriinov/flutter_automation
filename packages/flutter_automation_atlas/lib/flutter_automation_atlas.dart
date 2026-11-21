@@ -2,7 +2,11 @@ export 'package:flutter_automation_atlas/src/atlas_checks.dart'
     show AtlasCheckOutcome, AtlasCheckStatus, AtlasChecks;
 export 'package:flutter_automation_atlas/src/atlas_exception.dart';
 export 'package:flutter_automation_atlas/src/atlas_headless_settings.dart';
+export 'package:flutter_automation_atlas/src/atlas_journal_cleaner.dart'
+    show AtlasJournalCleaner;
 export 'package:flutter_automation_atlas/src/atlas_journal_schema.dart';
+export 'package:flutter_automation_atlas/src/atlas_journal_stages.dart'
+    show AtlasJournalRecord, AtlasJournalStage;
 export 'package:flutter_automation_atlas/src/atlas_launch_settings.dart';
 export 'package:flutter_automation_atlas/src/atlas_page_part.dart';
 export 'package:flutter_automation_atlas/src/atlas_paths.dart';
