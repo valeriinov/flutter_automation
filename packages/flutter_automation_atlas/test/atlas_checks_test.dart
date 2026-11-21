@@ -13,12 +13,19 @@ import 'package:flutter_automation_atlas/src/atlas_snapshot_store.dart';
 import 'package:flutter_automation_atlas/src/atlas_stale_check.dart';
 
 import 'test_utils/create_atlas_snapshot.dart';
+import 'test_utils/create_shot_snapshot.dart';
 import 'test_utils/fake_atlas_project.dart';
+import 'test_utils/fake_atlas_shot_storage.dart';
 import 'test_utils/test_atlas_root.dart';
 import 'test_utils/write_published_journals.dart';
 
 const _listPath = 'tool/uncovered.json';
 const _keyHash = 'abcdef012345';
+const _shortShot = '0123456789ab';
+const _heldShot =
+    '0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef';
+const _absentShot =
+    'fedcba9876543210fedcba9876543210fedcba9876543210fedcba9876543210';
 
 void main() {
   group('AtlasChecks Tests', () {
@@ -37,6 +44,11 @@ void main() {
     _atlasChecks_should_skipLocaleKeyCoverageWithoutList();
     _atlasChecks_should_failUndeclaredAndStrandedKeys();
     _atlasChecks_should_reportLocaleKeyCoverageCounts();
+    _atlasChecks_should_failShotThatIsNoSha256();
+    _atlasChecks_should_failShotTheStorageDoesNotHold();
+    _atlasChecks_should_passShotsTheStorageHolds();
+    _atlasChecks_should_failShotsOnAnotherAnswerOfTheStorage();
+    _atlasChecks_should_failShotsOnLinkTemplateThatIsNoLink();
     _atlasCheckOutcome_should_describeItself();
   });
 }
@@ -334,6 +346,110 @@ void _atlasChecks_should_reportLocaleKeyCoverageCounts() {
   });
 }
 
+void _atlasChecks_should_failShotThatIsNoSha256() {
+  test('AtlasChecks should fail shot that is no sha256', () async {
+    await TestAtlasRoot.run((root) async {
+      _writeShotSnapshot(root, stageShot: _shortShot, endShot: _heldShot);
+
+      final outcome = await _checks(root).shots();
+
+      expect(outcome.status, AtlasCheckStatus.failed);
+      expect(
+        outcome.lines.single,
+        allOf(contains(_shortShot), contains('migrate-shots')),
+      );
+    });
+  });
+}
+
+void _atlasChecks_should_failShotTheStorageDoesNotHold() {
+  test('AtlasChecks should fail shot the storage does not hold', () async {
+    await TestAtlasRoot.run((root) async {
+      final storage = await startFakeAtlasShotStorage(root);
+
+      storage.files[_heldShot] = const [1];
+      storage.isRedirecting = true;
+
+      _writeShotSnapshot(root, stageShot: _heldShot, endShot: _absentShot);
+
+      final outcome = await _checks(root).shots();
+
+      expect(outcome.status, AtlasCheckStatus.failed);
+      expect(outcome.lines.single, contains(_absentShot));
+      expect(storage.requestedShots.toSet(), {_heldShot, _absentShot});
+    });
+  });
+}
+
+void _atlasChecks_should_passShotsTheStorageHolds() {
+  test('AtlasChecks should pass shots the storage holds', () async {
+    await TestAtlasRoot.run((root) async {
+      final storage = await startFakeAtlasShotStorage(root);
+
+      storage.files.addAll(const {
+        _heldShot: [1],
+        _absentShot: [2],
+      });
+      _writeShotSnapshot(root, stageShot: _heldShot, endShot: _absentShot);
+
+      final outcome = await _checks(root).shots();
+
+      expect(outcome.status, AtlasCheckStatus.passed);
+    });
+  });
+}
+
+void _atlasChecks_should_failShotsOnAnotherAnswerOfTheStorage() {
+  test(
+    'AtlasChecks should fail shots on another answer of the storage',
+    () async {
+      await TestAtlasRoot.run((root) async {
+        final storage = await startFakeAtlasShotStorage(root);
+
+        storage.answeredStatus = HttpStatus.serviceUnavailable;
+
+        _writeShotSnapshot(root, stageShot: _heldShot, endShot: _absentShot);
+
+        final outcome = await _checks(root).shots();
+
+        expect(outcome.status, AtlasCheckStatus.failed);
+        expect(
+          outcome.lines.single,
+          contains('${HttpStatus.serviceUnavailable}'),
+        );
+      });
+    },
+  );
+}
+
+void _atlasChecks_should_failShotsOnLinkTemplateThatIsNoLink() {
+  test(
+    'AtlasChecks should fail shots on link template that is no link',
+    () async {
+      await TestAtlasRoot.run((root) async {
+        root.project.storage = const _NoLinkStorage();
+
+        _writeShotSnapshot(root, stageShot: _heldShot, endShot: _absentShot);
+
+        final outcome = await _checks(root).shots();
+
+        expect(outcome.status, AtlasCheckStatus.failed);
+        expect(outcome.lines.single, contains(_NoLinkStorage.linkStart));
+      });
+    },
+  );
+}
+
+void _writeShotSnapshot(
+  TestAtlasRoot root, {
+  required String stageShot,
+  required String endShot,
+}) {
+  AtlasSnapshotStore(
+    root.paths,
+  ).write(createShotSnapshot(stageShot: stageShot, endShot: endShot));
+}
+
 void _atlasCheckOutcome_should_describeItself() {
   test('AtlasCheckOutcome should describe itself', () {
     expect(const AtlasCheckOutcome.passed().describe('page'), ['ok    page']);
@@ -410,4 +526,20 @@ void _writeKeyStore(TestAtlasRoot root, {required Map<String, Object?> list}) {
       ],
     ),
   );
+}
+
+final class _NoLinkStorage implements AtlasShotStorage {
+  static const linkStart = 'http://[';
+  static const template = '$linkStart{shot}';
+
+  const _NoLinkStorage();
+
+  @override
+  String get urlTemplate => template;
+
+  @override
+  Future<void> upload(List<AtlasShot> shots) => Future.value();
+
+  @override
+  Future<void> delete(List<String> shots) => Future.value();
 }

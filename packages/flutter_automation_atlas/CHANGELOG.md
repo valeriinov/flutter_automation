@@ -1,5 +1,30 @@
 # Changelog
 
+## 0.15.0
+
+- Breaking: a screenshot identifier is the SHA-256 of the file, 64 lowercase
+  hex digits (`AtlasShotId`). The `migrate-shots` command renames the files
+  of the shots folder and rewrites the `shot` fields of the snapshots. The
+  `check` command fails on each other identifier.
+- Breaking: `AtlasProject.shotPublisher` and `AtlasShotPublisher` are
+  removed. `AtlasProject.shotStorage` returns an `AtlasShotStorage`: the link
+  template of a screenshot, the upload and the removal.
+- A project with `shotStorage` keeps its screenshots only in the remote
+  storage. A capture puts each new screenshot into the storage before it
+  writes the snapshot. The commands keep the files they read and shoot in
+  the cache folder `shots/` under the build folder; `--shots-cache <folder>`
+  names another folder.
+- `render` and `bundle --shots urls` put the link template of the storage
+  into the page, and put nothing into the storage. The other shot sources of
+  a bundle read the cache folder and the storage.
+- `check` runs a fifth check, `shots`. With a remote storage, it asks the
+  storage for each identifier that a snapshot names.
+- A file that the atlas reads from the storage or puts into it must hold the
+  bytes that its identifier names. Other bytes stop the command.
+- `upload-shots` puts into the storage each screenshot file that the storage
+  does not hold. `delete-shots <id>...` removes screenshots from the storage,
+  and refuses an identifier that a file of the store repository names.
+
 ## 0.14.0
 
 - Breaking: `AtlasPaths.uncoveredLocaleKeys` is a path relative to the store

@@ -38,14 +38,18 @@ headless walk, and `AtlasHeadlessApp`, `AtlasHeadlessDevice` and
 | `capture --stale` | Captures what `stale` names. |
 | `stale [<flow>]` | Prints one line per variant: `fresh`, or the reason the snapshot is stale. |
 | `headless [<flow> [<variant>...]]` | Walks the variants under `flutter test`, without a device, and writes the frame hashes. |
-| `check` | Runs the four checks of `AtlasChecks`: the page, the published variants, the snapshots and the translation key coverage. Exits with code 1 when one fails. |
+| `check` | Runs the five checks of `AtlasChecks`: the page, the published variants, the snapshots, the translation key coverage and the shots. Exits with code 1 when one fails. |
 | `normalize-manifests` | Rewrites the manifest hashes of the stored snapshots. |
 | `source-commit --snapshot <file>` | Prints the commit `stale` takes as the baseline of the snapshot, or `not found`. |
-| `render [--edition <name>]` | Writes `index.html` of the edition (`full` when absent) to the store, with the screenshots in `shots/` beside it. Deletes the screenshots and the declarations that no stored snapshot names, and writes the project reports. A declaration record holds the parts of a source file that a snapshot read. |
-| `bundle --edition <name> --shots <files\|inline\|sheets\|urls> [--locale <code\|all>]` | Writes `index.html` of the edition into a folder of its own under the build folder, one per edition and locale. It first empties `shots/` beside the page. With `inline` or `urls` the page is the only file; with `files` the screenshots go to `shots/` beside it; with `sheets` the WebP sheets go to `shots/` beside it. It prints the bytes of the page, the bytes and the files of the whole bundle and its images. |
+| `render [--edition <name>]` | Writes `index.html` of the edition (`full` when absent) to the store, with the screenshots in `shots/` beside it. Deletes the screenshots and the declarations that no stored snapshot names, and writes the project reports. A declaration record holds the parts of a source file that a snapshot read. With a remote shot storage, the page reads its screenshots by the link template of the storage, and `render` deletes no screenshot. |
+| `bundle --edition <name> --shots <files\|inline\|sheets\|urls> [--locale <code\|all>]` | Writes `index.html` of the edition into a folder of its own under the build folder, one per edition and locale. It first empties `shots/` beside the page. With `inline` or `urls` the page is the only file; `urls` puts the link template of the shot storage into the page and uploads nothing; with `files` the screenshots go to `shots/` beside it; with `sheets` the WebP sheets go to `shots/` beside it. It prints the bytes of the page, the bytes and the files of the whole bundle and its images. |
+| `migrate-shots` | Renames each file of the shots folder of the store to the SHA-256 of its bytes and rewrites the `shot` fields of the snapshots. With a remote shot storage, it also puts the files into the storage. |
+| `upload-shots` | Puts into the remote shot storage each screenshot file of the shots folder and of the cache folder that the storage does not hold. |
+| `delete-shots <id>...` | Removes the named screenshots from the remote shot storage. It removes nothing when a file of the store repository names one of them. |
 
 Every command takes `--store <folder>` and `--source-label <text>`.
 `capture` and `stale` take `--locale <code>`.
+With a remote shot storage, every command takes `--shots-cache <folder>`, the cache folder.
 
 ## Editions
 
@@ -77,10 +81,10 @@ takes `index.html` and 254 images.
 
 | Source | The page reads a screenshot from |
 | --- | --- |
-| `files` | `shots/<hash>.png` beside the page. |
+| `files` | `shots/<identifier>.png` beside the page. |
 | `inline` | WebP sheets inside the page. |
 | `sheets` | WebP sheets as files `shots/<sheet hash>.webp` beside the page, named by the hash of the sheet bytes. The page crops each screenshot from its sheet on a canvas, so the page and `shots/` stand on one http(s) origin. A page opened from disk takes `inline` or `files`. `bundle` deletes every other file and folder in `shots/`. |
-| `urls` | The link `AtlasProject.shotPublisher` returns for the screenshot hash. |
+| `urls` | The link template of `AtlasProject.shotStorage`, with the screenshot identifier in place of `{shot}`. |
 
 The page takes the link before the sheet, and the sheet before the file.
 `--locale all`, or no `--locale`, writes the series of every page locale into
@@ -91,3 +95,34 @@ one file.
 A viewer whose CSP blocks an `<img>` from another host needs `inline`, `files`
 or `sheets`. A Claude artifact is one example. The `urls` source serves a page
 that another host serves.
+
+## Shot storage
+
+A screenshot identifier is the SHA-256 of the PNG bytes, 64 lowercase hex
+digits. The identifier names the PNG file and the `shot` field of a snapshot.
+`AtlasProject.shotStorage` sets where the PNG files live.
+
+| Mode | `shotStorage` | The PNG files live in |
+| --- | --- | --- |
+| Folder | `null` (the default) | `<store>/shots/<identifier>.png`, the shots folder of the store. |
+| Remote | an `AtlasShotStorage` | The remote storage only. The snapshots name the identifiers. |
+
+`AtlasShotStorage` has three members:
+
+- `urlTemplate` is the public link of a screenshot. It holds `{shot}` in place
+  of the identifier.
+- `upload(List<AtlasShot>)` puts the shots into the storage.
+- `delete(List<String>)` removes the shots that the identifiers name.
+
+In remote mode `capture` puts each new screenshot into the storage before it
+writes the snapshot. A failed upload fails that variant and keeps its previous
+snapshot.
+
+The atlas reads a screenshot with a public `GET` of the link template. A 2xx or
+3xx code means the storage holds the screenshot. The code 404 means it does not.
+Another code stops the command.
+
+The commands keep the screenshots that they read and shoot in the cache folder
+`shots/` under the build folder. `--shots-cache <folder>` names another cache
+folder. With a remote storage, `files`, `inline` and `sheets` read the cache
+folder, and read each missing file from the storage.

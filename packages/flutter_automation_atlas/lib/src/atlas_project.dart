@@ -2,7 +2,7 @@ import 'package:flutter_automation_atlas/src/atlas_headless_settings.dart';
 import 'package:flutter_automation_atlas/src/atlas_journal_schema.dart';
 import 'package:flutter_automation_atlas/src/atlas_launch_settings.dart';
 import 'package:flutter_automation_atlas/src/atlas_paths.dart';
-import 'package:flutter_automation_atlas/src/atlas_shot_publisher.dart';
+import 'package:flutter_automation_atlas/src/atlas_shot_storage.dart';
 import 'package:flutter_automation_atlas/src/atlas_stale_settings.dart';
 import 'package:flutter_automation_atlas/src/atlas_store_reader.dart';
 import 'package:flutter_automation_atlas/src/atlas_table.dart';
@@ -17,7 +17,7 @@ import 'package:flutter_automation_runner/flutter_automation_runner.dart';
 /// A project extends this class once and passes it to `runAtlas`. The members
 /// with a body have a default for a project without that data. The defaults
 /// are no tables, no translations, no screen descriptions, no design links,
-/// no reports, no shot publisher, and each analytics event accepted.
+/// no reports, no shot storage, and each analytics event accepted.
 abstract class AtlasProject {
   const AtlasProject();
 
@@ -73,9 +73,9 @@ abstract class AtlasProject {
   /// default.
   List<String> get sourceDirtyIgnores => const [];
 
-  /// Publishes the screenshots of a page. It is `null` when the project keeps
-  /// them beside the page or inside it; `null` by default.
-  AtlasShotPublisher? get shotPublisher => null;
+  /// The remote storage that keeps the screenshots. It is `null` when the
+  /// shots folder of the store keeps them; `null` by default.
+  AtlasShotStorage? get shotStorage => null;
 
   /// The tables of project data the page shows, read from the atlas [store]
   /// holds; empty by default.

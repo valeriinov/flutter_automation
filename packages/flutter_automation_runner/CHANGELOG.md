@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.15.0
+
+- Version bump with `flutter_automation_atlas` 0.15.0.
+
 ## 0.14.0
 
 - A capture reads the texts of a frame before it takes the screenshot of the

@@ -117,12 +117,13 @@ snapshots. A stage whose frame and journal did not change stays fresh.
 ATLAS check [--store <folder>]
 ```
 
-`check` reads no device. It runs the four checks of `AtlasChecks`: `page` (the
+`check` reads no device. It runs the five checks of `AtlasChecks`: `page` (the
 committed page against its sources), `publishedVariants` (the list against the
 flow files and the snapshots), `snapshots` (the published snapshots against the
-variants) and `localeKeyCoverage` (the translation keys against the frames and
-the uncovered keys file of the store). It prints one line per check and exits with code 1
-when a check fails.
+variants), `localeKeyCoverage` (the translation keys against the frames and
+the uncovered keys file of the store) and `shots` (each screenshot identifier
+of the snapshots is the SHA-256 of its file, and a remote shot storage holds
+it). It prints one line per check and exits with code 1 when a check fails.
 
 ## 5. Render the page
 
@@ -132,7 +133,9 @@ ATLAS render [--edition <name>] [--store <folder>]
 
 `render` writes the page next to the snapshots, in **Atlas store**. It deletes
 the screenshots and the declarations that no stored snapshot names. A declaration
-record holds the parts of a source file that a snapshot read. `--edition` takes
+record holds the parts of a source file that a snapshot read. With a remote shot
+storage, `render` deletes no screenshot, and the page reads its screenshots by
+the link template of the storage. `--edition` takes
 `full`, `lite` or a name the project adds under `editions:`. The project lists
 the parts of each edition in `flutter_automation: atlas: editions:` of
 `pubspec.yaml`.
@@ -161,10 +164,10 @@ from:
 
 | Value | Source of the image | Use |
 | --- | --- | --- |
-| `files` | `shots/<hash>.png` beside the page | a folder or a site that holds many files |
+| `files` | `shots/<identifier>.png` beside the page | a folder or a site that holds many files |
 | `inline` | sheets of WebP in the page | one file with no host |
 | `sheets` | `shots/<sheet hash>.webp` beside the page, named by the hash of the sheet bytes and cropped by the page on a canvas | a host that serves the page and `shots/` from one http(s) origin; never a page opened from disk |
-| `urls` | a link for each hash, from the project publisher | a page that must stay small |
+| `urls` | the link template of the shot storage, with the identifier in place of `{shot}` | a page that must stay small |
 
 The limits come from the `atlas:` section of `pubspec.yaml`. `maxBundleBytes`
 limits the page. `maxBundleImages` limits the images: the inline sheets, the
@@ -172,14 +175,49 @@ sheet files or the shot files. `bundle` prints the bytes of the page, the bytes
 and the files of the whole bundle and its images. A bundle over a limit fails
 and prints its size. A viewer that takes at most 255 files in one publish takes
 `index.html` and 254 images.
-`urls` calls the publisher of the project. A publisher error stops the bundle
-and prints its text.
+`urls` puts the link template of `AtlasProject.shotStorage` into the page and
+uploads nothing. With a remote shot storage, `files`, `inline` and `sheets` read
+the cache folder `shots/` under the build folder, and read each missing file
+from the storage.
 
 A viewer whose CSP blocks an `<img>` from another host needs `inline`, `files`
 or `sheets`. Never use `urls` for such a viewer. A Claude artifact is one
 example.
 
 `--locale all` puts every locale of the project into one page.
+
+### Shot storage
+
+A screenshot identifier is the SHA-256 of the PNG bytes, 64 lowercase hex
+digits. `AtlasProject.shotStorage` sets where the PNG files live.
+
+- **Folder mode**: `shotStorage` is `null`. The PNG files live in
+  `<store>/shots/<identifier>.png`.
+- **Remote mode**: `shotStorage` is an `AtlasShotStorage`. The PNG files live
+  only in the remote storage, and the snapshots name the identifiers.
+  `capture` puts each new screenshot into the storage before it writes the
+  snapshot. A failed upload fails that variant and keeps its previous
+  snapshot.
+
+The atlas reads a screenshot with a public `GET` of the link template. A 2xx or
+3xx code means the storage holds it. The code 404 means it does not. Another
+code stops the command. The commands keep the screenshots in the cache folder
+`shots/` under the build folder. `--shots-cache <folder>` names another cache
+folder.
+
+```bash
+ATLAS migrate-shots
+ATLAS upload-shots
+ATLAS delete-shots <id>...
+```
+
+- `migrate-shots` renames each file of the shots folder of the store to the
+  SHA-256 of its bytes and rewrites the `shot` fields of the snapshots. With a
+  remote storage, it also puts the files into the storage.
+- `upload-shots` puts into the storage each screenshot file of the shots folder
+  and of the cache folder that the storage does not hold.
+- `delete-shots` removes the named screenshots from the storage. It removes
+  nothing when a file of the store repository names one of them.
 
 ## 7. Publish
 

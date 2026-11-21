@@ -169,7 +169,7 @@ final class FakeAtlasProject implements AtlasProject {
   final List<AtlasTable> tablesToReturn = [];
   final Map<String, Map<String, String>> descriptions = {};
   final Map<String, String> designLinks = {};
-  AtlasShotPublisher? publisher;
+  AtlasShotStorage? storage;
   final List<String> commandPrefix;
   final AtlasStaleSettings? staleSettingsOverride;
   final AtlasPaths? pathsOverride;
@@ -259,7 +259,7 @@ final class FakeAtlasProject implements AtlasProject {
   }
 
   @override
-  AtlasShotPublisher? get shotPublisher => publisher;
+  AtlasShotStorage? get shotStorage => storage;
 
   @override
   bool isCataloguedAnalytics(Map<String, Object?> record) {

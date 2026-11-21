@@ -3,7 +3,7 @@ import 'package:flutter_test/flutter_test.dart';
 
 import '../tool/example_atlas_project.dart';
 
-/// The four checks of `fvm dart run tool/atlas.dart check`. A stale snapshot
+/// The five checks of `fvm dart run tool/atlas.dart check`. A stale snapshot
 /// warns; only a failure breaks the run.
 void main() {
   final checks = AtlasChecks(const ExampleAtlasProject());
@@ -30,5 +30,11 @@ void main() {
 
     expect(outcome.lines, isEmpty);
     expect(outcome.isFailure, isFalse);
+  });
+  test('Every snapshot names its screenshots by their SHA-256', () async {
+    final outcome = await checks.shots();
+
+    expect(outcome.lines, isEmpty);
+    expect(outcome.status, AtlasCheckStatus.passed);
   });
 }

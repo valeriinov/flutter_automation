@@ -53,7 +53,7 @@ Read `references/atlas-project-stub.md`. It holds the stubs of the files below.
      smallest values that compile.
    - The class overrides no member that has a default: the tables, the
      translations, the screen descriptions, the design links, the reports,
-     the shot publisher and the analytics check. It overrides one only when
+     the shot storage and the analytics check. It overrides one only when
      the project has that data.
    - `tables(AtlasStoreReader store)` and `writeReports(AtlasStoreReader
      store)` read the atlas through the reader. A table of the requests of the

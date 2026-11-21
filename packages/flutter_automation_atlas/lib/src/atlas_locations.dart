@@ -14,9 +14,11 @@ import 'package:flutter_automation_atlas/src/atlas_source_hash.dart';
 /// Where the atlas reads its flows and writes its snapshots and its page,
 /// every path resolved against one root.
 ///
-/// The snapshots, the declarations, the screenshots and the page live in the
-/// store folder. Everything else that the atlas builds lives under the build
-/// folder of the project. The atlas reads each source file from the root.
+/// The snapshots, the declarations and the page live in the store folder.
+/// The screenshots live in its shots folder, or in the remote storage of
+/// [AtlasProject.shotStorage] with a cache under the build folder. Everything
+/// else that the atlas builds lives under the build folder of the project.
+/// The atlas reads each source file from the root.
 ///
 /// Each reader and writer of the atlas takes an instance, so a test points
 /// them at a temporary directory instead of the repository.
@@ -33,6 +35,7 @@ final class AtlasLocations {
   static const _dataDirectory = 'data';
   static const _declarationsDirectory = 'declarations';
   static const _shotCacheDirectory = 'shot_cache';
+  static const _remoteShotsDirectory = 'shots';
   static const _headlessDirectory = 'headless';
   static const _headlessBaselineDirectory = 'headless_baseline';
   static const _baselineWorktreesDirectory = 'baseline_worktrees';
@@ -51,10 +54,22 @@ final class AtlasLocations {
   /// `null` when the output folder of the project applies.
   final String? _store;
 
+  /// The cache of the screenshots of a remote storage, absolute or relative
+  /// to the current directory. It is `null` when the folder under the build
+  /// folder applies.
+  final String? _shotsCache;
+
   /// The [rootPath] parameter names the repository the commands read. The
-  /// [store] parameter replaces the output folder of the project.
-  const AtlasLocations(this.rootPath, this.project, {String? store})
-    : _store = store;
+  /// [store] parameter replaces the output folder of the project. The
+  /// [shotsCache] parameter replaces the cache folder of the screenshots of a
+  /// remote storage.
+  const AtlasLocations(
+    this.rootPath,
+    this.project, {
+    String? store,
+    String? shotsCache,
+  }) : _store = store,
+       _shotsCache = shotsCache;
 
   /// The `flutter_automation:` section of the `pubspec.yaml` under the root,
   /// read once per instance.
@@ -106,9 +121,28 @@ final class AtlasLocations {
   /// The directory that holds one snapshot per captured variant and locale.
   String get dataPath => p.join(storePath, _dataDirectory);
 
-  /// The directory that holds the screenshots, each named by its content
-  /// hash.
-  String get shotsPath => p.join(storePath, shotsDirectory);
+  /// Whether a remote storage keeps the screenshots, not the store folder.
+  bool get hasShotStorage => project.shotStorage != null;
+
+  /// The shots folder of the store. It holds the screenshots while no remote
+  /// storage keeps them.
+  String get storeShotsPath => p.join(storePath, shotsDirectory);
+
+  /// The cache of the screenshots of a remote storage: the frames a capture
+  /// shot and the files a command read from the storage. It is under the
+  /// build folder, outside the repository.
+  String get shotsCachePath {
+    final cache = _shotsCache;
+
+    return cache == null
+        ? resolve(p.join(project.paths.build, _remoteShotsDirectory))
+        : p.absolute(cache);
+  }
+
+  /// The directory that the commands read and write the screenshot files in,
+  /// each named by its identifier: [shotsCachePath] with a remote storage,
+  /// else [storeShotsPath].
+  String get shotsPath => hasShotStorage ? shotsCachePath : storeShotsPath;
 
   /// The directory that holds the declarations of each manifest file. The
   /// source hash of the file content that the atlas read names each record.
@@ -291,9 +325,15 @@ final class AtlasLocations {
     return localeExtension.substring(1);
   }
 
-  /// The screenshot file named by the [shot] content hash.
+  /// The screenshot file named by the [shot] identifier, in [shotsPath].
   String resolveShotPath(String shot) {
     return p.join(shotsPath, '$shot$_pngExtension');
+  }
+
+  /// The screenshot file named by the [shot] identifier, in
+  /// [storeShotsPath].
+  String resolveStoreShotPath(String shot) {
+    return p.join(storeShotsPath, '$shot$_pngExtension');
   }
 
   /// The declarations record of the manifest file content whose source hash

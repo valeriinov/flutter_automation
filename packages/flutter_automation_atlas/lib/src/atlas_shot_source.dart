@@ -14,7 +14,8 @@ enum AtlasShotSource {
   /// one http(s) origin.
   sheets,
 
-  /// The links an `AtlasShotPublisher` returns, one per screenshot hash.
+  /// The link template of the `AtlasShotStorage` of the project; the page
+  /// puts the hash of each screenshot into it.
   urls;
 
   /// The source named [name], or `null` when no source has that name.

@@ -455,8 +455,10 @@ void _atlasRun_should_printTheChecksAndFailTheExitCodeOnAFailure() {
         'note',
         'ok',
         'skip',
+        'ok',
       ]);
       expect(lines.first, startsWith('FAIL  page'));
+      expect(lines.last, startsWith('ok    shots'));
       expect(exitCode, 1);
 
       exitCode = 0;

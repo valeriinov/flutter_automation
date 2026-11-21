@@ -3,18 +3,19 @@ import 'dart:io';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:flutter_automation_atlas/src/atlas_exception.dart';
-import 'package:flutter_automation_atlas/src/atlas_shot.dart';
-import 'package:flutter_automation_atlas/src/atlas_shot_publisher.dart';
 import 'package:flutter_automation_atlas/src/atlas_snapshot.dart';
 import 'package:flutter_automation_atlas/src/atlas_snapshot_store.dart';
 import 'package:flutter_automation_atlas/src/run_atlas.dart';
 
 import 'test_utils/create_atlas_snapshot.dart';
+import 'test_utils/fake_atlas_shot_storage.dart';
 import 'test_utils/hash_shot_encoder.dart';
 import 'test_utils/test_atlas_root.dart';
 
-const _stageShot = '0123456789ab';
-const _endShot = 'ba9876543210';
+const _stageShot =
+    '0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef';
+const _endShot =
+    'fedcba9876543210fedcba9876543210fedcba9876543210fedcba9876543210';
 const _tapStep = {
   'action': 'tap',
   'label': 'open',
@@ -59,7 +60,6 @@ void main() {
     _atlasRun_should_bundleUrlsPageWithoutInlineImages();
     _atlasRun_should_bundleSheetsIntoShotsFilesWithinTheLimit();
     _atlasRun_should_stopSheetsBundleOverTheImageLimitWithItsCount();
-    _atlasRun_should_stopBundleWithTheTextOfAFailedPublish();
     _atlasRun_should_failBundleOverTheLimitWithItsSize();
     _atlasRun_should_nameTheMissingLimitKeyOnBundle();
     _atlasRun_should_rejectBundleWithoutEditionOrShots();
@@ -119,9 +119,9 @@ void _atlasRun_should_renderTheEditionTheOptionNames() {
 void _atlasRun_should_bundleUrlsPageWithoutInlineImages() {
   test('AtlasRun should bundle urls page without inline images', () async {
     await TestAtlasRoot.run((root) async {
-      _writeStore(root);
+      final storage = await startFakeAtlasShotStorage(root);
 
-      root.project.publisher = _UrlPublisher();
+      _writeStore(root);
 
       await _runIn(root, [
         'bundle',
@@ -137,8 +137,9 @@ void _atlasRun_should_bundleUrlsPageWithoutInlineImages() {
         root.paths.resolveBundlePagePath('full'),
       ).readAsStringSync();
 
-      expect(bundle, contains('https://shots.example/$_stageShot.png'));
+      expect(bundle, contains('"shotUrlTemplate":"${storage.urlTemplate}"'));
       expect(bundle, isNot(contains('data:image')));
+      expect(storage.uploads, isEmpty);
     });
   });
 }
@@ -194,35 +195,6 @@ void _atlasRun_should_stopSheetsBundleOverTheImageLimitWithItsCount() {
               contains('holds 2 images, over the 1 image limit'),
             ),
           ),
-        );
-      });
-    },
-  );
-}
-
-void _atlasRun_should_stopBundleWithTheTextOfAFailedPublish() {
-  test(
-    'AtlasRun should stop bundle with the text of a failed publish',
-    () async {
-      await TestAtlasRoot.run((root) async {
-        _writeStore(root);
-
-        root.project.publisher = _FailingPublisher();
-
-        await expectLater(
-          _runIn(root, ['bundle', '--edition', 'full', '--shots', 'urls']),
-          throwsA(
-            isA<AtlasException>().having(
-              (error) => error.message,
-              'message',
-              contains('quota exceeded'),
-            ),
-          ),
-        );
-
-        expect(
-          File(root.paths.resolveBundlePagePath('full')).existsSync(),
-          isFalse,
         );
       });
     },
@@ -383,21 +355,4 @@ void _writeStore(
       end: const AtlasEnd(screen: null, designScreen: null, shot: _endShot),
     ),
   );
-}
-
-final class _UrlPublisher implements AtlasShotPublisher {
-  @override
-  Future<Map<String, Uri>> publish(List<AtlasShot> shots) async {
-    return {
-      for (final shot in shots)
-        shot.hash: Uri.parse('https://shots.example/${shot.hash}.png'),
-    };
-  }
-}
-
-final class _FailingPublisher implements AtlasShotPublisher {
-  @override
-  Future<Map<String, Uri>> publish(List<AtlasShot> shots) {
-    throw StateError('quota exceeded');
-  }
 }

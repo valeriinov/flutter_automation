@@ -9,6 +9,7 @@ import 'package:flutter_automation_atlas/src/atlas_headless_hashes.dart';
 import 'package:flutter_automation_atlas/src/atlas_headless_record.dart';
 import 'package:flutter_automation_atlas/src/atlas_journal_order.dart';
 import 'package:flutter_automation_atlas/src/atlas_mock_replay.dart';
+import 'package:flutter_automation_atlas/src/atlas_remote_shots.dart';
 import 'package:flutter_automation_atlas/src/atlas_shot_store.dart';
 import 'package:flutter_automation_atlas/src/atlas_snapshot.dart';
 import 'package:flutter_automation_atlas/src/atlas_snapshot_builder.dart';
@@ -45,6 +46,12 @@ typedef _MockRejection = ({
 /// directory, and what it changed printed to stdout. A walk the runner stopped
 /// is printed and counted as failed, so the variants after it are walked all
 /// the same.
+///
+/// With a remote shot storage (`AtlasProject.shotStorage`), the screenshots
+/// of a walk go to the cache folder. Just before a snapshot is written, the
+/// capture puts into the storage each shot of the snapshot whose file the
+/// cache holds and that the storage did not confirm in this run. A failed
+/// upload fails the variant, and its previous snapshot stays.
 ///
 /// A variant named with stages walks only up to the last of them, shoots only
 /// them and places them onto its stored snapshot, its stages `stale` found
@@ -83,6 +90,7 @@ final class AtlasCapture {
   final String _locale;
   final AtlasMockReplay _mockReplay;
   final AtlasHeadlessPass _headlessPass;
+  final AtlasRemoteShots? _remoteShots;
 
   /// The [mockReplay] parameter replays the answers of the mock a merged
   /// snapshot recorded, under `flutter test` when absent; the [headlessPass]
@@ -100,7 +108,8 @@ final class AtlasCapture {
              _paths.project.mockReplayEntry,
              _paths.project.launchSettings,
            ),
-       _headlessPass = headlessPass ?? AtlasHeadless(_paths).run;
+       _headlessPass = headlessPass ?? AtlasHeadless(_paths).run,
+       _remoteShots = AtlasRemoteShots.tryCreate(_paths);
 
   /// Captures [variants] and returns whether every walk passed.
   ///
@@ -278,6 +287,8 @@ final class AtlasCapture {
           merged ?? await _walkWhole(variant, device: device, walker: walker);
       final snapshot = _stamp(walkedSnapshot, sourceStamp);
       final isMerged = merged != null && !scope.isEveryStage;
+
+      await _remoteShots?.uploadUnconfirmed(snapshot.shots);
 
       store.write(snapshot);
       _printDiff(
@@ -465,7 +476,7 @@ final class AtlasCapture {
         stepHashes: variant.stageStepHashes,
       );
 
-      return AtlasShotStore(_paths).store(
+      return await AtlasShotStore(_paths, remoteShots: _remoteShots).store(
         captured: AtlasJournalOrder.keepPreviousOrder(
           captured: captured,
           previous: previous,

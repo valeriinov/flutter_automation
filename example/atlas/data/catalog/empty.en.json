@@ -32,7 +32,7 @@
       },
       "screen": "login",
       "designScreen": null,
-      "shot": "bf2eb10d2082",
+      "shot": "93048c84de2489243c229e1b27d421fd09da438374340c55c8f221af03028d56",
       "journal": [
         {
           "kind": "request",
@@ -198,7 +198,7 @@
   "end": {
     "screen": "catalog",
     "designScreen": null,
-    "shot": "c93f83f0b89f",
+    "shot": "9603f93751ec7df8fa33e80611c9203b724a9cac81f0aef68de4b31d4ca198aa",
     "texts": [
       "The catalog is empty",
       "",

@@ -133,6 +133,11 @@ final class AtlasSnapshot {
     return candidate;
   }
 
+  /// The screenshot identifiers that the stages and the end name.
+  Iterable<String> get shots {
+    return [...stages.map((stage) => stage.shot), end.shot].nonNulls;
+  }
+
   /// The same snapshot holding [stages] and [end] instead.
   AtlasSnapshot copyWithStages({
     required List<AtlasStage> stages,

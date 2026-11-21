@@ -4,11 +4,14 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:image/image.dart' as image;
 import 'package:path/path.dart' as p;
 
-import 'package:flutter_automation_atlas/src/atlas_content_hash.dart';
+import 'package:flutter_automation_atlas/src/atlas_exception.dart';
+import 'package:flutter_automation_atlas/src/atlas_shot_id.dart';
 import 'package:flutter_automation_atlas/src/atlas_shot_store.dart';
 import 'package:flutter_automation_atlas/src/atlas_snapshot.dart';
 
 import 'test_utils/create_atlas_snapshot.dart';
+import 'test_utils/fake_atlas_shot_storage.dart';
+import 'test_utils/recording_stdout.dart';
 import 'test_utils/test_atlas_root.dart';
 
 const _frameSize = 100;
@@ -32,6 +35,10 @@ void main() {
     _atlasShotStore_should_takeMainVariantShotOfTheSameSteps();
     _atlasShotStore_should_replaceMainVariantShotWhenOneCellChanged();
     _atlasShotStore_should_replaceShotWhereMainVariantStepsDiffer();
+    _atlasShotStore_should_keepPreviousShotReadFromTheStorage();
+    _atlasShotStore_should_replaceShotTheStorageDoesNotHoldWithAWarning();
+    _atlasShotStore_should_stopOnAnotherAnswerOfTheStorageWithItsCode();
+    _atlasShotStore_should_stopOnOtherBytesThanThePreviousShotNames();
   });
 }
 
@@ -68,7 +75,7 @@ void _atlasShotStore_should_replaceShotWhenOneCellChanged() {
         changedCells: 1,
         pixelsPerCell: _changedCellPixels,
       );
-      final capturedShot = AtlasContentHash.hashBytes(capturedFrame);
+      final capturedShot = AtlasShotId.hashBytes(capturedFrame);
 
       final stored = await _store(
         root,
@@ -103,10 +110,7 @@ void _atlasShotStore_should_replaceShotOfAnotherAction() {
         ),
       );
 
-      expect(
-        stored.stages.single.shot,
-        AtlasContentHash.hashBytes(capturedFrame),
-      );
+      expect(stored.stages.single.shot, AtlasShotId.hashBytes(capturedFrame));
     });
   });
 }
@@ -123,10 +127,7 @@ void _atlasShotStore_should_replaceShotOfAnotherSize() {
         previous: _createSnapshot(label: _label, shot: previousShot),
       );
 
-      expect(
-        stored.stages.single.shot,
-        AtlasContentHash.hashBytes(capturedFrame),
-      );
+      expect(stored.stages.single.shot, AtlasShotId.hashBytes(capturedFrame));
     });
   });
 }
@@ -172,10 +173,7 @@ void _atlasShotStore_should_replaceMainVariantShotWhenOneCellChanged() {
           mainVariantShots: [mainShot],
         );
 
-        expect(
-          stored.stages.single.shot,
-          AtlasContentHash.hashBytes(capturedFrame),
-        );
+        expect(stored.stages.single.shot, AtlasShotId.hashBytes(capturedFrame));
       });
     },
   );
@@ -200,18 +198,151 @@ void _atlasShotStore_should_replaceShotWhereMainVariantStepsDiffer() {
           mainVariantShots: [null],
         );
 
-        expect(
-          stored.stages.single.shot,
-          AtlasContentHash.hashBytes(capturedFrame),
-        );
+        expect(stored.stages.single.shot, AtlasShotId.hashBytes(capturedFrame));
       });
     },
   );
 }
 
+void _atlasShotStore_should_keepPreviousShotReadFromTheStorage() {
+  test(
+    'AtlasShotStore should keep previous shot read from the storage',
+    () async {
+      await TestAtlasRoot.run((root) async {
+        final storage = await startFakeAtlasShotStorage(root);
+
+        final previousShot = _storePreviousShot(storage);
+
+        storage.isRedirecting = true;
+
+        final stored = await _store(
+          root,
+          capturedFrame: _encodeFrame(
+            changedCells: _noisyCellCount,
+            pixelsPerCell: _noisyCellPixels,
+          ),
+          previous: _createSnapshot(label: _label, shot: previousShot),
+        );
+
+        expect(stored.stages.single.shot, previousShot);
+        expect(storage.requestedShots, [previousShot]);
+        expect(
+          File(root.paths.resolveShotPath(previousShot)).readAsBytesSync(),
+          storage.files[previousShot],
+        );
+        expect(Directory(root.paths.storeShotsPath).existsSync(), isFalse);
+      });
+    },
+  );
+}
+
+void _atlasShotStore_should_replaceShotTheStorageDoesNotHoldWithAWarning() {
+  test('AtlasShotStore should replace shot the storage does not hold with a '
+      'warning', () async {
+    await TestAtlasRoot.run((root) async {
+      await startFakeAtlasShotStorage(root);
+
+      final previousShot = AtlasShotId.hashBytes(_encodeFrame());
+      final capturedFrame = _encodeFrame(
+        changedCells: _noisyCellCount,
+        pixelsPerCell: _noisyCellPixels,
+      );
+      final warnings = <String>[];
+
+      final stored = await IOOverrides.runZoned(
+        () => _store(
+          root,
+          capturedFrame: capturedFrame,
+          previous: _createSnapshot(label: _label, shot: previousShot),
+        ),
+        stderr: () => RecordingStdout(warnings),
+      );
+
+      expect(stored.stages.single.shot, AtlasShotId.hashBytes(capturedFrame));
+      expect(warnings, contains(contains(previousShot)));
+    });
+  });
+}
+
+void _atlasShotStore_should_stopOnAnotherAnswerOfTheStorageWithItsCode() {
+  test('AtlasShotStore should stop on another answer of the storage with '
+      'its code', () async {
+    await TestAtlasRoot.run((root) async {
+      final storage = await startFakeAtlasShotStorage(root);
+
+      final previousShot = _storePreviousShot(storage);
+
+      storage.answeredStatus = HttpStatus.serviceUnavailable;
+
+      await expectLater(
+        _store(
+          root,
+          capturedFrame: _encodeFrame(
+            changedCells: _noisyCellCount,
+            pixelsPerCell: _noisyCellPixels,
+          ),
+          previous: _createSnapshot(label: _label, shot: previousShot),
+        ),
+        throwsA(
+          isA<AtlasException>().having(
+            (error) => error.message,
+            'message',
+            contains('${HttpStatus.serviceUnavailable}'),
+          ),
+        ),
+      );
+    });
+  });
+}
+
+void _atlasShotStore_should_stopOnOtherBytesThanThePreviousShotNames() {
+  test('AtlasShotStore should stop on other bytes than the previous shot '
+      'names', () async {
+    await TestAtlasRoot.run((root) async {
+      final storage = await startFakeAtlasShotStorage(root);
+
+      final previousShot = _storePreviousShot(storage);
+
+      storage.files[previousShot] = const [1, 2, 3];
+
+      await expectLater(
+        _store(
+          root,
+          capturedFrame: _encodeFrame(
+            changedCells: _noisyCellCount,
+            pixelsPerCell: _noisyCellPixels,
+          ),
+          previous: _createSnapshot(label: _label, shot: previousShot),
+        ),
+        throwsA(
+          isA<AtlasException>().having(
+            (error) => error.message,
+            'message',
+            contains(previousShot),
+          ),
+        ),
+      );
+
+      expect(
+        File(root.paths.resolveShotPath(previousShot)).existsSync(),
+        isFalse,
+      );
+    });
+  });
+}
+
+String _storePreviousShot(FakeAtlasShotStorage storage) {
+  final bytes = _encodeFrame();
+  final shot = AtlasShotId.hashBytes(bytes);
+
+  storage.files[shot] = bytes;
+
+  return shot;
+}
+
 String _writePreviousShot(TestAtlasRoot root) {
   final bytes = _encodeFrame();
-  final shot = AtlasContentHash.hashBytes(bytes);
+  final shot = AtlasShotId.hashBytes(bytes);
 
   root.writeShot(shot, bytes);
 

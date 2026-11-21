@@ -17,6 +17,7 @@ import 'package:flutter_automation_atlas/src/atlas_stale_check.dart';
 import 'test_utils/add_test_headless_hashes.dart';
 import 'test_utils/create_atlas_snapshot.dart';
 import 'test_utils/fake_atlas_project.dart';
+import 'test_utils/fake_atlas_shot_storage.dart';
 import 'test_utils/read_test_package_config.dart';
 import 'test_utils/recording_stdout.dart';
 import 'test_utils/test_atlas_root.dart';
@@ -29,6 +30,8 @@ const _stoppedVariant = 'shopFromExistingItem';
 const _walkedVariant = 'shopFromSearch';
 const _shotFileName = 'shop_flow_shot_0.png';
 const _frameSize = 16;
+const _frameCellSize = 8;
+const _lastFrameCell = 3;
 const _failedLoadScenario = {
   'cart': {'failedLoadCount': 1},
 };
@@ -114,6 +117,9 @@ void main() {
     _atlasCapture_should_dropHeadlessHashesOfAnotherRenderer();
     _atlasCapture_should_walkNoHeadlessPassInAnotherLocale();
     _atlasCapture_should_walkWholeWhenTheMockAnswersAMergeOtherwise();
+    _atlasCapture_should_keepPreviousSnapshotWhenTheShotUploadFails();
+    _atlasCapture_should_uploadShotOfAFailedUploadWithTheNextVariant();
+    _atlasCapture_should_uploadNoShotThatAMergedSnapshotKeeps();
   });
 }
 
@@ -838,6 +844,162 @@ void _atlasCapture_should_walkWholeWhenTheMockAnswersAMergeOtherwise() {
       expect(passedVariants, ['$_flow $_walkedVariant']);
     });
   });
+}
+
+void _atlasCapture_should_keepPreviousSnapshotWhenTheShotUploadFails() {
+  test(
+    'AtlasCapture should keep previous snapshot when the shot upload fails',
+    () async {
+      await TestAtlasRoot.run((root) async {
+        final storage = await startFakeAtlasShotStorage(root);
+
+        _writeFlow(root);
+        root.writeFlutterConfig();
+
+        await _capture(root, _shootFrame(const [0]));
+
+        final previous = _readShot(root, _walkedVariant);
+
+        storage.uploadFailures.addAll(const ['quota', 'quota']);
+
+        final isOk = await _capture(root, _shootFrame(const [1]));
+
+        expect(isOk, isFalse);
+        expect(previous, isNotNull);
+        expect(_readShot(root, _walkedVariant), previous);
+        expect(_readShot(root, _stoppedVariant), previous);
+      });
+    },
+  );
+}
+
+void _atlasCapture_should_uploadShotOfAFailedUploadWithTheNextVariant() {
+  test('AtlasCapture should upload shot of a failed upload with the next '
+      'variant', () async {
+    await TestAtlasRoot.run((root) async {
+      final storage = await startFakeAtlasShotStorage(root);
+
+      _writeFlow(root);
+      root.writeFlutterConfig();
+      storage.uploadFailures.add('quota');
+
+      final isOk = await _capture(root, _shootFrame(const [0]));
+
+      final shot = _readShot(root, _walkedVariant);
+
+      expect(isOk, isFalse);
+      expect(_readShot(root, _stoppedVariant), isNull);
+      expect(shot, isNotNull);
+      expect(storage.uploads, [
+        [shot],
+      ]);
+    });
+  });
+}
+
+void _atlasCapture_should_uploadNoShotThatAMergedSnapshotKeeps() {
+  test(
+    'AtlasCapture should upload no shot that a merged snapshot keeps',
+    () async {
+      await TestAtlasRoot.run((root) async {
+        final storage = await startFakeAtlasShotStorage(root);
+
+        _writeStagedFlow(root);
+        root.writeFlutterConfig();
+        _writeStagedSources(root);
+
+        await _captureStaged(root, _shootStagedFrames(const [0, 1, 2]));
+
+        final keptShot = _readStaged(root)?.stages.firstOrNull?.shot;
+
+        Directory(root.paths.shotsCachePath).deleteSync(recursive: true);
+        storage.uploads.clear();
+        root.writeSource(
+          _secondScreenPath,
+          'class SecondScreen { int a = 0; }',
+        );
+
+        final staleness = await _checkStaged(root);
+        final isOk = await _captureStaged(
+          root,
+          _shootStagedFrames(const [1, 2], isLastCellWhite: true),
+          stages: staleness.stages,
+        );
+
+        final merged = _readStaged(root);
+
+        expect(isOk, isTrue);
+        expect(keptShot, isNotNull);
+        expect(merged?.stages.firstOrNull?.shot, keptShot);
+        expect(storage.uploads.single.toSet(), {
+          merged?.stages[1].shot,
+          merged?.stages[2].shot,
+        });
+        expect(storage.requestedShots, isNot(contains(keptShot)));
+      });
+    },
+  );
+}
+
+String? _readShot(TestAtlasRoot root, String variant) {
+  return AtlasSnapshotStore(
+    root.paths,
+  ).tryRead(flow: _flow, variant: variant, locale: _uk)?.stages.single.shot;
+}
+
+_Walk _shootFrame(List<int> whiteCells) {
+  return (variant, _, captureDirectory) async {
+    _writeFrame(captureDirectory, _shotFileName, whiteCells);
+
+    return _buildReport(variant.name, screenshot: _shotFileName);
+  };
+}
+
+// Shoots the [stages] of the staged variant, each as its own frame: the cell
+// of the stage index is white, and the last cell when [isLastCellWhite].
+_Walk _shootStagedFrames(List<int> stages, {bool isLastCellWhite = false}) {
+  return (_, _, captureDirectory) async {
+    final report = _buildStagedReport();
+    final steps = (report['steps'] as List<Object?>)
+        .cast<Map<String, Object?>>();
+
+    for (final stage in stages) {
+      final fileName = 'stage_$stage.png';
+
+      _writeFrame(captureDirectory, fileName, [
+        stage,
+        if (isLastCellWhite) _lastFrameCell,
+      ]);
+
+      steps[stage]['screenshot'] = fileName;
+    }
+
+    return report;
+  };
+}
+
+void _writeFrame(
+  Directory captureDirectory,
+  String fileName,
+  List<int> whiteCells,
+) {
+  final frame = image.Image(width: _frameSize, height: _frameSize);
+  final cellsPerRow = _frameSize ~/ _frameCellSize;
+
+  for (final cell in whiteCells) {
+    image.fillRect(
+      frame,
+      x1: cell % cellsPerRow * _frameCellSize,
+      y1: cell ~/ cellsPerRow * _frameCellSize,
+      x2: (cell % cellsPerRow + 1) * _frameCellSize - 1,
+      y2: (cell ~/ cellsPerRow + 1) * _frameCellSize - 1,
+      color: image.ColorRgb8(255, 255, 255),
+    );
+  }
+
+  File(
+    p.join(captureDirectory.path, fileName),
+  ).writeAsBytesSync(image.encodePng(frame));
 }
 
 Future<({String? mainShot, String? walkedShot})> _captureShotsOfBothVariants(

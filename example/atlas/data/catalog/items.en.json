@@ -33,7 +33,7 @@
       },
       "screen": "login",
       "designScreen": null,
-      "shot": "bf2eb10d2082",
+      "shot": "93048c84de2489243c229e1b27d421fd09da438374340c55c8f221af03028d56",
       "journal": [
         {
           "kind": "request",
@@ -220,7 +220,7 @@
   "end": {
     "screen": "catalog",
     "designScreen": null,
-    "shot": "90059f1f8dbc",
+    "shot": "801846ff65fe4ffa27334817729e36dc58bc4600068a34a9def50b7a031cc0bc",
     "texts": [
       "Item 1",
       "Item 2",

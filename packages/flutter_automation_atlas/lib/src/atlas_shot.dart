@@ -2,9 +2,9 @@ import 'dart:typed_data';
 
 /// {@category Utils}
 ///
-/// One screenshot a page shows, named by its content hash.
+/// One screenshot of the atlas, named by its `AtlasShotId`.
 final class AtlasShot {
-  /// The content hash that names the screenshot in a snapshot.
+  /// The identifier that names the screenshot in a snapshot.
   final String hash;
 
   /// The bytes of the image file.

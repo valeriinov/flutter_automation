@@ -6,14 +6,20 @@ import 'package:image/image.dart' as image;
 import 'package:path/path.dart' as p;
 
 import 'package:flutter_automation_atlas/src/atlas_snapshot.dart';
-import 'package:flutter_automation_atlas/src/atlas_content_hash.dart';
 import 'package:flutter_automation_atlas/src/atlas_exception.dart';
 import 'package:flutter_automation_atlas/src/atlas_locations.dart';
+import 'package:flutter_automation_atlas/src/atlas_remote_shots.dart';
+import 'package:flutter_automation_atlas/src/atlas_shot_id.dart';
 
 /// {@category Utils}
 ///
-/// Moves the screenshots of a capture into the shots directory, each named by
-/// its content hash.
+/// Moves the screenshots of a capture into the shots directory
+/// ([AtlasLocations.shotsPath]), each named by its [AtlasShotId].
+///
+/// With a remote storage, the shots directory is the cache folder. A previous
+/// frame that the cache does not hold comes from the storage. A previous
+/// frame that the storage does not hold either counts as another frame, with
+/// a warning.
 ///
 /// A frame of the same action as the previous snapshot keeps the previous hash
 /// while no cell of the frame changed, so capturing an unchanged variant again
@@ -30,8 +36,13 @@ final class AtlasShotStore {
   static const _channelTolerance = 16;
 
   final AtlasLocations _paths;
+  final AtlasRemoteShots? _remoteShots;
 
-  const AtlasShotStore(this._paths);
+  /// The [remoteShots] parameter reads a previous frame from the remote
+  /// storage. It is the storage of the project by default, and `null` when
+  /// the store folder keeps the screenshots.
+  AtlasShotStore(this._paths, {AtlasRemoteShots? remoteShots})
+    : _remoteShots = remoteShots ?? AtlasRemoteShots.tryCreate(_paths);
 
   /// Stores the screenshots [captured] names, and returns it naming their
   /// content hashes instead.
@@ -41,17 +52,17 @@ final class AtlasShotStore {
   /// the variant held before the capture, and the [mainVariantShots]
   /// parameter holds, by stage index, the shot of the main variant's stage
   /// walking the same steps, `null` where the steps differ.
-  AtlasSnapshot store({
+  Future<AtlasSnapshot> store({
     required AtlasSnapshot captured,
     required AtlasSnapshot? previous,
     required String captureDirectory,
     List<String?> mainVariantShots = const [],
-  }) {
+  }) async {
     return captured.copyWithStages(
       stages: [
         for (final (index, stage) in captured.stages.indexed)
           stage.copyWithShot(
-            _storeShot(
+            await _storeShot(
               captureDirectory: captureDirectory,
               fileName: stage.shot,
               previousShot:
@@ -61,7 +72,7 @@ final class AtlasShotStore {
           ),
       ],
       end: captured.end.copyWithShot(
-        _storeShot(
+        await _storeShot(
           captureDirectory: captureDirectory,
           fileName: captured.end.shot,
           previousShot: previous?.end.shot,
@@ -70,19 +81,19 @@ final class AtlasShotStore {
     );
   }
 
-  String? _storeShot({
+  Future<String?> _storeShot({
     required String captureDirectory,
     required String? fileName,
     required String? previousShot,
-  }) {
+  }) async {
     if (fileName == null) {
       return null;
     }
 
     final bytes = _readCapturedFile(captureDirectory, fileName);
-    final shot = AtlasContentHash.hashBytes(bytes);
+    final shot = AtlasShotId.hashBytes(bytes);
 
-    if (_isSameAsPreviousShot(bytes, shot, previousShot)) {
+    if (await _isSameAsPreviousShot(bytes, shot, previousShot)) {
       return previousShot;
     }
 
@@ -109,18 +120,18 @@ final class AtlasShotStore {
     return file.readAsBytesSync();
   }
 
-  bool _isSameAsPreviousShot(
+  Future<bool> _isSameAsPreviousShot(
     Uint8List bytes,
     String shot,
     String? previousShot,
-  ) {
+  ) async {
     if (previousShot == null || previousShot == shot) {
       return false;
     }
 
     final previousFile = File(_paths.resolveShotPath(previousShot));
 
-    if (!previousFile.existsSync()) {
+    if (!previousFile.existsSync() && !await _tryDownload(previousShot)) {
       return false;
     }
 
@@ -128,6 +139,25 @@ final class AtlasShotStore {
       image.decodePng(bytes),
       image.decodePng(previousFile.readAsBytesSync()),
     );
+  }
+
+  Future<bool> _tryDownload(String previousShot) async {
+    final remoteShots = _remoteShots;
+
+    if (remoteShots == null) {
+      return false;
+    }
+
+    final isDownloaded = await remoteShots.tryDownload(previousShot);
+
+    if (!isDownloaded) {
+      stderr.writeln(
+        'The shot storage holds no previous shot $previousShot; the frame '
+        'counts as another frame.',
+      );
+    }
+
+    return isDownloaded;
   }
 
   bool _isSameFrame(image.Image? current, image.Image? previous) {

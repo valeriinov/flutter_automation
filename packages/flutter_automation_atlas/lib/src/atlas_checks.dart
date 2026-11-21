@@ -14,6 +14,9 @@ import 'package:flutter_automation_atlas/src/atlas_locations.dart';
 import 'package:flutter_automation_atlas/src/atlas_page_renderer.dart';
 import 'package:flutter_automation_atlas/src/atlas_project.dart';
 import 'package:flutter_automation_atlas/src/atlas_published_variants.dart';
+import 'package:flutter_automation_atlas/src/atlas_remote_shots.dart';
+import 'package:flutter_automation_atlas/src/atlas_shot_id.dart';
+import 'package:flutter_automation_atlas/src/atlas_snapshot_store.dart';
 import 'package:flutter_automation_atlas/src/atlas_stale_check.dart';
 
 /// {@category Utils}
@@ -115,7 +118,7 @@ final class AtlasCheckOutcome {
 ///
 /// The checks that the stored atlas of a project agrees with the project, for
 /// a gate that runs outside `runAtlas`, such as a documentation check. The
-/// `check` command of `runAtlas` runs the same four.
+/// `check` command of `runAtlas` runs the same five.
 ///
 /// Each check only reads files and does not depend on the others. A check
 /// that cannot read its sources ends `failed` with the cause. [snapshots]
@@ -128,15 +131,22 @@ final class AtlasChecks {
 
   /// The [rootPath] parameter names the repository the checks read. It is the
   /// current directory by default. The [store] parameter replaces the output
-  /// folder of the project. The [sourceLabel] parameter is the label that the
-  /// page footer shows; it is the `--source-label` of the `render` command
-  /// that wrote the page.
+  /// folder of the project. The [shotsCache] parameter replaces the cache
+  /// folder of the screenshots of a remote storage. The [sourceLabel]
+  /// parameter is the label that the page footer shows; it is the
+  /// `--source-label` of the `render` command that wrote the page.
   AtlasChecks(
     AtlasProject project, {
     String rootPath = '.',
     String? store,
+    String? shotsCache,
     String? sourceLabel,
-  }) : _paths = AtlasLocations(rootPath, project, store: store),
+  }) : _paths = AtlasLocations(
+         rootPath,
+         project,
+         store: store,
+         shotsCache: shotsCache,
+       ),
        _sourceLabel = sourceLabel;
 
   /// Holds the committed page against the snapshots, the flow files and the
@@ -190,6 +200,17 @@ final class AtlasChecks {
   /// show. The run skips the check when the project names no list.
   Future<AtlasCheckOutcome> localeKeyCoverage() {
     return _guard(() => _LocaleKeyCoverageCheck(_paths).run());
+  }
+
+  /// Holds the screenshot identifiers of each stored snapshot.
+  ///
+  /// An identifier that is not an [AtlasShotId] fails, with the
+  /// `migrate-shots` command. With a remote shot storage
+  /// ([AtlasProject.shotStorage]), an identifier that the storage does not
+  /// hold fails also. The check asks the storage with one public `GET` per
+  /// identifier.
+  Future<AtlasCheckOutcome> shots() {
+    return _guard(() => _ShotsCheck(_paths).run());
   }
 
   Future<AtlasCheckOutcome> _guard(
@@ -259,6 +280,36 @@ final class AtlasChecks {
     }
 
     return line.length <= maxLength ? line : '${line.substring(0, maxLength)}…';
+  }
+}
+
+final class _ShotsCheck {
+  final AtlasLocations _paths;
+
+  const _ShotsCheck(this._paths);
+
+  Future<AtlasCheckOutcome> run() async {
+    final shots = AtlasSnapshotStore(
+      _paths,
+    ).readEveryLocale().expand((snapshot) => snapshot.shots).toSet();
+    final malformed = shots.whereNot(AtlasShotId.isValid).toList();
+    final absent =
+        await AtlasRemoteShots.tryCreate(
+          _paths,
+        )?.findAbsent(shots.where(AtlasShotId.isValid)) ??
+        const <String>[];
+    final problems = [
+      for (final shot in malformed)
+        'A snapshot names the shot $shot, which is not a SHA-256 '
+            'identifier; run `migrate-shots`.',
+      for (final shot in absent)
+        'The shot storage holds no $shot; capture its variant again or run '
+            '`upload-shots`.',
+    ];
+
+    return problems.isEmpty
+        ? const AtlasCheckOutcome.passed()
+        : AtlasCheckOutcome.failed(problems);
   }
 }
 

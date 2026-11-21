@@ -1732,7 +1732,7 @@ function readAtlasPageData() {
     var shots = JSON.parse(document.getElementById('atlas-shots').textContent);
     parsed.shotSheets = shots.shotSheets;
     parsed.shotCells = shots.shotCells;
-    parsed.shotUrls = shots.shotUrls || {};
+    parsed.shotUrlTemplate = shots.shotUrlTemplate || '';
     return resolveBlobs(parsed, parsed.blobs || []);
   }).catch(function () { return empty; });
 
@@ -2246,7 +2246,7 @@ readAtlasPageData().then(function (data) {
     stats.appendChild(statItem(totals.flows || 0, 'statFlows'));
     stats.appendChild(statItem(totals.variants || 0, 'statVariants'));
     stats.appendChild(statItem(totals.stages || 0, 'statStages'));
-    stats.appendChild(statItem(totals.shots || 0, 'statShots', copyNode('small', null, 'shotsSize', totals.shotsBytes || 0)));
+    stats.appendChild(statItem(totals.shots || 0, 'statShots', totals.shotsBytes == null ? null : copyNode('small', null, 'shotsSize', totals.shotsBytes)));
   }
 
   /* ---------- graph model ---------- */
@@ -3138,7 +3138,7 @@ readAtlasPageData().then(function (data) {
   }
 
   function loadShotSource(hash) {
-    if (data.shotUrls && data.shotUrls[hash]) { return Promise.resolve(data.shotUrls[hash]); }
+    if (data.shotUrlTemplate) { return Promise.resolve(data.shotUrlTemplate.split('{shot}').join(encodeURIComponent(hash))); }
     var cell = data.shotCells && data.shotCells[hash];
     if (!cell) { return Promise.resolve('shots/' + encodeURIComponent(hash) + '.png'); }
     return cropShotSheet(cell[0]).then(function (sources) { return sources[hash]; });

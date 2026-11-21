@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:collection/collection.dart';
 import 'package:flutter_automation_runner/flutter_automation_runner.dart';
+import 'package:path/path.dart' as p;
 
 import 'package:flutter_automation_atlas/src/atlas_capture.dart';
 import 'package:flutter_automation_atlas/src/atlas_checks.dart';
@@ -17,7 +18,11 @@ import 'package:flutter_automation_atlas/src/atlas_manifest_normalization.dart';
 import 'package:flutter_automation_atlas/src/atlas_page_renderer.dart';
 import 'package:flutter_automation_atlas/src/atlas_project.dart';
 import 'package:flutter_automation_atlas/src/atlas_published_variants.dart';
+import 'package:flutter_automation_atlas/src/atlas_remote_shots.dart';
 import 'package:flutter_automation_atlas/src/atlas_shot_encoder.dart';
+import 'package:flutter_automation_atlas/src/atlas_shot_id.dart';
+import 'package:flutter_automation_atlas/src/atlas_shot_migration.dart';
+import 'package:flutter_automation_atlas/src/atlas_shot_references.dart';
 import 'package:flutter_automation_atlas/src/atlas_shot_source.dart';
 import 'package:flutter_automation_atlas/src/atlas_stale_check.dart';
 import 'package:flutter_automation_atlas/src/atlas_store_reader.dart';
@@ -92,6 +97,8 @@ import 'package:flutter_automation_atlas/src/atlas_store_reader.dart';
 ///   page reads its shots from `shots/<hash>.png` beside it. The command
 ///   removes the shots and the declarations that no stored snapshot names.
 ///   It writes the reports of the project ([AtlasProject.writeReports]).
+///   With a remote shot storage, the page reads its shots by the link
+///   template of the storage, and the command removes no shot.
 /// - `bundle --edition <name> --shots <source> [--locale <code|all>]` writes
 ///   the page of the edition as `index.html` in its own folder under the
 ///   build folder, one folder per edition and locale. The source is `files`,
@@ -101,7 +108,12 @@ import 'package:flutter_automation_atlas/src/atlas_store_reader.dart';
 ///   - `inline` embeds them as WebP sheets.
 ///   - `sheets` writes the WebP sheets as `shots/<sheet hash>.webp`. The hash
 ///     of the sheet bytes names each file.
-///   - `urls` takes their links from [AtlasProject.shotPublisher].
+///   - `urls` puts the link template of [AtlasProject.shotStorage] into the
+///     page, and puts nothing into the storage.
+///
+///   With a remote shot storage, the other three sources read the shots from
+///   the cache folder. They first read from the storage each shot that the
+///   cache does not hold.
 ///
 ///   `--locale` names the one series that the page shows. `all`, or no
 ///   option, shows all page locales in one file. The command prints the bytes
@@ -109,9 +121,8 @@ import 'package:flutter_automation_atlas/src/atlas_store_reader.dart';
 ///   images. The bundle stops with its size when the page passes the
 ///   `maxBundleBytes` limit or the images pass the `maxBundleImages` limit
 ///   of `flutter_automation: atlas:`. `maxBundleImages` counts the inline
-///   sheets, the sheet files or the shot files. The bundle also stops with
-///   the message of a publisher that fails.
-/// - `check` runs the four checks of [AtlasChecks]. It prints one line per
+///   sheets, the sheet files or the shot files.
+/// - `check` runs the five checks of [AtlasChecks]. It prints one line per
 ///   check, with the lines of each problem under it:
 ///   - `page` holds the committed page against its sources.
 ///   - `publishedVariants` holds the published variants list against the flow
@@ -120,8 +131,27 @@ import 'package:flutter_automation_atlas/src/atlas_store_reader.dart';
 ///     stale variant warns.
 ///   - `localeKeyCoverage` holds the translation keys against the frames and
 ///     the uncovered keys list.
+///   - `shots` holds the screenshot identifiers of the snapshots. It fails
+///     an identifier that is not 64 lowercase hex digits. It fails also an
+///     identifier that a remote shot storage does not hold.
 ///
 ///   The command exits with code 1 when a check fails.
+/// - `migrate-shots` renames each file of the shots folder of the store to
+///   the SHA-256 of its bytes. It rewrites only the `shot` fields of the
+///   snapshots ([AtlasShotMigration]). With a remote shot storage, it puts
+///   the files into the storage. It then asks the storage for each
+///   identifier.
+/// - `upload-shots` reads the screenshot files of the shots folder of the
+///   store and of the cache folder. It puts into the remote shot storage
+///   each file that the storage does not hold.
+/// - `delete-shots <id>...` removes the named screenshots from the remote
+///   shot storage. It removes nothing when a file of the repository of the
+///   store names one of them ([AtlasShotReferences]).
+///
+/// A project with a remote shot storage ([AtlasProject.shotStorage]) keeps no
+/// screenshot in the store folder. The commands read and write the files in
+/// the cache folder `shots/` under the build folder, and
+/// `--shots-cache <folder>` names another folder.
 ///
 /// `capture` and `stale` take `--locale <code>`. The default is the first
 /// locale of the project. The app runs in that locale, and its values come
@@ -159,6 +189,9 @@ final class AtlasRun {
   static const _renderCommand = 'render';
   static const _bundleCommand = 'bundle';
   static const _checkCommand = 'check';
+  static const _migrateShotsCommand = 'migrate-shots';
+  static const _uploadShotsCommand = 'upload-shots';
+  static const _deleteShotsCommand = 'delete-shots';
   static const _staleFlag = '--stale';
   static const _baselineFlag = '--baseline';
   static const _recordFlag = '--record';
@@ -171,6 +204,8 @@ final class AtlasRun {
   static const _snapshotOption = '--snapshot';
   static const _editionOption = '--edition';
   static const _shotsOption = '--shots';
+  static const _shotsCacheOption = '--shots-cache';
+  static const _pngExtension = '.png';
   static const _allLocales = 'all';
   static const _optionArgumentCount = 2;
   static const _failureExitCode = 1;
@@ -191,10 +226,14 @@ final class AtlasRun {
       '$_sourceCommitCommand $_snapshotOption <file> | '
       '$_renderCommand [$_editionOption <name>] | '
       '$_checkCommand | '
+      '$_migrateShotsCommand | '
+      '$_uploadShotsCommand | '
+      '$_deleteShotsCommand <id>... | '
       '$_bundleCommand $_editionOption <name> '
       '$_shotsOption <files|inline|sheets|urls> '
       '[$_localeOption <code|$_allLocales>] '
-      '[$_storeOption <folder>] [$_sourceLabelOption <text>]';
+      '[$_storeOption <folder>] [$_sourceLabelOption <text>] '
+      '[$_shotsCacheOption <folder>]';
 
   /// The arguments of the command.
   final List<String> args;
@@ -225,6 +264,7 @@ final class AtlasRun {
          rootPath,
          _project,
          store: _tryReadOption(args, _storeOption),
+         shotsCache: _tryReadOption(args, _shotsCacheOption),
        ),
        _readStalenesses = readStalenesses,
        _headlessPass = headlessPass,
@@ -269,6 +309,7 @@ final class AtlasRun {
               _snapshotOption,
               _editionOption,
               _shotsOption,
+              _shotsCacheOption,
             ]
             .map(args.indexOf)
             .where((index) => index >= 0)
@@ -304,6 +345,12 @@ final class AtlasRun {
         await _bundle();
       case _checkCommand:
         await _check();
+      case _migrateShotsCommand:
+        await _migrateShots();
+      case _uploadShotsCommand:
+        await _uploadShots();
+      case _deleteShotsCommand:
+        await _deleteShots();
       case _:
         throw const AtlasException(_usage);
     }
@@ -470,6 +517,7 @@ final class AtlasRun {
       _project,
       rootPath: locations.rootPath,
       store: _tryReadOption(args, _storeOption),
+      shotsCache: _tryReadOption(args, _shotsCacheOption),
       sourceLabel: sourceLabel,
     );
     final outcomes = {
@@ -480,6 +528,7 @@ final class AtlasRun {
         readStalenesses: _readStalenesses,
       ).run(),
       'localeKeyCoverage': await checks.localeKeyCoverage(),
+      'shots': await checks.shots(),
     };
 
     for (final MapEntry(key: name, value: outcome) in outcomes.entries) {
@@ -489,6 +538,59 @@ final class AtlasRun {
     if (outcomes.values.any((outcome) => outcome.isFailure)) {
       exitCode = _failureExitCode;
     }
+  }
+
+  Future<void> _migrateShots() async {
+    final result = await AtlasShotMigration(locations).run();
+
+    stdout.writeln(
+      'Renamed ${result.renamedShots} shots, rewrote '
+      '${result.rewrittenSnapshots} snapshots, stored ${result.storedShots} '
+      'shots',
+    );
+  }
+
+  Future<void> _uploadShots() async {
+    final remoteShots = _resolveRemoteShots();
+    final pathsByShot = {
+      for (final directory in [
+        locations.shotsCachePath,
+        locations.storeShotsPath,
+      ])
+        ..._listShotFiles(directory),
+    };
+
+    final absent = await remoteShots.findAbsent(pathsByShot.keys);
+
+    await remoteShots.upload({
+      for (final shot in absent) shot: ?pathsByShot[shot],
+    });
+
+    stdout.writeln('Uploaded ${absent.length} of ${pathsByShot.length} shots');
+  }
+
+  Future<void> _deleteShots() async {
+    final remoteShots = _resolveRemoteShots();
+    final shots = _positionalArguments.skip(1).toList();
+
+    if (shots.isEmpty || !shots.every(AtlasShotId.isValid)) {
+      throw const AtlasException(_usage);
+    }
+
+    final references = await AtlasShotReferences(locations.storePath).read();
+
+    final needed = shots.where(references.contains).toList();
+
+    if (needed.isNotEmpty) {
+      throw AtlasException(
+        'The repository of ${locations.storePath} names the shots '
+        '${needed.join(', ')}; nothing is deleted.',
+      );
+    }
+
+    await remoteShots.delete(shots);
+
+    stdout.writeln('Deleted ${shots.length} shots');
   }
 
   AtlasPageRenderer _createRenderer() {
@@ -509,6 +611,38 @@ final class AtlasRun {
     final commit = AtlasHeadless.tryReadSnapshotCommit(locations, snapshotPath);
 
     stdout.writeln(commit ?? _noSourceCommit);
+  }
+
+  AtlasRemoteShots _resolveRemoteShots() {
+    final remoteShots = AtlasRemoteShots.tryCreate(locations);
+
+    if (remoteShots == null) {
+      throw const AtlasException(
+        'The command needs AtlasProject.shotStorage, and the project returns '
+        'none.',
+      );
+    }
+
+    return remoteShots;
+  }
+
+  Map<String, String> _listShotFiles(String path) {
+    final directory = Directory(path);
+
+    if (!directory.existsSync()) {
+      return const {};
+    }
+
+    return {
+      for (final file in directory.listSync().whereType<File>())
+        if (file.path.endsWith(_pngExtension) &&
+            AtlasShotId.isValid(_readFileShot(file)))
+          _readFileShot(file): file.path,
+    };
+  }
+
+  String _readFileShot(File file) {
+    return p.basenameWithoutExtension(file.path);
   }
 
   Future<bool> _captureStale(String locale) async {

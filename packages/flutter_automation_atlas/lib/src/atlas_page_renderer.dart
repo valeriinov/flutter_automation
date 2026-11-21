@@ -17,8 +17,8 @@ import 'package:flutter_automation_atlas/src/atlas_journal_stages.dart';
 import 'package:flutter_automation_atlas/src/atlas_locations.dart';
 import 'package:flutter_automation_atlas/src/atlas_page_part.dart';
 import 'package:flutter_automation_atlas/src/atlas_published_variants.dart';
+import 'package:flutter_automation_atlas/src/atlas_remote_shots.dart';
 import 'package:flutter_automation_atlas/src/atlas_series.dart';
-import 'package:flutter_automation_atlas/src/atlas_shot.dart';
 import 'package:flutter_automation_atlas/src/atlas_shot_encoder.dart';
 import 'package:flutter_automation_atlas/src/atlas_shot_source.dart';
 import 'package:flutter_automation_atlas/src/atlas_snapshot.dart';
@@ -100,18 +100,28 @@ typedef _GatheredPage = ({
 /// repository.
 ///
 /// The shots script of the template holds `shotSheets`, `shotCells` and
-/// `shotUrls`. They are empty on the page. A bundle fills them by the shot
+/// `shotUrlTemplate`. The first two are empty on the page. With a remote
+/// shot storage ([AtlasProject.shotStorage]), the page holds the link
+/// template of the storage in `shotUrlTemplate` and reads each shot by it.
+/// [render] then deletes no shot. The page data holds no `shotsBytes` total,
+/// and no shot counts as missing. A bundle fills the script by the shot
 /// source:
 ///
 /// - With [AtlasShotSource.inline], a bundle holds the data URI of each sheet
 ///   of up to 16 shots in `shotSheets`. It holds the sheet index, left, top,
 ///   width and height of each shot by its content hash in `shotCells`.
-/// - With [AtlasShotSource.urls], a bundle holds the link of each shot in
-///   `shotUrls`. Its page data is one string, the base64 of its gzip.
+/// - With [AtlasShotSource.urls], a bundle holds the link template of the
+///   storage in `shotUrlTemplate`, and nothing goes to the storage. The page
+///   data of a bundle is one string, the base64 of its gzip.
 /// - With [AtlasShotSource.sheets], a bundle writes each sheet as the file
 ///   `shots/<sheet hash>.webp` beside the page. The hash of the sheet bytes
 ///   names the file. The bundle holds that relative path in `shotSheets`
 ///   instead of a data URI.
+///
+/// With a remote shot storage, a bundle of [AtlasShotSource.files],
+/// [AtlasShotSource.inline] or [AtlasShotSource.sheets] reads the shots from
+/// the cache folder. It first reads from the storage each shot that the
+/// cache does not hold.
 final class AtlasPageRenderer {
   static const _templateUri =
       'package:flutter_automation_atlas/template/index.html';
@@ -131,10 +141,9 @@ final class AtlasPageRenderer {
     CatalogueBlobs.blobsKey,
     'shotSheets',
     'shotCells',
-    'shotUrls',
+    'shotUrlTemplate',
   };
   static const _shotsPerSheet = 16;
-  static const _pngType = 'image/png';
   static const _designLinkKey = 'designUrl';
   static const _journalKey = 'journal';
   static const _stepHashKey = 'stepHash';
@@ -150,6 +159,7 @@ final class AtlasPageRenderer {
   final String? _template;
   final String? _sourceLabel;
   final DateTime Function() _clock;
+  final AtlasRemoteShots? _remoteShots;
 
   /// The [shotEncoder] parameter turns shots into the sheets that the bundle
   /// inlines or writes. It is an [AtlasShotWebpEncoder] by default. The
@@ -166,7 +176,8 @@ final class AtlasPageRenderer {
   }) : _shotEncoder = shotEncoder,
        _template = template,
        _sourceLabel = sourceLabel,
-       _clock = clock ?? DateTime.now;
+       _clock = clock ?? DateTime.now,
+       _remoteShots = AtlasRemoteShots.tryCreate(_paths);
 
   /// Reads each source and returns the page of [edition] that the snapshots
   /// make now. The default [edition] is `full`.
@@ -176,7 +187,7 @@ final class AtlasPageRenderer {
     final page = _assemble(
       template: await _readTemplate(),
       gathered: gathered,
-      shotsData: const {},
+      shotsData: _buildStorageShotsData(),
       isPacked: false,
     );
 
@@ -199,7 +210,7 @@ final class AtlasPageRenderer {
     final page = _assemble(
       template: await _readTemplate(),
       gathered: gathered,
-      shotsData: const {},
+      shotsData: _buildStorageShotsData(),
       isPacked: false,
     );
 
@@ -210,7 +221,9 @@ final class AtlasPageRenderer {
     return AtlasPageRendering(
       page: page,
       totals: gathered.totals,
-      deletedShots: _deleteUnreferencedShots(gathered.snapshots),
+      deletedShots: _paths.hasShotStorage
+          ? const []
+          : _deleteUnreferencedShots(gathered.snapshots),
       deletedDeclarations: _deleteUnreferencedDeclarations(gathered.snapshots),
       unlistedSnapshots: gathered.unlistedSnapshots,
       missingShots: gathered.missingShots,
@@ -224,17 +237,17 @@ final class AtlasPageRenderer {
   ///
   /// The [locale] parameter names the one series that the bundle shows. When
   /// [locale] is `null`, the bundle holds all page locales. For
-  /// [AtlasShotSource.urls], the shot publisher of the project puts the shots
-  /// where a browser reads them. The folder `shots/` beside the page holds
+  /// [AtlasShotSource.urls], the page reads the shots by the link template of
+  /// the shot storage of the project. The folder `shots/` beside the page holds
   /// the sheet files of [AtlasShotSource.sheets] or the shot files of
   /// [AtlasShotSource.files]. For each source, [renderBundle] first deletes
   /// each file and folder in it.
   ///
   /// Throws an [AtlasException] in these cases:
   /// - [locale] is none of [AtlasLocations.pageLocales].
-  /// - [source] is [AtlasShotSource.urls] and [AtlasProject.shotPublisher] is
+  /// - [source] is [AtlasShotSource.urls] and [AtlasProject.shotStorage] is
   ///   `null`.
-  /// - The publisher fails or gives a shot no link.
+  /// - The shot storage does not hold a shot that another source reads.
   Future<AtlasBundleRendering> renderBundle({
     required AtlasEdition edition,
     required AtlasShotSource source,
@@ -418,7 +431,7 @@ final class AtlasPageRenderer {
     final renderedVariants = flows.expand((flow) => flow.variants).toList();
     final shots = renderedVariants
         .expand(_readRenderedSnapshots)
-        .expand(_readShots)
+        .expand((snapshot) => snapshot.shots)
         .toSet();
     final totals = {
       'flows': flows.length,
@@ -427,7 +440,7 @@ final class AtlasPageRenderer {
           .map((variant) => variant.snapshot.stages.length)
           .sum,
       'shots': shots.length,
-      'shotsBytes': shots.map(_readShotBytes).sum,
+      if (!_paths.hasShotStorage) 'shotsBytes': shots.map(_readShotBytes).sum,
     };
     final groups = AtlasGroups(definitions, project);
     final projectTables = project.tables(AtlasLocationsStore(_paths));
@@ -511,8 +524,12 @@ final class AtlasPageRenderer {
   ) async {
     switch (source) {
       case AtlasShotSource.files:
+        await _remoteShots?.ensureCached(shots);
+
         return (shotsData: const <String, Object?>{}, images: shots.length);
       case AtlasShotSource.inline:
+        await _remoteShots?.ensureCached(shots);
+
         final sheets = _encodeShotSheets(shots);
 
         return (
@@ -520,6 +537,8 @@ final class AtlasPageRenderer {
           images: sheets.length,
         );
       case AtlasShotSource.sheets:
+        await _remoteShots?.ensureCached(shots);
+
         final sheets = _encodeShotSheets(shots);
         final sheetFiles = {
           for (final sheet in sheets) sheet.fileName: sheet.bytes,
@@ -535,55 +554,23 @@ final class AtlasPageRenderer {
           images: sheetFiles.length,
         );
       case AtlasShotSource.urls:
-        final links = await _publish(shots);
+        if (!_paths.hasShotStorage) {
+          throw const AtlasException(
+            'The shot source urls needs AtlasProject.shotStorage, and the '
+            'project returns none.',
+          );
+        }
 
-        return (
-          shotsData: {
-            'shotUrls': {
-              for (final MapEntry(:key, :value) in links.entries) key: '$value',
-            },
-          },
-          images: 0,
-        );
+        return (shotsData: _buildStorageShotsData(), images: 0);
     }
   }
 
-  Future<Map<String, Uri>> _publish(List<String> shots) async {
-    final publisher = _paths.project.shotPublisher;
+  Map<String, Object?> _buildStorageShotsData() {
+    final remoteShots = _remoteShots;
 
-    if (publisher == null) {
-      throw const AtlasException(
-        'The shot source urls needs AtlasProject.shotPublisher, and the '
-        'project returns none.',
-      );
-    }
-
-    final Map<String, Uri> links;
-
-    try {
-      links = await publisher.publish([
-        for (final shot in shots)
-          AtlasShot(
-            hash: shot,
-            bytes: File(_paths.resolveShotPath(shot)).readAsBytesSync(),
-            type: _pngType,
-          ),
-      ]);
-    } on AtlasException {
-      rethrow;
-    } on Object catch (error) {
-      throw AtlasException('The shot publisher failed: $error');
-    }
-
-    final unlinked = shots.where((shot) => !links.containsKey(shot)).toList();
-
-    if (unlinked.isNotEmpty) {
-      throw AtlasException(
-        'The shot publisher returned no link for ${unlinked.join(', ')}.',
-      );
-    }
-
-    return {for (final shot in shots) shot: ?links[shot]};
+    return remoteShots == null
+        ? const {}
+        : {'shotUrlTemplate': remoteShots.urlTemplate};
   }
 
   void _copyShots(List<String> shots, String directory) {
@@ -616,7 +603,7 @@ final class AtlasPageRenderer {
     }
 
     final referencedFileNames = snapshots
-        .expand(_readShots)
+        .expand((snapshot) => snapshot.shots)
         .map((shot) => p.basename(_paths.resolveShotPath(shot)))
         .toSet();
     final unreferencedFiles = directory
@@ -836,13 +823,6 @@ final class AtlasPageRenderer {
         .where((id) => !listedIds.contains(id))
         .toSet()
         .toList();
-  }
-
-  Iterable<String> _readShots(AtlasSnapshot snapshot) {
-    return [
-      ...snapshot.stages.map((stage) => stage.shot),
-      snapshot.end.shot,
-    ].nonNulls;
   }
 
   Map<String, Object?> _buildVariantData(
@@ -1123,7 +1103,8 @@ final class AtlasPageRenderer {
   }
 
   bool _isShotMissing(String shot) {
-    return !File(_paths.resolveShotPath(shot)).existsSync();
+    return !_paths.hasShotStorage &&
+        !File(_paths.resolveShotPath(shot)).existsSync();
   }
 }
 
@@ -1148,7 +1129,8 @@ final class AtlasPageRendering {
   /// Snapshots whose variant no flow file lists any more, left off the page.
   final List<String> unlistedSnapshots;
 
-  /// Shots a rendered snapshot names that the shots directory does not hold.
+  /// Shots a rendered snapshot names that the shots directory does not hold;
+  /// empty with a remote shot storage.
   final List<String> missingShots;
 
   const AtlasPageRendering({

@@ -10,9 +10,8 @@ import 'package:flutter_automation_atlas/src/atlas_exception.dart';
 import 'package:flutter_automation_atlas/src/atlas_page_part.dart';
 import 'package:flutter_automation_atlas/src/atlas_paths.dart';
 import 'package:flutter_automation_atlas/src/atlas_page_renderer.dart';
-import 'package:flutter_automation_atlas/src/atlas_shot.dart';
 import 'package:flutter_automation_atlas/src/atlas_shot_encoder.dart';
-import 'package:flutter_automation_atlas/src/atlas_shot_publisher.dart';
+import 'package:flutter_automation_atlas/src/atlas_shot_references.dart';
 import 'package:flutter_automation_atlas/src/atlas_shot_source.dart';
 import 'package:flutter_automation_atlas/src/atlas_snapshot.dart';
 import 'package:flutter_automation_atlas/src/atlas_snapshot_store.dart';
@@ -20,6 +19,7 @@ import 'package:flutter_automation_atlas/src/atlas_table.dart';
 
 import 'test_utils/create_atlas_snapshot.dart';
 import 'test_utils/fake_atlas_project.dart';
+import 'test_utils/fake_atlas_shot_storage.dart';
 import 'test_utils/hash_shot_encoder.dart';
 import 'test_utils/test_atlas_root.dart';
 
@@ -36,11 +36,14 @@ const _loginDesign = 'login/design';
 const _detailsDesign = 'details/design';
 const _loginDesignLink = 'https://design.example/login';
 const _detailsDesignLink = 'https://design.example/details';
-const _stageShot = '0123456789ab';
-const _endShot = 'ba9876543210';
+const _stageShot =
+    '0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef';
+const _endShot =
+    '9f64a747e1b97f131fabb6b447296c9b6f0201e79fb3c5356e6c77e89b6a806a';
 const _sourceLabel = '1.2.0 (test)';
 const _storedShot = 'cccccccccccc';
-const _strandedShot = 'eeeeeeeeeeee';
+const _strandedShot =
+    'eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee';
 const _referencedDeclarations = '333333333333';
 const _strandedDeclarations = '444444444444';
 const _shotBytes = [1, 2, 3, 4];
@@ -261,9 +264,10 @@ void main() {
     _atlasPageRenderer_should_nameBundleByEdition();
     _atlasPageRenderer_should_rejectBundleOfLocaleOffPage();
     _atlasPageRenderer_should_linkShotsOfAUrlsBundle();
-    _atlasPageRenderer_should_stopBundleWhenPublishFails();
-    _atlasPageRenderer_should_stopBundleWhenPublisherLeavesAShotUnlinked();
-    _atlasPageRenderer_should_rejectUrlsBundleWithoutPublisher();
+    _atlasPageRenderer_should_rejectUrlsBundleWithoutStorage();
+    _atlasPageRenderer_should_renderThePageOfARemoteStorageByItsTemplate();
+    _atlasPageRenderer_should_readFilesBundleShotsFromTheStorage();
+    _atlasPageRenderer_should_stopBundleOnShotTheStorageDoesNotHold();
     _atlasPageRenderer_should_copyShotsBesideAFilesBundle();
     _atlasPageRenderer_should_writeSheetFilesBesideASheetsBundle();
     _atlasPageRenderer_should_emptyShotsFolderOfAnInlineBundle();
@@ -466,15 +470,12 @@ void _atlasPageRenderer_should_deleteUnreferencedShots() {
   test('AtlasPageRenderer should delete unreferenced shots', () async {
     await TestAtlasRoot.run((root) async {
       _writeCatalogue(root);
-      root.writeShot('ffffffffffff', _shotBytes);
+      root.writeShot('f' * 64, _shotBytes);
 
       final rendering = await AtlasPageRenderer(root.paths).render();
 
-      expect(rendering.deletedShots, ['ffffffffffff.png']);
-      expect(
-        File(root.paths.resolveShotPath('ffffffffffff')).existsSync(),
-        isFalse,
-      );
+      expect(rendering.deletedShots, ['${'f' * 64}.png']);
+      expect(File(root.paths.resolveShotPath('f' * 64)).existsSync(), isFalse);
       expect(File(root.paths.resolveShotPath(_stageShot)).existsSync(), isTrue);
     });
   });
@@ -1504,11 +1505,9 @@ void _atlasPageRenderer_should_rejectBundleOfLocaleOffPage() {
 void _atlasPageRenderer_should_linkShotsOfAUrlsBundle() {
   test('AtlasPageRenderer should link shots of a urls bundle', () async {
     await TestAtlasRoot.run((root) async {
+      final storage = await startFakeAtlasShotStorage(root);
+
       _writeCatalogue(root);
-
-      final publisher = _FakeShotPublisher();
-
-      root.project.publisher = publisher;
 
       final rendering = await _createRenderer(root).renderBundle(
         edition: _fullEdition(root),
@@ -1519,11 +1518,15 @@ void _atlasPageRenderer_should_linkShotsOfAUrlsBundle() {
       final page = File(rendering.path).readAsStringSync();
       final shots = _readShots(page);
 
-      expect(publisher.published.toSet(), {_stageShot, _endShot});
-      expect(shots['shotUrls'], {
-        _stageShot: 'https://shots.example/$_stageShot.png',
-        _endShot: 'https://shots.example/$_endShot.png',
-      });
+      expect(storage.uploads, isEmpty);
+      expect(storage.requestedShots, isEmpty);
+      expect(shots['shotUrlTemplate'], storage.urlTemplate);
+      expect(
+        const AtlasShotReferences(
+          '.',
+        ).readFile(rendering.path, File(rendering.path).readAsBytesSync()),
+        {_stageShot, _endShot},
+      );
       expect(shots['shotSheets'], isEmpty);
       expect(page, isNot(contains('data:image')));
       expect(rendering.images, 0);
@@ -1531,84 +1534,112 @@ void _atlasPageRenderer_should_linkShotsOfAUrlsBundle() {
   });
 }
 
-void _atlasPageRenderer_should_stopBundleWhenPublishFails() {
-  test('AtlasPageRenderer should stop bundle when publish fails', () async {
+void _atlasPageRenderer_should_rejectUrlsBundleWithoutStorage() {
+  test('AtlasPageRenderer should reject urls bundle without storage', () async {
     await TestAtlasRoot.run((root) async {
       _writeCatalogue(root);
-
-      root.project.publisher = _FakeShotPublisher(failure: 'the host is down');
 
       await expectLater(
         _createRenderer(root).renderBundle(
           edition: _fullEdition(root),
           source: AtlasShotSource.urls,
-          locale: _ukLocale,
         ),
         throwsA(
           isA<AtlasException>().having(
             (error) => error.message,
             'message',
-            contains('the host is down'),
+            contains('shotStorage'),
           ),
         ),
       );
+    });
+  });
+}
+
+void _atlasPageRenderer_should_renderThePageOfARemoteStorageByItsTemplate() {
+  test('AtlasPageRenderer should render the page of a remote storage by its '
+      'template', () async {
+    await TestAtlasRoot.run((root) async {
+      final storage = await startFakeAtlasShotStorage(root);
+
+      _writeCatalogue(root);
+      root.writeShot(_strandedShot, _shotBytes);
+
+      final rendering = await _createRenderer(root).render();
+      final built = await _createRenderer(root).build();
 
       expect(
-        File(
-          root.paths.resolveBundlePagePath(
-            AtlasEdition.fullName,
-            locale: _ukLocale,
-          ),
-        ).existsSync(),
-        isFalse,
+        _readShots(rendering.page)['shotUrlTemplate'],
+        storage.urlTemplate,
       );
+      expect(built.page, rendering.page);
+      expect(rendering.totals.containsKey('shotsBytes'), isFalse);
+      expect(rendering.deletedShots, isEmpty);
+      expect(rendering.missingShots, isEmpty);
+      expect(
+        File(root.paths.resolveShotPath(_strandedShot)).existsSync(),
+        isTrue,
+      );
+      expect(storage.requestedShots, isEmpty);
     });
   });
 }
 
-void _atlasPageRenderer_should_stopBundleWhenPublisherLeavesAShotUnlinked() {
-  test('AtlasPageRenderer should stop bundle when publisher leaves a shot '
-      'unlinked', () async {
-    await TestAtlasRoot.run((root) async {
-      _writeCatalogue(root);
-
-      root.project.publisher = _FakeShotPublisher(skipped: _endShot);
-
-      await expectLater(
-        _createRenderer(root).renderBundle(
-          edition: _fullEdition(root),
-          source: AtlasShotSource.urls,
-          locale: _ukLocale,
-        ),
-        throwsA(
-          isA<AtlasException>().having(
-            (error) => error.message,
-            'message',
-            contains(_endShot),
-          ),
-        ),
-      );
-    });
-  });
-}
-
-void _atlasPageRenderer_should_rejectUrlsBundleWithoutPublisher() {
+void _atlasPageRenderer_should_readFilesBundleShotsFromTheStorage() {
   test(
-    'AtlasPageRenderer should reject urls bundle without publisher',
+    'AtlasPageRenderer should read files bundle shots from the storage',
     () async {
       await TestAtlasRoot.run((root) async {
+        final storage = await startFakeAtlasShotStorage(root);
+
         _writeCatalogue(root);
+        File(root.paths.resolveShotPath(_endShot)).deleteSync();
+
+        storage.files[_endShot] = _shotBytes;
+
+        final rendering = await _createRenderer(root).renderBundle(
+          edition: _fullEdition(root),
+          source: AtlasShotSource.files,
+          locale: _ukLocale,
+        );
+
+        expect(storage.requestedShots, [_endShot]);
+        expect(_readSheetFiles(rendering.path).keys.toSet(), {
+          '$_stageShot.png',
+          '$_endShot.png',
+        });
+        expect(
+          _readShots(
+            File(rendering.path).readAsStringSync(),
+          ).containsKey('shotUrlTemplate'),
+          isFalse,
+        );
+      });
+    },
+  );
+}
+
+void _atlasPageRenderer_should_stopBundleOnShotTheStorageDoesNotHold() {
+  test(
+    'AtlasPageRenderer should stop bundle on shot the storage does not hold',
+    () async {
+      await TestAtlasRoot.run((root) async {
+        await startFakeAtlasShotStorage(root);
+
+        _writeCatalogue(root);
+        File(root.paths.resolveShotPath(_endShot)).deleteSync();
 
         await expectLater(
           _createRenderer(root).renderBundle(
             edition: _fullEdition(root),
-            source: AtlasShotSource.urls,
+            source: AtlasShotSource.files,
+            locale: _ukLocale,
           ),
           throwsA(
             isA<AtlasException>().having(
               (error) => error.message,
               'message',
-              contains('shotPublisher'),
+              contains(_endShot),
             ),
           ),
         );
@@ -2180,29 +2211,6 @@ Iterable<String> _findStepKeys(Map<String, Object?> stage) {
 
 AtlasPageRenderer _createRenderer(TestAtlasRoot root) {
   return AtlasPageRenderer(root.paths, shotEncoder: const HashShotEncoder());
-}
-
-final class _FakeShotPublisher implements AtlasShotPublisher {
-  final String? failure;
-  final String? skipped;
-  final List<String> published = [];
-
-  _FakeShotPublisher({this.failure, this.skipped});
-
-  @override
-  Future<Map<String, Uri>> publish(List<AtlasShot> shots) async {
-    if (failure case final message?) {
-      throw StateError(message);
-    }
-
-    published.addAll(shots.map((shot) => shot.hash));
-
-    return {
-      for (final shot in shots)
-        if (shot.hash != skipped)
-          shot.hash: Uri.parse('https://shots.example/${shot.hash}.png'),
-    };
-  }
 }
 
 String _hashSheetDataUri(List<String> shots) {
