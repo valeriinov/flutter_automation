@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.16.5
+
+- The language switch in the page header changes the language of the page
+  alone: the titles of the areas, groups, flows, variants and steps, and the
+  descriptions. The series switch beside the device changes the screenshots
+  and the screen texts of the variant alone.
+- A test opens a rendered page in headless Chrome and presses both switches.
+  `CHROME_EXECUTABLE` names the browser; the test is skipped on a machine
+  without Chrome.
+
 ## 0.16.4
 
 - The page shows the area tabs and the flow strip in two rows. Each row

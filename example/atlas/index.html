@@ -2056,11 +2056,11 @@ readAtlasPageData().then(function (data) {
   function localizedText(text, fallback, locale) {
     var value = isPlainObject(text) ? text : {};
     var first = Object.keys(value).map(function (code) { return value[code]; }).filter(Boolean)[0];
-    return value[locale || series] || value[DEFAULT_LOCALE] || first || fallback;
+    return value[locale || lang] || value[DEFAULT_LOCALE] || first || fallback;
   }
 
   function localized(tag, className, text, fallback) {
-    return el(tag, className, localizedText(text, fallback));
+    return bilingual(tag, className, localizedText(text, fallback, 'en'), localizedText(text, fallback, 'uk'));
   }
 
   function hasText(text) {
@@ -3510,7 +3510,7 @@ readAtlasPageData().then(function (data) {
   function arrowLabel(stage, language) {
     var vector = scrollVector(stage);
     var fallback = vector ? copyText(language, 'scroll_' + scrollDirection(vector)) : stage.label || stage.action || '';
-    return localizedText(stage.title, fallback);
+    return localizedText(stage.title, fallback, language);
   }
 
   function edgeInfo(edge, route) {
