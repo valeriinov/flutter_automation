@@ -8,6 +8,8 @@ const _macChromePath =
 const _pathChromeNames = ['google-chrome', 'chromium', 'chromium-browser'];
 const _listeningPrefix = 'DevTools listening on ';
 const _startTimeout = Duration(seconds: 30);
+const _deleteAttempts = 50;
+const _deleteDelay = Duration(milliseconds: 100);
 
 /// Returns the Chrome executable that `CHROME_EXECUTABLE` names, the macOS
 /// application, or the first Chrome on `PATH`. Returns `null` when the
@@ -100,6 +102,21 @@ final class HeadlessChrome {
     _process.kill();
 
     await _process.exitCode;
+    await _deleteProfile();
+  }
+
+  // The helper processes of Chrome outlive the main one and still write to
+  // the profile for a moment.
+  Future<void> _deleteProfile() async {
+    for (int attempt = 1; attempt < _deleteAttempts; attempt++) {
+      try {
+        _profile.deleteSync(recursive: true);
+
+        return;
+      } on FileSystemException {
+        await Future<void>.delayed(_deleteDelay);
+      }
+    }
 
     _profile.deleteSync(recursive: true);
   }
