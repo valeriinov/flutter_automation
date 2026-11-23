@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.16.7
+
+- The scroll arrows take the look of their row: a flat chevron on the page
+  background beside the flow strip, and the grey end of the segment beside
+  the area tabs.
+
 ## 0.16.6
 
 - The area tabs and the flow strip of the page show a scroll arrow on each
