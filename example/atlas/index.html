@@ -1509,6 +1509,13 @@
     .area-seg { min-width: 100%; }
     .area-seg button { flex: 1 0 auto; padding: 0 8px; }
   }
+  .scroll-strip { position: relative; min-width: 0; display: flex; flex-direction: column; }
+  .strip-arrow { position: absolute; top: 50%; z-index: 2; width: 28px; height: 28px; margin-top: -14px; padding: 0; display: inline-flex; align-items: center; justify-content: center; border: 1px solid var(--line-strong); border-radius: 50%; background: var(--surface); color: var(--ink-soft); box-shadow: var(--shadow); cursor: pointer; }
+  .strip-arrow:hover { color: var(--brand); }
+  .strip-arrow[hidden] { display: none; }
+  .strip-arrow.is-left { left: 0; }
+  .strip-arrow.is-right { right: 0; }
+  .strip-arrow svg { width: 14px; height: 14px; }
 
 
   /* ---------- scenario labels ---------- */
@@ -1669,7 +1676,7 @@
 <nav class="drawer" id="drawer" aria-label="Menu" hidden></nav>
 
 <div class="wrap app">
-  <div class="flows-bar"><div class="area-switch" id="area-switch"></div><nav class="flow-tabs" id="flow-tabs" role="tablist" aria-label="Flows"></nav></div>
+  <div class="flows-bar"><div class="scroll-strip"><div class="area-switch" id="area-switch"></div></div><div class="scroll-strip"><nav class="flow-tabs" id="flow-tabs" role="tablist" aria-label="Flows"></nav></div></div>
   <div class="view-switch" id="view-switch" hidden></div>
   <section class="search-bar" id="search-bar">
     <div class="variant-slot" id="variant-slot"></div>
@@ -5616,6 +5623,36 @@ readAtlasPageData().then(function (data) {
     flowTabs.scrollLeft += event.deltaY;
   }, { passive: false });
   window.addEventListener('resize', updateTabFades);
+
+  function addScrollArrows(scroller) {
+    var strip = scroller.parentNode;
+    var arrows = [-1, 1].map(function (direction) {
+      var arrow = el('button', 'strip-arrow ' + (direction < 0 ? 'is-left' : 'is-right'));
+      arrow.type = 'button';
+      arrow.hidden = true;
+      arrow.tabIndex = -1;
+      arrow.setAttribute('aria-hidden', 'true');
+      arrow.innerHTML = '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="' + (direction < 0 ? 'M10 3 5 8l5 5' : 'M6 3l5 5-5 5') + '"/></svg>';
+      arrow.addEventListener('click', function () {
+        scroller.scrollBy({ left: direction * scroller.clientWidth * 0.8, behavior: 'smooth' });
+      });
+      strip.appendChild(arrow);
+      return arrow;
+    });
+    function update() {
+      var max = scroller.scrollWidth - scroller.clientWidth;
+      arrows[0].hidden = !(max > 4 && scroller.scrollLeft > 4);
+      arrows[1].hidden = !(max > 4 && scroller.scrollLeft < max - 4);
+    }
+    scroller.addEventListener('scroll', update, { passive: true });
+    window.addEventListener('resize', update);
+    new MutationObserver(update).observe(scroller, { childList: true, subtree: true, characterData: true });
+    if (typeof ResizeObserver === 'function') { new ResizeObserver(update).observe(scroller); }
+    update();
+  }
+
+  addScrollArrows(document.getElementById('area-switch'));
+  addScrollArrows(flowTabs);
 
   var baseRenderAllForMobile = renderAll;
   renderAll = function () {

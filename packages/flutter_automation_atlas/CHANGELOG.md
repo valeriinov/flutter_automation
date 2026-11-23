@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.16.6
+
+- The area tabs and the flow strip of the page show a scroll arrow on each
+  side that has hidden content. The arrow appears when the row can scroll
+  to that side and disappears when it cannot. A click on an arrow scrolls the
+  row by most of its visible width.
+- A headless Chrome test checks the arrows at the start, the middle and the
+  end of the flow strip, after a click, and after a language switch.
+
 ## 0.16.5
 
 - The language switch in the page header changes the language of the page
