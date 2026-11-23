@@ -44,12 +44,14 @@ enum AtlasPagePart {
 
 /// {@category Utils}
 ///
-/// A named list of the parts of the atlas page.
+/// A named list of the parts of the atlas page, with the title and the icon
+/// of the page.
 ///
 /// The `full` edition holds every [AtlasPagePart]. The `lite` edition holds
 /// [AtlasPagePart.flowStages] and [AtlasPagePart.screenDescriptions]. The
 /// `flutter_automation: atlas: editions:` section of the `pubspec.yaml` of a
-/// project replaces either list and adds others.
+/// project replaces either list, adds others, and gives an edition its title
+/// and its icon.
 final class AtlasEdition {
   /// The name of the edition that holds every part.
   static const fullName = 'full';
@@ -63,12 +65,26 @@ final class AtlasEdition {
   /// The parts the page of the edition shows.
   final Set<AtlasPagePart> parts;
 
-  /// Creates the edition [name] with [parts].
+  /// The title of the page, by page language (`en`, `uk`). The page shows
+  /// its own title in a language the map lacks. Empty by default.
+  final Map<String, String> title;
+
+  /// The path of the `.png` or `.ico` file that the browser tab shows,
+  /// relative to the root of the project. The page draws its own icon when
+  /// the path is `null`, the default.
+  final String? iconPath;
+
+  /// Creates the edition [name] with [parts], [title] and [iconPath].
   ///
   /// Throws an [AtlasException] when [parts] lacks
   /// [AtlasPagePart.flowStages].
-  AtlasEdition(this.name, Set<AtlasPagePart> parts)
-    : parts = Set.unmodifiable(parts) {
+  AtlasEdition(
+    this.name,
+    Set<AtlasPagePart> parts, {
+    Map<String, String> title = const {},
+    this.iconPath,
+  }) : parts = Set.unmodifiable(parts),
+       title = Map.unmodifiable(title) {
     if (!parts.contains(AtlasPagePart.flowStages)) {
       throw AtlasException(
         'The edition "$name" lacks the part ${AtlasPagePart.flowStages.name}; '

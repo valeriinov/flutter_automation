@@ -67,12 +67,32 @@ flutter_automation:
   atlas:
     maxBundleBytes: 15728640
     maxBundleImages: 254
+    icon: tool/atlas/icon.png
     editions:
-      lite: [flowStages, screenDescriptions, designLinks]
+      design: [flowStages, designLinks]
+      lite:
+        parts: [flowStages, screenDescriptions, designLinks]
+        title: {en: Product flows, uk: Флоу продукту}
+        icon: tool/atlas/icon_lite.png
+      full:
+        title: {en: Team atlas, uk: Атлас команди}
 ```
 
 The renderer puts into the page data, and into its search, only the parts of
 the edition. The page hides every section that has no data.
+
+An edition is a list of part names, or a map of `parts`, `title` and `icon`.
+A map for `full` or `lite` without `parts` keeps the built-in parts. Another
+edition lists its `parts`.
+
+- `title` maps a page language, `en` or `uk`, to the title of the page. The
+  tab and the heading of the page show it after the project name. A language
+  without a title keeps the title of the page, "Screen flows".
+- `icon` names a `.png` or `.ico` file, relative to the root of the project.
+  The browser tab shows it. The `icon` of an edition replaces the `icon` of
+  the section. Without both, the page draws the green square with the first
+  letter of the project, like its logo. The page holds the file inline, so
+  the file counts toward `maxBundleBytes`.
 
 `bundle` needs both limits and has no default for them: a missing limit stops
 the command with the name of its key. A bundle over a limit stops the command

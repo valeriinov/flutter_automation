@@ -161,6 +161,18 @@ flutter_automation:
     maxBundleBytes: 15728640
     maxBundleImages: 500
 ''';
+const _iconBytes = [137, 80, 78, 71];
+const _liteTitle = {'en': 'Product flows', 'uk': 'Флоу продукту'};
+const _titledLitePubspec = '''
+name: sample
+flutter_automation:
+  defaultLocale: uk
+  atlas:
+    icon: tool/icon.png
+    editions:
+      lite:
+        title: {en: Product flows, uk: Флоу продукту}
+''';
 const _liteWithDesignPubspec = '''
 name: sample
 flutter_automation:
@@ -258,6 +270,9 @@ void main() {
     _atlasPageRenderer_should_rejectVersionWithoutStorage();
     _atlasPageRenderer_should_showDesignLinksWhenLiteListsThePart();
     _atlasPageRenderer_should_hideSectionsOfPartsOutsideTheEdition();
+    _atlasPageRenderer_should_carryTitleAndIconOfTheEdition();
+    _atlasPageRenderer_should_leaveTitleAndIconOutWithoutSettings();
+    _atlasPageRenderer_should_rejectIconTheRootLacks();
   });
   group('AtlasPageRenderer Bundle Tests', () {
     _atlasPageRenderer_should_inlineEveryShownShotInBundle();
@@ -1373,6 +1388,81 @@ void _atlasPageRenderer_should_hideSectionsOfPartsOutsideTheEdition() {
       });
     },
   );
+}
+
+void _atlasPageRenderer_should_carryTitleAndIconOfTheEdition() {
+  test(
+    'AtlasPageRenderer should carry title and icon of the edition',
+    () async {
+      await TestAtlasRoot.run((root) async {
+        _writeFullOnlyCatalogue(root);
+        root.writeSource('pubspec.yaml', _titledLitePubspec);
+        _writeIcon(root);
+
+        final rendering = await AtlasPageRenderer(root.paths).build(
+          edition: root.paths.pageConfig.resolveEdition(AtlasEdition.liteName),
+        );
+
+        final meta = _readMeta(rendering.page);
+
+        expect(meta['title'], _liteTitle);
+        expect(
+          meta['icon'],
+          'data:image/png;base64,${base64Encode(_iconBytes)}',
+        );
+      });
+    },
+  );
+}
+
+void _atlasPageRenderer_should_leaveTitleAndIconOutWithoutSettings() {
+  test(
+    'AtlasPageRenderer should leave title and icon out without settings',
+    () async {
+      await TestAtlasRoot.run((root) async {
+        _writeFullOnlyCatalogue(root);
+
+        final rendering = await AtlasPageRenderer(root.paths).build(
+          edition: root.paths.pageConfig.resolveEdition(AtlasEdition.liteName),
+        );
+
+        final meta = _readMeta(rendering.page);
+
+        expect(meta.containsKey('title'), isFalse);
+        expect(meta.containsKey('icon'), isFalse);
+      });
+    },
+  );
+}
+
+void _atlasPageRenderer_should_rejectIconTheRootLacks() {
+  test('AtlasPageRenderer should reject icon the root lacks', () async {
+    await TestAtlasRoot.run((root) async {
+      _writeFullOnlyCatalogue(root);
+      root.writeSource('pubspec.yaml', _titledLitePubspec);
+
+      final build = AtlasPageRenderer(root.paths).build(
+        edition: root.paths.pageConfig.resolveEdition(AtlasEdition.liteName),
+      );
+
+      await expectLater(
+        build,
+        throwsA(
+          isA<AtlasException>().having(
+            (error) => error.message,
+            'message',
+            contains('tool/icon.png'),
+          ),
+        ),
+      );
+    });
+  });
+}
+
+void _writeIcon(TestAtlasRoot root) {
+  File(root.paths.resolve('tool/icon.png'))
+    ..createSync(recursive: true)
+    ..writeAsBytesSync(_iconBytes);
 }
 
 void _atlasPageRenderer_should_inlineEveryShownShotInBundle() {
