@@ -43,8 +43,7 @@
 ## 0.14.0
 
 - A capture reads the texts of a frame before it takes the screenshot of the
-  frame. The texts of a toast that leaves the screen while the capture writes
-  the PNG stay in the snapshot.
+  frame.
 
 ## 0.13.3
 
