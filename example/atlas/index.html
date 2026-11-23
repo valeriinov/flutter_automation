@@ -2008,6 +2008,11 @@ readAtlasPageData().then(function (data) {
     COPY.uk['kind_' + kind] = isAnalytics ? 'Аналітика' : isState ? 'Стан' : capitalized(kind);
   });
 
+  ['en', 'uk'].forEach(function (language) {
+    var title = isPlainObject(meta.title) ? meta.title[language] : null;
+    if (title) { COPY[language].title = title; }
+  });
+
   (function () {
     var colors = ['#0369A1', '#7C3AED', '#C2410C', '#0F766E', '#B45309', '#45413B'];
     var css = '';
@@ -6631,10 +6636,41 @@ readAtlasPageData().then(function (data) {
     });
   }
 
+  /* ---------- tab icon ---------- */
+
+  function drawIcon(letter) {
+    var size = 64;
+    var canvas = document.createElement('canvas');
+    canvas.width = size;
+    canvas.height = size;
+    var context = canvas.getContext('2d');
+    if (!context) { return null; }
+    var style = getComputedStyle(root);
+    context.fillStyle = style.getPropertyValue('--brand-l').trim() || '#14867D';
+    context.beginPath();
+    if (context.roundRect) { context.roundRect(0, 0, size, size, 18); } else { context.rect(0, 0, size, size); }
+    context.fill();
+    context.fillStyle = '#fff';
+    context.font = '700 40px ' + (style.getPropertyValue('--font-display').trim() || 'sans-serif');
+    context.textAlign = 'center';
+    context.textBaseline = 'middle';
+    context.fillText(letter, size / 2, size / 2 + 2);
+    return canvas.toDataURL('image/png');
+  }
+
+  function setTabIcon(href) {
+    if (!href) { return; }
+    var link = document.createElement('link');
+    link.rel = 'icon';
+    link.href = href;
+    document.head.appendChild(link);
+  }
+
   /* ---------- boot ---------- */
 
   var brandLetter = String(meta.projectName || 'A').charAt(0).toUpperCase();
   ['side-logo', 'head-logo'].forEach(function (id) { document.getElementById(id).textContent = brandLetter; });
+  setTabIcon(typeof meta.icon === 'string' ? meta.icon : drawIcon(brandLetter));
   document.getElementById('side-name').textContent = (meta.projectName || '') + ' · Atlas';
   document.getElementById('head-project').textContent = meta.projectName || '';
   renderVersionSwitch();

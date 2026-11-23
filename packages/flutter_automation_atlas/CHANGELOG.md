@@ -1,5 +1,18 @@
 # Changelog
 
+## 0.16.8
+
+- The browser tab of the page shows an icon: the green square with the first
+  letter of the project, like the logo of the page.
+- `flutter_automation: atlas: icon:` names a `.png` or `.ico` file of the
+  project that replaces that icon.
+- An edition of `flutter_automation: atlas: editions:` is a list of parts or
+  a map of `parts`, `title` and `icon`. The `title` replaces the title of the
+  tab and of the page, by page language. The `icon` replaces the icon of the
+  section for that edition. A map for `full` or `lite` without `parts` keeps
+  the built-in parts.
+- `AtlasEdition` has `title` and `iconPath`.
+
 ## 0.16.7
 
 - The scroll arrows take the look of their row: a flat chevron on the page

@@ -119,9 +119,12 @@ flutter_automation:
   place where the page goes. A viewer that hosts the page sets its own limits;
   a Claude artifact is one example.
 - The editions `full` and `lite` exist without a key. Add `editions:` only to
-  change a list or to add an edition. The part names come from the
-  `AtlasPagePart` enum of the package. `lite` lists no part with keys,
-  requests, translations or the mock scenario.
+  change a list, to add an edition, or to give an edition its own `title` or
+  `icon`. The part names come from the `AtlasPagePart` enum of the package.
+  `lite` lists no part with keys, requests, translations or the mock scenario.
+- Add `icon:` only when the user gives a `.png` or `.ico` file for the browser
+  tab. Without it, the page draws the green square with the first letter of
+  the project.
 
 ## 5. Write the fields
 

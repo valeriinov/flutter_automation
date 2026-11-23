@@ -85,8 +85,11 @@ typedef _GatheredPage = ({
 ///
 /// A second script of the page, `atlas-meta`, holds what the page needs to
 /// draw itself. It holds the project name, the source label and the build
-/// time of a bundle as `builtAt`. It holds the parts, the menu of the tables
-/// with their columns, the locales and the journal kinds. The page data
+/// time of a bundle as `builtAt`. It holds the [AtlasEdition.title] as
+/// `title` and the file of [AtlasEdition.iconPath] as the data URI `icon`;
+/// without them the page shows its own title and draws its own icon. It
+/// holds the parts, the menu of the tables with their columns, the locales
+/// and the journal kinds. The page data
 /// replaces the placeholder inside the JSON script of the template. The
 /// renderer writes each `</` in the data as `<\/`, so that no text can close
 /// that script.
@@ -783,6 +786,8 @@ final class AtlasPageRenderer {
 
     return {
       'projectName': project.projectName,
+      if (edition.title.isNotEmpty) 'title': edition.title,
+      'icon': ?_readIcon(edition.iconPath),
       'sourceLabel': ?_sourceLabel,
       'builtAt': ?builtAt?.toUtc().toIso8601String(),
       'locales': project.locales,
@@ -809,6 +814,27 @@ final class AtlasPageRenderer {
         'parametersKey': schema.parametersKey,
       },
     };
+  }
+
+  String? _readIcon(String? iconPath) {
+    if (iconPath == null) {
+      return null;
+    }
+
+    final file = File(_paths.resolve(iconPath));
+
+    if (!file.existsSync()) {
+      throw AtlasException(
+        'No icon $iconPath under the root; the pubspec.yaml names it in '
+        'flutter_automation: atlas:.',
+      );
+    }
+
+    final mimeType = p.extension(iconPath).toLowerCase() == '.png'
+        ? 'image/png'
+        : 'image/x-icon';
+
+    return 'data:$mimeType;base64,${base64Encode(file.readAsBytesSync())}';
   }
 
   Map<String, Object?> _buildScreenDescriptions(Set<String> designScreens) {

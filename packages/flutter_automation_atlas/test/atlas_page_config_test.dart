@@ -35,6 +35,50 @@ flutter_automation:
     editions:
       brief: [designLinks]
 ''';
+const _editionMaps = '''
+name: sample
+flutter_automation:
+  atlas:
+    icon: tool/icon.png
+    editions:
+      lite:
+        parts: [flowStages, designLinks]
+        title: {en: Product flows, uk: Флоу продукту}
+        icon: tool/icon_lite.ico
+      full:
+        title: {en: Team atlas}
+      brief: [flowStages]
+''';
+const _newEditionWithoutParts = '''
+name: sample
+flutter_automation:
+  atlas:
+    editions:
+      brief:
+        title: {en: Brief}
+''';
+const _unknownEditionKey = '''
+name: sample
+flutter_automation:
+  atlas:
+    editions:
+      lite:
+        heading: {en: Brief}
+''';
+const _unknownTitleLanguage = '''
+name: sample
+flutter_automation:
+  atlas:
+    editions:
+      lite:
+        title: {de: Ablauf}
+''';
+const _badIconFile = '''
+name: sample
+flutter_automation:
+  atlas:
+    icon: tool/icon.svg
+''';
 const _badLimit = '''
 name: sample
 flutter_automation:
@@ -50,6 +94,14 @@ void main() {
     _atlasPageConfig_should_rejectUnknownPartNamingTheKey();
     _atlasPageConfig_should_rejectEditionWithoutFlows();
     _atlasPageConfig_should_rejectUnknownEditionNamingTheOnesThereAre();
+    _atlasPageConfig_should_readTitleAndIconOfEditionMap();
+    _atlasPageConfig_should_keepBuiltInPartsOfMapWithoutParts();
+    _atlasPageConfig_should_giveSectionIconToEditionWithoutIcon();
+    _atlasPageConfig_should_giveNoTitleAndNoIconByDefault();
+    _atlasPageConfig_should_rejectNewEditionWithoutParts();
+    _atlasPageConfig_should_rejectUnknownEditionKey();
+    _atlasPageConfig_should_rejectUnknownTitleLanguage();
+    _atlasPageConfig_should_rejectIconThatIsNoPngOrIco();
     _atlasPageConfig_should_readLimits();
     _atlasPageConfig_should_nameTheKeyOfAMissingLimit();
     _atlasPageConfig_should_rejectLimitThatIsNoNumber();
@@ -148,6 +200,109 @@ void _atlasPageConfig_should_rejectUnknownEditionNamingTheOnesThereAre() {
   );
 }
 
+void _atlasPageConfig_should_readTitleAndIconOfEditionMap() {
+  test('AtlasPageConfig should read title and icon of edition map', () {
+    final edition = AtlasPageConfig.fromPubspec(
+      _editionMaps,
+    ).resolveEdition('lite');
+
+    expect(edition.parts, {
+      AtlasPagePart.flowStages,
+      AtlasPagePart.designLinks,
+    });
+    expect(edition.title, {'en': 'Product flows', 'uk': 'Флоу продукту'});
+    expect(edition.iconPath, 'tool/icon_lite.ico');
+  });
+}
+
+void _atlasPageConfig_should_keepBuiltInPartsOfMapWithoutParts() {
+  test('AtlasPageConfig should keep built in parts of map without parts', () {
+    final edition = AtlasPageConfig.fromPubspec(
+      _editionMaps,
+    ).resolveEdition(AtlasEdition.fullName);
+
+    expect(edition.parts, AtlasPagePart.values.toSet());
+    expect(edition.title, {'en': 'Team atlas'});
+  });
+}
+
+void _atlasPageConfig_should_giveSectionIconToEditionWithoutIcon() {
+  test('AtlasPageConfig should give section icon to edition without icon', () {
+    final config = AtlasPageConfig.fromPubspec(_editionMaps);
+    final full = config.resolveEdition(AtlasEdition.fullName);
+    final brief = config.resolveEdition('brief');
+
+    expect(full.iconPath, 'tool/icon.png');
+    expect(brief.iconPath, 'tool/icon.png');
+    expect(brief.title, isEmpty);
+  });
+}
+
+void _atlasPageConfig_should_giveNoTitleAndNoIconByDefault() {
+  test('AtlasPageConfig should give no title and no icon by default', () {
+    final edition = AtlasPageConfig.fromPubspec(
+      _editions,
+    ).resolveEdition('lite');
+
+    expect(edition.title, isEmpty);
+    expect(edition.iconPath, isNull);
+  });
+}
+
+void _atlasPageConfig_should_rejectNewEditionWithoutParts() {
+  test('AtlasPageConfig should reject new edition without parts', () {
+    expect(
+      () => AtlasPageConfig.fromPubspec(_newEditionWithoutParts),
+      _throwsAtlasException(
+        allOf(
+          contains('flutter_automation: atlas: editions: brief:'),
+          contains('parts:'),
+        ),
+      ),
+    );
+  });
+}
+
+void _atlasPageConfig_should_rejectUnknownEditionKey() {
+  test('AtlasPageConfig should reject unknown edition key', () {
+    expect(
+      () => AtlasPageConfig.fromPubspec(_unknownEditionKey),
+      _throwsAtlasException(
+        allOf(contains('heading'), contains('parts, title, icon')),
+      ),
+    );
+  });
+}
+
+void _atlasPageConfig_should_rejectUnknownTitleLanguage() {
+  test('AtlasPageConfig should reject unknown title language', () {
+    expect(
+      () => AtlasPageConfig.fromPubspec(_unknownTitleLanguage),
+      _throwsAtlasException(
+        allOf(
+          contains('editions: lite: title:'),
+          contains('"de"'),
+          contains('en, uk'),
+        ),
+      ),
+    );
+  });
+}
+
+void _atlasPageConfig_should_rejectIconThatIsNoPngOrIco() {
+  test('AtlasPageConfig should reject icon that is no png or ico', () {
+    expect(
+      () => AtlasPageConfig.fromPubspec(_badIconFile),
+      _throwsAtlasException(
+        allOf(
+          contains('flutter_automation: atlas: icon:'),
+          contains('.png or .ico'),
+        ),
+      ),
+    );
+  });
+}
+
 void _atlasPageConfig_should_readLimits() {
   test('AtlasPageConfig should read limits', () {
     final config = AtlasPageConfig.fromPubspec(_limits);
@@ -220,4 +375,10 @@ void _atlasLaunchSettings_should_callToolDirectlyWithoutPrefix() {
     expect(command.executable, 'dart');
     expect(command.arguments, isEmpty);
   });
+}
+
+Matcher _throwsAtlasException(Matcher message) {
+  return throwsA(
+    isA<AtlasException>().having((error) => error.message, 'message', message),
+  );
 }
